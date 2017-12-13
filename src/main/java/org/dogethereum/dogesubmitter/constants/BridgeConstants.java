@@ -1,0 +1,70 @@
+package org.dogethereum.dogesubmitter.constants;
+
+import org.bitcoinj.core.*;
+import org.bitcoinj.script.Script;
+import org.libdohj.params.AbstractDogecoinParams;
+
+public class BridgeConstants {
+
+    protected AbstractDogecoinParams dogeParams;
+
+    protected Script federationPubScript;
+    protected Address federationAddress;
+    // We ignore txs to the federation before this time
+    protected long federationAddressCreationTime;
+
+    protected int doge2EthMinimumAcceptableConfirmations;
+
+    protected int updateBridgeExecutionPeriod;
+
+    protected int maxDogeHeadersPerRound;
+
+    protected Coin minimumLockTxValue;
+
+    public AbstractDogecoinParams getDogeParams() {
+        return dogeParams;
+    }
+
+    public Script getFederationPubScript() {
+        return federationPubScript;
+    }
+
+    public Address getFederationAddress() {
+        return federationAddress;
+    }
+
+    public long getFederationAddressCreationTime() { return federationAddressCreationTime; }
+
+    public int getDoge2EthMinimumAcceptableConfirmations() {
+        return doge2EthMinimumAcceptableConfirmations;
+    }
+
+
+    public int getUpdateBridgeExecutionPeriod() { return updateBridgeExecutionPeriod; }
+
+    public int getMaxDogeHeadersPerRound() { return maxDogeHeadersPerRound; }
+
+    public Coin getMinimumLockTxValue() { return minimumLockTxValue; }
+
+
+//    This is just used for the release process. Part of this might be useful
+//    protected List<ECKey> federatorPublicKeys;
+//    protected int federatorsRequiredToSign;
+//    protected int eth2DogeMinimumAcceptableConfirmations;
+//    protected int dogeBroadcastingMinimumAcceptableBlocks;
+//    protected Coin minimumReleaseTxValue;
+//
+//    public List<ECKey> getFederatorPublicKeys() {
+//        return federatorPublicKeys;
+//    }
+//    public int getFederatorsRequiredToSign() {
+//        return federatorsRequiredToSign;
+//    }
+//    public int getEth2DogeMinimumAcceptableConfirmations() {
+//        return eth2DogeMinimumAcceptableConfirmations;
+//    }
+//    public int getDogeBroadcastingMinimumAcceptableBlocks() {
+//        return dogeBroadcastingMinimumAcceptableBlocks;
+//    }
+//    public Coin getMinimumReleaseTxValue() { return minimumReleaseTxValue; }
+}

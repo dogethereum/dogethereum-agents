@@ -1,0 +1,13 @@
+src/main/resources/dogesubmitter.local.conf
+src/main/resources/dogesubmitter.ropsten.conf
+
+*.iml
+*.log
+
+.idea
+.gradle
+
+classes
+logs
+build
+target
