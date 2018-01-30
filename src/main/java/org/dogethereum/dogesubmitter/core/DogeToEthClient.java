@@ -14,6 +14,7 @@ import org.bitcoinj.store.BlockStoreException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileSystemUtils;
+import org.web3j.protocol.core.DefaultBlockParameterName;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -192,7 +193,7 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
 
     public int updateBridgeDogeBlockchain() throws Exception {
         //m_lastBlockHeight
-        int bridgeDogeBlockchainBestChainHeight = federatorSupport.getDogeBestBlockHeight();
+        int bridgeDogeBlockchainBestChainHeight = federatorSupport.getDogeBestBlockHeight(DefaultBlockParameterName.PENDING);
         if (dogecoinWrapper.getBestChainHeight() <= bridgeDogeBlockchainBestChainHeight) {
             return 0;
         }
@@ -212,7 +213,7 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
 //        }
 
         // implementation using a block locator
-        List<String> blockLocator = federatorSupport.getDogeBlockchainBlockLocator();
+        List<String> blockLocator = federatorSupport.getDogeBlockchainBlockLocator(DefaultBlockParameterName.PENDING);
         log.debug("Block locator size {}, first {}, last {}.", blockLocator.size(), blockLocator.get(0), blockLocator.get(blockLocator.size()-1));
         // find the last best chain block it has
         StoredBlock matchedBlock = null;
@@ -278,7 +279,7 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
                             pmt = proof.getPartialMerkleTree();
                         }
                     }
-                    int contractHeight = federatorSupport.getDogeBestBlockHeight();
+                    int contractHeight = federatorSupport.getDogeBestBlockHeight(DefaultBlockParameterName.PENDING);
                     if (contractHeight < (txStoredBlock.getHeight() + bridgeConstants.getDoge2EthMinimumAcceptableConfirmations() -1 )) {
                         log.debug("Tx not relayed yet because not enough confirmations yet {}. Contract height {}, Tx included in block {}",
                                   federatorWalletTx.getHash(), contractHeight, txStoredBlock.getHeight());

@@ -1,14 +1,15 @@
 package org.dogethereum.dogesubmitter.contract;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import org.web3j.abi.EventEncoder;
-import org.web3j.abi.EventValues;
-import org.web3j.abi.TypeReference;
+
+import org.web3j.abi.*;
+import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.Event;
 import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
@@ -17,12 +18,15 @@ import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
+import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.RemoteCall;
 import org.web3j.protocol.core.methods.request.EthFilter;
+import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.Contract;
 import org.web3j.tx.TransactionManager;
+import org.web3j.tx.exceptions.ContractCallException;
 import rx.Observable;
 import rx.functions.Func1;
 
@@ -191,6 +195,13 @@ public class DogeRelay extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
+    public RemoteCall<BigInteger> getBestBlockHash(DefaultBlockParameter defaultBlockParameter) {
+        Function function = new Function("getBestBlockHash",
+                Arrays.<Type>asList(),
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+        return executeRemoteCallSingleValueReturn(function, BigInteger.class, defaultBlockParameter);
+    }
+
     public RemoteCall<TransactionReceipt> setInitialParent(BigInteger blockHash, BigInteger height, BigInteger chainWork) {
         Function function = new Function(
                 "setInitialParent", 
@@ -217,11 +228,25 @@ public class DogeRelay extends Contract {
         return executeRemoteCallSingleValueReturn(function, List.class);
     }
 
+    public RemoteCall<List> getBlockLocator(DefaultBlockParameter defaultBlockParameter) {
+        Function function = new Function("getBlockLocator",
+                Arrays.<Type>asList(),
+                Arrays.<TypeReference<?>>asList(new TypeReference<StaticArray9<Uint256>>() {}));
+        return executeRemoteCallSingleValueReturn(function, List.class, defaultBlockParameter);
+    }
+
     public RemoteCall<BigInteger> getBestBlockHeight() {
         Function function = new Function("getBestBlockHeight", 
                 Arrays.<Type>asList(), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
+    public RemoteCall<BigInteger> getBestBlockHeight(DefaultBlockParameter defaultBlockParameter) {
+        Function function = new Function("getBestBlockHeight",
+                Arrays.<Type>asList(),
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+        return executeRemoteCallSingleValueReturn(function, BigInteger.class, defaultBlockParameter);
     }
 
     public RemoteCall<TransactionReceipt> verifyTx(byte[] txBytes, BigInteger txIndex, List<BigInteger> siblings, BigInteger txBlockHash) {
@@ -305,5 +330,54 @@ public class DogeRelay extends Contract {
         public BigInteger txHash;
 
         public BigInteger returnCode;
+    }
+
+    protected <T> RemoteCall<T> executeRemoteCallSingleValueReturn(
+            Function function, Class<T> returnType, DefaultBlockParameter defaultBlockParameter) {
+        return new RemoteCall<>(() -> executeCallSingleValueReturn(function, returnType, defaultBlockParameter));
+    }
+
+    @SuppressWarnings("unchecked")
+    protected <T extends Type, R> R executeCallSingleValueReturn(
+            Function function, Class<R> returnType, DefaultBlockParameter defaultBlockParameter) throws IOException {
+        T result = executeCallSingleValueReturn(function, defaultBlockParameter);
+        if (result == null) {
+            throw new ContractCallException("Empty value (0x) returned from contract");
+        }
+
+        Object value = result.getValue();
+        if (returnType.isAssignableFrom(value.getClass())) {
+            return (R) value;
+        } else if (result.getClass().equals(Address.class) && returnType.equals(String.class)) {
+            return (R) result.toString();  // cast isn't necessary
+        } else {
+            throw new ContractCallException(
+                    "Unable to convert response: " + value
+                            + " to expected type: " + returnType.getSimpleName());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    protected <T extends Type> T executeCallSingleValueReturn(
+            Function function, DefaultBlockParameter defaultBlockParameter) throws IOException {
+        List<Type> values = executeCall(function, defaultBlockParameter);
+        if (!values.isEmpty()) {
+            return (T) values.get(0);
+        } else {
+            return null;
+        }
+    }
+
+    private List<Type> executeCall(
+            Function function, DefaultBlockParameter defaultBlockParameter) throws IOException {
+        String encodedFunction = FunctionEncoder.encode(function);
+        org.web3j.protocol.core.methods.response.EthCall ethCall = web3j.ethCall(
+                Transaction.createEthCallTransaction(
+                        transactionManager.getFromAddress(), contractAddress, encodedFunction),
+                defaultBlockParameter)
+                .send();
+
+        String value = ethCall.getValue();
+        return FunctionReturnDecoder.decode(value, function.getOutputParameters());
     }
 }

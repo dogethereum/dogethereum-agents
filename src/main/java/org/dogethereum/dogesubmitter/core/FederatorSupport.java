@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.protocol.Web3j;
+import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
@@ -149,12 +150,12 @@ public class FederatorSupport {
         return value4;
     }
 
-    public int getDogeBestBlockHeight() throws Exception {
-        return dogeRelay.getBestBlockHeight().send().intValue();
+    public int getDogeBestBlockHeight(DefaultBlockParameter defaultBlockParameter) throws Exception {
+        return dogeRelay.getBestBlockHeight(defaultBlockParameter).send().intValue();
     }
 
-    public String getDogeBestBlockHash() throws Exception {
-        BigInteger result = dogeRelay.getBestBlockHash().send();
+    public String getDogeBestBlockHash(DefaultBlockParameter defaultBlockParameter) throws Exception {
+        BigInteger result = dogeRelay.getBestBlockHash(defaultBlockParameter).send();
         return hashBigIntegerToString(result);
     }
 
@@ -168,8 +169,8 @@ public class FederatorSupport {
     }
 
 
-    public List<String> getDogeBlockchainBlockLocator() throws Exception {
-        List<Uint256> result = dogeRelay.getBlockLocator().send();
+    public List<String> getDogeBlockchainBlockLocator(DefaultBlockParameter defaultBlockParameter) throws Exception {
+        List<Uint256> result = dogeRelay.getBlockLocator(defaultBlockParameter).send();
         List<String> formattedResult = new ArrayList<>();
         for (Uint256 uint256Hash : result) {
             formattedResult.add(hashBigIntegerToString(uint256Hash.getValue()));
@@ -270,7 +271,8 @@ public class FederatorSupport {
     }
 
     public void updateContractFacadesGasPrice() throws IOException {
-        BigInteger gasPrice = web3.ethGasPrice().send().getGasPrice();
+        // BigInteger gasPrice = web3.ethGasPrice().send().getGasPrice();
+        BigInteger gasPrice = new BigInteger("2000000000");
         dogeRelay.setGasPrice(gasPrice);
         dogeToken.setGasPrice(gasPrice);
     }
