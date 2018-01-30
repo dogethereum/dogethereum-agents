@@ -13,6 +13,7 @@ import org.bitcoinj.core.*;
 import org.bitcoinj.store.BlockStoreException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.FileSystemUtils;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -70,8 +71,11 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
 //            System.exit(1);
 //        }
 
-        //this.dataDirectory = new File(config.databaseDir() + "/peg");
         this.dataDirectory = new File(config.dataDirectory());
+        // Empty dataDirectory until we solve the bug we have reusing an existing directory
+        FileSystemUtils.deleteRecursively(this.dataDirectory);
+        this.dataDirectory.mkdirs();
+
         this.proofFile = new File(dataDirectory.getAbsolutePath() + "/DogeToEthClient.proofs");
 
         restoreProofsFromFile();
