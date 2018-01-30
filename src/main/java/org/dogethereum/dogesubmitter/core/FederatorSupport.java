@@ -8,6 +8,7 @@ import org.dogethereum.dogesubmitter.contract.DogeToken;
 import org.bitcoinj.core.*;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.libdohj.core.ScryptHash;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -199,13 +200,14 @@ public class FederatorSupport {
 //        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) -> log.info("BulkStoreHeaders receipt {}.", toString(receipt)) );
         for (Block header : headers) {
             AltcoinBlock dogeHeader = (AltcoinBlock) header;
-            BigInteger scryptHash;
+            ScryptHash scryptHash;
             if (dogeHeader.getAuxPoW() == null) {
-                scryptHash = dogeHeader.getScryptHash().toBigInteger();
+                scryptHash = dogeHeader.getScryptHash();
             } else {
-                scryptHash = dogeHeader.getAuxPoW().getParentBlockHeader().getScryptHash().toBigInteger();
+                scryptHash = dogeHeader.getAuxPoW().getParentBlockHeader().getScryptHash();
             }
-            CompletableFuture<TransactionReceipt> futureReceipt = dogeRelay.storeBlockHeader(dogeHeader.bitcoinSerialize(), scryptHash).sendAsync();
+            BigInteger scryptHashBI = ScryptHash.wrapReversed(scryptHash.getBytes()).toBigInteger();
+            CompletableFuture<TransactionReceipt> futureReceipt = dogeRelay.storeBlockHeader(dogeHeader.bitcoinSerialize(), scryptHashBI).sendAsync();
             log.info("Sent storeBlockHeader {}", dogeHeader.getHash());
             futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
                     log.info("StoreBlockHeader receipt {}.", toString(receipt))
