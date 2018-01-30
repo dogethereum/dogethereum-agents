@@ -1,6 +1,7 @@
 package org.dogethereum.dogesubmitter.core.dogecoin;
 
 
+import org.dogethereum.dogesubmitter.AltcoinLevelDBBlockStore;
 import org.dogethereum.dogesubmitter.BridgeUtils;
 import org.dogethereum.dogesubmitter.constants.BridgeConstants;
 import org.dogethereum.dogesubmitter.util.FileUtil;
@@ -65,7 +66,7 @@ public class DogecoinWrapperImpl implements DogecoinWrapper {
             }
             @Override
             protected BlockStore provideBlockStore(File file) throws BlockStoreException {
-                return new LevelDBBlockStore(dogeContext, getChainFile());
+                return new AltcoinLevelDBBlockStore(dogeContext, getChainFile());
             }
             @Override
             protected boolean chainFileDelete(File chainFile) {

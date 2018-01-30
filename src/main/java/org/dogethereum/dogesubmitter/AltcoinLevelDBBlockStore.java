@@ -73,7 +73,11 @@ public class AltcoinLevelDBBlockStore implements BlockStore {
     public synchronized void put(StoredBlock block) throws BlockStoreException {
         buffer.clear();
         serializeCompact(block, buffer);
-        db.put(block.getHeader().getHash().getBytes(), buffer.array());
+        int arraySize = buffer.position();
+        byte[] array = new byte[arraySize];
+        byte[] bufferArray = buffer.array();
+        System.arraycopy(bufferArray, 0, array, 0, arraySize);
+        db.put(block.getHeader().getHash().getBytes(), array);
     }
 
     private void serializeCompact(StoredBlock block, ByteBuffer buffer) {
@@ -106,7 +110,8 @@ public class AltcoinLevelDBBlockStore implements BlockStore {
         buffer.get(chainWorkBytes);
         BigInteger chainWork = new BigInteger(1, chainWorkBytes);
         int height = buffer.getInt();  // +4 bytes
-        byte[] header = new byte[buffer.remaining() + 1];    // Extra byte for the 00 transactions length.
+        //byte[] header = new byte[buffer.remaining() + 1];    // Extra byte for the 00 transactions length.
+        byte[] header = new byte[buffer.remaining()]; // Don't add Extra byte for the 00 transactions length because it should be already included in the serialized header
         buffer.get(header, 0, buffer.remaining());
         return new StoredBlock(params.getDefaultSerializer().makeBlock(header), chainWork, height);
     }
