@@ -34,9 +34,9 @@ public class BridgeTestNetConstants extends BridgeConstants {
             // that appears on block 2.010.001 as a lock tx
 
 
-            // Address based on hash 0x0000000000000000000000000000000000000001
-            // new Address(params, params.getAddressHeader(), Hex.decode("0000000000000000000000000000000000000001"))
-            federationAddress = Address.fromBase58(getDogeParams(), "D596YFweJQuHY1BbjazZYmAbt8jJXaDhSF");
+            // Address based on hash 0x0000000000000000000000000000000000000002
+            // new Address(params, params.getAddressHeader(), Hex.decode("0000000000000000000000000000000000000002"))
+            federationAddress = Address.fromBase58(getDogeParams(), "D596YFweJQuHY1BbjazZYmAbt8jJe1axaD");
             federationPubScript = ScriptBuilder.createOutputScript(federationAddress);
         } catch (AddressFormatException e) {
             logger.error("Federation address format is invalid");
