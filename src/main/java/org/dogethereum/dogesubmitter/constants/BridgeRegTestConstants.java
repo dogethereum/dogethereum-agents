@@ -8,6 +8,8 @@ import org.libdohj.params.DogecoinMainNetParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.GregorianCalendar;
+
 
 public class BridgeRegTestConstants extends BridgeConstants {
 
@@ -44,15 +46,10 @@ public class BridgeRegTestConstants extends BridgeConstants {
         }
 
         // To recreate the value use
-        // federationAddressCreationTime = new GregorianCalendar(2017,11,13).getTimeInMillis() / 1000;
+        // federationAddressCreationTime = new GregorianCalendar(2018,0,30).getTimeInMillis() / 1000;
         // Currently set to:
-        // Wed Dec 13 00:00:00 ART 2017
-        //federationAddressCreationTime = 1513134000l;
-
-        // Sun Jan 14 00:00:00 ART 2018
-        federationAddressCreationTime = 1515898800l;
-        //Add a week because checkpoints substract a week
-        //federationAddressCreationTime+= 86400 * 7;
+        // Tue Jan 30 00:00:00 ART 2018
+        federationAddressCreationTime = 1517281200l;
 
         doge2EthMinimumAcceptableConfirmations = 7;
 
