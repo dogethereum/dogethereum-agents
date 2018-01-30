@@ -1,7 +1,6 @@
 package org.dogethereum.dogesubmitter.core.dogecoin;
 
 
-import org.dogethereum.dogesubmitter.AltcoinLevelDBBlockStore;
 import org.dogethereum.dogesubmitter.BridgeUtils;
 import org.dogethereum.dogesubmitter.constants.BridgeConstants;
 import org.dogethereum.dogesubmitter.util.FileUtil;
@@ -22,17 +21,17 @@ public class DogecoinWrapperImpl implements DogecoinWrapper {
     private WalletAppKit kit;
     private Context dogeContext;
     private BridgeConstants bridgeConstants;
-    private File pegDirectory;
+    private File dataDirectory;
 
-    public DogecoinWrapperImpl(BridgeConstants bridgeConstants, File pegDirectory) {
+    public DogecoinWrapperImpl(BridgeConstants bridgeConstants, File dataDirectory) {
         this.dogeContext = new Context(bridgeConstants.getDogeParams());
         this.bridgeConstants = bridgeConstants;
-        this.pegDirectory = pegDirectory;
+        this.dataDirectory = dataDirectory;
     }
 
     @Override
     public void setup(final BlockListener blockListener, final TransactionListener transactionListener, List<PeerAddress> peerAddresses) {
-        kit = new WalletAppKit(dogeContext, pegDirectory, "DogeToEthClient") {
+        kit = new WalletAppKit(dogeContext, dataDirectory, "DogeToEthClient") {
             @Override
             protected void onSetupCompleted() {
                 Context.propagate(dogeContext);
