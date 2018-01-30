@@ -269,6 +269,14 @@ public class FederatorSupport {
         return web3.ethSyncing().send().isSyncing();
     }
 
+    public void updateContractFacadesGasPrice() throws IOException {
+        BigInteger gasPrice = web3.ethGasPrice().send().getGasPrice();
+        dogeRelay.setGasPrice(gasPrice);
+        dogeToken.setGasPrice(gasPrice);
+    }
+
+
+
 //    Used just for release process
 //    public StateForFederator getStateForFederator() throws IOException, ClassNotFoundException {
 //        byte[] result = (byte[]) this.callTx(Bridge.GET_STATE_FOR_DOGE_RELEASE_CLIENT);

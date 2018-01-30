@@ -170,7 +170,8 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
             try {
                 if (!federatorSupport.isEthNodeSyncing()) {
                     log.debug("UpdateBridgeTimerTask");
-                    int numberOfBlocksSent = updateBridgeDogeBlockchain();
+                    federatorSupport.updateContractFacadesGasPrice();
+                    updateBridgeDogeBlockchain();
                     // Don't relay tx if DogeRelay blockchain is not fully in sync - commented out because we don't need this
                     //if (numberOfBlocksSent < bridgeConstants.getMaxDogeHeadersPerRound())
                     updateBridgeTransactions();
