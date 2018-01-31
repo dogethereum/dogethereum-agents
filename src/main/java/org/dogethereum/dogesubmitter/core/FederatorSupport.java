@@ -62,6 +62,7 @@ public class FederatorSupport {
     private DogeRelay dogeRelayForRelayTx;
     private DogeToken dogeToken;
     private SystemProperties config;
+    private BigInteger gasPriceMinimum;
 
     @Autowired
     public FederatorSupport() throws Exception {
@@ -82,13 +83,13 @@ public class FederatorSupport {
             fromAddressGeneralPurposeAndSendBlocks = config.addressGeneralPurposeAndSendBlocks();
             fromAddressRelayTxs = config.addressRelayTxs();
         }
-        BigInteger gasPrice = BigInteger.valueOf(config.gasPrice());
+        gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
         BigInteger gasLimit = BigInteger.valueOf(config.gasLimit());
-        dogeRelay = DogeRelay.load(dogeRelayContractAddress, web3, new ClientTransactionManager(web3, fromAddressGeneralPurposeAndSendBlocks), gasPrice, gasLimit);
+        dogeRelay = DogeRelay.load(dogeRelayContractAddress, web3, new ClientTransactionManager(web3, fromAddressGeneralPurposeAndSendBlocks), gasPriceMinimum, gasLimit);
         assert dogeRelay.isValid();
-        dogeRelayForRelayTx = DogeRelay.load(dogeRelayContractAddress, web3, new ClientTransactionManager(web3, fromAddressRelayTxs), gasPrice, gasLimit);
+        dogeRelayForRelayTx = DogeRelay.load(dogeRelayContractAddress, web3, new ClientTransactionManager(web3, fromAddressRelayTxs), gasPriceMinimum, gasLimit);
         assert dogeRelayForRelayTx.isValid();
-        dogeToken = DogeToken.load(dogeTokenContractAddress, web3, new ClientTransactionManager(web3, fromAddressGeneralPurposeAndSendBlocks), gasPrice, gasLimit);
+        dogeToken = DogeToken.load(dogeTokenContractAddress, web3, new ClientTransactionManager(web3, fromAddressGeneralPurposeAndSendBlocks), gasPriceMinimum, gasLimit);
         assert dogeToken.isValid();
     }
 
@@ -272,7 +273,13 @@ public class FederatorSupport {
     }
 
     public void updateContractFacadesGasPrice() throws IOException {
-        BigInteger gasPrice = web3.ethGasPrice().send().getGasPrice();
+        BigInteger gasPriceSuggestedByEthNode = web3.ethGasPrice().send().getGasPrice();
+        BigInteger gasPrice;
+        if (gasPriceSuggestedByEthNode.compareTo(gasPriceMinimum) > 0) {
+            gasPrice = gasPriceSuggestedByEthNode;
+        } else {
+            gasPrice = gasPriceMinimum;
+        }
         dogeRelay.setGasPrice(gasPrice);
         dogeToken.setGasPrice(gasPrice);
     }

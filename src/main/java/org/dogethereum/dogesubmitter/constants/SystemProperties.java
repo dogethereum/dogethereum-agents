@@ -215,8 +215,8 @@ public class SystemProperties {
         return getStringProperty("data.directory", null);
     }
 
-    public long gasPrice() {
-        return getLongProperty("gas.price", 0);
+    public long gasPriceMinimum() {
+        return getLongProperty("gas.price.min", 0);
     }
 
     public long gasLimit() {
