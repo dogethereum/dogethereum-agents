@@ -63,6 +63,7 @@ public class FederatorSupport {
     private DogeToken dogeToken;
     private SystemProperties config;
     private BigInteger gasPriceMinimum;
+    private String truebitClaimantAddress;
 
     @Autowired
     public FederatorSupport() throws Exception {
@@ -77,11 +78,13 @@ public class FederatorSupport {
             dogeTokenContractAddress = getContractAddress("DogeToken");
             fromAddressGeneralPurposeAndSendBlocks = web3.ethAccounts().send().getAccounts().get(0);
             fromAddressRelayTxs = web3.ethAccounts().send().getAccounts().get(1);
+            truebitClaimantAddress = web3.ethAccounts().send().getAccounts().get(2);
         } else {
             dogeRelayContractAddress = config.dogeRelayContractAddress();
             dogeTokenContractAddress = config.dogeTokenContractAddress();
             fromAddressGeneralPurposeAndSendBlocks = config.addressGeneralPurposeAndSendBlocks();
             fromAddressRelayTxs = config.addressRelayTxs();
+            truebitClaimantAddress = config.truebitClaimantAddress();
         }
         gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
         BigInteger gasLimit = BigInteger.valueOf(config.gasLimit());
@@ -208,7 +211,7 @@ public class FederatorSupport {
                 scryptHash = dogeHeader.getAuxPoW().getParentBlockHeader().getScryptHash();
             }
             BigInteger scryptHashBI = ScryptHash.wrapReversed(scryptHash.getBytes()).toBigInteger();
-            CompletableFuture<TransactionReceipt> futureReceipt = dogeRelay.storeBlockHeader(dogeHeader.bitcoinSerialize(), scryptHashBI).sendAsync();
+            CompletableFuture<TransactionReceipt> futureReceipt = dogeRelay.storeBlockHeader(dogeHeader.bitcoinSerialize(), scryptHashBI, truebitClaimantAddress).sendAsync();
             log.info("Sent storeBlockHeader {}", dogeHeader.getHash());
             futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
                     log.info("StoreBlockHeader receipt {}.", toString(receipt))

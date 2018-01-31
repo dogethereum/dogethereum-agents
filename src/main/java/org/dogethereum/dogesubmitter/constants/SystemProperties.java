@@ -207,6 +207,10 @@ public class SystemProperties {
         return getStringProperty("dogeToken.contract.address", null);
     }
 
+    public String truebitClaimantAddress() {
+        return getStringProperty("truebit.claimant.address", null);
+    }
+
     public String truffleBuildContractsDirectory() {
         return getStringProperty("truffle.build.contracts.directory", null);
     }
