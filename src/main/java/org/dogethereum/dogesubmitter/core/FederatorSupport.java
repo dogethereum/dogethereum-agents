@@ -182,6 +182,17 @@ public class FederatorSupport {
         return formattedResult;
     }
 
+    public List<String> getOnholdHashes() throws Exception{
+        List<Uint256> result = dogeRelay.getOnholdHashes().send();
+        List<String> formattedResult = new ArrayList<>();
+        for (Uint256 uint256Hash : result) {
+            formattedResult.add(hashBigIntegerToString(uint256Hash.getValue()));
+        }
+        return formattedResult;
+    }
+
+
+
     public void sendStoreHeaders(org.bitcoinj.core.Block headers[]) throws Exception {
         log.info("About to send to the bridge headers from {} to {}", headers[0].getHash(), headers[headers.length - 1].getHash());
 //        ByteArrayOutputStream baosHeaders = new ByteArrayOutputStream();

@@ -245,6 +245,20 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
         }
         headersToSendToBridge = Lists.reverse(headersToSendToBridge);
         log.debug("Headers missing in the bridge {}.", headersToSendToBridge.size());
+
+        List<String> onholdHashes = federatorSupport.getOnholdHashes();
+        log.debug("On hold hashes {}.", onholdHashes.size());
+        if (onholdHashes.size() > 0) {
+            Iterator<Block> headersToSendToBridgeIterator = headersToSendToBridge.iterator();
+            while (headersToSendToBridgeIterator.hasNext()) {
+                Block headerToSendToBridge = headersToSendToBridgeIterator.next();
+                if (onholdHashes.contains(headerToSendToBridge.getHash().toString())) {
+                    log.debug("Skipping hash {} because it is on hold.", headerToSendToBridge.getHash());
+                    headersToSendToBridgeIterator.remove();
+                }
+            }
+        }
+
         int to = Math.min(bridgeConstants.getMaxDogeHeadersPerRound(), headersToSendToBridge.size());
         List<Block> headersToSendToBridgeSubList = headersToSendToBridge.subList(0, to);
         federatorSupport.sendStoreHeaders(headersToSendToBridgeSubList.toArray(new Block[]{}));
