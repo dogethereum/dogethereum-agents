@@ -5,25 +5,22 @@ import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.script.ScriptBuilder;
 import org.libdohj.params.DogecoinMainNetParams;
-import org.libdohj.params.DogecoinRegTestParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.GregorianCalendar;
 
-
-public class BridgeRegTestConstants extends BridgeConstants {
+public class BridgeRegTestConstantsOld extends BridgeConstants {
 
     private static final Logger logger = LoggerFactory.getLogger("BridgeRegTestConstants");
 
-    private static BridgeRegTestConstants instance = new BridgeRegTestConstants();
+    private static BridgeRegTestConstantsOld instance = new BridgeRegTestConstantsOld();
 
-    public static BridgeRegTestConstants getInstance() {
+    public static BridgeRegTestConstantsOld getInstance() {
         return instance;
     }
 
-    BridgeRegTestConstants() {
-        dogeParams = DogecoinRegTestParams.get();
+    BridgeRegTestConstantsOld() {
+        dogeParams = DogecoinMainNetParams.get();
 
 
         try {
@@ -37,9 +34,9 @@ public class BridgeRegTestConstants extends BridgeConstants {
             // that appears on block 2.010.001 as a lock tx
 
 
-            // Address based on hash 0x0000000000000000000000000000000000000004
-            // new Address(params, params.getAddressHeader(), Hex.decode("0000000000000000000000000000000000000004"))
-            federationAddress = Address.fromBase58(getDogeParams(), "nUCAGGgZEPN1QyknmQe1oAku817btqFwUR");
+            // Address based on hash 0x0000000000000000000000000000000000000002
+            // new Address(params, params.getAddressHeader(), Hex.decode("0000000000000000000000000000000000000003"))
+            federationAddress = Address.fromBase58(getDogeParams(), "D596YFweJQuHY1BbjazZYmAbt8jJj4CD3E");
             federationPubScript = ScriptBuilder.createOutputScript(federationAddress);
         } catch (AddressFormatException e) {
             logger.error("Federation address format is invalid");
