@@ -23,25 +23,20 @@ public class BridgeRegTestConstantsOld extends BridgeConstants {
         dogeParams = DogecoinMainNetParams.get();
 
 
-        try {
-            // Key hash taken from DogeRelay's 2_deploy_contracts.js
-            // Doge address is DCDDW6wYnykQDvKHwduc9m9G8GTJnbHuo4
-            // Taken from tx from 2015 https://dogechain.info/tx/718add98dca8f54288b244dde3b0e797e8fe541477a08ef4b570ea2b07dccd3f
-            //federationAddress = new Address(getDogeParams(), getDogeParams().getAddressHeader(), Hex.decode("4d905b4b815d483cdfabcd292c6f86509d0fad82"));
+        // Key hash taken from DogeRelay's 2_deploy_contracts.js
+        // Doge address is DCDDW6wYnykQDvKHwduc9m9G8GTJnbHuo4
+        // Taken from tx from 2015 https://dogechain.info/tx/718add98dca8f54288b244dde3b0e797e8fe541477a08ef4b570ea2b07dccd3f
+        //federationAddress = new Address(getDogeParams(), getDogeParams().getAddressHeader(), Hex.decode("4d905b4b815d483cdfabcd292c6f86509d0fad82"));
 
-            // Address to use with tx https://dogechain.info/tx/158a1acc6fd0e0ef1b8d19711f5e4b572d6835db9bdf2d79b76aa732ad736b58
-            // DR4U7ZJXrAjX4MSGCbJ1wSc3JcJSELQnBc
-            // that appears on block 2.010.001 as a lock tx
+        // Address to use with tx https://dogechain.info/tx/158a1acc6fd0e0ef1b8d19711f5e4b572d6835db9bdf2d79b76aa732ad736b58
+        // DR4U7ZJXrAjX4MSGCbJ1wSc3JcJSELQnBc
+        // that appears on block 2.010.001 as a lock tx
 
 
-            // Address based on hash 0x0000000000000000000000000000000000000002
-            // new Address(params, params.getAddressHeader(), Hex.decode("0000000000000000000000000000000000000003"))
-            federationAddress = Address.fromBase58(getDogeParams(), "D596YFweJQuHY1BbjazZYmAbt8jJj4CD3E");
-            federationPubScript = ScriptBuilder.createOutputScript(federationAddress);
-        } catch (AddressFormatException e) {
-            logger.error("Federation address format is invalid");
-            throw new RuntimeException(e.getMessage(), e);
-        }
+        // Address based on hash 0x0000000000000000000000000000000000000002
+        // new Address(params, params.getAddressHeader(), Hex.decode("0000000000000000000000000000000000000003"))
+        federationAddress = Address.fromBase58(getDogeParams(), "D596YFweJQuHY1BbjazZYmAbt8jJj4CD3E");
+        federationPubScript = ScriptBuilder.createOutputScript(federationAddress);
 
         // To recreate the value use
         // federationAddressCreationTime = new GregorianCalendar(2018,1,1).getTimeInMillis() / 1000;

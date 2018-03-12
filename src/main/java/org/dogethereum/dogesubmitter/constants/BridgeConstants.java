@@ -4,6 +4,8 @@ import org.bitcoinj.core.*;
 import org.bitcoinj.script.Script;
 import org.libdohj.params.AbstractDogecoinParams;
 
+import java.util.List;
+
 public class BridgeConstants {
 
     protected AbstractDogecoinParams dogeParams;
@@ -46,25 +48,29 @@ public class BridgeConstants {
 
     public Coin getMinimumLockTxValue() { return minimumLockTxValue; }
 
+    // Unlock mechanism specific start
 
-//    This is just used for the release process. Part of this might be useful
-//    protected List<ECKey> federatorPublicKeys;
-//    protected int federatorsRequiredToSign;
-//    protected int eth2DogeMinimumAcceptableConfirmations;
-//    protected int dogeBroadcastingMinimumAcceptableBlocks;
-//    protected Coin minimumReleaseTxValue;
-//
-//    public List<ECKey> getFederatorPublicKeys() {
-//        return federatorPublicKeys;
-//    }
-//    public int getFederatorsRequiredToSign() {
-//        return federatorsRequiredToSign;
-//    }
-//    public int getEth2DogeMinimumAcceptableConfirmations() {
-//        return eth2DogeMinimumAcceptableConfirmations;
-//    }
-//    public int getDogeBroadcastingMinimumAcceptableBlocks() {
-//        return dogeBroadcastingMinimumAcceptableBlocks;
-//    }
-//    public Coin getMinimumReleaseTxValue() { return minimumReleaseTxValue; }
+
+    protected List<ECKey> federatorPublicKeys;
+    protected int federatorsRequiredToSign;
+    protected int eth2DogeMinimumAcceptableConfirmations;
+    protected int dogeBroadcastingMinimumAcceptableBlocks;
+    protected Coin minimumReleaseTxValue;
+
+    public List<ECKey> getFederatorPublicKeys() {
+        return federatorPublicKeys;
+    }
+    public int getFederatorsRequiredToSign() {
+        return federatorsRequiredToSign;
+    }
+    public int getEth2DogeMinimumAcceptableConfirmations() {
+        return eth2DogeMinimumAcceptableConfirmations;
+    }
+    public int getDogeBroadcastingMinimumAcceptableBlocks() {
+        return dogeBroadcastingMinimumAcceptableBlocks;
+    }
+    public Coin getMinimumReleaseTxValue() { return minimumReleaseTxValue; }
+
+    // Unlock mechanism specific end
+
 }
