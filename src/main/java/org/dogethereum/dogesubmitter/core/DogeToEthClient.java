@@ -41,12 +41,6 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
     @Autowired
     private FederatorSupport federatorSupport;
 
-    //@Autowired
-    //private FedNodeSystemProperties config;
-
-    //@Autowired
-    //private Ethereum eth;
-
     private SystemProperties config;
 
     private BridgeConstants bridgeConstants;
@@ -65,25 +59,27 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
     @PostConstruct
     public void setup() throws Exception {
         config = SystemProperties.CONFIG;
-        bridgeConstants = config.getBridgeConstants();
+        if (config.isRelayEnabled()) {
+            bridgeConstants = config.getBridgeConstants();
 //        if (!checkFederateRequirements()) {
 //            log.error("Error validating Fed-Node Requirements");
 //            System.exit(1);
 //        }
 
-        this.dataDirectory = new File(config.dataDirectory());
-        // Empty dataDirectory until we solve the bug we have reusing an existing directory
-        FileSystemUtils.deleteRecursively(this.dataDirectory);
-        this.dataDirectory.mkdirs();
+            this.dataDirectory = new File(config.dataDirectory());
+            // Empty dataDirectory until we solve the bug we have reusing an existing directory
+            FileSystemUtils.deleteRecursively(this.dataDirectory);
+            this.dataDirectory.mkdirs();
 
-        this.proofFile = new File(dataDirectory.getAbsolutePath() + "/DogeToEthClient.proofs");
+            this.proofFile = new File(dataDirectory.getAbsolutePath() + "/DogeToEthClient.proofs");
 
-        restoreProofsFromFile();
-        setupDogecoinWrapper();
+            restoreProofsFromFile();
+            setupDogecoinWrapper();
 
-        // int numberOfFederators = bridgeConstants.getFederatorPublicKeys().size();
-        int numberOfFederators = 1;
-        new Timer("Federator update bridge").scheduleAtFixedRate(new UpdateBridgeTimerTask(), getFirstExecutionDate(), bridgeConstants.getUpdateBridgeExecutionPeriod() * numberOfFederators);
+            // int numberOfFederators = bridgeConstants.getFederatorPublicKeys().size();
+            int numberOfFederators = 1;
+            new Timer("Federator update bridge").scheduleAtFixedRate(new UpdateBridgeTimerTask(), getFirstExecutionDate(), bridgeConstants.getUpdateBridgeExecutionPeriod() * numberOfFederators);
+        }
     }
 
 //    private boolean checkFederateRequirements() {
@@ -320,13 +316,15 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
 
     @PreDestroy
     public void tearDown() throws BlockStoreException, IOException {
-        log.info("DogeToEthClient tearDown starting...");
-        dogecoinWrapper.stop();
+        if (config.isRelayEnabled()) {
+            log.info("DogeToEthClient tearDown starting...");
+            dogecoinWrapper.stop();
 
-        synchronized (this) {
-            flushProofs();
+            synchronized (this) {
+                flushProofs();
+            }
+            log.info("DogeToEthClient tearDown finished.");
         }
-        log.info("DogeToEthClient tearDown finished.");
     }
 
     private void flushProofs() throws IOException {

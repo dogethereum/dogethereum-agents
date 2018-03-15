@@ -73,18 +73,21 @@ public class FederatorSupport {
         String dogeTokenContractAddress;
         String fromAddressGeneralPurposeAndSendBlocks;
         String fromAddressRelayTxs;
+        String fromAddressPriceOracle;
         if (config.isRegtest()) {
             dogeRelayContractAddress = getContractAddress("DogeRelay");
             dogeTokenContractAddress = getContractAddress("DogeToken");
             fromAddressGeneralPurposeAndSendBlocks = web3.ethAccounts().send().getAccounts().get(0);
             fromAddressRelayTxs = web3.ethAccounts().send().getAccounts().get(1);
             truebitClaimantAddress = web3.ethAccounts().send().getAccounts().get(2);
+            fromAddressPriceOracle = web3.ethAccounts().send().getAccounts().get(3);
         } else {
             dogeRelayContractAddress = config.dogeRelayContractAddress();
             dogeTokenContractAddress = config.dogeTokenContractAddress();
             fromAddressGeneralPurposeAndSendBlocks = config.addressGeneralPurposeAndSendBlocks();
             fromAddressRelayTxs = config.addressRelayTxs();
             truebitClaimantAddress = config.truebitClaimantAddress();
+            fromAddressPriceOracle = config.addressPriceOracle();
         }
         gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
         BigInteger gasLimit = BigInteger.valueOf(config.gasLimit());
@@ -92,7 +95,7 @@ public class FederatorSupport {
         assert dogeRelay.isValid();
         dogeRelayForRelayTx = DogeRelay.load(dogeRelayContractAddress, web3, new ClientTransactionManager(web3, fromAddressRelayTxs), gasPriceMinimum, gasLimit);
         assert dogeRelayForRelayTx.isValid();
-        dogeToken = DogeToken.load(dogeTokenContractAddress, web3, new ClientTransactionManager(web3, fromAddressGeneralPurposeAndSendBlocks), gasPriceMinimum, gasLimit);
+        dogeToken = DogeToken.load(dogeTokenContractAddress, web3, new ClientTransactionManager(web3, fromAddressPriceOracle), gasPriceMinimum, gasLimit);
         assert dogeToken.isValid();
     }
 
@@ -290,15 +293,28 @@ public class FederatorSupport {
 
 
 //    Used just for release process
+
+//    public void addSignature(List<byte[]> signatures, byte[] unlockId) {
+//        byte[] federatorPublicKeyBytes = this.getFederatorPubKeyBytes();
+//        dogeToken.
+//        this.sendEthTx(Bridge.ADD_SIGNATURE, federatorPublicKeyBytes, signatures, ethTxHash);
+//    }
+
+    public void updatePrice(long price) {
+        BigInteger priceBI = BigInteger.valueOf(price);
+        CompletableFuture<TransactionReceipt> futureReceipt = dogeToken.setDogeEthPrice(priceBI).sendAsync();
+        log.info("Sent update doge-eth price tx. Price: {}", price);
+        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
+                log.info("Update doge-eth price tx receipt {}.", toString(receipt))
+        );
+    }
+
+
 //    public StateForFederator getStateForFederator() throws IOException, ClassNotFoundException {
 //        byte[] result = (byte[]) this.callTx(Bridge.GET_STATE_FOR_DOGE_RELEASE_CLIENT);
 //        return new StateForFederator(result, this.parameters);
 //    }
 //
-//    public void addSignature(List<byte[]> signatures, byte[] ethTxHash) {
-//        byte[] federatorPublicKeyBytes = this.getFederatorPubKeyBytes();
-//        this.sendEthTx(Bridge.ADD_SIGNATURE, federatorPublicKeyBytes, signatures, ethTxHash);
-//    }
 //
 //    public void sendUpdateCollections() {
 //        this.sendEthTx(Bridge.UPDATE_COLLECTIONS);

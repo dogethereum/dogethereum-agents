@@ -171,6 +171,14 @@ public class SystemProperties {
         return bridgeConstants;
     }
 
+    public boolean isRelayEnabled() {
+        return config.hasPath("relay.enabled") ? config.getBoolean("relay.enabled") : null;
+    }
+
+    public boolean isPriceOracleEnabled() {
+        return config.hasPath("price.oracle.enabled") ? config.getBoolean("price.oracle.enabled") : null;
+    }
+
     public boolean isTestnet() {
         return TESTNET.equals(network());
     }
@@ -211,6 +219,10 @@ public class SystemProperties {
         return getStringProperty("truebit.claimant.address", null);
     }
 
+    public String addressPriceOracle() {
+        return getStringProperty("address.price.oracle", null);
+    }
+
     public String truffleBuildContractsDirectory() {
         return getStringProperty("truffle.build.contracts.directory", null);
     }
@@ -218,6 +230,11 @@ public class SystemProperties {
     public String dataDirectory() {
         return getStringProperty("data.directory", null);
     }
+
+    public String federatorPrivateKeyFilePath() {
+        return getStringProperty("federator.private.key.file.path", null);
+    }
+
 
     public long gasPriceMinimum() {
         return getLongProperty("gas.price.min", 0);
@@ -237,4 +254,5 @@ public class SystemProperties {
     protected boolean getBooleanProperty(String propertyName, boolean defaultValue) {
         return config.hasPath(propertyName) ? config.getBoolean(propertyName) : defaultValue;
     }
+
 }
