@@ -50,7 +50,7 @@ public class DogeEthPriceOracle {
 
     private SystemProperties config;
 
-    long latestPrice;
+    private long latestPrice;
 
     public DogeEthPriceOracle() {}
 
@@ -110,7 +110,7 @@ public class DogeEthPriceOracle {
                         federatorSupport.updatePrice(price);
                     }
                 } else {
-                    log.warn("UpdateBridgeTimerTask skipped because the eth node is syncing blocks");
+                    log.warn("UpdateDogeEthPriceTimerTask skipped because the eth node is syncing blocks");
                 }
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
