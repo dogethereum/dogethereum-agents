@@ -172,11 +172,15 @@ public class SystemProperties {
     }
 
     public boolean isRelayEnabled() {
-        return config.hasPath("relay.enabled") ? config.getBoolean("relay.enabled") : null;
+        return getBooleanProperty("relay.enabled", null);
     }
 
     public boolean isPriceOracleEnabled() {
-        return config.hasPath("price.oracle.enabled") ? config.getBoolean("price.oracle.enabled") : null;
+        return getBooleanProperty("price.oracle.enabled", null);
+    }
+
+    public boolean isEthToDogeEnabled() {
+        return getBooleanProperty("eth.to.doge.enabled", null);
     }
 
     public boolean isTestnet() {

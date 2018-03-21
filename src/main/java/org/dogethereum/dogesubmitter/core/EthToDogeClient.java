@@ -48,7 +48,7 @@ public class EthToDogeClient {
     @PostConstruct
     public void setup() throws Exception {
         config = SystemProperties.CONFIG;
-        if (config.isEthToDogeClientEnabled()) {
+        if (config.isEthToDogeEnabled()) {
             new Timer("Eth to Doge client").scheduleAtFixedRate(new UpdateEthToDogeTimerTask(), Calendar.getInstance().getTime(), 30 * 1000);
         }
     }
