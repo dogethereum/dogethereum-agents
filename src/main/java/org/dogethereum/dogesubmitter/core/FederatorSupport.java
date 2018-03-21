@@ -1,6 +1,7 @@
 package org.dogethereum.dogesubmitter.core;
 
 
+import com.google.common.util.concurrent.SettableFuture;
 import lombok.extern.slf4j.Slf4j;
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
 import org.dogethereum.dogesubmitter.contract.DogeRelay;
@@ -14,10 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.protocol.Web3j;
+import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.tx.ClientTransactionManager;
+import rx.Observable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileReader;
@@ -26,6 +29,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 /**
@@ -307,6 +311,20 @@ public class FederatorSupport {
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
                 log.info("Update doge-eth price tx receipt {}.", toString(receipt))
         );
+    }
+
+    public long getEthBlockCount() throws IOException {
+        return web3.ethBlockNumber().send().getBlockNumber().longValue();
+    }
+
+    public List<Long> getNewUnlockRequestIds(long latestEthBlockProcessed, long topBlock) throws ExecutionException, InterruptedException {
+        List<Long> result = new ArrayList<>();
+        SettableFuture future = SettableFuture.create();
+        Observable<DogeToken.UnlockRequestEventResponse> responseObservable = dogeToken.unlockRequestEventObservable(DefaultBlockParameter.valueOf(BigInteger.valueOf(latestEthBlockProcessed)), DefaultBlockParameter.valueOf(BigInteger.valueOf(topBlock)));
+        responseObservable.subscribe(unlockRequestEventResponse -> result.add(unlockRequestEventResponse.id.longValue()));
+        responseObservable.doOnCompleted(() -> future.set("completed"));
+        future.get();
+        return result;
     }
 
 
