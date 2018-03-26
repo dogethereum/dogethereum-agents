@@ -1,10 +1,12 @@
 package org.dogethereum.dogesubmitter;
 
+import org.bitcoinj.wallet.Wallet;
 import org.dogethereum.dogesubmitter.constants.BridgeConstants;
 import org.bitcoinj.core.*;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
+import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,13 +38,13 @@ public class BridgeUtils {
         }
     }
 
-    public static boolean isLockTx(org.bitcoinj.core.Transaction tx, org.bitcoinj.wallet.Wallet wallet, BridgeConstants bridgeConstants) {
+    public static boolean isLockTx(Transaction tx, Wallet wallet, BridgeConstants bridgeConstants, OperatorKeyHandler keyHandler) {
         // First, check tx is not a typical release tx (tx spending from the federation address and
         // optionally sending some change to the federation address)
         int i = 0;
         for (TransactionInput transactionInput : tx.getInputs()) {
             try {
-                transactionInput.getScriptSig().correctlySpends(tx, i, bridgeConstants.getFederationPubScript(), Script.ALL_VERIFY_FLAGS);
+                transactionInput.getScriptSig().correctlySpends(tx, i, keyHandler.getOutputScript(), Script.ALL_VERIFY_FLAGS);
                 // There is an input spending from the federation address, this is not a lock tx
                 return false;
             } catch (ScriptException se) {
@@ -59,11 +61,11 @@ public class BridgeUtils {
         return (valueSentToMeSignum > 0 && !valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue()));
     }
 
-    public static boolean isReleaseTx(org.bitcoinj.core.Transaction tx, BridgeConstants bridgeConstants) {
+    public static boolean isReleaseTx(Transaction tx, BridgeConstants bridgeConstants, OperatorKeyHandler keyHandler) {
         int i = 0;
         for (TransactionInput transactionInput : tx.getInputs()) {
             try {
-                transactionInput.getScriptSig().correctlySpends(tx, i, bridgeConstants.getFederationPubScript(), Script.ALL_VERIFY_FLAGS);
+                transactionInput.getScriptSig().correctlySpends(tx, i, keyHandler.getOutputScript(), Script.ALL_VERIFY_FLAGS);
                 // There is an input spending from the federation address, this is a release tx
                 return true;
             } catch (ScriptException se) {

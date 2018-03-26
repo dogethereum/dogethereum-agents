@@ -10,10 +10,8 @@ public class BridgeConstants {
 
     protected AbstractDogecoinParams dogeParams;
 
-    protected Script federationPubScript;
-    protected Address federationAddress;
-    // We ignore txs to the federation before this time
-    protected long federationAddressCreationTime;
+    //protected Script federationPubScript;
+    //protected Address federationAddress;
 
     protected int doge2EthMinimumAcceptableConfirmations;
 
@@ -27,15 +25,13 @@ public class BridgeConstants {
         return dogeParams;
     }
 
-    public Script getFederationPubScript() {
-        return federationPubScript;
-    }
+//    public Script getFederationPubScript() {
+//        return federationPubScript;
+//    }
 
-    public Address getFederationAddress() {
-        return federationAddress;
-    }
-
-    public long getFederationAddressCreationTime() { return federationAddressCreationTime; }
+//    public Address getFederationAddress() {
+//        return federationAddress;
+//    }
 
     public int getDoge2EthMinimumAcceptableConfirmations() {
         return doge2EthMinimumAcceptableConfirmations;
@@ -51,18 +47,18 @@ public class BridgeConstants {
     // Unlock mechanism specific start
 
 
-    protected List<ECKey> federatorPublicKeys;
-    protected int federatorsRequiredToSign;
+    // protected List<ECKey> federatorPublicKeys;
+    // protected int federatorsRequiredToSign;
     protected int eth2DogeMinimumAcceptableConfirmations;
     protected int dogeBroadcastingMinimumAcceptableBlocks;
     protected Coin minimumReleaseTxValue;
 
-    public List<ECKey> getFederatorPublicKeys() {
-        return federatorPublicKeys;
-    }
-    public int getFederatorsRequiredToSign() {
-        return federatorsRequiredToSign;
-    }
+    //public List<ECKey> getFederatorPublicKeys() {
+    //     return federatorPublicKeys;
+    // }
+    // public int getFederatorsRequiredToSign() {
+    //    return federatorsRequiredToSign;
+    // }
     public int getEth2DogeMinimumAcceptableConfirmations() {
         return eth2DogeMinimumAcceptableConfirmations;
     }

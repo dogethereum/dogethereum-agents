@@ -11,6 +11,8 @@ import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.store.LevelDBBlockStore;
 import org.bitcoinj.wallet.Wallet;
+import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.File;
 import java.io.InputStream;
@@ -23,11 +25,13 @@ public class DogecoinWrapperImpl implements DogecoinWrapper {
     private Context dogeContext;
     private BridgeConstants bridgeConstants;
     private File dataDirectory;
+    private OperatorKeyHandler keyHandler;
 
-    public DogecoinWrapperImpl(BridgeConstants bridgeConstants, File dataDirectory) {
+    public DogecoinWrapperImpl(BridgeConstants bridgeConstants, File dataDirectory, OperatorKeyHandler keyHandler) {
         this.dogeContext = new Context(bridgeConstants.getDogeParams());
         this.bridgeConstants = bridgeConstants;
         this.dataDirectory = dataDirectory;
+        this.keyHandler = keyHandler;
     }
 
     @Override
@@ -51,7 +55,7 @@ public class DogecoinWrapperImpl implements DogecoinWrapper {
 
             private void coinsReceivedOrSent(Transaction tx) {
                 Context.propagate(dogeContext);
-                if (BridgeUtils.isLockTx(tx, vWallet, bridgeConstants) || BridgeUtils.isReleaseTx(tx, bridgeConstants)) {
+                if (BridgeUtils.isLockTx(tx, vWallet, bridgeConstants, keyHandler) || BridgeUtils.isReleaseTx(tx, bridgeConstants, keyHandler)) {
                     transactionListener.onTransaction(tx);
                 }
             }
@@ -59,9 +63,9 @@ public class DogecoinWrapperImpl implements DogecoinWrapper {
             @Override
             protected Wallet createWallet() {
                 Wallet wallet = super.createWallet();
-                Address address = bridgeConstants.getFederationAddress();
+                Address address = keyHandler.getAddress(bridgeConstants.getDogeParams());
                 // Be notified when we receive doge so we call registerTransaction()
-                wallet.addWatchedAddress(address, bridgeConstants.getFederationAddressCreationTime());
+                wallet.addWatchedAddress(address, keyHandler.getOperatorAddressCreationTime());
                 return wallet;
             }
             @Override

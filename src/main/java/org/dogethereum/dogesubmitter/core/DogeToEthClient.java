@@ -11,6 +11,7 @@ import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.bitcoinj.store.BlockStoreException;
+import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileSystemUtils;
@@ -40,6 +41,9 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
 
     @Autowired
     private FederatorSupport federatorSupport;
+
+    @Autowired
+    private OperatorKeyHandler keyHandler;
 
     private SystemProperties config;
 
@@ -102,7 +106,7 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
     }
 
     private void setupDogecoinWrapper() throws UnknownHostException {
-        dogecoinWrapper = new DogecoinWrapperImpl(bridgeConstants, dataDirectory);
+        dogecoinWrapper = new DogecoinWrapperImpl(bridgeConstants, dataDirectory, keyHandler);
         //dogecoinWrapper.setup(this, this, federatorSupport.getDogecoinPeerAddresses());
         dogecoinWrapper.setup(this, this, null);
         dogecoinWrapper.start();

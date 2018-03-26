@@ -35,14 +35,14 @@ public class BridgeTestNetConstants extends BridgeConstants {
 
         // Address based on hash 0x0000000000000000000000000000000000000002
         // new Address(params, params.getAddressHeader(), Hex.decode("0000000000000000000000000000000000000003"))
-        federationAddress = Address.fromBase58(getDogeParams(), "D596YFweJQuHY1BbjazZYmAbt8jJj4CD3E");
-        federationPubScript = ScriptBuilder.createOutputScript(federationAddress);
+//        federationAddress = Address.fromBase58(getDogeParams(), "D596YFweJQuHY1BbjazZYmAbt8jJj4CD3E");
+//        federationPubScript = ScriptBuilder.createOutputScript(federationAddress);
 
         // To recreate the value use
         // federationAddressCreationTime = new GregorianCalendar(2018,1,1).getTimeInMillis() / 1000;
         // Currently set to:
         // Thu Feb 01 00:00:00 ART 2018
-        federationAddressCreationTime = 1517454000l;
+//        federationAddressCreationTime = 1517454000l;
 
 
         doge2EthMinimumAcceptableConfirmations = 7;

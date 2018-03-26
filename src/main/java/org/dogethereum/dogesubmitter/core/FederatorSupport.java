@@ -177,10 +177,10 @@ public class FederatorSupport {
 
 
     public List<String> getDogeBlockchainBlockLocator() throws Exception {
-        List<Uint256> result = dogeRelay.getBlockLocator().send();
+        List<BigInteger> result = dogeRelay.getBlockLocator().send();
         List<String> formattedResult = new ArrayList<>();
-        for (Uint256 uint256Hash : result) {
-            formattedResult.add(hashBigIntegerToString(uint256Hash.getValue()));
+        for (BigInteger biHash : result) {
+            formattedResult.add(hashBigIntegerToString(biHash));
         }
         return formattedResult;
     }

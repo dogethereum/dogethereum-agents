@@ -235,8 +235,12 @@ public class SystemProperties {
         return getStringProperty("data.directory", null);
     }
 
-    public String federatorPrivateKeyFilePath() {
-        return getStringProperty("federator.private.key.file.path", null);
+    public String operatorPrivateKeyFilePath() {
+        return getStringProperty("operator.private.key.file.path", null);
+    }
+
+    public Long operatorAddressCreationTime() {
+        return getLongProperty("operator.address.creation.time", 0);
     }
 
 
