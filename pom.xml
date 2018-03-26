@@ -74,6 +74,14 @@
         </dependency>
         <!-- end doge-eth price oracle -->
 
+        <!-- begin used to read bridge operator key -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.7</version>
+        </dependency>
+        <!-- end used to read bridge operator key -->
+
     </dependencies>
 
     <repositories>

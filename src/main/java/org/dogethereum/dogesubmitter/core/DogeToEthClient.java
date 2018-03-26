@@ -78,7 +78,7 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
 
             // int numberOfFederators = bridgeConstants.getFederatorPublicKeys().size();
             int numberOfFederators = 1;
-            new Timer("Federator update bridge").scheduleAtFixedRate(new UpdateBridgeTimerTask(), getFirstExecutionDate(), bridgeConstants.getUpdateBridgeExecutionPeriod() * numberOfFederators);
+            new Timer("Submitter update bridge").scheduleAtFixedRate(new UpdateBridgeTimerTask(), getFirstExecutionDate(), bridgeConstants.getUpdateBridgeExecutionPeriod() * numberOfFederators);
         }
     }
 

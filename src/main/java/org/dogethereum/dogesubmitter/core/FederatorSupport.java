@@ -7,6 +7,7 @@ import org.dogethereum.dogesubmitter.constants.SystemProperties;
 import org.dogethereum.dogesubmitter.contract.DogeRelay;
 import org.dogethereum.dogesubmitter.contract.DogeToken;
 import org.bitcoinj.core.*;
+import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.libdohj.core.ScryptHash;
@@ -16,13 +17,13 @@ import org.springframework.stereotype.Component;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
-import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
+import org.web3j.tuples.generated.Tuple3;
+import org.web3j.tuples.generated.Tuple6;
 import org.web3j.tx.ClientTransactionManager;
 import rx.Observable;
 
-import java.io.ByteArrayOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -30,7 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Consumer;
 
 /**
  * Helps the federator communication with the Eth blockchain.
@@ -123,10 +123,6 @@ public class FederatorSupport {
 //        return result[0];
 //    }
 
-
-//    public byte[] getFederatorPrivKeyBytes() {
-//        return keyHandler.privateKey();
-//    }
 
 //    public byte[] getFederatorPubKeyBytes() {
 //        return this.getPubKey().getPubKey();
@@ -326,6 +322,40 @@ public class FederatorSupport {
         future.get();
         return result;
     }
+
+    public Unlock getUnlock(Long unlockRequestId) throws Exception {
+
+        Tuple6<String, String, BigInteger, BigInteger, List<BigInteger>, BigInteger> tuple =
+                dogeToken.getUnlockPendingInvestorProof(BigInteger.valueOf(unlockRequestId)).send();
+        Unlock unlock = new Unlock();
+        unlock.from = tuple.getValue1();
+        unlock.dogeAddress = tuple.getValue2();
+        unlock.value = tuple.getValue3().longValue();
+        unlock.timestamp =  tuple.getValue4().longValue();
+        unlock.fee = tuple.getValue6().longValue();
+
+        List<BigInteger> selectedUtxosIndexes = tuple.getValue5();
+        List<UTXO> selectedUtxosOutpoints = new ArrayList<>();
+        for (BigInteger selectedUtxo : selectedUtxosIndexes) {
+            Tuple3<BigInteger, BigInteger, BigInteger> utxo = dogeToken.utxos(selectedUtxo).send();
+            long value = utxo.getValue2().longValue();
+            Sha256Hash txHash = Sha256Hash.wrap(hashBigIntegerToString(utxo.getValue2()));
+            long outputIndex = utxo.getValue3().longValue();
+            selectedUtxosOutpoints.add(new UTXO(txHash, outputIndex, Coin.valueOf(value), 0 ,false, null));
+        }
+        unlock.selectedUtxos = selectedUtxosOutpoints;
+        return unlock;
+    }
+
+    public static class Unlock {
+        public String from;
+        public String dogeAddress;
+        public long value;
+        public long timestamp;
+        public List<UTXO> selectedUtxos;
+        public long fee;
+    }
+
 
 
 //    public StateForFederator getStateForFederator() throws IOException, ClassNotFoundException {

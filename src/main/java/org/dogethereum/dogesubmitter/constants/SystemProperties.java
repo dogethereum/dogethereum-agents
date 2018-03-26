@@ -172,15 +172,15 @@ public class SystemProperties {
     }
 
     public boolean isRelayEnabled() {
-        return getBooleanProperty("relay.enabled", null);
+        return getBooleanProperty("relay.enabled", false);
     }
 
     public boolean isPriceOracleEnabled() {
-        return getBooleanProperty("price.oracle.enabled", null);
+        return getBooleanProperty("price.oracle.enabled", false);
     }
 
     public boolean isEthToDogeEnabled() {
-        return getBooleanProperty("eth.to.doge.enabled", null);
+        return getBooleanProperty("eth.to.doge.enabled", false);
     }
 
     public boolean isTestnet() {
