@@ -89,7 +89,7 @@ public class FederatorSupport {
             List<String> accounts = web3.ethAccounts().send().getAccounts();
             fromAddressGeneralPurposeAndSendBlocks = accounts.get(0);
             fromAddressRelayTxs = accounts.get(1);
-            fromAddressPriceOracle = accounts.get(3);
+            fromAddressPriceOracle = accounts.get(2);
         } else {
             dogeRelayContractAddress = config.dogeRelayContractAddress();
             dogeTokenContractAddress = config.dogeTokenContractAddress();
