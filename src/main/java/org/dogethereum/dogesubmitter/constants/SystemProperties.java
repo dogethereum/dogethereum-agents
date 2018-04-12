@@ -219,10 +219,6 @@ public class SystemProperties {
         return getStringProperty("dogeToken.contract.address", null);
     }
 
-    public String truebitClaimantAddress() {
-        return getStringProperty("truebit.claimant.address", null);
-    }
-
     public String addressPriceOracle() {
         return getStringProperty("address.price.oracle", null);
     }

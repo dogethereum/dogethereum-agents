@@ -3,31 +3,37 @@ package org.dogethereum.dogesubmitter.core;
 
 import com.google.common.util.concurrent.SettableFuture;
 import lombok.extern.slf4j.Slf4j;
+import org.bitcoinj.core.*;
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
 import org.dogethereum.dogesubmitter.contract.DogeRelay;
 import org.dogethereum.dogesubmitter.contract.DogeToken;
-import org.bitcoinj.core.*;
-import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.libdohj.core.ScryptHash;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.web3j.abi.EventEncoder;
+import org.web3j.abi.TypeReference;
+import org.web3j.abi.datatypes.Event;
+import org.web3j.abi.datatypes.Utf8String;
 import org.web3j.abi.datatypes.generated.Uint256;
+import org.web3j.abi.datatypes.generated.Uint32;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
+import org.web3j.protocol.core.methods.request.EthFilter;
+import org.web3j.protocol.core.methods.response.EthLog;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.tuples.generated.Tuple3;
 import org.web3j.tuples.generated.Tuple6;
 import org.web3j.tx.ClientTransactionManager;
-import rx.Observable;
 
 import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -67,7 +73,6 @@ public class FederatorSupport {
     private DogeToken dogeToken;
     private SystemProperties config;
     private BigInteger gasPriceMinimum;
-    private String truebitClaimantAddress;
 
     @Autowired
     public FederatorSupport() throws Exception {
@@ -81,16 +86,15 @@ public class FederatorSupport {
         if (config.isRegtest()) {
             dogeRelayContractAddress = getContractAddress("DogeRelay");
             dogeTokenContractAddress = getContractAddress("DogeToken");
-            fromAddressGeneralPurposeAndSendBlocks = web3.ethAccounts().send().getAccounts().get(0);
-            fromAddressRelayTxs = web3.ethAccounts().send().getAccounts().get(1);
-            truebitClaimantAddress = web3.ethAccounts().send().getAccounts().get(2);
-            fromAddressPriceOracle = web3.ethAccounts().send().getAccounts().get(3);
+            List<String> accounts = web3.ethAccounts().send().getAccounts();
+            fromAddressGeneralPurposeAndSendBlocks = accounts.get(0);
+            fromAddressRelayTxs = accounts.get(1);
+            fromAddressPriceOracle = accounts.get(3);
         } else {
             dogeRelayContractAddress = config.dogeRelayContractAddress();
             dogeTokenContractAddress = config.dogeTokenContractAddress();
             fromAddressGeneralPurposeAndSendBlocks = config.addressGeneralPurposeAndSendBlocks();
             fromAddressRelayTxs = config.addressRelayTxs();
-            truebitClaimantAddress = config.truebitClaimantAddress();
             fromAddressPriceOracle = config.addressPriceOracle();
         }
         gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
@@ -214,7 +218,7 @@ public class FederatorSupport {
                 scryptHash = dogeHeader.getAuxPoW().getParentBlockHeader().getScryptHash();
             }
             BigInteger scryptHashBI = ScryptHash.wrapReversed(scryptHash.getBytes()).toBigInteger();
-            CompletableFuture<TransactionReceipt> futureReceipt = dogeRelay.storeBlockHeader(dogeHeader.bitcoinSerialize(), scryptHashBI, truebitClaimantAddress).sendAsync();
+            CompletableFuture<TransactionReceipt> futureReceipt = dogeRelay.storeBlockHeader(dogeHeader.bitcoinSerialize(), scryptHashBI).sendAsync();
             log.info("Sent storeBlockHeader {}", dogeHeader.getHash());
             futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
                     log.info("StoreBlockHeader receipt {}.", toString(receipt))
@@ -313,13 +317,26 @@ public class FederatorSupport {
         return web3.ethBlockNumber().send().getBlockNumber().longValue();
     }
 
-    public List<Long> getNewUnlockRequestIds(long latestEthBlockProcessed, long topBlock) throws ExecutionException, InterruptedException {
+    public List<Long> getNewUnlockRequestIds(long latestEthBlockProcessed, long topBlock) throws ExecutionException, InterruptedException, IOException {
         List<Long> result = new ArrayList<>();
         SettableFuture future = SettableFuture.create();
-        Observable<DogeToken.UnlockRequestEventResponse> responseObservable = dogeToken.unlockRequestEventObservable(DefaultBlockParameter.valueOf(BigInteger.valueOf(latestEthBlockProcessed)), DefaultBlockParameter.valueOf(BigInteger.valueOf(topBlock)));
-        responseObservable.subscribe(unlockRequestEventResponse -> result.add(unlockRequestEventResponse.id.longValue()));
-        responseObservable.doOnCompleted(() -> future.set("completed"));
-        future.get();
+        topBlock = 27;
+        EthFilter ethFilter = new EthFilter(DefaultBlockParameter.valueOf(BigInteger.valueOf(latestEthBlockProcessed)), DefaultBlockParameter.valueOf(BigInteger.valueOf(topBlock)), dogeToken.getContractAddress());
+        final Event event = new Event("UnlockRequest",
+                Arrays.<TypeReference<?>>asList(),
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint32>() {}, new TypeReference<org.web3j.abi.datatypes.Address>() {}, new TypeReference<Utf8String>() {}, new TypeReference<Uint256>() {}));
+        ethFilter.addSingleTopic(EventEncoder.encode(event));
+        EthLog ethLog = web3.ethGetLogs(ethFilter).send();
+        List<EthLog.LogResult> logResults = ethLog.getLogs();
+        for (EthLog.LogResult logResult : logResults) {
+            System.out.println(logResult.get());
+            //result.add()
+        }
+//        Observable<DogeToken.UnlockRequestEventResponse> responseObservable = dogeToken.unlockRgetNewUnlockRequestIdsequestEventObservable(DefaultBlockParameter.valueOf(BigInteger.valueOf(latestEthBlockProcessed)), DefaultBlockParameter.valueOf(BigInteger.valueOf(topBlock)));
+//        responseObservable.subscribe(unlockRequestEventResponse -> result.add(unlockRequestEventResponse.id.longValue()));
+//        responseObservable.doOnCompleted(() -> future.set("completed"));
+//        responseObservable.doOnError((Throwable e) -> { e.printStackTrace(); future.set("completed");});
+//        future.get();
         return result;
     }
 
