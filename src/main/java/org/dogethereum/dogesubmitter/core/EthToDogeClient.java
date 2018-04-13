@@ -94,14 +94,22 @@ public class EthToDogeClient {
         }
 
         private Transaction buildDogeTransaction(FederatorSupport.Unlock unlock) {
-            ECKey key = keyHandler.getPrivateKey();
+            ECKey operatorPrivateKey = keyHandler.getPrivateKey();
 
             NetworkParameters params = config.getBridgeConstants().getDogeParams();
             Transaction tx = new Transaction(params);
+            long totalInputValue = 0;
+            for (UTXO utxo : unlock.selectedUtxos) {
+                totalInputValue += utxo.getValue().getValue();
+            }
             tx.addOutput(Coin.valueOf(unlock.value), Address.fromBase58(params, unlock.dogeAddress));
+            long change = totalInputValue - unlock.value - unlock.fee;
+            if (change > 0) {
+                tx.addOutput(Coin.valueOf(change), operatorPrivateKey.toAddress(params));
+            }
             for (UTXO utxo : unlock.selectedUtxos) {
                 TransactionOutPoint outPoint = new TransactionOutPoint(params, utxo.getIndex(), utxo.getHash());
-                tx.addSignedInput(outPoint, keyHandler.getOutputScript(),  key);
+                tx.addSignedInput(outPoint, keyHandler.getOutputScript(),  operatorPrivateKey);
             }
             return tx;
         }

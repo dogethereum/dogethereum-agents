@@ -8,6 +8,7 @@ import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
+import org.libdohj.params.AbstractDogecoinParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
@@ -24,6 +25,8 @@ public class OperatorKeyHandler {
 
     private static final Logger logger = LoggerFactory.getLogger("OperatorKeyHandler");
 
+    AbstractDogecoinParams dogeParams;
+
     // We ignore txs to the federation before this time
     protected long federationAddressCreationTime;
 
@@ -35,6 +38,7 @@ public class OperatorKeyHandler {
 
     public OperatorKeyHandler() {
         SystemProperties config = SystemProperties.CONFIG;
+        this.dogeParams = config.getBridgeConstants().getDogeParams();
         this.filePath = config.operatorPrivateKeyFilePath();
         this.operatorAddressCreationTime = config.operatorAddressCreationTime();
     }
@@ -60,10 +64,10 @@ public class OperatorKeyHandler {
     }
 
     public Script getOutputScript() {
-        return ScriptBuilder.createOutputScript(getPrivateKey());
+        return ScriptBuilder.createOutputScript(getAddress());
     }
 
-    public Address getAddress(NetworkParameters dogeParams) {
+    public Address getAddress() {
         return getPrivateKey().toAddress(dogeParams);
     }
 

@@ -63,7 +63,7 @@ public class DogecoinWrapperImpl implements DogecoinWrapper {
             @Override
             protected Wallet createWallet() {
                 Wallet wallet = super.createWallet();
-                Address address = keyHandler.getAddress(bridgeConstants.getDogeParams());
+                Address address = keyHandler.getAddress();
                 // Be notified when we receive doge so we call registerTransaction()
                 wallet.addWatchedAddress(address, keyHandler.getOperatorAddressCreationTime());
                 return wallet;
