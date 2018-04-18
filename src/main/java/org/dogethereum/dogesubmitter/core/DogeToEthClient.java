@@ -338,10 +338,12 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
                 throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());
             }
         }
-        FileOutputStream txsToSendToEthFileOs = new FileOutputStream(proofFile);
-        ObjectOutputStream txsToSendToEthObjectOs = new ObjectOutputStream(txsToSendToEthFileOs);
-        txsToSendToEthObjectOs.write(Proof.encodeProofs(this.txsToSendToEth));
-        txsToSendToEthObjectOs.close();
+        try (
+            FileOutputStream txsToSendToEthFileOs = new FileOutputStream(proofFile);
+            ObjectOutputStream txsToSendToEthObjectOs = new ObjectOutputStream(txsToSendToEthFileOs);
+        ) {
+            txsToSendToEthObjectOs.write(Proof.encodeProofs(this.txsToSendToEth));
+        }
     }
 
 }
