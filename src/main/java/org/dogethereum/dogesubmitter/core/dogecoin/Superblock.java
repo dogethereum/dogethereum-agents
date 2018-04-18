@@ -1,3 +1,13 @@
+package org.dogethereum.dogesubmitter.core.dogecoin;
+
+import org.bitcoinj.core.AltcoinBlock;
+import org.bitcoinj.core.Sha256Hash;
+import org.bitcoinj.core.Utils;
+import org.libdohj.core.ScryptHash;
+
+import java.math.BigInteger;
+import java.util.List;
+
 /**
  * Constructs a superblock from a sequence of block hashes
  * Just a very rough prototype for now! This might not even compile
@@ -25,8 +35,8 @@ public class Superblock {
         // hash all the block hashes into a Merkle tree
         merkleRoot = calculateMerkleRoot(blocks);
         chainWork = work;
-        lastBlockHash = blocks.get(blocks.size - 1).getHash();
-        lastBlockTime = blocks.get(blocks.size - 1).getTimeSeconds(); // maybe this should be a Date object, check later
+        lastBlockHash = blocks.get(blocks.size() - 1).getHash();
+        lastBlockTime = blocks.get(blocks.size() - 1).getTimeSeconds(); // maybe this should be a Date object, check later
         prevSuperblockHash = superblockHash;
     }
 
@@ -81,7 +91,10 @@ public class Superblock {
     }
 
     public ScryptHash getchainWork() {
-        return chainWork;
+        // TODO: Note from Oscar to Cata: Returning null because method does not compile
+        // why this method returns a ScryptHash? Use camel case
+        //return chainWork;
+        return null;
     }
 
     public Sha256Hash getLastBlockHash() {
