@@ -96,15 +96,6 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
 //    }
 
 
-    private void restoreProofsFromFile() throws IOException {
-        if (proofFile.exists()) {
-            NetworkParameters networkParameters = bridgeConstants.getDogeParams();
-            synchronized (this) {
-                this.txsToSendToEth = Proof.deserializeProofs(Files.readAllBytes(proofFile.toPath()), networkParameters);
-            }
-        }
-    }
-
     private void setupDogecoinWrapper() throws UnknownHostException {
         dogecoinWrapper = new DogecoinWrapperImpl(bridgeConstants, dataDirectory, keyHandler);
         //dogecoinWrapper.setup(this, this, federatorSupport.getDogecoinPeerAddresses());
@@ -331,6 +322,16 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
         }
     }
 
+    private void restoreProofsFromFile() throws IOException {
+        if (proofFile.exists()) {
+            NetworkParameters networkParameters = bridgeConstants.getDogeParams();
+            synchronized (this) {
+                this.txsToSendToEth = Proof.deserializeProofs(Files.readAllBytes(proofFile.toPath()), networkParameters);
+            }
+        }
+    }
+
+
     private void flushProofs() throws IOException {
         if (!dataDirectory.exists()) {
             if (!dataDirectory.mkdirs()) {
@@ -341,7 +342,6 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
         ObjectOutputStream txsToSendToEthObjectOs = new ObjectOutputStream(txsToSendToEthFileOs);
         txsToSendToEthObjectOs.write(Proof.encodeProofs(this.txsToSendToEth));
         txsToSendToEthObjectOs.close();
-        txsToSendToEthFileOs.close();
     }
 
 }
