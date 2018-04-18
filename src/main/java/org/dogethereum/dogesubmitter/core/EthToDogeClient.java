@@ -88,36 +88,35 @@ public class EthToDogeClient {
                 log.error(e.getMessage(), e);
             }
         }
+    }
 
-        private void broadcastDogeTransaction(Transaction tx) {
-            peerGroup.broadcastTransaction(tx);
+    private void broadcastDogeTransaction(Transaction tx) {
+        peerGroup.broadcastTransaction(tx);
+    }
+
+    private Transaction buildDogeTransaction(FederatorSupport.Unlock unlock) {
+        ECKey operatorPrivateKey = keyHandler.getPrivateKey();
+
+        NetworkParameters params = config.getBridgeConstants().getDogeParams();
+        Transaction tx = new Transaction(params);
+        long totalInputValue = 0;
+        for (UTXO utxo : unlock.selectedUtxos) {
+            totalInputValue += utxo.getValue().getValue();
         }
-
-        private Transaction buildDogeTransaction(FederatorSupport.Unlock unlock) {
-            ECKey operatorPrivateKey = keyHandler.getPrivateKey();
-
-            NetworkParameters params = config.getBridgeConstants().getDogeParams();
-            Transaction tx = new Transaction(params);
-            long totalInputValue = 0;
-            for (UTXO utxo : unlock.selectedUtxos) {
-                totalInputValue += utxo.getValue().getValue();
-            }
-            tx.addOutput(Coin.valueOf(unlock.value), Address.fromBase58(params, unlock.dogeAddress));
-            long change = totalInputValue - unlock.value - unlock.fee;
-            if (change > 0) {
-                tx.addOutput(Coin.valueOf(change), operatorPrivateKey.toAddress(params));
-            }
-            for (UTXO utxo : unlock.selectedUtxos) {
-                TransactionOutPoint outPoint = new TransactionOutPoint(params, utxo.getIndex(), utxo.getHash());
-                tx.addSignedInput(outPoint, keyHandler.getOutputScript(),  operatorPrivateKey);
-            }
-            return tx;
+        tx.addOutput(Coin.valueOf(unlock.value), Address.fromBase58(params, unlock.dogeAddress));
+        long change = totalInputValue - unlock.value - unlock.fee;
+        if (change > 0) {
+            tx.addOutput(Coin.valueOf(change), operatorPrivateKey.toAddress(params));
         }
-
-        private boolean isMine(FederatorSupport.Unlock unlock) {
-            return true;
+        for (UTXO utxo : unlock.selectedUtxos) {
+            TransactionOutPoint outPoint = new TransactionOutPoint(params, utxo.getIndex(), utxo.getHash());
+            tx.addSignedInput(outPoint, keyHandler.getOutputScript(),  operatorPrivateKey);
         }
+        return tx;
+    }
 
+    private boolean isMine(FederatorSupport.Unlock unlock) {
+        return true;
     }
 
 }
