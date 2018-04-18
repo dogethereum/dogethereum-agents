@@ -8,9 +8,12 @@ import org.dogethereum.dogesubmitter.constants.SystemProperties;
 import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.FileSystemUtils;
 
 import javax.annotation.PostConstruct;
+import java.io.*;
 import java.net.InetAddress;
+import java.nio.file.Files;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Timer;
@@ -32,6 +35,8 @@ public class EthToDogeClient {
     private static long ETH_REQUIRED_CONFIRMATIONS = 5;
 
     private long latestEthBlockProcessed;
+    private File dataDirectory;
+    private File latestEthBlockProcessedFile;
 
     private PeerGroup peerGroup;
 
@@ -45,6 +50,10 @@ public class EthToDogeClient {
     public void setup() throws Exception {
         config = SystemProperties.CONFIG;
         if (config.isEthToDogeEnabled()) {
+            this.dataDirectory = new File(config.dataDirectory());
+            this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() + "/EthToDogeClientLatestEthBlockProcessedFile.dat");
+            restoreLatestEthBlockProcessed();
+
             BridgeConstants bridgeConstants = config.getBridgeConstants();
             Context dogeContext = new Context(bridgeConstants.getDogeParams());
             peerGroup = new PeerGroup(dogeContext);
@@ -81,6 +90,7 @@ public class EthToDogeClient {
                         }
                     }
                     latestEthBlockProcessed = topBlock;
+                    flushLatestEthBlockProcessed();
                 } else {
                     log.warn("UpdateEthToDogeTimerTask skipped because the eth node is syncing blocks");
                 }
@@ -118,6 +128,36 @@ public class EthToDogeClient {
     private boolean isMine(FederatorSupport.Unlock unlock) {
         return true;
     }
+
+    private void restoreLatestEthBlockProcessed() throws IOException {
+        if (latestEthBlockProcessedFile.exists()) {
+            synchronized (this) {
+                try (
+                    FileInputStream latestEthBlockProcessedFileIs = new FileInputStream(latestEthBlockProcessedFile);
+                    ObjectInputStream latestEthBlockProcessedObjectIs = new ObjectInputStream(latestEthBlockProcessedFileIs);
+                ) {
+                    latestEthBlockProcessed = latestEthBlockProcessedObjectIs.readLong();
+                }
+            }
+        }
+    }
+
+    private void flushLatestEthBlockProcessed() throws IOException {
+        if (!dataDirectory.exists()) {
+            if (!dataDirectory.mkdirs()) {
+                throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());
+            }
+        }
+        try (
+            FileOutputStream latestEthBlockProcessedFileOs = new FileOutputStream(latestEthBlockProcessedFile);
+            ObjectOutputStream latestEthBlockProcessedObjectOs = new ObjectOutputStream(latestEthBlockProcessedFileOs);
+        ) {
+            latestEthBlockProcessedObjectOs.writeLong(latestEthBlockProcessed);
+        }
+    }
+
+
+
 
 }
 
