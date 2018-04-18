@@ -6,6 +6,7 @@ import org.bitcoinj.core.Utils;
 import org.libdohj.core.ScryptHash;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -61,7 +62,7 @@ public class Superblock {
      */
     private List<byte[]> buildMerkleTree(List<AltcoinBlock> blocks) {
         // adapted from bitcoinj's implementation of Merkle trees for transactions
-        List<byte[]> tree = new List<>(); // check if this should be a List or an ArrayList
+        List<byte[]> tree = new ArrayList<>(); // check if this should be a List or an ArrayList
         // add all the block hashes
         for (AltcoinBlock b : blocks) {
             tree.add(b.getHash().getBytes());
