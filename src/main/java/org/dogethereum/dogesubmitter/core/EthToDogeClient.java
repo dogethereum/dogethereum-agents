@@ -78,7 +78,7 @@ public class EthToDogeClient {
             try {
                 if (!federatorSupport.isEthNodeSyncing()) {
                     long fromBlock = latestEthBlockProcessed + 1;
-                    long toBlock = federatorSupport.getEthBlockCount() - ETH_REQUIRED_CONFIRMATIONS;
+                    long toBlock = federatorSupport.getEthBlockCount() - config.getBridgeConstants().getEth2DogeMinimumAcceptableConfirmations();
                     // Ignore execution if nothing to process
                     if (fromBlock > toBlock) return;
                     List<Long> newUnlockRequestIds = federatorSupport.getNewUnlockRequestIds(fromBlock, toBlock);

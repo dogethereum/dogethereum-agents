@@ -83,6 +83,13 @@ public class BridgeTestNetConstants extends BridgeConstants {
 //        dogeBroadcastingMinimumAcceptableBlocks = 30;
 //        minimumReleaseTxValue = Coin.valueOf(500000);
 
+        // Unlock mechanism specific start
+
+        eth2DogeMinimumAcceptableConfirmations = 20;
+        dogeBroadcastingMinimumAcceptableBlocks = 30;
+
+        // Unlock mechanism specific emd
+
 
     }
 

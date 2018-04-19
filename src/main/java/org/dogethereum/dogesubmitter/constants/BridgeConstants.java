@@ -51,8 +51,6 @@ public class BridgeConstants {
     // protected int federatorsRequiredToSign;
     protected int eth2DogeMinimumAcceptableConfirmations;
     protected int dogeBroadcastingMinimumAcceptableBlocks;
-    protected Coin minimumReleaseTxValue;
-
     //public List<ECKey> getFederatorPublicKeys() {
     //     return federatorPublicKeys;
     // }
@@ -65,7 +63,6 @@ public class BridgeConstants {
     public int getDogeBroadcastingMinimumAcceptableBlocks() {
         return dogeBroadcastingMinimumAcceptableBlocks;
     }
-    public Coin getMinimumReleaseTxValue() { return minimumReleaseTxValue; }
 
     // Unlock mechanism specific end
 

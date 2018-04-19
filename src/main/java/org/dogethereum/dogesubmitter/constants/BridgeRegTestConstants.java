@@ -51,9 +51,8 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
         // Unlock mechanism specific start
 
-        eth2DogeMinimumAcceptableConfirmations = 10;
+        eth2DogeMinimumAcceptableConfirmations = 5;
         dogeBroadcastingMinimumAcceptableBlocks = 30;
-        minimumReleaseTxValue = Coin.valueOf(500000);
 
         // Unlock mechanism specific emd
 
