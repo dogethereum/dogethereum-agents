@@ -87,7 +87,6 @@ public class BridgeRegTestConstantsFederate extends BridgeConstants {
 
         eth2DogeMinimumAcceptableConfirmations = 10;
         dogeBroadcastingMinimumAcceptableBlocks = 30;
-        minimumReleaseTxValue = Coin.valueOf(500000);
 
         // Unlock mechanism specific emd
 

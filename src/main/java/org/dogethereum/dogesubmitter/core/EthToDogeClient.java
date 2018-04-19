@@ -50,6 +50,9 @@ public class EthToDogeClient {
     public void setup() throws Exception {
         config = SystemProperties.CONFIG;
         if (config.isEthToDogeEnabled()) {
+            // Set latestEthBlockProcessed to eth genesis block or eth checkpoint,
+            // then read the latestEthBlockProcessed from file and overwrite it.
+            this.latestEthBlockProcessed = config.getBridgeConstants().getEthInitialCheckpoint();
             this.dataDirectory = new File(config.dataDirectory());
             this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() + "/EthToDogeClientLatestEthBlockProcessedFile.dat");
             restoreLatestEthBlockProcessed();

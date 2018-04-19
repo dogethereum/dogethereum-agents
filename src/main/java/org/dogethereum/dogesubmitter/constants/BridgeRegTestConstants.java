@@ -53,6 +53,7 @@ public class BridgeRegTestConstants extends BridgeConstants {
 
         eth2DogeMinimumAcceptableConfirmations = 5;
         dogeBroadcastingMinimumAcceptableBlocks = 30;
+        ethInitialCheckpoint = 0;
 
         // Unlock mechanism specific emd
 
