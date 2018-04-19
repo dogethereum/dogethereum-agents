@@ -77,11 +77,11 @@ public class EthToDogeClient {
         public void run() {
             try {
                 if (!federatorSupport.isEthNodeSyncing()) {
-                    long ethBlockCount = federatorSupport.getEthBlockCount();
-                    long topBlock = ethBlockCount - ETH_REQUIRED_CONFIRMATIONS;
-                    // Ignore execution if using a fresh new blockchain (most likely during local tests)
-                    if (topBlock < 0) return;
-                    List<Long> newUnlockRequestIds = federatorSupport.getNewUnlockRequestIds(latestEthBlockProcessed, topBlock);
+                    long fromBlock = latestEthBlockProcessed + 1;
+                    long toBlock = federatorSupport.getEthBlockCount() - ETH_REQUIRED_CONFIRMATIONS;
+                    // Ignore execution if nothing to process
+                    if (fromBlock > toBlock) return;
+                    List<Long> newUnlockRequestIds = federatorSupport.getNewUnlockRequestIds(fromBlock, toBlock);
                     for (Long unlockRequestId : newUnlockRequestIds) {
                         FederatorSupport.Unlock unlock = federatorSupport.getUnlock(unlockRequestId);
                         if (isMine(unlock)) {
@@ -89,7 +89,7 @@ public class EthToDogeClient {
                             broadcastDogeTransaction(tx);
                         }
                     }
-                    latestEthBlockProcessed = topBlock;
+                    latestEthBlockProcessed = toBlock;
                     flushLatestEthBlockProcessed();
                 } else {
                     log.warn("UpdateEthToDogeTimerTask skipped because the eth node is syncing blocks");
