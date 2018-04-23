@@ -49,7 +49,7 @@ public class Proof {
         return RLP.encodeList(hastToEncode, partialMerkleToEncode);
     }
 
-    public static byte[] serializeProofList(List<Proof> list){
+    private static byte[] serializeProofList(List<Proof> list){
         int nProof = list.size();
         byte[][] bytes = new byte[nProof][];
         int n = 0;
@@ -59,7 +59,7 @@ public class Proof {
         return RLP.encodeList(bytes);
     }
 
-    public static List<Proof> deserializeProofList(byte[] rlpData, NetworkParameters parameters){
+    private static List<Proof> deserializeProofList(byte[] rlpData, NetworkParameters parameters){
         List<Proof> list = new ArrayList<>();
 
         if (rlpData == null || rlpData.length == 0)
