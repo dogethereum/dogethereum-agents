@@ -18,10 +18,7 @@ import org.springframework.util.FileSystemUtils;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.util.*;
@@ -71,15 +68,9 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
 //        }
 
             this.dataDirectory = new File(config.dataDirectory());
-            // Empty dataDirectory until we solve the bug we have reusing an existing directory
-            FileSystemUtils.deleteRecursively(this.dataDirectory);
-            this.dataDirectory.mkdirs();
-
             this.proofFile = new File(dataDirectory.getAbsolutePath() + "/DogeToEthClient.proofs");
-
             restoreProofsFromFile();
             setupDogecoinWrapper();
-
             // int numberOfFederators = bridgeConstants.getFederatorPublicKeys().size();
             int numberOfFederators = 1;
             new Timer("Submitter update bridge").scheduleAtFixedRate(new UpdateBridgeTimerTask(), getFirstExecutionDate(), bridgeConstants.getUpdateBridgeExecutionPeriod() * numberOfFederators);
@@ -322,11 +313,18 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
         }
     }
 
-    private void restoreProofsFromFile() throws IOException {
+    private void restoreProofsFromFile() throws IOException, ClassNotFoundException {
         if (proofFile.exists()) {
-            NetworkParameters networkParameters = bridgeConstants.getDogeParams();
+            //NetworkParameters networkParameters = bridgeConstants.getDogeParams();
             synchronized (this) {
-                this.txsToSendToEth = Proof.deserializeProofs(Files.readAllBytes(proofFile.toPath()), networkParameters);
+                byte[] arr = Files.readAllBytes(proofFile.toPath());
+                try (
+                    FileInputStream txsToSendToEthFileIs = new FileInputStream(proofFile);
+                    ObjectInputStream txsToSendToEthObjectIs = new ObjectInputStream(txsToSendToEthFileIs);
+                ) {
+                    this.txsToSendToEth = (Map<Sha256Hash, List<Proof>> ) txsToSendToEthObjectIs.readObject();
+                }
+
             }
         }
     }
@@ -342,7 +340,7 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
             FileOutputStream txsToSendToEthFileOs = new FileOutputStream(proofFile);
             ObjectOutputStream txsToSendToEthObjectOs = new ObjectOutputStream(txsToSendToEthFileOs);
         ) {
-            txsToSendToEthObjectOs.write(Proof.encodeProofs(this.txsToSendToEth));
+            txsToSendToEthObjectOs.writeObject(this.txsToSendToEth);
         }
     }
 
