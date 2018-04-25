@@ -236,7 +236,7 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
     }
 
     public void updateBridgeTransactions() throws Exception {
-        Set<Transaction> federatorWalletTxSet = dogecoinWrapper.getTransactions(bridgeConstants.getDoge2EthMinimumAcceptableConfirmations());
+        Set<Transaction> federatorWalletTxSet = dogecoinWrapper.getTransactions(bridgeConstants.getDoge2EthMinimumAcceptableConfirmations(), true, true);
         //Object[] bridgeTxHashesAlreadyProcessedArray = federatorSupport.getDogeTxHashesAlreadyProcessed();
 //        Object[] bridgeTxHashesAlreadyProcessedArray = new Object[]{};
 //        Set<Sha256Hash> bridgeTxHashesAlreadyProcessedSet = new HashSet<>(bridgeTxHashesAlreadyProcessedArray.length);

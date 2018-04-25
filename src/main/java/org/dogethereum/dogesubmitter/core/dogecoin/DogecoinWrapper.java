@@ -22,5 +22,5 @@ public interface DogecoinWrapper {
 
     StoredBlock getBlockAtHeight(int height) throws BlockStoreException;
 
-    Set<Transaction> getTransactions(int minconfirmations);
+    Set<Transaction> getTransactions(int minconfirmations, boolean includeLock, boolean includeUnlock);
 }

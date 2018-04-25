@@ -130,19 +130,17 @@ public class DogecoinWrapperImpl implements DogecoinWrapper {
     }
 
     @Override
-    public Set<Transaction> getTransactions(int minconfirmations) {
+    public Set<Transaction> getTransactions(int minconfirmations, boolean includeLock, boolean includeUnlock) {
         Set<Transaction> txs = new HashSet<>();
-
         for (Transaction tx : kit.wallet().getTransactions(false)) {
-            if (!tx.getConfidence().getConfidenceType().equals(TransactionConfidence.ConfidenceType.BUILDING))
-                continue;
-
-            if (tx.getConfidence().getDepthInBlocks() < minconfirmations)
-                continue;
-
-            txs.add(tx);
+            if (tx.getConfidence().getConfidenceType().equals(TransactionConfidence.ConfidenceType.BUILDING) &&
+                tx.getConfidence().getDepthInBlocks() >= minconfirmations) {
+                if (BridgeUtils.isLockTx(tx, kit.wallet(), bridgeConstants, keyHandler) && includeLock ||
+                    BridgeUtils.isReleaseTx(tx, bridgeConstants, keyHandler) && includeUnlock) {
+                    txs.add(tx);
+                }
+            }
         }
-
         return txs;
     }
 }
