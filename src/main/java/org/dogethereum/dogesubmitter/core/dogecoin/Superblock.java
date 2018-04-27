@@ -3,8 +3,10 @@ package org.dogethereum.dogesubmitter.core.dogecoin;
 import org.bitcoinj.core.AltcoinBlock;
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Utils;
-import org.libdohj.core.ScryptHash;
 
+import org.web3j.crypto.Hash;
+
+import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +14,7 @@ import java.util.List;
 /**
  * Constructs a superblock from a sequence of block hashes
  * Just a very rough prototype for now! This might not even compile
+ * @author Catalina Juarros
  */
 
 // TODO: check if data is big endian or little endian for documentation
@@ -21,8 +24,10 @@ public class Superblock {
     private BigInteger chainWork;
     private Sha256Hash lastBlockHash;
     private long lastBlockTime;
-    private Sha256Hash prevSuperblockHash;
-    
+    private byte[] prevSuperblockHash;
+    private byte[] hash;
+    private int lastBlockHeight;
+
     /**
      * Construct a Superblock object from a list of Dogecoin blocks,
      * the previous superblock's hash and the accumulated chain work from its last block.
@@ -32,13 +37,14 @@ public class Superblock {
      * @param superblockHash Previous superblock's SHA-256 hash.
      * @param work Last Dogecoin block's accumulated chainwork.
      */
-    public Superblock(List<AltcoinBlock> blocks, Sha256Hash superblockHash, BigInteger work) {
+    public Superblock(List<AltcoinBlock> blocks, byte[] superblockHash, BigInteger work, int height) {
         // hash all the block hashes into a Merkle tree
         merkleRoot = calculateMerkleRoot(blocks);
         chainWork = work;
         lastBlockHash = blocks.get(blocks.size() - 1).getHash();
         lastBlockTime = blocks.get(blocks.size() - 1).getTimeSeconds(); // maybe this should be a Date object, check later
         prevSuperblockHash = superblockHash;
+        lastBlockHeight = height;
     }
 
     /**
@@ -46,7 +52,7 @@ public class Superblock {
      * @param blocks List of all Dogecoin blocks mined within the last hour.
      * @return Root of a Merkle tree with all these blocks as its leaves.
      */
-    private Sha256Hash calculateMerkleRoot(List<AltcoinBlock> blocks) {
+    public Sha256Hash calculateMerkleRoot(List<AltcoinBlock> blocks) {
         // important: look at buildMerkleTree() from bitcoinj to see how this is done for transactions
         // that code is probably not reusable but it serve as a guideline
         // there's something called hashTwice() which would be useful for calculating parent hashes
@@ -63,7 +69,7 @@ public class Superblock {
     private List<byte[]> buildMerkleTree(List<AltcoinBlock> blocks) {
         // adapted from bitcoinj's implementation of Merkle trees for transactions
         List<byte[]> tree = new ArrayList<>(); // check if this should be a List or an ArrayList
-        // add all the block hashes
+        // add all the block hashes in bytes[] format
         for (AltcoinBlock b : blocks) {
             tree.add(b.getHash().getBytes());
         }
@@ -74,9 +80,9 @@ public class Superblock {
             // hashes each pair of nodes
             for (int left = 0; left < levelSize; left += 2) {
                 int right = Math.min(left + 1, levelSize - 1); // in case left needs to be hashed with itself
-                byte[] leftBytes = Utils.reverseBytes(tree.get(levelOffset + left));
-                byte[] rightBytes = Utils.reverseBytes(tree.get(levelOffset + right));
-                tree.add(Utils.reverseBytes(Sha256Hash.hashTwice(leftBytes, 0, 32, rightBytes, 0, 32)));
+                byte[] leftBytes = tree.get(levelOffset + left);
+                byte[] rightBytes = tree.get(levelOffset + right);
+                tree.add(Sha256Hash.hashTwice(leftBytes, 0, 32, rightBytes, 0, 32));
             }
             
             levelOffset += levelSize;
@@ -85,17 +91,33 @@ public class Superblock {
         return tree;
     }
 
+    /**
+     * Calculates Keccak-256 hash of superblock data.
+     * TODO: All these output streams are probably not very efficient, look into optimising them later!
+     * @return Superblock ID hash in bytes format
+     */
+
+    private byte[] calculateHash() throws java.io.IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        outputStream.write(merkleRoot.getBytes());
+        outputStream.write(toBytes32(chainWork));
+        outputStream.write(lastBlockHash.getBytes());
+        outputStream.write(toBytes32(lastBlockTime));
+        outputStream.write(prevSuperblockHash);
+
+        byte[] data = outputStream.toByteArray();
+        return Hash.sha3(data);
+    }
+
     /* ---- GETTERS ---- */
 
     public Sha256Hash getMerkleRoot() {
         return merkleRoot;
     }
 
-    public ScryptHash getchainWork() {
-        // TODO: Note from Oscar to Cata: Returning null because method does not compile
-        // why this method returns a ScryptHash? Use camel case
-        //return chainWork;
-        return null;
+    public BigInteger getChainWork() {
+        return chainWork;
     }
 
     public Sha256Hash getLastBlockHash() {
@@ -106,7 +128,32 @@ public class Superblock {
         return lastBlockTime;
     }
 
-    public Sha256Hash getPrevSuperblockHash() {
+    public byte[] getPrevSuperblockHash() {
         return prevSuperblockHash;
+    }
+
+    public byte[] getHash() throws java.io.IOException {
+        if (hash == null) {
+            hash = calculateHash();
+        }
+        return hash;
+    }
+
+    /* ---- HELPERS ----- */
+
+    public byte[] toBytes32(BigInteger n) throws java.io.IOException {
+        String hex = n.toString(16);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        outputStream.write(hex.getBytes());
+        for (int i = hex.length(); i < 32; i++) outputStream.write(0);
+        return outputStream.toByteArray();
+    }
+
+    public byte[] toBytes32(long n) throws java.io.IOException {
+        String hex = Long.toHexString(n);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        outputStream.write(hex.getBytes());
+        for (int i = hex.length(); i < 32; i++) outputStream.write(0);
+        return outputStream.toByteArray();
     }
 }
