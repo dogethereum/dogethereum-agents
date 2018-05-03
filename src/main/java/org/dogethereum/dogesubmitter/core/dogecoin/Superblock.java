@@ -1,12 +1,15 @@
 package org.dogethereum.dogesubmitter.core.dogecoin;
 
 import org.bitcoinj.core.AltcoinBlock;
+import org.bitcoinj.core.ProtocolException;
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Utils;
 
 import org.web3j.crypto.Hash;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,14 +22,28 @@ import java.util.List;
 
 // TODO: check if data is big endian or little endian for documentation
 
-public class Superblock {
-    private Sha256Hash merkleRoot;
-    private BigInteger chainWork;
-    private Sha256Hash lastBlockHash;
-    private long lastBlockTime;
-    private byte[] prevSuperblockHash;
-    private byte[] hash;
-    private int lastBlockHeight;
+public class Superblock extends org.bitcoinj.core.Message {
+//    public static final int COMPACT_SERIALIZED_SIZE;
+
+    /* ---- INFO FIELDS ---- */
+
+    private Sha256Hash merkleRoot; // Root of a Merkle tree comprised of Dogecoin block hashes. 32 bytes.
+    private BigInteger chainWork; // Total chain work put into this superblock -- same as total chain work put into last block. 32 bytes.
+    private Sha256Hash lastBlockHash; // SHA-256 hash of last mined Dogecoin block in the superblock. 32 bytes.
+    private long lastBlockTime; // Timestamp of last mined Dogecoin block in the superblock. 4 bytes.
+    private byte[] prevSuperblockHash; // KECCAK-256 hash of previous superblock. 32 bytes.
+
+
+    /* ---- EXTRA FIELDS ---- */
+
+    public static final int COMPACT_SERIALIZED_SIZE = 132; // Size of all data in bytes: 32*4 + 4 = 128 + 4 = 132.
+
+    private byte[] hash; // KECCAK-256 hash of superblock data
+    private int lastBlockHeight; // Height of last mined Dogecoin block within the Dogecoin blockchain
+    private int offset = 0; // offset is inherited from Message. Since it's only going to be used for raw blocks which must be read from the beginning, it can be initialised to 0.
+
+
+    /* ---- CONSTRUCTION METHODS ---- */
 
     /**
      * Construct a Superblock object from a list of Dogecoin blocks,
@@ -47,16 +64,17 @@ public class Superblock {
         lastBlockHeight = height;
     }
 
+    public Superblock(byte[] payload) {
+        parse();
+    }
+
     /**
      * Calculate the Merkle root hash of a tree containing all the blocks in `blocks`.
      * @param blocks List of all Dogecoin blocks mined within the last hour.
      * @return Root of a Merkle tree with all these blocks as its leaves.
      */
     public Sha256Hash calculateMerkleRoot(List<AltcoinBlock> blocks) {
-        // important: look at buildMerkleTree() from bitcoinj to see how this is done for transactions
-        // that code is probably not reusable but it serve as a guideline
-        // there's something called hashTwice() which would be useful for calculating parent hashes
-        // I still don't know how or if it's possible to concatenate two sha256 hashes
+
         List<byte[]> tree = buildMerkleTree(blocks);
         return Sha256Hash.wrap(tree.get(tree.size() - 1));
     }
@@ -93,7 +111,6 @@ public class Superblock {
 
     /**
      * Calculates Keccak-256 hash of superblock data.
-     * TODO: All these output streams are probably not very efficient, look into optimising them later!
      * @return Superblock ID hash in bytes format
      */
 
@@ -109,6 +126,7 @@ public class Superblock {
         byte[] data = outputStream.toByteArray();
         return Hash.sha3(data);
     }
+
 
     /* ---- GETTERS ---- */
 
@@ -132,28 +150,72 @@ public class Superblock {
         return prevSuperblockHash;
     }
 
-    public byte[] getHash() throws java.io.IOException {
+    public byte[] getSuperblockHash() throws java.io.IOException {
         if (hash == null) {
             hash = calculateHash();
         }
         return hash;
     }
 
+    public int getLastBlockHeight() {
+        return lastBlockHeight;
+    }
+
+
+    /* ---- STORAGE AND READING ---- */
+
+    // TODO: this might need to be implemented like bitcoinSerialize
+
+    public void serialize(OutputStream stream) throws java.io.IOException {
+        stream.write(merkleRoot.getReversedBytes());
+        stream.write(Utils.reverseBytes(toBytes32(chainWork)));
+        stream.write(lastBlockHash.getReversedBytes());
+        Utils.uint32ToByteStreamLE(lastBlockTime, stream);
+        stream.write(Utils.reverseBytes(prevSuperblockHash));
+    }
+
+    protected void parse() throws ProtocolException {
+        cursor = 0; // to make sure parse() is NEVER called with a different offset, neither accidentally nor maliciously
+
+        merkleRoot = readHash();
+        chainWork = new BigInteger(Utils.reverseBytes(readByteArray(32))); // read 256 bits
+        lastBlockHash = readHash();
+        lastBlockTime = readInt64();
+        prevSuperblockHash = Utils.reverseBytes(readByteArray(32));
+    }
+
+    protected byte[] readByteArray(int len) throws ProtocolException {
+        return readBytes(len);
+    }
+
+
     /* ---- HELPERS ----- */
 
+    // TODO: test toBytes32 -- make sure hex.length() is the expected value
+
     public byte[] toBytes32(BigInteger n) throws java.io.IOException {
-        String hex = n.toString(16);
+        byte[] hex = n.toByteArray();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        outputStream.write(hex.getBytes());
-        for (int i = hex.length(); i < 32; i++) outputStream.write(0);
+        for (int i = hex.length; i < 32; i++) outputStream.write(0); // pad with 0s
+        outputStream.write(hex);
         return outputStream.toByteArray();
     }
 
     public byte[] toBytes32(long n) throws java.io.IOException {
-        String hex = Long.toHexString(n);
+        byte[] hex = longToBytes(n);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        outputStream.write(hex.getBytes());
-        for (int i = hex.length(); i < 32; i++) outputStream.write(0);
+        for (int i = 8; i < 32; i++) outputStream.write(0); // pad with 0s
+        outputStream.write(hex);
         return outputStream.toByteArray();
     }
+
+    public static byte[] longToBytes(long l) {
+        byte[] result = new byte[8];
+        for (int i = 7; i >= 0; i--) {
+            result[i] = (byte)(l & 0xFF);
+            l >>= 8;
+        }
+        return result;
+    }
+
 }
