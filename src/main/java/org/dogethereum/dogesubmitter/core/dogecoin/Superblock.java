@@ -15,8 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Constructs a superblock from a sequence of block hashes
- * Just a very rough prototype for now! This might not even compile
+ * Constructs a superblock from a sequence of block hashes.
+ * Also provides methods for serialising and deserialising superblocks.
  * @author Catalina Juarros
  */
 
@@ -38,8 +38,10 @@ public class Superblock extends org.bitcoinj.core.Message {
 
     public static final int COMPACT_SERIALIZED_SIZE = 132; // Size of all data in bytes: 32*4 + 4 = 128 + 4 = 132.
 
+    private int height; // helper to keep chain updated
+    private int lastBlockHeight; // Height of last mined Dogecoin block in the superblock within the Dogecoin blockchain
+
     private byte[] hash; // KECCAK-256 hash of superblock data
-    private int lastBlockHeight; // Height of last mined Dogecoin block within the Dogecoin blockchain
     private int offset = 0; // offset is inherited from Message. Since it's only going to be used for raw blocks which must be read from the beginning, it can be initialised to 0.
 
 
@@ -54,14 +56,16 @@ public class Superblock extends org.bitcoinj.core.Message {
      * @param superblockHash Previous superblock's SHA-256 hash.
      * @param work Last Dogecoin block's accumulated chainwork.
      */
-    public Superblock(List<AltcoinBlock> blocks, byte[] superblockHash, BigInteger work, int height) {
+    public Superblock(List<AltcoinBlock> blocks, byte[] superblockHash, BigInteger work, int dogeHeight, int superHeight) {
         // hash all the block hashes into a Merkle tree
         merkleRoot = calculateMerkleRoot(blocks);
         chainWork = work;
         lastBlockHash = blocks.get(blocks.size() - 1).getHash();
         lastBlockTime = blocks.get(blocks.size() - 1).getTimeSeconds(); // maybe this should be a Date object, check later
         prevSuperblockHash = superblockHash;
-        lastBlockHeight = height;
+
+        lastBlockHeight = dogeHeight;
+        height = superHeight;
     }
 
     public Superblock(byte[] payload) {
@@ -157,6 +161,10 @@ public class Superblock extends org.bitcoinj.core.Message {
         return hash;
     }
 
+    public int getHeight() {
+        return height;
+    }
+
     public int getLastBlockHeight() {
         return lastBlockHeight;
     }
@@ -172,6 +180,9 @@ public class Superblock extends org.bitcoinj.core.Message {
         stream.write(lastBlockHash.getReversedBytes());
         Utils.uint32ToByteStreamLE(lastBlockTime, stream);
         stream.write(Utils.reverseBytes(prevSuperblockHash));
+
+        stream.write(lastBlockHeight);
+        stream.write(height);
     }
 
     protected void parse() throws ProtocolException {
@@ -180,8 +191,11 @@ public class Superblock extends org.bitcoinj.core.Message {
         merkleRoot = readHash();
         chainWork = new BigInteger(Utils.reverseBytes(readByteArray(32))); // read 256 bits
         lastBlockHash = readHash();
-        lastBlockTime = readInt64();
+        lastBlockTime = readUint32();
         prevSuperblockHash = Utils.reverseBytes(readByteArray(32));
+
+        lastBlockHeight = (int) readUint32(); // ask about this!
+        height = (int) readUint32();
     }
 
     protected byte[] readByteArray(int len) throws ProtocolException {
@@ -209,11 +223,28 @@ public class Superblock extends org.bitcoinj.core.Message {
         return outputStream.toByteArray();
     }
 
+    public byte[] toBytes32(int n) throws java.io.IOException {
+        byte[] hex = intToBytes(n);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        for (int i = 4; i < 32; i++) outputStream.write(0); // pad with 0s
+        outputStream.write(hex);
+        return outputStream.toByteArray();
+    }
+
     public static byte[] longToBytes(long l) {
         byte[] result = new byte[8];
         for (int i = 7; i >= 0; i--) {
             result[i] = (byte)(l & 0xFF);
             l >>= 8;
+        }
+        return result;
+    }
+
+    public static byte[] intToBytes(int j) {
+        byte[] result = new byte[4];
+        for (int i = 3; i >= 0; i--) {
+            result[i] = (byte)(j & 0xFF);
+            j >>= 8;
         }
         return result;
     }
