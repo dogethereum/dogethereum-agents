@@ -42,12 +42,15 @@ public class SuperblockChain {
 
     private int bestSuperblockHeight;
 
+    private ArrayList<AltcoinBlock> currentBlocksToHash;
+
     /**
      * Class constructor
      * @param dogecoinWrapper Dogecoin blockchain interface
      */
     public SuperblockChain(DogecoinWrapper dogecoinWrapper) {
         this.dogecoinWrapper = dogecoinWrapper;
+        this.currentBlocksToHash = new ArrayList<>();
     }
 
     /**
@@ -62,7 +65,9 @@ public class SuperblockChain {
         int bestChainHeight = dogecoinWrapper.getBestChainHeight();
         int currentHeight = initialHeight;
         AltcoinBlock currentBlock = (AltcoinBlock) dogecoinWrapper.getBlockAtHeight(initialHeight).getHeader();
-        Date currentDate = currentBlock.getTime();
+        Date currentTime = currentBlock.getTime();
+        Date superblockEndTime = roundToNextWholeHour(currentTime);
+//        Date currentTime = currentBlock.getTime();
 
         // While the current block was *not* mined an hour or more after the initial date,
         // keep adding blocks to the array.
@@ -71,14 +76,31 @@ public class SuperblockChain {
         // It's allowed to be less than the initial date
         // because a Dogecoin timestamp can be less than that of a previous block
         // and still be valid.
-        while (DateUtils.truncatedCompareTo(initialDate, currentDate, Calendar.HOUR) >= 0 && currentHeight < bestChainHeight) {
+        while (currentTime.before(superblockEndTime) && currentHeight < bestChainHeight) {
             blocks.add(currentBlock);
             currentHeight++; // loop condition ensures that this height will always be valid
             currentBlock = (AltcoinBlock) dogecoinWrapper.getBlockAtHeight(currentHeight).getHeader();
-            currentDate = currentBlock.getTime();
+            currentTime = currentBlock.getTime();
         }
 
         return currentHeight;
+    }
+
+    // I hate that I have to define this inside the SuperblockChain class
+    // instead of just a function that can be applied to dates
+    private Date roundToNextWholeHour(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.add(Calendar.HOUR, 1);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        return calendar.getTime();
+    }
+
+    private Date getThreeHoursAgo() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.HOUR, -3);
+        return calendar.getTime();
     }
 
     @PostConstruct
@@ -90,7 +112,6 @@ public class SuperblockChain {
      */
     public void buildChainFromGenesis() throws BlockStoreException, java.io.IOException {
         List<Superblock> superblocks = new ArrayList<>(); // entire chain of superblocks
-        List<AltcoinBlock> currentBlocksToHash = new ArrayList<>(); // Dogecoin blocks for the next superblock
 
         int bestChainHeight = dogecoinWrapper.getBestChainHeight();
         int currentHeight = 0;
@@ -100,24 +121,38 @@ public class SuperblockChain {
         AltcoinBlock currentBlock = (AltcoinBlock) currentStoredBlock.getHeader(); // first block of the next superblock
         Date currentInitialDate = currentBlock.getTime(); // timestamp of the first block of the next superblock
 
+        Date stopDate = getThreeHoursAgo(); // to stop when the last block to be hashed was mined 3 hours ago
+        Boolean stopBuilding = false;
+
         byte[] previousSuperblockHash = Hash.sha3("0000000000000000000000000000000000000000000000000000000000000000".getBytes());
 
-        while (currentHeight < bestChainHeight) {
+        while (currentHeight < bestChainHeight && !stopBuilding) {
             // builds list and advances height
-            currentHeight = fillWithBlocksStartingAtTime(currentInitialDate, currentHeight, currentBlocksToHash);
-            Superblock newSuperblock = new Superblock(currentBlocksToHash, previousSuperblockHash, currentWork, currentHeight);
-            superblocks.add(newSuperblock);
+            currentHeight = fillWithBlocksStartingAtTime(currentInitialDate, currentHeight, this.currentBlocksToHash);
+            stopDate = getThreeHoursAgo();
 
-            // update necessary fields for next superblock
-            if (currentHeight <= bestChainHeight) {
+            if (this.currentBlocksToHash.get(this.currentBlocksToHash.size() - 1).getTime().after(stopDate)) {
+                stopBuilding = true; // last block to hash was mined less than three hours ago, so the blocks should not be hashed yet
+            }
+
+            // build superblock and update necessary fields for next superblock
+            if (!stopBuilding) {
+                Superblock newSuperblock = new Superblock(this.currentBlocksToHash, previousSuperblockHash, currentWork, currentHeight);
+                superblocks.add(newSuperblock);
+
+                // remember: currentHeight was updated to the correct value by fillWithBlocksStartingAtTime
                 currentStoredBlock = dogecoinWrapper.getBlockAtHeight(currentHeight);
                 currentWork = currentStoredBlock.getChainWork();
                 currentBlock = (AltcoinBlock) currentStoredBlock.getHeader();
                 currentInitialDate = currentBlock.getTime();
-                previousSuperblockHash = newSuperblock.getHash();
+                previousSuperblockHash = newSuperblock.getSuperblockHash();
+
+                this.currentBlocksToHash.clear(); // to start again for next superblock
             }
         }
     }
+
+    public void updateChain() {}
 
 //    public void buildChainFromHeight(int initialHeight) throws BlockStoreException, java.io.IOException {
 //        int bestChainHeight = dogecoinWrapper.getBestChainHeight();
