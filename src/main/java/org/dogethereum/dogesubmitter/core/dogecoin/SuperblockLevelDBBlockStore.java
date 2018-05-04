@@ -39,15 +39,17 @@ public class SuperblockLevelDBBlockStore {
     private final File path;
     private DB db;
     private final ByteBuffer buffer = ByteBuffer.allocate(Superblock.COMPACT_SERIALIZED_SIZE);
+    // TODO: hardcode genesis superblock. Keep in mind that it might not be necessary, since SuperblockChain is going to store superblocks here.
 
-    public SuperblockLevelDBBlockStore(Context context, File directory) {
-        this(context, directory, JniDBFactory.factory);
+    public SuperblockLevelDBBlockStore(Context context, File directory) throws BlockStoreException {
+        this(context, directory, JniDBFactory.factory); // this might not work, ask later
     }
 
     public SuperblockLevelDBBlockStore(Context context, File directory, DBFactory dbFactory) throws BlockStoreException {
         this.context = context;
         this.path = directory;
         Options options = new Options();
+        options.createIfMissing();
 
         try {
             tryOpen(directory, dbFactory, options);
@@ -65,8 +67,25 @@ public class SuperblockLevelDBBlockStore {
         db = dbFactory.open(directory, options);
     }
 
-//    public synchronized Superblock getChainHead() throws BlockStoreException {}
+    /**
+     * If the database hasn't been initialised, this method sets it up
+     * by storing the genesis superblock.
+     * @throws java.io.IOException
+     * @throws BlockStoreException
+     */
+    private synchronized void initStoreIfNeeded() throws java.io.IOException, BlockStoreException {
+        if (db.get(CHAIN_HEAD_KEY) != null)
+            return; // Already initialised.
+//        Superblock genesisBlock = chain.getGenesisBlock();
+//        put(genesisBlock);
+//        setChainHead(genesisBlock);
+    }
 
+    /**
+     * Write a superblock to the database.
+     * @param block superblock to be written
+     * @throws java.io.IOException
+     */
     public synchronized void put(Superblock block) throws java.io.IOException {
         buffer.clear();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -75,12 +94,36 @@ public class SuperblockLevelDBBlockStore {
         db.put(block.getSuperblockHash(), buffer.array());
     }
 
-    public synchronized Superblock get(Sha256Hash hash) {
-        byte[] bits = db.get(hash.getBytes());
+    /**
+     * Retrieve an unserialised superblock from the database.
+     * @param hash Keccak-256 hash of superblock
+     * @return superblock identified by hash
+     */
+    public synchronized Superblock get(byte[] hash) {
+        byte[] bits = db.get(hash);
         if (bits == null)
             return null;
         Superblock superblock = new Superblock(bits);
         return superblock;
     }
 
+    public synchronized void close() throws BlockStoreException {
+        try {
+            db.close();
+        } catch (IOException e) {
+            throw new BlockStoreException(e);
+        }
+    }
+
+    public synchronized void destroy() throws IOException {
+        JniDBFactory.factory.destroy(path, new Options());
+    }
+
+    public synchronized Superblock getChainHead() throws BlockStoreException {
+        return get(db.get(CHAIN_HEAD_KEY));
+    }
+
+    public synchronized void setChainHead(Superblock chainHead) throws BlockStoreException, java.io.IOException {
+        db.put(CHAIN_HEAD_KEY, chainHead.getSuperblockHash());
+    }
 }

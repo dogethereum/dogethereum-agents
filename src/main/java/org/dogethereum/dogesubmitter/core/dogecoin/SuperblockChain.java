@@ -28,29 +28,42 @@ import java.math.BigInteger;
 import java.util.*;
 
 /**
- * Keeps a chain of superblocks in disk and provides information about it.
+ * Provides methods for interacting with a superblock chain.
+ * Storage is managed by SuperblockLevelDBBlockStore.
  * @author Catalina Juarros
  */
 
 public class SuperblockChain {
     @Autowired
     private DogecoinWrapper dogecoinWrapper; // Interface with the Doge blockchain
+    private final Context context;
 
-    // Where the superblock chain is going to be stored in the disk
-    private File dataDirectory;
-    private File chainFile;
+    private File dataDirectory; // TODO: see if this is even necessary
+    private File chainFile; // where the superblock chain is going to be stored in the disk
+    private SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
 
-    private int bestSuperblockHeight;
+    private int bestSuperblockHeight; // height of last calculated proper superblock
+    private int currentHeight; // height of last Dogecoin block added to a superblock; optimisation to avoid making queries
+    private byte[] previousSuperblockHash; // hash of last calculated proper superblock
+    private Superblock genesisBlock; // TODO: get rid of this after testing/debugging
 
-    private ArrayList<AltcoinBlock> currentBlocksToHash;
+    private ArrayList<AltcoinBlock> currentBlocksToHash; // Dogecoin blocks queued for being hashed into a superblock
+
+
+    /* ---- CONSTRUCTION METHODS ---- */
 
     /**
      * Class constructor
      * @param dogecoinWrapper Dogecoin blockchain interface
      */
-    public SuperblockChain(DogecoinWrapper dogecoinWrapper) {
+    public SuperblockChain(DogecoinWrapper dogecoinWrapper, Context context) throws BlockStoreException {
         this.dogecoinWrapper = dogecoinWrapper;
         this.currentBlocksToHash = new ArrayList<>();
+        this.genesisBlock = calculateGenesisBlock(); // TODO: get rid of this after testing/debugging
+        this.context = context;
+        this.superblockStorage = new SuperblockLevelDBBlockStore(context, chainFile);
+        this.currentHeight = 0; // because the chain has not been initialised yet
+        this.previousSuperblockHash = Hash.sha3("0000000000000000000000000000000000000000000000000000000000000000".getBytes()); // for genesis
     }
 
     /**
@@ -67,7 +80,6 @@ public class SuperblockChain {
         AltcoinBlock currentBlock = (AltcoinBlock) dogecoinWrapper.getBlockAtHeight(initialHeight).getHeader();
         Date currentTime = currentBlock.getTime();
         Date superblockEndTime = roundToNextWholeHour(currentTime);
-//        Date currentTime = currentBlock.getTime();
 
         // While the current block was *not* mined an hour or more after the initial date,
         // keep adding blocks to the array.
@@ -86,63 +98,65 @@ public class SuperblockChain {
         return currentHeight;
     }
 
-    // I hate that I have to define this inside the SuperblockChain class
-    // instead of just a function that can be applied to dates
-    private Date roundToNextWholeHour(Date date) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(date);
-        calendar.add(Calendar.HOUR, 1);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        return calendar.getTime();
+    // testing only for now
+    private Superblock calculateGenesisBlock() throws BlockStoreException {
+        // maybe this should be a void but I love functional programming too much
+        List<AltcoinBlock> blocks = new ArrayList<>();
+        byte[] previousSuperblockHash = Hash.sha3("0000000000000000000000000000000000000000000000000000000000000000".getBytes());
+        AltcoinBlock dogeGenesis = (AltcoinBlock) dogecoinWrapper.getBlockAtHeight(0).getHeader();
+
+        int endHeight = fillWithBlocksStartingAtTime(dogeGenesis.getTime(), 0, blocks) - 1; // height of last block in the superblock
+        BigInteger chainWork = dogecoinWrapper.getBlockAtHeight(endHeight).getChainWork();
+        Superblock superblock = new Superblock(blocks, previousSuperblockHash, chainWork, endHeight);
+        return superblock;
     }
 
-    private Date getThreeHoursAgo() {
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.HOUR, -3);
-        return calendar.getTime();
-    }
-
-    @PostConstruct
     /**
-     * Builds a chain of superblocks from the whole Dogecoin blockchain.
-     * Right now this is only for testing. It will be useful when it writes to disk.
+     * Builds and maintains a chain of superblocks from the whole Dogecoin blockchain.
+     * Writes it to disk as specified by SuperblockLevelDBBlockStore.
      * @throws BlockStoreException
      * @throws java.io.IOException
      */
-    public void buildChainFromGenesis() throws BlockStoreException, java.io.IOException {
-        List<Superblock> superblocks = new ArrayList<>(); // entire chain of superblocks
-
+    public void updateChain() throws BlockStoreException, java.io.IOException {
         int bestChainHeight = dogecoinWrapper.getBestChainHeight();
-        int currentHeight = 0;
 
-        StoredBlock currentStoredBlock = dogecoinWrapper.getBlockAtHeight(currentHeight); // start with genesis block
-        BigInteger currentWork = currentStoredBlock.getChainWork(); // chain work for the block that will be built from currentBlocksToHash
-        AltcoinBlock currentBlock = (AltcoinBlock) currentStoredBlock.getHeader(); // first block of the next superblock
-        Date currentInitialDate = currentBlock.getTime(); // timestamp of the first block of the next superblock
+        // The first time this function is called, currentHeight should be 0
+        // and this should be the genesis block
+        StoredBlock currentStoredBlock = dogecoinWrapper.getBlockAtHeight(currentHeight);
+        BigInteger currentWork; // chain work for the block that will be built from currentBlocksToHash
+        AltcoinBlock currentBlock = (AltcoinBlock) currentStoredBlock.getHeader(); // blocks starting from this one will be added to the queue
+        Date currentInitialDate; // timestamp of the first block of the next superblock
+
+        if (currentBlocksToHash.isEmpty()) {
+            // If the queue doesn't have any blocks, the next superblock will start with the block that was just requested.
+            currentInitialDate = currentBlock.getTime();
+        } else {
+            // If the queue already has blocks, the initial date will be that of the first block,
+            // i.e. the first block in the superblock.
+            currentInitialDate = currentBlocksToHash.get(0).getTime();
+        }
 
         Date stopDate = getThreeHoursAgo(); // to stop when the last block to be hashed was mined 3 hours ago
         Boolean stopBuilding = false;
 
-        byte[] previousSuperblockHash = Hash.sha3("0000000000000000000000000000000000000000000000000000000000000000".getBytes());
-
         while (currentHeight < bestChainHeight && !stopBuilding) {
-            // builds list and advances height
+            // Modifies currentBlocksToHash.
+            // Builds list and advances height to that of the first block that wasn't added,
+            // i.e. the first block in the next superblock
             currentHeight = fillWithBlocksStartingAtTime(currentInitialDate, currentHeight, this.currentBlocksToHash);
-            stopDate = getThreeHoursAgo();
+            stopDate = getThreeHoursAgo(); // the method might run for a while, so this must be updated for each new block list
 
-            if (this.currentBlocksToHash.get(this.currentBlocksToHash.size() - 1).getTime().after(stopDate)) {
+            if (this.currentBlocksToHash.get(this.currentBlocksToHash.size() - 1).getTime().after(stopDate))
                 stopBuilding = true; // last block to hash was mined less than three hours ago, so the blocks should not be hashed yet
-            }
 
             // build superblock and update necessary fields for next superblock
             if (!stopBuilding) {
-                Superblock newSuperblock = new Superblock(this.currentBlocksToHash, previousSuperblockHash, currentWork, currentHeight);
-                superblocks.add(newSuperblock);
+                currentWork = dogecoinWrapper.getBlockAtHeight(currentHeight - 1).getChainWork(); // chain work of last block in the superblock
+                Superblock newSuperblock = new Superblock(this.currentBlocksToHash, previousSuperblockHash, currentWork, currentHeight - 1);
+                superblockStorage.put(newSuperblock);
 
                 // remember: currentHeight was updated to the correct value by fillWithBlocksStartingAtTime
                 currentStoredBlock = dogecoinWrapper.getBlockAtHeight(currentHeight);
-                currentWork = currentStoredBlock.getChainWork();
                 currentBlock = (AltcoinBlock) currentStoredBlock.getHeader();
                 currentInitialDate = currentBlock.getTime();
                 previousSuperblockHash = newSuperblock.getSuperblockHash();
@@ -151,8 +165,6 @@ public class SuperblockChain {
             }
         }
     }
-
-    public void updateChain() {}
 
 //    public void buildChainFromHeight(int initialHeight) throws BlockStoreException, java.io.IOException {
 //        int bestChainHeight = dogecoinWrapper.getBestChainHeight();
@@ -189,4 +201,34 @@ public class SuperblockChain {
 //            }
 //        }
 //    }
+
+    /* ---- GETTERS ---- */
+
+    public Superblock getGenesisBlock() {
+        return genesisBlock;
+    }
+
+    public Superblock getChainHead() throws BlockStoreException {
+        return superblockStorage.getChainHead();
+    }
+
+
+    /* ---- HELPER METHODS ---- */
+
+    // I hate that I have to define this inside the SuperblockChain class
+    // instead of just a function that can be applied to dates
+    private Date roundToNextWholeHour(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.add(Calendar.HOUR, 1);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        return calendar.getTime();
+    }
+
+    private Date getThreeHoursAgo() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.HOUR, -3);
+        return calendar.getTime();
+    }
 }
