@@ -42,8 +42,6 @@ public class SuperblockChain {
     private File chainFile; // where the superblock chain is going to be stored in the disk
     private SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
 
-    private int bestSuperblockHeight; // height of last calculated proper superblock
-    private int currentHeight; // height of last Dogecoin block added to a superblock; optimisation to avoid making queries
     private byte[] previousSuperblockHash; // hash of last calculated proper superblock
     private Superblock genesisBlock; // TODO: get rid of this after testing/debugging
 
@@ -58,13 +56,17 @@ public class SuperblockChain {
      */
     public SuperblockChain(DogecoinWrapper dogecoinWrapper, Context context) throws BlockStoreException {
         this.dogecoinWrapper = dogecoinWrapper;
-        this.currentBlocksToHash = new ArrayList<>();
         this.genesisBlock = calculateGenesisBlock(); // TODO: get rid of this after testing/debugging
         this.context = context;
         this.superblockStorage = new SuperblockLevelDBBlockStore(context, chainFile);
-        this.currentHeight = 0; // because the chain has not been initialised yet
-        this.previousSuperblockHash = Hash.sha3("0000000000000000000000000000000000000000000000000000000000000000".getBytes()); // for genesis
     }
+
+    @PostConstruct
+    public void initialize() throws BlockStoreException, java.io.IOException {
+        updateChain();
+    }
+
+//    public void syncWithDogeBlockchain() {}
 
     /**
      * Gets necessary blocks for building a superblock starting at a given time
@@ -107,7 +109,7 @@ public class SuperblockChain {
 
         int endHeight = fillWithBlocksStartingAtTime(dogeGenesis.getTime(), 0, blocks) - 1; // height of last block in the superblock
         BigInteger chainWork = dogecoinWrapper.getBlockAtHeight(endHeight).getChainWork();
-        Superblock superblock = new Superblock(blocks, previousSuperblockHash, chainWork, endHeight);
+        Superblock superblock = new Superblock(blocks, previousSuperblockHash, chainWork, endHeight, 0);
         return superblock;
     }
 
@@ -119,22 +121,18 @@ public class SuperblockChain {
      */
     public void updateChain() throws BlockStoreException, java.io.IOException {
         int bestChainHeight = dogecoinWrapper.getBestChainHeight();
+        int currentHeight = superblockStorage.getDogeHeight();
+        int bestSuperblockHeight = superblockStorage.getHeight();
 
         // The first time this function is called, currentHeight should be 0
         // and this should be the genesis block
         StoredBlock currentStoredBlock = dogecoinWrapper.getBlockAtHeight(currentHeight);
         BigInteger currentWork; // chain work for the block that will be built from currentBlocksToHash
         AltcoinBlock currentBlock = (AltcoinBlock) currentStoredBlock.getHeader(); // blocks starting from this one will be added to the queue
-        Date currentInitialDate; // timestamp of the first block of the next superblock
+        Date currentInitialDate = currentBlock.getTime();
+        List<AltcoinBlock> currentBlocksToHash = new ArrayList<>();
 
-        if (currentBlocksToHash.isEmpty()) {
-            // If the queue doesn't have any blocks, the next superblock will start with the block that was just requested.
-            currentInitialDate = currentBlock.getTime();
-        } else {
-            // If the queue already has blocks, the initial date will be that of the first block,
-            // i.e. the first block in the superblock.
-            currentInitialDate = currentBlocksToHash.get(0).getTime();
-        }
+        byte[] previousSuperblockHash = superblockStorage.getChainHeadHash();
 
         Date stopDate = getThreeHoursAgo(); // to stop when the last block to be hashed was mined 3 hours ago
         Boolean stopBuilding = false;
@@ -143,17 +141,19 @@ public class SuperblockChain {
             // Modifies currentBlocksToHash.
             // Builds list and advances height to that of the first block that wasn't added,
             // i.e. the first block in the next superblock
-            currentHeight = fillWithBlocksStartingAtTime(currentInitialDate, currentHeight, this.currentBlocksToHash);
+            currentHeight = fillWithBlocksStartingAtTime(currentInitialDate, currentHeight, currentBlocksToHash);
             stopDate = getThreeHoursAgo(); // the method might run for a while, so this must be updated for each new block list
 
-            if (this.currentBlocksToHash.get(this.currentBlocksToHash.size() - 1).getTime().after(stopDate))
+            if (currentBlocksToHash.get(currentBlocksToHash.size() - 1).getTime().after(stopDate))
                 stopBuilding = true; // last block to hash was mined less than three hours ago, so the blocks should not be hashed yet
 
             // build superblock and update necessary fields for next superblock
             if (!stopBuilding) {
                 currentWork = dogecoinWrapper.getBlockAtHeight(currentHeight - 1).getChainWork(); // chain work of last block in the superblock
-                Superblock newSuperblock = new Superblock(this.currentBlocksToHash, previousSuperblockHash, currentWork, currentHeight - 1);
+                Superblock newSuperblock = new Superblock(currentBlocksToHash, previousSuperblockHash, currentWork, currentHeight - 1, bestSuperblockHeight);
                 superblockStorage.put(newSuperblock);
+                superblockStorage.setChainHead(newSuperblock);
+                bestSuperblockHeight++;
 
                 // remember: currentHeight was updated to the correct value by fillWithBlocksStartingAtTime
                 currentStoredBlock = dogecoinWrapper.getBlockAtHeight(currentHeight);
@@ -161,7 +161,7 @@ public class SuperblockChain {
                 currentInitialDate = currentBlock.getTime();
                 previousSuperblockHash = newSuperblock.getSuperblockHash();
 
-                this.currentBlocksToHash.clear(); // to start again for next superblock
+                currentBlocksToHash.clear(); // to start again for next superblock
             }
         }
     }

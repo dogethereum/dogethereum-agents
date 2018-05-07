@@ -48,16 +48,16 @@ public class SuperblockChainTest {
         rawHeaders.add("02016200427b118bc209c9ff10f50a25181410276720ba4bb2d6e001d2897671ebd3cfe43983c016d7643b77b2bab44314d6411c68634813c2ae1a2eb4894321c609e93cb7485556932f051b0000000002000000010000000000000000000000000000000000000000000000000000000000000000ffffffff5403449e0d2cfabe6d6dbaac4ffbf483b312f20c87896d4651b22b5da8ad1fae296b733926353e066ec201000000000000002fe585abe5ae9de6b1a0203862616f6368692e636f6d2f0100000076fc0f023d010000000000000110ae0f96000000001976a9149659e4bc4b884ae48b9e8e70e22b9b7dea9ef24788ac0000000002c4e323fc827d020a0d179b3d39489ce1d2c8391eaa715248a4f836fccea12107f3798f240748c042e9b6074526232c818a192df3016a2f8c04835c336db4335ffbf3c336ec1fe51ef9e6e60460c3902d84e3c672a91001d63aa2a22edb0485cca78d32071fabf1ebc844fb2c9f37630394ef405bcc4a9211170fd7db6ebf9069c4e1386a0c75901ffa5cfc53d5e02c843508586b38ee9ede0fea5379968b0418e30c2eda83fedb03c5d1f0485d301f34fe2740ec3106891fb8041abb85d73ff2e8a0855c3d58afc5f8f3aea6c176f960e7b08dab000627c5adc09e9169da742d6e799841f20c5bcd121c0df05bcf57ab79a77b181340a440292c66539fbebee30000000000000000000300000071fad47a6bcb4f483da2562d7e1afeb03bfa07a4540365fbf2ef3db5be415980daaadd9da1da6c858fdfd94c8e297f695a6c575b65e215a8888aa9ae6cb1352bb6485556358c011bfeffbb00");
         AltcoinBlock dummyBlock = new AltcoinBlock(params, Hex.decode(rawHeaders.get(0).getBytes()));
 
-//        List<AltcoinBlock> blocks = new ArrayList<>();
-//        byte[] hash = null;
-//        BigInteger work = null;
-//
-//        for (String h : rawHeaders) {
-//            AltcoinBlock block = new AltcoinBlock(params, Hex.decode(h.getBytes()));
-//            blocks.add(block);
-//        }
-//
-//        Superblock superblock = new Superblock(blocks, hash, work);
+        List<AltcoinBlock> blocks = new ArrayList<>();
+        byte[] hash = null;
+        BigInteger work = null;
+
+        for (String h : rawHeaders) {
+            AltcoinBlock block = new AltcoinBlock(params, Hex.decode(h.getBytes()));
+            blocks.add(block);
+        }
+
+//        Superblock superblock = new Superblock(blocks, hash, work, 0);
     }
 
     public static byte[] testKeccak256(String merkleRoot, String accumulatedWork, String timestamp, String lastHash, String parentId) throws java.io.IOException {
