@@ -85,7 +85,7 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
 
             Context context = new Context(bridgeConstants.getDogeParams());
 
-            superblockChain = new SuperblockChain(dogecoinWrapper, context, config);
+            superblockChain = new SuperblockChain(dogecoinWrapper, context, dataDirectory);
             superblockChain.initialize(bridgeConstants.getUpdateBridgeExecutionPeriod(), getFirstExecutionDate());
         }
     }

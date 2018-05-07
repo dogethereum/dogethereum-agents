@@ -10,6 +10,8 @@ import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.core.Context;
 
+import org.web3j.crypto.Hash;
+
 import org.fusesource.leveldbjni.*;
 import org.iq80.leveldb.*;
 
@@ -18,6 +20,8 @@ import com.google.common.base.Objects;
 import java.math.BigInteger;
 import java.io.*;
 import java.nio.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -37,7 +41,6 @@ public class SuperblockLevelDBBlockStore {
     private final File path;
     private DB db;
     private final ByteBuffer buffer = ByteBuffer.allocate(Superblock.COMPACT_SERIALIZED_SIZE);
-    // TODO: hardcode genesis superblock. Keep in mind that it might not be necessary, since SuperblockChain is going to store superblocks here.
 
     public SuperblockLevelDBBlockStore(Context context, File directory) throws BlockStoreException {
         this(context, directory, JniDBFactory.factory); // this might not work, ask later
@@ -63,6 +66,7 @@ public class SuperblockLevelDBBlockStore {
 
     private synchronized void tryOpen(File directory, DBFactory dbFactory, Options options) throws IOException, BlockStoreException {
         db = dbFactory.open(directory, options);
+        initStoreIfNeeded();
     }
 
     /**
@@ -71,15 +75,19 @@ public class SuperblockLevelDBBlockStore {
      * @throws java.io.IOException
      * @throws BlockStoreException
      */
-    // TODO: see how to get rid of this method or integrate it with SuperblockChain
-    // this doesn't seem necessary honestly
-//    private synchronized void initStoreIfNeeded() throws java.io.IOException, BlockStoreException {
-//        if (db.get(CHAIN_HEAD_KEY) != null)
-//            return; // Already initialised.
-////        Superblock genesisBlock = chain.getGenesisBlock();
-////        put(genesisBlock);
-////        setChainHead(genesisBlock);
-//    }
+    private synchronized void initStoreIfNeeded() throws java.io.IOException, BlockStoreException {
+        if (db.get(CHAIN_HEAD_KEY) != null)
+            return; // Already initialised.
+        List<AltcoinBlock> genesisList = new ArrayList<>();
+        genesisList.add((AltcoinBlock) context.getParams().getGenesisBlock());
+        byte[] emptyHash = Hash.sha3("".getBytes());
+        Superblock genesisBlock = new Superblock(genesisList, emptyHash, BigInteger.valueOf(0), 0, 0);
+        put(genesisBlock);
+        setChainHead(genesisBlock);
+//        Superblock genesisBlock = chain.getGenesisBlock();
+//        put(genesisBlock);
+//        setChainHead(genesisBlock);
+    }
 
     /**
      * Write a superblock to the database.
@@ -151,6 +159,7 @@ public class SuperblockLevelDBBlockStore {
      * @throws BlockStoreException
      */
     public synchronized Superblock getChainHead() throws BlockStoreException {
+        // TODO: there's a bug. This is probably not getting set properly in SuperblockChain. FIX!!!
         return get(db.get(CHAIN_HEAD_KEY));
     }
 

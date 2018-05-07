@@ -22,6 +22,7 @@ import org.dogethereum.dogesubmitter.core.dogecoin.Superblock;
 import org.libdohj.core.ScryptHash;
 import org.spongycastle.util.Store;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.FileSystemUtils;
 import org.web3j.crypto.Hash;
 
 import javax.annotation.PostConstruct;
@@ -42,7 +43,7 @@ public class SuperblockChain {
     private DogecoinWrapper dogecoinWrapper; // Interface with the Doge blockchain
 //    private final Context context;
 
-    private File dataDirectory; // TODO: see if this is even necessary
+//    private File dataDirectory;
     private File chainFile; // where the superblock chain is going to be stored in the disk
     private SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
 
@@ -58,16 +59,18 @@ public class SuperblockChain {
      * Class constructor
      * @param dogecoinWrapper Dogecoin blockchain interface
      */
-    public SuperblockChain(DogecoinWrapper dogecoinWrapper, Context context, SystemProperties config) throws BlockStoreException {
+    public SuperblockChain(DogecoinWrapper dogecoinWrapper, Context context, File directory) throws BlockStoreException {
         this.dogecoinWrapper = dogecoinWrapper;
-        this.genesisBlock = calculateGenesisBlock(); // TODO: get rid of this after testing/debugging
-//        this.context = context;
+        this.chainFile = new File(directory.getAbsolutePath() + "/SuperblockChain"); //TODO: look into file types
         this.superblockStorage = new SuperblockLevelDBBlockStore(context, chainFile);
+//        this.superblockStorage.setChainHead();
     }
+
 
     /**
      * Starts syncing
      * @param updatePeriod
+     * @param executionDate
      * @throws BlockStoreException
      * @throws java.io.IOException
      */
@@ -122,7 +125,7 @@ public class SuperblockChain {
         return superblock;
     }
 
-    // TODO: look into refactoring this -- it could probably be rewritten as smaller, simpler methods
+    // TODO: look into refactoring this -- it could probably be rewritten as smaller, simpler methods. Maybe benchmark the two options.
     /**
      * Builds and maintains a chain of superblocks from the whole Dogecoin blockchain.
      * Writes it to disk as specified by SuperblockLevelDBBlockStore.
