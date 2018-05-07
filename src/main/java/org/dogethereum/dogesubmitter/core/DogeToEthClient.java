@@ -2,11 +2,8 @@ package org.dogethereum.dogesubmitter.core;
 
 
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
-import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapper;
+import org.dogethereum.dogesubmitter.core.dogecoin.*;
 import org.dogethereum.dogesubmitter.constants.BridgeConstants;
-import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapperImpl;
-import org.dogethereum.dogesubmitter.core.dogecoin.BlockListener;
-import org.dogethereum.dogesubmitter.core.dogecoin.TransactionListener;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
@@ -49,8 +46,10 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
 
     private BridgeConstants bridgeConstants;
 
-
     private DogecoinWrapper dogecoinWrapper;
+
+    private SuperblockChain superblockChain;
+    private File superblockChainFile;
 
     private Map<Sha256Hash, List<Proof>> txsToSendToEth = new ConcurrentHashMap<>();
 
@@ -83,6 +82,11 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
             // int numberOfFederators = bridgeConstants.getFederatorPublicKeys().size();
             int numberOfFederators = 1;
             new Timer("Submitter update bridge").scheduleAtFixedRate(new UpdateBridgeTimerTask(), getFirstExecutionDate(), bridgeConstants.getUpdateBridgeExecutionPeriod() * numberOfFederators);
+
+            Context context = new Context(bridgeConstants.getDogeParams());
+
+            superblockChain = new SuperblockChain(dogecoinWrapper, context, config);
+            superblockChain.initialize(bridgeConstants.getUpdateBridgeExecutionPeriod(), getFirstExecutionDate());
         }
     }
 
@@ -180,6 +184,13 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
             }
         }
     }
+
+    // TODO: this entire function
+//    public int updateBridgeDogeBlockchainSUPERBLOCKS() throws Exception {
+//        List<String> blockLocator = federatorSupport.getSuperblockLocator();
+//        log.debug("Block locator size {}, first {}, last {}.", blockLocator.size(), blockLocator.get(0), blockLocator.get(blockLocator.size()-1));
+//        return 0;
+//    }
 
     public int updateBridgeDogeBlockchain() throws Exception {
         //m_lastBlockHeight

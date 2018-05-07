@@ -1,5 +1,7 @@
 package org.dogethereum.dogesubmitter.core.dogecoin;
 
+import lombok.extern.slf4j.Slf4j;
+
 import org.apache.commons.lang3.time.DateUtils;
 import org.bitcoinj.core.AltcoinBlock;
 import org.bitcoinj.core.Sha256Hash;
@@ -11,6 +13,7 @@ import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.store.LevelDBBlockStore;
 import org.bitcoinj.wallet.Wallet;
 
+import org.dogethereum.dogesubmitter.constants.SystemProperties;
 import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
 import org.dogethereum.dogesubmitter.constants.BridgeConstants;
 import org.dogethereum.dogesubmitter.util.FileUtil;
@@ -33,10 +36,11 @@ import java.util.*;
  * @author Catalina Juarros
  */
 
+@Slf4j(topic = "SuperblockChain")
 public class SuperblockChain {
     @Autowired
     private DogecoinWrapper dogecoinWrapper; // Interface with the Doge blockchain
-    private final Context context;
+//    private final Context context;
 
     private File dataDirectory; // TODO: see if this is even necessary
     private File chainFile; // where the superblock chain is going to be stored in the disk
@@ -54,16 +58,21 @@ public class SuperblockChain {
      * Class constructor
      * @param dogecoinWrapper Dogecoin blockchain interface
      */
-    public SuperblockChain(DogecoinWrapper dogecoinWrapper, Context context) throws BlockStoreException {
+    public SuperblockChain(DogecoinWrapper dogecoinWrapper, Context context, SystemProperties config) throws BlockStoreException {
         this.dogecoinWrapper = dogecoinWrapper;
         this.genesisBlock = calculateGenesisBlock(); // TODO: get rid of this after testing/debugging
-        this.context = context;
+//        this.context = context;
         this.superblockStorage = new SuperblockLevelDBBlockStore(context, chainFile);
     }
 
-    @PostConstruct
-    public void initialize() throws BlockStoreException, java.io.IOException {
-        updateChain();
+    /**
+     * Starts syncing
+     * @param updatePeriod
+     * @throws BlockStoreException
+     * @throws java.io.IOException
+     */
+    public void initialize(int updatePeriod, Date executionDate) throws BlockStoreException, java.io.IOException {
+        new Timer("Update superblock chain").scheduleAtFixedRate(new UpdateBridgeTimerTask(), executionDate, updatePeriod);
     }
 
 //    public void syncWithDogeBlockchain() {}
@@ -113,6 +122,7 @@ public class SuperblockChain {
         return superblock;
     }
 
+    // TODO: look into refactoring this -- it could probably be rewritten as smaller, simpler methods
     /**
      * Builds and maintains a chain of superblocks from the whole Dogecoin blockchain.
      * Writes it to disk as specified by SuperblockLevelDBBlockStore.
@@ -166,42 +176,6 @@ public class SuperblockChain {
         }
     }
 
-//    public void buildChainFromHeight(int initialHeight) throws BlockStoreException, java.io.IOException {
-//        int bestChainHeight = dogecoinWrapper.getBestChainHeight();
-//        StoredBlock currentStoredBlock = dogecoinWrapper.getBlockAtHeight(initialHeight);
-//        AltcoinBlock currentBlock = (AltcoinBlock) currentStoredBlock.getHeader();
-//        long firstBlockOfSuperblockTime = currentStoredBlock.getHeader().getTimeSeconds(); // timestamp of the first block in the superblock being built
-//        byte[] previousSuperblockHash = new byte[1]; // dummy value for now
-//        BigInteger currentInitialWork = currentStoredBlock.getChainWork(); // chain work of the first block in the superblock being built
-//
-//        // list of blocks that a superblock will be composed of
-//        // this must be cleared after the superblock is built
-//        List<AltcoinBlock> blocksToHash = new ArrayList<>();
-//        blocksToHash.add(currentBlock);
-//        // I'll probably do without this when I figure out how to write a superblock to disk
-//        List<Superblock> superblocks = new ArrayList<>();
-//
-//        for (int i = initialHeight + 1; i < bestChainHeight; i++) {
-//            currentStoredBlock = dogecoinWrapper.getBlockAtHeight(i);
-//            currentBlock = (AltcoinBlock) currentStoredBlock.getHeader();
-//
-//            if (currentBlock.getTimeSeconds() - firstBlockOfSuperblockTime > 3600) {
-//                // blocksToHash already contains blocks mined within an hour,
-//                // so they must be hashed into a superblock and the list must be cleared
-//                Superblock newSuperblock = new Superblock(blocksToHash, previousSuperblockHash, currentInitialWork);
-//                superblocks.add(newSuperblock);
-//                previousSuperblockHash = newSuperblock.getHash(); // TODO: maybe I need to hash the whole data - ask later
-//
-//                // restart list and set currentBlock as the first block of the next superblock
-//                blocksToHash = new ArrayList<>();
-//                blocksToHash.add(currentBlock);
-//                currentInitialWork = currentStoredBlock.getChainWork();
-//            } else {
-//                blocksToHash.add(currentBlock);
-//            }
-//        }
-//    }
-
     /* ---- GETTERS ---- */
 
     public Superblock getGenesisBlock() {
@@ -213,7 +187,7 @@ public class SuperblockChain {
     }
 
 
-    /* ---- HELPER METHODS ---- */
+    /* ---- HELPER METHODS AND CLASSES ---- */
 
     // I hate that I have to define this inside the SuperblockChain class
     // instead of just a function that can be applied to dates
@@ -230,5 +204,20 @@ public class SuperblockChain {
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.HOUR, -3);
         return calendar.getTime();
+    }
+
+    /**
+     * Task to keep superblock chain updated whenever the agent is running
+     */
+    private class UpdateBridgeTimerTask extends TimerTask {
+        @Override
+        public void run() {
+            try {
+                log.debug("UpdateBridgeTimerTask");
+                updateChain();
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+            }
+        }
     }
 }
