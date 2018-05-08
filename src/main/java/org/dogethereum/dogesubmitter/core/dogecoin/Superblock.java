@@ -23,7 +23,6 @@ import java.util.List;
 // TODO: check if data is big endian or little endian for documentation
 
 public class Superblock extends org.bitcoinj.core.Message {
-//    public static final int COMPACT_SERIALIZED_SIZE;
 
     /* ---- INFO FIELDS ---- */
 
@@ -36,7 +35,7 @@ public class Superblock extends org.bitcoinj.core.Message {
 
     /* ---- EXTRA FIELDS ---- */
 
-    public static final int COMPACT_SERIALIZED_SIZE = 132; // Size of all data in bytes: 32*4 + 4 = 128 + 4 = 132.
+    public static final int COMPACT_SERIALIZED_SIZE = 140; // Size of all data in bytes: 32*4 + 4*3 = 128 + 12 = 140.
 
     private int height; // helper to keep chain updated
     private int lastBlockHeight; // Height of last mined Dogecoin block in the superblock within the Dogecoin blockchain
@@ -69,7 +68,8 @@ public class Superblock extends org.bitcoinj.core.Message {
     }
 
     public Superblock(byte[] payload) {
-        parse();
+        this.payload = payload;
+        parseSuperblock();
     }
 
     /**
@@ -175,37 +175,36 @@ public class Superblock extends org.bitcoinj.core.Message {
     // TODO: this might need to be implemented like bitcoinSerialize
 
     public void serialize(OutputStream stream) throws java.io.IOException {
-        stream.write(merkleRoot.getReversedBytes());
-        stream.write(Utils.reverseBytes(toBytes32(chainWork)));
-        stream.write(lastBlockHash.getReversedBytes());
-        Utils.uint32ToByteStreamLE(lastBlockTime, stream);
-        stream.write(Utils.reverseBytes(prevSuperblockHash));
+        stream.write(merkleRoot.getReversedBytes()); // 32
+        stream.write(Utils.reverseBytes(toBytes32(chainWork))); // 32
+        stream.write(lastBlockHash.getReversedBytes()); // 32
+        Utils.uint32ToByteStreamLE(lastBlockTime, stream); // 4
+        stream.write(Utils.reverseBytes(prevSuperblockHash)); // 32
 
-        stream.write(lastBlockHeight);
-        stream.write(height);
+        stream.write(lastBlockHeight); // 4
+        stream.write(height); // 4
     }
 
-    protected void parse() throws ProtocolException {
+    @Override
+    protected void parse() {
+        System.out.println("I seriously cannot believe this WON'T LET ME OVERRIDE A METHOD.");
+    }
+
+    private void parseSuperblock() throws ProtocolException {
         cursor = 0; // to make sure parse() is NEVER called with a different offset, neither accidentally nor maliciously
 
         merkleRoot = readHash();
-        chainWork = new BigInteger(Utils.reverseBytes(readByteArray(32))); // read 256 bits
+        chainWork = new BigInteger(Utils.reverseBytes(readBytes(32))); // read 256 bits
         lastBlockHash = readHash();
         lastBlockTime = readUint32();
-        prevSuperblockHash = Utils.reverseBytes(readByteArray(32));
+        prevSuperblockHash = Utils.reverseBytes(readBytes(32));
 
         lastBlockHeight = (int) readUint32(); // ask about this!
         height = (int) readUint32();
     }
 
-    protected byte[] readByteArray(int len) throws ProtocolException {
-        return readBytes(len);
-    }
-
 
     /* ---- HELPERS ----- */
-
-    // TODO: test toBytes32 -- make sure hex.length() is the expected value
 
     public byte[] toBytes32(BigInteger n) throws java.io.IOException {
         byte[] hex = n.toByteArray();

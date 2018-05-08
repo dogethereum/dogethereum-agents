@@ -61,7 +61,7 @@ public class SuperblockChain {
      */
     public SuperblockChain(DogecoinWrapper dogecoinWrapper, Context context, File directory) throws BlockStoreException {
         this.dogecoinWrapper = dogecoinWrapper;
-        this.chainFile = new File(directory.getAbsolutePath() + "/SuperblockChain"); //TODO: look into file types
+        this.chainFile = new File(directory.getAbsolutePath() + "/SuperblockChain.txt"); //TODO: look into file types
         this.superblockStorage = new SuperblockLevelDBBlockStore(context, chainFile);
 //        this.superblockStorage.setChainHead();
     }
@@ -136,6 +136,7 @@ public class SuperblockChain {
         int bestChainHeight = dogecoinWrapper.getBestChainHeight();
         int currentHeight = superblockStorage.getDogeHeight();
         int bestSuperblockHeight = superblockStorage.getHeight();
+        // TODO: why is bestSuperblockHeight not persisting???? Or maybe it is persisting but getDogeHeight() is returning 839 for some reason. Also, getHeight() is returning 0 when it should return 4.
 
         // The first time this function is called, currentHeight should be 0
         // and this should be the genesis block

@@ -80,13 +80,10 @@ public class SuperblockLevelDBBlockStore {
             return; // Already initialised.
         List<AltcoinBlock> genesisList = new ArrayList<>();
         genesisList.add((AltcoinBlock) context.getParams().getGenesisBlock());
-        byte[] emptyHash = Hash.sha3("".getBytes());
-        Superblock genesisBlock = new Superblock(genesisList, emptyHash, BigInteger.valueOf(0), 0, 0);
+        byte[] genesisHash = Hash.sha3("0000000000000000000000000000000000000000000000000000000000000000".getBytes());
+        Superblock genesisBlock = new Superblock(genesisList, genesisHash, BigInteger.valueOf(0), 0, 0);
         put(genesisBlock);
         setChainHead(genesisBlock);
-//        Superblock genesisBlock = chain.getGenesisBlock();
-//        put(genesisBlock);
-//        setChainHead(genesisBlock);
     }
 
     /**
@@ -160,11 +157,12 @@ public class SuperblockLevelDBBlockStore {
      */
     public synchronized Superblock getChainHead() throws BlockStoreException {
         // TODO: there's a bug. This is probably not getting set properly in SuperblockChain. FIX!!!
+        // Apparently it is getting set properly, just not getting PARSED properly.
         return get(db.get(CHAIN_HEAD_KEY));
     }
 
     public synchronized byte[] getChainHeadHash() throws BlockStoreException, java.io.IOException {
-        return getChainHead().getSuperblockHash();
+        return db.get(CHAIN_HEAD_KEY);
     }
 
     /**
