@@ -40,7 +40,7 @@ public class SuperblockLevelDBBlockStore {
     private final Context context;
     private final File path;
     private DB db;
-    private final ByteBuffer buffer = ByteBuffer.allocate(Superblock.COMPACT_SERIALIZED_SIZE);
+    private final ByteBuffer buffer = ByteBuffer.allocate(Superblock.COMPACT_SERIALIZED_SIZE); // TODO: see if this should be little endian
 
     public SuperblockLevelDBBlockStore(Context context, File directory) throws BlockStoreException {
         this(context, directory, JniDBFactory.factory); // this might not work, ask later

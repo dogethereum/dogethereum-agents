@@ -181,8 +181,11 @@ public class Superblock extends org.bitcoinj.core.Message {
         Utils.uint32ToByteStreamLE(lastBlockTime, stream); // 4
         stream.write(Utils.reverseBytes(prevSuperblockHash)); // 32
 
-        stream.write(lastBlockHeight); // 4
-        stream.write(height); // 4
+        Utils.uint32ToByteStreamLE(lastBlockHeight, stream); // 4
+        Utils.uint32ToByteStreamLE(height, stream); // 4
+
+//        stream.write(lastBlockHeight); // 4 // TODO: THERE'S A BUG. THIS IS 1 BYTE, SHOULD BE 4.
+//        stream.write(height); // 4
     }
 
     @Override
@@ -199,6 +202,7 @@ public class Superblock extends org.bitcoinj.core.Message {
         lastBlockTime = readUint32();
         prevSuperblockHash = Utils.reverseBytes(readBytes(32));
 
+        // TODO: figure out why payload is 134 bytes instead of 140
         lastBlockHeight = (int) readUint32(); // ask about this!
         height = (int) readUint32();
     }
