@@ -10,9 +10,6 @@ public class BridgeConstants {
 
     protected AbstractDogecoinParams dogeParams;
 
-    //protected Script federationPubScript;
-    //protected Address federationAddress;
-
     protected int doge2EthMinimumAcceptableConfirmations;
 
     protected int updateBridgeExecutionPeriod;
@@ -24,14 +21,6 @@ public class BridgeConstants {
     public AbstractDogecoinParams getDogeParams() {
         return dogeParams;
     }
-
-//    public Script getFederationPubScript() {
-//        return federationPubScript;
-//    }
-
-//    public Address getFederationAddress() {
-//        return federationAddress;
-//    }
 
     public int getDoge2EthMinimumAcceptableConfirmations() {
         return doge2EthMinimumAcceptableConfirmations;
