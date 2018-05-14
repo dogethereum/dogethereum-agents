@@ -8,12 +8,10 @@ import org.dogethereum.dogesubmitter.constants.SystemProperties;
 import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.FileSystemUtils;
 
 import javax.annotation.PostConstruct;
 import java.io.*;
 import java.net.InetAddress;
-import java.nio.file.Files;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Timer;
@@ -28,7 +26,7 @@ import java.util.TimerTask;
 public class EthToDogeClient {
 
     @Autowired
-    private FederatorSupport federatorSupport;
+    private AgentSupport agentSupport;
 
     private SystemProperties config;
 
@@ -60,11 +58,11 @@ public class EthToDogeClient {
             BridgeConstants bridgeConstants = config.getBridgeConstants();
             Context dogeContext = new Context(bridgeConstants.getDogeParams());
             peerGroup = new PeerGroup(dogeContext);
-//        if (federatorSupport.getBitcoinPeerAddresses().size()>0) {
-//            for (PeerAddress peerAddress : federatorSupport.getBitcoinPeerAddresses()) {
+//        if (agentSupport.getBitcoinPeerAddresses().size()>0) {
+//            for (PeerAddress peerAddress : agentSupport.getBitcoinPeerAddresses()) {
 //                peerGroup.addAddress(peerAddress);
 //            }
-//            peerGroup.setMaxConnections(federatorSupport.getBitcoinPeerAddresses().size());
+//            peerGroup.setMaxConnections(agentSupport.getBitcoinPeerAddresses().size());
 //        }
             final InetAddress localHost = InetAddress.getLocalHost();
             peerGroup.addAddress(localHost);
@@ -79,14 +77,14 @@ public class EthToDogeClient {
         @Override
         public void run() {
             try {
-                if (!federatorSupport.isEthNodeSyncing()) {
+                if (!agentSupport.isEthNodeSyncing()) {
                     long fromBlock = latestEthBlockProcessed + 1;
-                    long toBlock = federatorSupport.getEthBlockCount() - config.getBridgeConstants().getEth2DogeMinimumAcceptableConfirmations();
+                    long toBlock = agentSupport.getEthBlockCount() - config.getBridgeConstants().getEth2DogeMinimumAcceptableConfirmations();
                     // Ignore execution if nothing to process
                     if (fromBlock > toBlock) return;
-                    List<Long> newUnlockRequestIds = federatorSupport.getNewUnlockRequestIds(fromBlock, toBlock);
+                    List<Long> newUnlockRequestIds = agentSupport.getNewUnlockRequestIds(fromBlock, toBlock);
                     for (Long unlockRequestId : newUnlockRequestIds) {
-                        FederatorSupport.Unlock unlock = federatorSupport.getUnlock(unlockRequestId);
+                        AgentSupport.Unlock unlock = agentSupport.getUnlock(unlockRequestId);
                         if (isMine(unlock)) {
                             Transaction tx = buildDogeTransaction(unlock);
                             broadcastDogeTransaction(tx);
@@ -107,7 +105,7 @@ public class EthToDogeClient {
         peerGroup.broadcastTransaction(tx);
     }
 
-    private Transaction buildDogeTransaction(FederatorSupport.Unlock unlock) {
+    private Transaction buildDogeTransaction(AgentSupport.Unlock unlock) {
         ECKey operatorPrivateKey = keyHandler.getPrivateKey();
 
         NetworkParameters params = config.getBridgeConstants().getDogeParams();
@@ -128,7 +126,7 @@ public class EthToDogeClient {
         return tx;
     }
 
-    private boolean isMine(FederatorSupport.Unlock unlock) {
+    private boolean isMine(AgentSupport.Unlock unlock) {
         return true;
     }
 

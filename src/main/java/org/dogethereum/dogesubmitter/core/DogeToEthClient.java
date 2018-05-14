@@ -14,7 +14,6 @@ import org.bitcoinj.store.BlockStoreException;
 import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.FileSystemUtils;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -37,7 +36,7 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
     static final int MAXIMUM_REGISTER_DOGE_LOCK_TXS_PER_TURN = 40;
 
     @Autowired
-    private FederatorSupport federatorSupport;
+    private AgentSupport agentSupport;
 
     @Autowired
     private OperatorKeyHandler keyHandler;
@@ -89,7 +88,7 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
 
     private void setupDogecoinWrapper() throws UnknownHostException {
         dogecoinWrapper = new DogecoinWrapperImpl(bridgeConstants, dataDirectory, keyHandler);
-        //dogecoinWrapper.setup(this, this, federatorSupport.getDogecoinPeerAddresses());
+        //dogecoinWrapper.setup(this, this, agentSupport.getDogecoinPeerAddresses());
         dogecoinWrapper.setup(this, this, null);
         dogecoinWrapper.start();
     }
@@ -154,15 +153,15 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
         @Override
         public void run() {
             try {
-                if (!federatorSupport.isEthNodeSyncing()) {
+                if (!agentSupport.isEthNodeSyncing()) {
                     log.debug("UpdateBridgeTimerTask");
-                    federatorSupport.updateContractFacadesGasPrice();
+                    agentSupport.updateContractFacadesGasPrice();
                     updateBridgeDogeBlockchain();
                     // Don't relay tx if DogeRelay blockchain is not fully in sync - commented out because we don't need this
                     //if (numberOfBlocksSent < bridgeConstants.getMaxDogeHeadersPerRound())
                     updateBridgeTransactions();
 //                      Just used for the release process
-//                      federatorSupport.sendUpdateCollections();
+//                      agentSupport.sendUpdateCollections();
                 } else {
                     log.warn("UpdateBridgeTimerTask skipped because the eth node is syncing blocks");
                 }
@@ -174,7 +173,7 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
 
     public int updateBridgeDogeBlockchain() throws Exception {
         //m_lastBlockHeight
-        int bridgeDogeBlockchainBestChainHeight = federatorSupport.getDogeBestBlockHeight();
+        int bridgeDogeBlockchainBestChainHeight = agentSupport.getDogeBestBlockHeight();
         if (dogecoinWrapper.getBestChainHeight() <= bridgeDogeBlockchainBestChainHeight) {
             return 0;
         }
@@ -183,7 +182,7 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
         // Federator's blockchain has more blocks than bridge's blockchain
 
         //getBlockchainHeadHash
-//        String bridgeDogeBlockchainHeadHash = federatorSupport.getBlockchainHeadHash();
+//        String bridgeDogeBlockchainHeadHash = agentSupport.getBlockchainHeadHash();
 //        StoredBlock matchedBlock = null;
 //        StoredBlock storedBlock = dogecoinWrapper.getBlock(Sha256Hash.wrap(bridgeDogeBlockchainHeadHash));
 //        if (storedBlock != null) {
@@ -194,7 +193,7 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
 //        }
 
         // implementation using a block locator
-        List<String> blockLocator = federatorSupport.getDogeBlockchainBlockLocator();
+        List<String> blockLocator = agentSupport.getDogeBlockchainBlockLocator();
         log.debug("Block locator size {}, first {}, last {}.", blockLocator.size(), blockLocator.get(0), blockLocator.get(blockLocator.size()-1));
         // find the last best chain block it has
         StoredBlock matchedBlock = null;
@@ -229,7 +228,7 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
         log.debug("Headers missing in the bridge {}.", headersToSendToBridge.size());
         int to = Math.min(bridgeConstants.getMaxDogeHeadersPerRound(), headersToSendToBridge.size());
         List<Block> headersToSendToBridgeSubList = headersToSendToBridge.subList(0, to);
-        federatorSupport.sendStoreHeaders(headersToSendToBridgeSubList.toArray(new Block[]{}));
+        agentSupport.sendStoreHeaders(headersToSendToBridgeSubList.toArray(new Block[]{}));
         log.debug("Invoked receiveHeaders with {} blocks. First {}, Last {}.", headersToSendToBridgeSubList.size(),
                      headersToSendToBridgeSubList.get(0).getHash(), headersToSendToBridgeSubList.get(headersToSendToBridgeSubList.size()-1).getHash());
         return headersToSendToBridgeSubList.size();
@@ -237,7 +236,7 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
 
     public void updateBridgeTransactions() throws Exception {
         Set<Transaction> federatorWalletTxSet = dogecoinWrapper.getTransactions(bridgeConstants.getDoge2EthMinimumAcceptableConfirmations(), true, true);
-        //Object[] bridgeTxHashesAlreadyProcessedArray = federatorSupport.getDogeTxHashesAlreadyProcessed();
+        //Object[] bridgeTxHashesAlreadyProcessedArray = agentSupport.getDogeTxHashesAlreadyProcessed();
 //        Object[] bridgeTxHashesAlreadyProcessedArray = new Object[]{};
 //        Set<Sha256Hash> bridgeTxHashesAlreadyProcessedSet = new HashSet<>(bridgeTxHashesAlreadyProcessedArray.length);
 //        for (Object txHash : bridgeTxHashesAlreadyProcessedArray) {
@@ -245,7 +244,7 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
 //        }
         int numberOfTxsSent = 0;
         for (Transaction federatorWalletTx : federatorWalletTxSet) {
-            if (!federatorSupport.wasLockTxProcessed(federatorWalletTx.getHash())) {
+            if (!agentSupport.wasLockTxProcessed(federatorWalletTx.getHash())) {
                 synchronized (this) {
                     List<Proof> proofs = txsToSendToEth.get(federatorWalletTx.getHash());
 
@@ -260,13 +259,13 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
                             pmt = proof.getPartialMerkleTree();
                         }
                     }
-                    int contractHeight = federatorSupport.getDogeBestBlockHeight();
+                    int contractHeight = agentSupport.getDogeBestBlockHeight();
                     if (contractHeight < (txStoredBlock.getHeight() + bridgeConstants.getDoge2EthMinimumAcceptableConfirmations() -1 )) {
                         log.debug("Tx not relayed yet because not enough confirmations yet {}. Contract height {}, Tx included in block {}",
                                   federatorWalletTx.getHash(), contractHeight, txStoredBlock.getHeight());
                         continue;
                     }
-                    federatorSupport.sendRelayTx(federatorWalletTx, txStoredBlock.getHeader().getHash(), pmt);
+                    agentSupport.sendRelayTx(federatorWalletTx, txStoredBlock.getHeader().getHash(), pmt);
                     numberOfTxsSent++;
                     // Sent a maximum of 40 registerTransaction txs per federator
                     if (numberOfTxsSent >= MAXIMUM_REGISTER_DOGE_LOCK_TXS_PER_TURN) {

@@ -46,8 +46,8 @@ import java.util.concurrent.ExecutionException;
  * @author Oscar Guindzberg
  */
 @Component
-@Slf4j(topic = "FederatorSupport")
-public class FederatorSupport {
+@Slf4j(topic = "AgentSupport")
+public class AgentSupport {
 
     //private Ethereum ethereum;
 
@@ -78,7 +78,7 @@ public class FederatorSupport {
     private BigInteger gasPriceMinimum;
 
     @Autowired
-    public FederatorSupport() throws Exception {
+    public AgentSupport() throws Exception {
         config = SystemProperties.CONFIG;
         web3 = Web3j.build(new HttpService());  // defaults to http://localhost:8545/
         String dogeRelayContractAddress;
@@ -111,7 +111,7 @@ public class FederatorSupport {
     }
 
 //    @Autowired
-//    public FederatorSupport(Ethereum ethereum, AccountBuilder accountBuilder, Blockchain blockchain, PendingState pendingState, FedNodeSystemProperties config) {
+//    public AgentSupport(Ethereum ethereum, AccountBuilder accountBuilder, Blockchain blockchain, PendingState pendingState, FedNodeSystemProperties config) {
 //        this.ethereum = ethereum;
 //        this.accountBuilder = accountBuilder;
 //        this.blockchain = blockchain;
