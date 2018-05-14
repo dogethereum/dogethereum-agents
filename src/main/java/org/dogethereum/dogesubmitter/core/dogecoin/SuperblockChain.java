@@ -136,8 +136,8 @@ public class SuperblockChain {
     public void updateChain() throws BlockStoreException, java.io.IOException {
         int bestChainHeight = dogecoinWrapper.getBestChainHeight();
         int firstHeight = superblockStorage.getDogeHeight() + 1; // for declarative purposes
-        int nextSuperblockFirstBlockHeight = firstHeight;
-        int bestSuperblockHeight = superblockStorage.getHeight();
+        int nextSuperblockFirstBlockHeight = firstHeight; // so we can start queuing from the beginning of the superblock
+        int bestSuperblockHeight = superblockStorage.getHeight(); // because we'll need to save the superblock's height
 
         // If firstHeight > bestChainHeight, the superblock chain is up to date with the Doge blockchain
         // and no more blocks should be added.
@@ -145,7 +145,8 @@ public class SuperblockChain {
             StoredBlock currentStoredBlock = dogecoinWrapper.getBlockAtHeight(nextSuperblockFirstBlockHeight);
             BigInteger currentWork; // chain work for the block that will be built from currentBlocksToHash
             AltcoinBlock currentBlock = (AltcoinBlock) currentStoredBlock.getHeader(); // blocks starting from this one will be added to the queue
-            Date currentInitialDate = currentBlock.getTime();
+            Date currentInitialDate = currentBlock.getTime(); // lower bound of new superblock's time interval (included)
+
             List<AltcoinBlock> currentBlocksToHash = new ArrayList<>();
 
             byte[] previousSuperblockHash = superblockStorage.getChainHeadHash();
@@ -166,15 +167,17 @@ public class SuperblockChain {
                 // build superblock and update necessary fields for next superblock
                 if (!stopBuilding) {
                     currentWork = dogecoinWrapper.getBlockAtHeight(nextSuperblockFirstBlockHeight - 1).getChainWork(); // chain work of last block in the superblock
-                    Superblock newSuperblock = new Superblock(currentBlocksToHash, previousSuperblockHash, currentWork, nextSuperblockFirstBlockHeight - 1, bestSuperblockHeight);
+                    Superblock newSuperblock = new Superblock(currentBlocksToHash, previousSuperblockHash, currentWork, nextSuperblockFirstBlockHeight - 1, bestSuperblockHeight + 1);
 
                     superblockStorage.put(newSuperblock);
                     superblockStorage.setChainHead(newSuperblock);
                     bestSuperblockHeight++;
 
-                    if (nextSuperblockFirstBlockHeight <= bestChainHeight) {
-                        // remember: nextSuperblockFirstBlockHeight was updated to the correct value by fillWithBlocksStartingAtTime
-                        currentStoredBlock = dogecoinWrapper.getBlockAtHeight(nextSuperblockFirstBlockHeight);
+                    // remember: nextSuperblockFirstBlockHeight was updated to the correct value by fillWithBlocksStartingAtTime
+                    currentStoredBlock = dogecoinWrapper.getBlockAtHeight(nextSuperblockFirstBlockHeight);
+
+                    // this check is needed to avoid null pointer exceptions when we advance to the next Doge block
+                    if (currentStoredBlock != null) {
                         currentBlock = (AltcoinBlock) currentStoredBlock.getHeader();
                         currentInitialDate = currentBlock.getTime();
                         previousSuperblockHash = newSuperblock.getSuperblockHash();
