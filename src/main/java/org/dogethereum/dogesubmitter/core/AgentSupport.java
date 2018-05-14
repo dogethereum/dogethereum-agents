@@ -42,33 +42,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 /**
- * Helps the federator communication with the Eth blockchain.
+ * Helps the agent communication with the Eth blockchain.
  * @author Oscar Guindzberg
  */
 @Component
 @Slf4j(topic = "AgentSupport")
 public class AgentSupport {
-
-    //private Ethereum ethereum;
-
-    //private FederateKeyHandler keyHandler;
-
-    //private AccountBuilder accountBuilder;
-
-
-    //private Blockchain blockchain;
-
-    //PendingState pendingState;
-
-    //BigInteger gasPrice;
-
-    //private FedNodeSystemProperties config;
-
-    //private org.bitcoinj.core.ECKey publicKey;
-
-    //private NetworkParameters parameters;
-
-    //private String bridgeContractAddress;
 
     private Web3j web3;
     private DogeRelay dogeRelay;
@@ -109,42 +88,6 @@ public class AgentSupport {
         dogeToken = DogeTokenExtended.load(dogeTokenContractAddress, web3, new ClientTransactionManager(web3, fromAddressPriceOracle), gasPriceMinimum, gasLimit);
         assert dogeToken.isValid();
     }
-
-//    @Autowired
-//    public AgentSupport(Ethereum ethereum, AccountBuilder accountBuilder, Blockchain blockchain, PendingState pendingState, FedNodeSystemProperties config) {
-//        this.ethereum = ethereum;
-//        this.accountBuilder = accountBuilder;
-//        this.blockchain = blockchain;
-//        this.pendingState = pendingState;
-//        this.config = config;
-//        this.keyHandler = new FederateKeyHandler(this.config.federatorKeyFile());
-//        this.gasPrice = BigInteger.valueOf(config.federatorGasPrice());
-//        this.bridgeConstants = config.getBridgeConstants();
-//        this.parameters = this.bridgeConstants.getDogeParams();
-//        this.bridgeContractAddress = this.bridgeConstants.getBridgeContractAddress();
-//    }
-
-//    public Object callTx(CallTransaction.Function function) {
-//        ProgramResult res = ethereum.callConstantFunction(bridgeContractAddress, function);
-//        Object[] result = function.decodeResult(res.getHReturn());
-//        return result[0];
-//    }
-
-
-//    public byte[] getFederatorPubKeyBytes() {
-//        return this.getPubKey().getPubKey();
-//    }
-
-//    public org.bitcoinj.core.ECKey getPubKey() {
-//        if (this.publicKey == null) {
-//            this.publicKey = org.bitcoinj.core.ECKey.fromPrivate(this.getFederatorPrivKeyBytes());
-//        }
-//        return this.publicKey;
-//    }
-
-//    public List<PeerAddress> getDogecoinPeerAddresses() throws UnknownHostException {
-//        return DogecoinPeerFactory.buildDogecoinPeerAddresses(this.bridgeConstants.getDogeParams().getPort(), this.config.dogecoinPeerAddresses());
-//    }
 
     /**
      * Get the deployed contract address from a truffle json file
@@ -194,6 +137,7 @@ public class AgentSupport {
 
     public void sendStoreHeaders(org.bitcoinj.core.Block headers[]) throws Exception {
         log.info("About to send to the bridge headers from {} to {}", headers[0].getHash(), headers[headers.length - 1].getHash());
+//  Commented out solution that used bulkStoreHeaders
 //        ByteArrayOutputStream baosHeaders = new ByteArrayOutputStream();
 //        ByteArrayOutputStream baosHashes = new ByteArrayOutputStream();
 //        for (int i = 0; i < headers.length; i++) {
@@ -226,7 +170,7 @@ public class AgentSupport {
             futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
                     log.info("StoreBlockHeader receipt {}.", toString(receipt))
             );
-            // Sleep a couple of millis, executing on ganache I get some tx receipt with "no previous block" error
+            // Sleep a couple of millis. Before this "hack", when using ganache I used to get some tx receipt with "no previous block" error
             Thread.sleep(200);
         }
     }
@@ -301,12 +245,6 @@ public class AgentSupport {
 
 //    Used just for release process
 
-//    public void addSignature(List<byte[]> signatures, byte[] unlockId) {
-//        byte[] federatorPublicKeyBytes = this.getFederatorPubKeyBytes();
-//        dogeToken.
-//        this.sendEthTx(Bridge.ADD_SIGNATURE, federatorPublicKeyBytes, signatures, ethTxHash);
-//    }
-
     public void updatePrice(long price) {
         BigInteger priceBI = BigInteger.valueOf(price);
         CompletableFuture<TransactionReceipt> futureReceipt = dogeToken.setDogeEthPrice(priceBI).sendAsync();
@@ -362,15 +300,4 @@ public class AgentSupport {
         public long fee;
     }
 
-
-
-//    public StateForFederator getStateForFederator() throws IOException, ClassNotFoundException {
-//        byte[] result = (byte[]) this.callTx(Bridge.GET_STATE_FOR_DOGE_RELEASE_CLIENT);
-//        return new StateForFederator(result, this.parameters);
-//    }
-//
-//
-//    public void sendUpdateCollections() {
-//        this.sendEthTx(Bridge.UPDATE_COLLECTIONS);
-//    }
 }

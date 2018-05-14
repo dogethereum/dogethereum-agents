@@ -61,30 +61,14 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
         config = SystemProperties.CONFIG;
         if (config.isRelayEnabled()) {
             bridgeConstants = config.getBridgeConstants();
-//        if (!checkFederateRequirements()) {
-//            log.error("Error validating Fed-Node Requirements");
-//            System.exit(1);
-//        }
 
             this.dataDirectory = new File(config.dataDirectory());
             this.proofFile = new File(dataDirectory.getAbsolutePath() + "/DogeToEthClient.proofs");
             restoreProofsFromFile();
             setupDogecoinWrapper();
-            // int numberOfFederators = bridgeConstants.getFederatorPublicKeys().size();
-            int numberOfFederators = 1;
-            new Timer("Submitter update bridge").scheduleAtFixedRate(new UpdateBridgeTimerTask(), getFirstExecutionDate(), bridgeConstants.getUpdateBridgeExecutionPeriod() * numberOfFederators);
+            new Timer("Submitter update bridge").scheduleAtFixedRate(new UpdateBridgeTimerTask(), getFirstExecutionDate(), bridgeConstants.getUpdateBridgeExecutionPeriod());
         }
     }
-
-//    private boolean checkFederateRequirements() {
-//        FedNodeSystemProperties config = FedNodeSystemProperties.FED_CONFIG;
-//        int defaultPort = bridgeConstants.getDogeParams().getPort();
-//        List<String> peers = config.dogecoinPeerAddresses();
-//
-//        Federator federator = new Federator(config.federatorKeyFile(), new FederatorPeersChecker(defaultPort, peers));
-//        return federator.validFederator();
-//    }
-
 
     private void setupDogecoinWrapper() throws UnknownHostException {
         dogecoinWrapper = new DogecoinWrapperImpl(bridgeConstants, dataDirectory, keyHandler);
@@ -235,24 +219,17 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
     }
 
     public void updateBridgeTransactions() throws Exception {
-        Set<Transaction> federatorWalletTxSet = dogecoinWrapper.getTransactions(bridgeConstants.getDoge2EthMinimumAcceptableConfirmations(), true, true);
-        //Object[] bridgeTxHashesAlreadyProcessedArray = agentSupport.getDogeTxHashesAlreadyProcessed();
-//        Object[] bridgeTxHashesAlreadyProcessedArray = new Object[]{};
-//        Set<Sha256Hash> bridgeTxHashesAlreadyProcessedSet = new HashSet<>(bridgeTxHashesAlreadyProcessedArray.length);
-//        for (Object txHash : bridgeTxHashesAlreadyProcessedArray) {
-//            bridgeTxHashesAlreadyProcessedSet.add(Sha256Hash.wrap((String)txHash));
-//        }
+        Set<Transaction> operatorWalletTxSet = dogecoinWrapper.getTransactions(bridgeConstants.getDoge2EthMinimumAcceptableConfirmations(), true, true);
         int numberOfTxsSent = 0;
-        for (Transaction federatorWalletTx : federatorWalletTxSet) {
-            if (!agentSupport.wasLockTxProcessed(federatorWalletTx.getHash())) {
+        for (Transaction operatorWalletTx : operatorWalletTxSet) {
+            if (!agentSupport.wasLockTxProcessed(operatorWalletTx.getHash())) {
                 synchronized (this) {
-                    List<Proof> proofs = txsToSendToEth.get(federatorWalletTx.getHash());
+                    List<Proof> proofs = txsToSendToEth.get(operatorWalletTx.getHash());
 
                     if (proofs == null || proofs.isEmpty())
                         continue;
 
-                    StoredBlock txStoredBlock = findBestChainStoredBlockFor(federatorWalletTx);
-                    //int blockHeight = txStoredBlock.getHeight();
+                    StoredBlock txStoredBlock = findBestChainStoredBlockFor(operatorWalletTx);
                     PartialMerkleTree pmt = null;
                     for (Proof proof : proofs) {
                         if (proof.getBlockHash().equals(txStoredBlock.getHeader().getHash())) {
@@ -262,17 +239,16 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
                     int contractHeight = agentSupport.getDogeBestBlockHeight();
                     if (contractHeight < (txStoredBlock.getHeight() + bridgeConstants.getDoge2EthMinimumAcceptableConfirmations() -1 )) {
                         log.debug("Tx not relayed yet because not enough confirmations yet {}. Contract height {}, Tx included in block {}",
-                                  federatorWalletTx.getHash(), contractHeight, txStoredBlock.getHeight());
+                                  operatorWalletTx.getHash(), contractHeight, txStoredBlock.getHeight());
                         continue;
                     }
-                    agentSupport.sendRelayTx(federatorWalletTx, txStoredBlock.getHeader().getHash(), pmt);
+                    agentSupport.sendRelayTx(operatorWalletTx, txStoredBlock.getHeader().getHash(), pmt);
                     numberOfTxsSent++;
-                    // Sent a maximum of 40 registerTransaction txs per federator
+                    // Send a maximum of 40 registerTransaction txs per turn
                     if (numberOfTxsSent >= MAXIMUM_REGISTER_DOGE_LOCK_TXS_PER_TURN) {
                         break;
                     }
-                    //txsToSendToEth.remove(federatorWalletTx.getHash());
-                    log.debug("Invoked registerTransaction for tx {}", federatorWalletTx.getHash());
+                    log.debug("Invoked registerTransaction for tx {}", operatorWalletTx.getHash());
                 }
             }
         }

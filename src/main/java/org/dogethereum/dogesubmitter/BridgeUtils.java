@@ -39,16 +39,15 @@ public class BridgeUtils {
     }
 
     public static boolean isLockTx(Transaction tx, Wallet wallet, BridgeConstants bridgeConstants, OperatorKeyHandler keyHandler) {
-        // First, check tx is not a typical release tx (tx spending from the federation address and
-        // optionally sending some change to the federation address)
+        // First, check tx is not a release tx.
         int i = 0;
         for (TransactionInput transactionInput : tx.getInputs()) {
             try {
                 transactionInput.getScriptSig().correctlySpends(tx, i, keyHandler.getOutputScript(), Script.ALL_VERIFY_FLAGS);
-                // There is an input spending from the federation address, this is not a lock tx
+                // There is an input spending from the operator address, this is not a lock tx
                 return false;
             } catch (ScriptException se) {
-                // do-nothing, input does not spends from the federation address
+                // do-nothing, input does not spends from the operator address
             }
             i++;
         }
@@ -66,10 +65,10 @@ public class BridgeUtils {
         for (TransactionInput transactionInput : tx.getInputs()) {
             try {
                 transactionInput.getScriptSig().correctlySpends(tx, i, keyHandler.getOutputScript(), Script.ALL_VERIFY_FLAGS);
-                // There is an input spending from the federation address, this is a release tx
+                // There is an input spending from the operator address, this is a release tx
                 return true;
             } catch (ScriptException se) {
-                // do-nothing, input does not spends from the federation address
+                // do-nothing, input does not spends from the operator address
             }
             i++;
         }
