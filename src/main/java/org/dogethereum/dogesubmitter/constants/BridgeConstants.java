@@ -47,17 +47,9 @@ public class BridgeConstants {
     // Unlock mechanism specific start
 
 
-    // protected List<ECKey> federatorPublicKeys;
-    // protected int federatorsRequiredToSign;
     protected int eth2DogeMinimumAcceptableConfirmations;
     protected int dogeBroadcastingMinimumAcceptableBlocks;
     protected int ethInitialCheckpoint;
-    //public List<ECKey> getFederatorPublicKeys() {
-    //     return federatorPublicKeys;
-    // }
-    // public int getFederatorsRequiredToSign() {
-    //    return federatorsRequiredToSign;
-    // }
     public int getEth2DogeMinimumAcceptableConfirmations() {
         return eth2DogeMinimumAcceptableConfirmations;
     }
