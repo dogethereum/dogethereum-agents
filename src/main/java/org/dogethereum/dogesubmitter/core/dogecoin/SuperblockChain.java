@@ -49,7 +49,7 @@ public class SuperblockChain {
     private byte[] previousSuperblockHash; // hash of last calculated proper superblock
     private Superblock genesisBlock; // TODO: get rid of this after testing/debugging
 
-    private ArrayList<AltcoinBlock> currentBlocksToHash; // Dogecoin blocks queued for being hashed into a superblock
+//    private ArrayList<AltcoinBlock> currentBlocksToHash; // Dogecoin blocks queued for being hashed into a superblock
 
 
     /* ---- CONSTRUCTION METHODS ---- */
@@ -142,49 +142,110 @@ public class SuperblockChain {
         // If firstHeight > bestChainHeight, the superblock chain is up to date with the Doge blockchain
         // and no more blocks should be added.
         if (firstHeight <= bestChainHeight) {
-            StoredBlock currentStoredBlock = dogecoinWrapper.getBlockAtHeight(nextSuperblockFirstBlockHeight);
-            BigInteger currentWork; // chain work for the block that will be built from currentBlocksToHash
-            AltcoinBlock currentBlock = (AltcoinBlock) currentStoredBlock.getHeader(); // blocks starting from this one will be added to the queue
-            Date currentInitialDate = currentBlock.getTime(); // lower bound of new superblock's time interval (included)
 
-            List<AltcoinBlock> currentBlocksToHash = new ArrayList<>();
+            storeSuperblocks(firstHeight, bestChainHeight, bestSuperblockHeight + 1);
 
-            byte[] previousSuperblockHash = superblockStorage.getChainHeadHash();
 
-            Date stopDate = getThreeHoursAgo(); // to stop when the last block to be hashed was mined 3 hours ago
-            Boolean stopBuilding = false;
+//            StoredBlock currentStoredBlock = dogecoinWrapper.getBlockAtHeight(nextSuperblockFirstBlockHeight);
+//            BigInteger currentWork; // chain work for the block that will be built from currentBlocksToHash
+//            AltcoinBlock currentBlock = (AltcoinBlock) currentStoredBlock.getHeader(); // blocks starting from this one will be added to the queue
+//            Date currentInitialDate = currentBlock.getTime(); // lower bound of new superblock's time interval (included)
 
-            while (nextSuperblockFirstBlockHeight <= bestChainHeight && !stopBuilding) {
-                // Modifies currentBlocksToHash.
-                // Builds list and advances height to that of the first block that wasn't added,
-                // i.e. the first block in the next superblock
-                nextSuperblockFirstBlockHeight = fillWithBlocksStartingAtTime(currentInitialDate, nextSuperblockFirstBlockHeight, currentBlocksToHash, bestChainHeight);
-                stopDate = getThreeHoursAgo(); // the method might run for a while, so this must be updated for each new block list
+//            List<AltcoinBlock> currentBlocksToHash = new ArrayList<>();
 
-                if (currentBlocksToHash.get(currentBlocksToHash.size() - 1).getTime().after(stopDate))
-                    stopBuilding = true; // last block to hash was mined less than three hours ago, so the blocks should not be hashed yet
+//            byte[] previousSuperblockHash = superblockStorage.getChainHeadHash();
 
-                // build superblock and update necessary fields for next superblock
-                if (!stopBuilding) {
-                    currentWork = dogecoinWrapper.getBlockAtHeight(nextSuperblockFirstBlockHeight - 1).getChainWork(); // chain work of last block in the superblock
-                    Superblock newSuperblock = new Superblock(currentBlocksToHash, previousSuperblockHash, currentWork, nextSuperblockFirstBlockHeight - 1, bestSuperblockHeight + 1);
+//            Date stopDate = getThreeHoursAgo(); // to stop when the last block to be hashed was mined 3 hours ago
+//            Boolean stopBuilding = false;
 
-                    superblockStorage.put(newSuperblock);
-                    superblockStorage.setChainHead(newSuperblock);
-                    bestSuperblockHeight++;
+//            while (nextSuperblockFirstBlockHeight <= bestChainHeight && !stopBuilding) {
+//                // Modifies currentBlocksToHash.
+//                // Builds list and advances height to that of the first block that wasn't added,
+//                // i.e. the first block in the next superblock
+//                nextSuperblockFirstBlockHeight = fillWithBlocksStartingAtTime(currentInitialDate, nextSuperblockFirstBlockHeight, currentBlocksToHash, bestChainHeight);
+//                stopDate = getThreeHoursAgo(); // the method might run for a while, so this must be updated for each new block list
+//
+//                if (currentBlocksToHash.get(currentBlocksToHash.size() - 1).getTime().after(stopDate))
+//                    stopBuilding = true; // last block to hash was mined less than three hours ago, so the blocks should not be hashed yet
+//
+//                // build superblock and update necessary fields for next superblock
+//                if (!stopBuilding) {
+//                    currentWork = dogecoinWrapper.getBlockAtHeight(nextSuperblockFirstBlockHeight - 1).getChainWork(); // chain work of last block in the superblock
+//                    Superblock newSuperblock = new Superblock(currentBlocksToHash, previousSuperblockHash, currentWork, nextSuperblockFirstBlockHeight - 1, bestSuperblockHeight + 1);
+//
+//                    superblockStorage.put(newSuperblock);
+//                    superblockStorage.setChainHead(newSuperblock);
+//                    bestSuperblockHeight++;
+//
+//                    // remember: nextSuperblockFirstBlockHeight was updated to the correct value by fillWithBlocksStartingAtTime
+//                    currentStoredBlock = dogecoinWrapper.getBlockAtHeight(nextSuperblockFirstBlockHeight);
+//
+//                    // this check is needed to avoid null pointer exceptions when we advance to the next Doge block
+//                    if (currentStoredBlock != null) {
+//                        currentBlock = (AltcoinBlock) currentStoredBlock.getHeader();
+//                        currentInitialDate = currentBlock.getTime();
+//                        previousSuperblockHash = newSuperblock.getSuperblockHash();
+//                    }
+//
+//                    currentBlocksToHash.clear(); // to start again for next superblock
+//                }
+//            }
+        }
+    }
 
-                    // remember: nextSuperblockFirstBlockHeight was updated to the correct value by fillWithBlocksStartingAtTime
-                    currentStoredBlock = dogecoinWrapper.getBlockAtHeight(nextSuperblockFirstBlockHeight);
+    /**
+     * Creates and stores superblocks from Doge blocks starting at a given height.
+     * @param nextSuperblockFirstBlockHeight
+     * @param bestChainHeight
+     * @param startSuperblockHeight
+     * @throws BlockStoreException
+     * @throws java.io.IOException
+     */
+    private void storeSuperblocks(int nextSuperblockFirstBlockHeight, int bestChainHeight, int startSuperblockHeight)
+            throws BlockStoreException, java.io.IOException {
 
-                    // this check is needed to avoid null pointer exceptions when we advance to the next Doge block
-                    if (currentStoredBlock != null) {
-                        currentBlock = (AltcoinBlock) currentStoredBlock.getHeader();
-                        currentInitialDate = currentBlock.getTime();
-                        previousSuperblockHash = newSuperblock.getSuperblockHash();
-                    }
+        int currentSuperblockHeight = startSuperblockHeight; // height of next superblock to store
+        List<AltcoinBlock> currentBlocksToHash = new ArrayList<>(); // queue of blocks that will be in the next superblock
+        byte[] previousSuperblockHash = superblockStorage.getChainHeadHash();
 
-                    currentBlocksToHash.clear(); // to start again for next superblock
+        StoredBlock currentStoredBlock = dogecoinWrapper.getBlockAtHeight(nextSuperblockFirstBlockHeight);
+        BigInteger currentWork; // chain work for the block that will be built from currentBlocksToHash
+        AltcoinBlock currentBlock = (AltcoinBlock) currentStoredBlock.getHeader(); // blocks starting from this one will be added to the queue
+        Date currentInitialDate = currentBlock.getTime(); // lower bound of new superblock's time interval (included)
+
+        Date stopDate = getThreeHoursAgo(); // to stop when the last block to be hashed was mined 3 hours ago
+        Boolean stopBuilding = false;
+
+        while (nextSuperblockFirstBlockHeight <= bestChainHeight && !stopBuilding) {
+            // Modifies currentBlocksToHash.
+            // Builds list and advances height to that of the first block that wasn't added,
+            // i.e. the first block in the next superblock
+            nextSuperblockFirstBlockHeight = fillWithBlocksStartingAtTime(currentInitialDate, nextSuperblockFirstBlockHeight, currentBlocksToHash, bestChainHeight);
+            stopDate = getThreeHoursAgo(); // the method might run for a while, so this must be updated for each new block list
+
+            if (currentBlocksToHash.get(currentBlocksToHash.size() - 1).getTime().after(stopDate))
+                stopBuilding = true; // last block to hash was mined less than three hours ago, so the blocks should not be hashed yet
+
+            // build superblock and update necessary fields for next superblock
+            if (!stopBuilding) {
+                currentWork = dogecoinWrapper.getBlockAtHeight(nextSuperblockFirstBlockHeight - 1).getChainWork(); // chain work of last block in the superblock
+                Superblock newSuperblock = new Superblock(currentBlocksToHash, previousSuperblockHash, currentWork, nextSuperblockFirstBlockHeight - 1, currentSuperblockHeight);
+
+                superblockStorage.put(newSuperblock);
+                superblockStorage.setChainHead(newSuperblock);
+                currentSuperblockHeight++;
+
+                // remember: nextSuperblockFirstBlockHeight was updated to the correct value by fillWithBlocksStartingAtTime
+                currentStoredBlock = dogecoinWrapper.getBlockAtHeight(nextSuperblockFirstBlockHeight);
+
+                // this check is needed to avoid null pointer exceptions when we advance to the next Doge block
+                if (currentStoredBlock != null) {
+                    currentBlock = (AltcoinBlock) currentStoredBlock.getHeader();
+                    currentInitialDate = currentBlock.getTime();
+                    previousSuperblockHash = newSuperblock.getSuperblockHash();
                 }
+
+                currentBlocksToHash.clear(); // to start again for next superblock
             }
         }
     }
