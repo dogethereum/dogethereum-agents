@@ -18,6 +18,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.util.Date;
 
 @Component
 @Slf4j(topic = "OperatorKeyHandler")
@@ -41,6 +42,7 @@ public class OperatorKeyHandler {
         this.dogeParams = config.getBridgeConstants().getDogeParams();
         this.filePath = config.operatorPrivateKeyFilePath();
         this.operatorAddressCreationTime = config.operatorAddressCreationTime();
+        log.info("OperatorKeyHandler started. Operator address is {}, created on {}.", getAddress(), getOperatorAddressCreationDate());
     }
 
     public byte[] getPrivateKeyBytes() {
@@ -73,6 +75,11 @@ public class OperatorKeyHandler {
 
 
     public long getOperatorAddressCreationTime() {
-        return operatorAddressCreationTime; }
+        return operatorAddressCreationTime;
+    }
+
+    private Date getOperatorAddressCreationDate() {
+        return new Date(getOperatorAddressCreationTime() * 1000);
+    }
 
 }
