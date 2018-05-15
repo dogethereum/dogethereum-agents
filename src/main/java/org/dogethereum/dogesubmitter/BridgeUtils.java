@@ -1,11 +1,11 @@
 package org.dogethereum.dogesubmitter;
 
-import org.bitcoinj.wallet.Wallet;
-import org.dogethereum.dogesubmitter.constants.BridgeConstants;
 import org.bitcoinj.core.*;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
+import org.bitcoinj.wallet.Wallet;
+import org.dogethereum.dogesubmitter.constants.BridgeConstants;
 import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

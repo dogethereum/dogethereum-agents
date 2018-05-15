@@ -1,18 +1,16 @@
 package org.dogethereum.dogesubmitter.core.dogecoin;
 
 
-import org.dogethereum.dogesubmitter.AltcoinLevelDBBlockStore;
-import org.dogethereum.dogesubmitter.BridgeUtils;
-import org.dogethereum.dogesubmitter.constants.BridgeConstants;
-import org.dogethereum.dogesubmitter.util.FileUtil;
 import org.bitcoinj.core.*;
 import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
-import org.bitcoinj.store.LevelDBBlockStore;
 import org.bitcoinj.wallet.Wallet;
+import org.dogethereum.dogesubmitter.AltcoinLevelDBBlockStore;
+import org.dogethereum.dogesubmitter.BridgeUtils;
+import org.dogethereum.dogesubmitter.constants.BridgeConstants;
+import org.dogethereum.dogesubmitter.util.FileUtil;
 import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.File;
 import java.io.InputStream;

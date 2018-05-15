@@ -1,16 +1,16 @@
 package org.dogethereum.dogesubmitter.core;
 
 
-import org.dogethereum.dogesubmitter.constants.SystemProperties;
-import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapper;
-import org.dogethereum.dogesubmitter.constants.BridgeConstants;
-import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapperImpl;
-import org.dogethereum.dogesubmitter.core.dogecoin.BlockListener;
-import org.dogethereum.dogesubmitter.core.dogecoin.TransactionListener;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.bitcoinj.store.BlockStoreException;
+import org.dogethereum.dogesubmitter.constants.BridgeConstants;
+import org.dogethereum.dogesubmitter.constants.SystemProperties;
+import org.dogethereum.dogesubmitter.core.dogecoin.BlockListener;
+import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapper;
+import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapperImpl;
+import org.dogethereum.dogesubmitter.core.dogecoin.TransactionListener;
 import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

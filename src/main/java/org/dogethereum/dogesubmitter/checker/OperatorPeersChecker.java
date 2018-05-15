@@ -1,23 +1,17 @@
 package org.dogethereum.dogesubmitter.checker;
+
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.PeerAddress;
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
-import org.dogethereum.dogesubmitter.core.DogeToEthClient;
 import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinPeerFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Timer;
 
 @Component
 @Slf4j(topic = "OperatorPeersChecker")

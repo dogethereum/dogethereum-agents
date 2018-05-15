@@ -1,6 +1,6 @@
 package org.dogethereum.dogesubmitter.constants;
 
-import org.bitcoinj.core.*;
+import org.bitcoinj.core.Coin;
 import org.libdohj.params.DogecoinRegTestParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -2,7 +2,9 @@ package org.dogethereum.dogesubmitter;
 
 import lombok.extern.slf4j.Slf4j;
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
-import org.springframework.context.annotation.*;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @ComponentScan

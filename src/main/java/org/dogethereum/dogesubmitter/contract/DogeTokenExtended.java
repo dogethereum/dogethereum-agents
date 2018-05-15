@@ -1,6 +1,5 @@
 package org.dogethereum.dogesubmitter.contract;
 
-import com.google.common.util.concurrent.SettableFuture;
 import org.web3j.abi.EventEncoder;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Event;
@@ -20,7 +19,6 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 public class DogeTokenExtended extends DogeToken {
 

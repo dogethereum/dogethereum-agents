@@ -1,9 +1,6 @@
 package org.dogethereum.dogesubmitter.constants;
 
-import org.bitcoinj.core.Address;
-import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.Coin;
-import org.bitcoinj.script.ScriptBuilder;
 import org.libdohj.params.DogecoinMainNetParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,10 +1,7 @@
 package org.dogethereum.dogesubmitter.constants;
 
-import org.bitcoinj.core.*;
-import org.bitcoinj.script.Script;
+import org.bitcoinj.core.Coin;
 import org.libdohj.params.AbstractDogecoinParams;
-
-import java.util.List;
 
 public class BridgeConstants {
 

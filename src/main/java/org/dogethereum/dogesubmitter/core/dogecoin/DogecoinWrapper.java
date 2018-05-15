@@ -1,6 +1,9 @@
 package org.dogethereum.dogesubmitter.core.dogecoin;
 
-import org.bitcoinj.core.*;
+import org.bitcoinj.core.PeerAddress;
+import org.bitcoinj.core.Sha256Hash;
+import org.bitcoinj.core.StoredBlock;
+import org.bitcoinj.core.Transaction;
 import org.bitcoinj.store.BlockStoreException;
 
 import java.util.List;
