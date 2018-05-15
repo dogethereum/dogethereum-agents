@@ -5,18 +5,20 @@ import org.libdohj.params.DogecoinMainNetParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * TestNet implementation of BridgeConstants
+ */
+public class TestNetBridgeConstants extends BridgeConstants {
 
-public class BridgeTestNetConstants extends BridgeConstants {
+    private static final Logger logger = LoggerFactory.getLogger("TestNetBridgeConstants");
 
-    private static final Logger logger = LoggerFactory.getLogger("BridgeTestNetConstants");
+    private static TestNetBridgeConstants instance = new TestNetBridgeConstants();
 
-    private static BridgeTestNetConstants instance = new BridgeTestNetConstants();
-
-    public static BridgeTestNetConstants getInstance() {
+    public static TestNetBridgeConstants getInstance() {
         return instance;
     }
 
-    BridgeTestNetConstants() {
+    TestNetBridgeConstants() {
         dogeParams = DogecoinMainNetParams.get();
         doge2EthMinimumAcceptableConfirmations = 7;
         updateBridgeExecutionPeriod = 1 * 60 * 1000; // 30 seconds
@@ -28,8 +30,5 @@ public class BridgeTestNetConstants extends BridgeConstants {
         dogeBroadcastingMinimumAcceptableBlocks = 30;
         ethInitialCheckpoint = 3069702;
         // Unlock mechanism specific emd
-
-
     }
-
 }

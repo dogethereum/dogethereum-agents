@@ -5,17 +5,20 @@ import org.libdohj.params.DogecoinRegTestParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class BridgeRegTestConstants extends BridgeConstants {
+/**
+ * RegTest implementation of BridgeConstants
+ */
+public class RegTestBridgeConstants extends BridgeConstants {
 
-    private static final Logger log = LoggerFactory.getLogger("BridgeRegTestConstants");
+    private static final Logger log = LoggerFactory.getLogger("RegTestBridgeConstants");
 
-    private static BridgeRegTestConstants instance = new BridgeRegTestConstants();
+    private static RegTestBridgeConstants instance = new RegTestBridgeConstants();
 
-    public static BridgeRegTestConstants getInstance() {
+    public static RegTestBridgeConstants getInstance() {
         return instance;
     }
 
-    BridgeRegTestConstants() {
+    RegTestBridgeConstants() {
         dogeParams = DogecoinRegTestParams.get();
         doge2EthMinimumAcceptableConfirmations = 7;
         updateBridgeExecutionPeriod = 20 * 1000; // 10 seconds
@@ -28,5 +31,4 @@ public class BridgeRegTestConstants extends BridgeConstants {
         ethInitialCheckpoint = 0;
         // Unlock mechanism specific emd
     }
-
 }

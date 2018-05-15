@@ -8,6 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 
+/**
+ * Builds a PeerAddress list based on a String list and a default port
+ */
 public class DogecoinPeerFactory {
 
     public static List<PeerAddress> buildDogecoinPeerAddresses(int defaultPort, List<String> dogecoinPeerAddressesString) throws UnknownHostException {

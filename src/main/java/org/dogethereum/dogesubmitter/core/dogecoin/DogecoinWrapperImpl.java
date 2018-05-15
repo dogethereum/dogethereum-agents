@@ -33,7 +33,7 @@ public class DogecoinWrapperImpl implements DogecoinWrapper {
     }
 
     @Override
-    public void setup(final BlockListener blockListener, final TransactionListener transactionListener, List<PeerAddress> peerAddresses) {
+    public void setup(final DogecoinWrapperListener dwListener, List<PeerAddress> peerAddresses) {
         kit = new WalletAppKit(dogeContext, dataDirectory, "DogeToEthClient") {
             @Override
             protected void onSetupCompleted() {
@@ -43,7 +43,7 @@ public class DogecoinWrapperImpl implements DogecoinWrapper {
                     if (filteredBlock != null) {
                         // filteredBlock may be null if we are downloading just headers before fastCatchupTimeSecs
                         Context.propagate(dogeContext);
-                        blockListener.onBlock(filteredBlock);
+                        dwListener.onBlock(filteredBlock);
                     }
                 });
                 vWallet.addCoinsReceivedEventListener((wallet, tx, prevBalance, newBalance) -> coinsReceivedOrSent(tx));
@@ -54,7 +54,7 @@ public class DogecoinWrapperImpl implements DogecoinWrapper {
             private void coinsReceivedOrSent(Transaction tx) {
                 Context.propagate(dogeContext);
                 if (BridgeUtils.isLockTx(tx, vWallet, bridgeConstants, keyHandler) || BridgeUtils.isReleaseTx(tx, bridgeConstants, keyHandler)) {
-                    transactionListener.onTransaction(tx);
+                    dwListener.onTransaction(tx);
                 }
             }
 

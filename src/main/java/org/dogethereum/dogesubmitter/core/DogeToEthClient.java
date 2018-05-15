@@ -7,10 +7,9 @@ import org.bitcoinj.core.*;
 import org.bitcoinj.store.BlockStoreException;
 import org.dogethereum.dogesubmitter.constants.BridgeConstants;
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
-import org.dogethereum.dogesubmitter.core.dogecoin.BlockListener;
+import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapperListener;
 import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapper;
 import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapperImpl;
-import org.dogethereum.dogesubmitter.core.dogecoin.TransactionListener;
 import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,7 +30,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 @Service
 @Slf4j(topic = "DogeToEthClient")
-public class DogeToEthClient implements BlockListener, TransactionListener {
+public class DogeToEthClient implements DogecoinWrapperListener {
 
     static final int MAXIMUM_REGISTER_DOGE_LOCK_TXS_PER_TURN = 40;
 
@@ -73,7 +72,7 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
     private void setupDogecoinWrapper() throws UnknownHostException {
         dogecoinWrapper = new DogecoinWrapperImpl(bridgeConstants, dataDirectory, keyHandler);
         //dogecoinWrapper.setup(this, this, agentSupport.getDogecoinPeerAddresses());
-        dogecoinWrapper.setup(this, this, null);
+        dogecoinWrapper.setup(this, null);
         dogecoinWrapper.start();
     }
 

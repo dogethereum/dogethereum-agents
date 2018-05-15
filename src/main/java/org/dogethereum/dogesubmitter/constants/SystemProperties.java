@@ -159,10 +159,10 @@ public class SystemProperties {
             String network = network();
             switch (network) {
                 case TESTNET:
-                    bridgeConstants = BridgeTestNetConstants.getInstance();
+                    bridgeConstants = TestNetBridgeConstants.getInstance();
                     break;
                 case REGTEST:
-                    bridgeConstants = BridgeRegTestConstants.getInstance();
+                    bridgeConstants = RegTestBridgeConstants.getInstance();
                     break;
                 default:
                     throw new RuntimeException("Unknown value for 'network': '" + config.getString("network") + "'");

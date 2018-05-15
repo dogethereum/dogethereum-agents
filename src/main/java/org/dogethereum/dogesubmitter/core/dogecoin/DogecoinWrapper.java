@@ -11,7 +11,7 @@ import java.util.Set;
 
 
 public interface DogecoinWrapper {
-    void setup(BlockListener blockListener, TransactionListener transactionListener, List<PeerAddress> peerAddresses);
+    void setup(DogecoinWrapperListener dwListener, List<PeerAddress> peerAddresses);
 
     void start();
 
