@@ -156,7 +156,7 @@ public class AgentSupport {
             CompletableFuture<TransactionReceipt> futureReceipt = dogeRelay.storeBlockHeader(dogeHeader.bitcoinSerialize(), scryptHashBI).sendAsync();
             log.info("Sent storeBlockHeader {}", dogeHeader.getHash());
             futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
-                    log.info("StoreBlockHeader receipt {}.", toString(receipt))
+                    log.info("StoreBlockHeader receipt {}.", receipt.toString())
             );
             // Sleep a couple of millis. Before this "hack", when using ganache I used to get some tx receipt with "no previous block" error
             Thread.sleep(200);
@@ -193,24 +193,8 @@ public class AgentSupport {
         CompletableFuture<TransactionReceipt> futureReceipt = dogeRelayForRelayTx.relayTx(txSerialized, txIndex, siblingsBigInteger, blockHashBigInteger, targetContract).sendAsync();
         log.info("Sent relayTx {}", tx.getHash());
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
-                log.info("RelayTx receipt {}.", toString(receipt))
+                log.info("RelayTx receipt {}.", receipt.toString())
         );
-    }
-
-    private String toString(TransactionReceipt receipt) {
-        return receipt.toString();
-//        StringBuilder sb = new StringBuilder();
-//        sb.append("Logs[")
-//        for (Log receiptLog : receipt.getLogs()) {
-//            sb.append(" Log " + receiptLog.getData());
-//            for (String topic : receiptLog.getTopics()) {
-//                sb.append(" Topic " + receiptLog.getData());
-//            }
-//            sb.append(". ");
-//        }
-//        sb.append("], ");
-//        sb.append(receipt.getBlockHash());
-//        return sb.toString();
     }
 
     public boolean isEthNodeSyncing() throws IOException {
@@ -238,7 +222,7 @@ public class AgentSupport {
         CompletableFuture<TransactionReceipt> futureReceipt = dogeToken.setDogeEthPrice(priceBI).sendAsync();
         log.info("Sent update doge-eth price tx. Price: {}", price);
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
-                log.info("Update doge-eth price tx receipt {}.", toString(receipt))
+                log.info("Update doge-eth price tx receipt {}.", receipt.toString())
         );
     }
 
@@ -256,7 +240,6 @@ public class AgentSupport {
     }
 
     public Unlock getUnlock(Long unlockRequestId) throws Exception {
-
         Tuple6<String, String, BigInteger, BigInteger, List<BigInteger>, BigInteger> tuple =
                 dogeToken.getUnlockPendingInvestorProof(BigInteger.valueOf(unlockRequestId)).send();
         Unlock unlock = new Unlock();

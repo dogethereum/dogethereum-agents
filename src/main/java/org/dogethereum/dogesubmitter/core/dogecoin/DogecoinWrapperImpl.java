@@ -18,6 +18,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Implements DogecoinWrapper
+ */
 public class DogecoinWrapperImpl implements DogecoinWrapper {
     private WalletAppKit kit;
     private Context dogeContext;

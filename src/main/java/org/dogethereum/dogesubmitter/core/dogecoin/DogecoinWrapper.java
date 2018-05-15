@@ -9,7 +9,9 @@ import org.bitcoinj.store.BlockStoreException;
 import java.util.List;
 import java.util.Set;
 
-
+/**
+ * Wrapper to the libdohj library
+ */
 public interface DogecoinWrapper {
     void setup(DogecoinWrapperListener dwListener, List<PeerAddress> peerAddresses);
 
