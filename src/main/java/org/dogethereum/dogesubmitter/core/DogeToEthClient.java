@@ -162,8 +162,8 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
             return 0;
         }
 
-        log.debug("DOGE blockchain height - Federator : {}, Bridge : {}.", dogecoinWrapper.getBestChainHeight(), bridgeDogeBlockchainBestChainHeight);
-        // Federator's blockchain has more blocks than bridge's blockchain
+        log.debug("DOGE blockchain height - Agent : {}, Bridge : {}.", dogecoinWrapper.getBestChainHeight(), bridgeDogeBlockchainBestChainHeight);
+        // Agent's blockchain has more blocks than bridge's blockchain
 
         //getBlockchainHeadHash
 //        String bridgeDogeBlockchainHeadHash = agentSupport.getBlockchainHeadHash();
@@ -197,7 +197,7 @@ public class DogeToEthClient implements BlockListener, TransactionListener {
 
         log.debug("Matched block {}.", matchedBlock.getHeader().getHash());
 
-        // We found the block in the federator's best chain. Send receiveHeaders with the blocks it is missing.
+        // We found the block in the agent's best chain. Send receiveHeaders with the blocks it is missing.
         StoredBlock current = dogecoinWrapper.getChainHead();
         List<Block> headersToSendToBridge = new LinkedList<>();
         while (!current.equals(matchedBlock)) {

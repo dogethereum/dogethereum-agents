@@ -55,7 +55,7 @@ public class BridgeUtils {
 
         int valueSentToMeSignum = valueSentToMe.signum();
         if (valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue())) {
-            logger.warn("Someone sent to the federation less than {} satoshis", bridgeConstants.getMinimumLockTxValue());
+            logger.warn("Someone sent to the operator less than {} satoshis", bridgeConstants.getMinimumLockTxValue());
         }
         return (valueSentToMeSignum > 0 && !valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue()));
     }
