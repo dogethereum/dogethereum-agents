@@ -6,19 +6,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * RegTest implementation of BridgeConstants
+ * RegTest implementation of AgentConstants
  */
-public class RegTestBridgeConstants extends BridgeConstants {
+public class RegTestAgentConstants extends AgentConstants {
 
-    private static final Logger log = LoggerFactory.getLogger("RegTestBridgeConstants");
+    private static final Logger log = LoggerFactory.getLogger("RegTestAgentConstants");
 
-    private static RegTestBridgeConstants instance = new RegTestBridgeConstants();
+    private static RegTestAgentConstants instance = new RegTestAgentConstants();
 
-    public static RegTestBridgeConstants getInstance() {
+    public static RegTestAgentConstants getInstance() {
         return instance;
     }
 
-    RegTestBridgeConstants() {
+    RegTestAgentConstants() {
         dogeParams = DogecoinRegTestParams.get();
         doge2EthMinimumAcceptableConfirmations = 7;
         updateBridgeExecutionPeriod = 20 * 1000; // 10 seconds

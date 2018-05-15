@@ -3,7 +3,7 @@ package org.dogethereum.dogesubmitter.core;
 
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
-import org.dogethereum.dogesubmitter.constants.BridgeConstants;
+import org.dogethereum.dogesubmitter.constants.AgentConstants;
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
 import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,13 +50,13 @@ public class EthToDogeClient {
         if (config.isEthToDogeEnabled()) {
             // Set latestEthBlockProcessed to eth genesis block or eth checkpoint,
             // then read the latestEthBlockProcessed from file and overwrite it.
-            this.latestEthBlockProcessed = config.getBridgeConstants().getEthInitialCheckpoint();
+            this.latestEthBlockProcessed = config.getAgentConstants().getEthInitialCheckpoint();
             this.dataDirectory = new File(config.dataDirectory());
             this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() + "/EthToDogeClientLatestEthBlockProcessedFile.dat");
             restoreLatestEthBlockProcessed();
 
-            BridgeConstants bridgeConstants = config.getBridgeConstants();
-            Context dogeContext = new Context(bridgeConstants.getDogeParams());
+            AgentConstants agentConstants = config.getAgentConstants();
+            Context dogeContext = new Context(agentConstants.getDogeParams());
             peerGroup = new PeerGroup(dogeContext);
 //        if (agentSupport.getBitcoinPeerAddresses().size()>0) {
 //            for (PeerAddress peerAddress : agentSupport.getBitcoinPeerAddresses()) {
@@ -79,7 +79,7 @@ public class EthToDogeClient {
             try {
                 if (!agentSupport.isEthNodeSyncing()) {
                     long fromBlock = latestEthBlockProcessed + 1;
-                    long toBlock = agentSupport.getEthBlockCount() - config.getBridgeConstants().getEth2DogeMinimumAcceptableConfirmations();
+                    long toBlock = agentSupport.getEthBlockCount() - config.getAgentConstants().getEth2DogeMinimumAcceptableConfirmations();
                     // Ignore execution if nothing to process
                     if (fromBlock > toBlock) return;
                     List<Long> newUnlockRequestIds = agentSupport.getNewUnlockRequestIds(fromBlock, toBlock);
@@ -108,7 +108,7 @@ public class EthToDogeClient {
     private Transaction buildDogeTransaction(AgentSupport.Unlock unlock) {
         ECKey operatorPrivateKey = keyHandler.getPrivateKey();
 
-        NetworkParameters params = config.getBridgeConstants().getDogeParams();
+        NetworkParameters params = config.getAgentConstants().getDogeParams();
         Transaction tx = new Transaction(params);
         long totalInputValue = 0;
         for (UTXO utxo : unlock.selectedUtxos) {

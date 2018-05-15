@@ -8,7 +8,7 @@ import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.wallet.Wallet;
 import org.dogethereum.dogesubmitter.AltcoinLevelDBBlockStore;
 import org.dogethereum.dogesubmitter.BridgeUtils;
-import org.dogethereum.dogesubmitter.constants.BridgeConstants;
+import org.dogethereum.dogesubmitter.constants.AgentConstants;
 import org.dogethereum.dogesubmitter.util.FileUtil;
 import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
 
@@ -21,13 +21,13 @@ import java.util.Set;
 public class DogecoinWrapperImpl implements DogecoinWrapper {
     private WalletAppKit kit;
     private Context dogeContext;
-    private BridgeConstants bridgeConstants;
+    private AgentConstants agentConstants;
     private File dataDirectory;
     private OperatorKeyHandler keyHandler;
 
-    public DogecoinWrapperImpl(BridgeConstants bridgeConstants, File dataDirectory, OperatorKeyHandler keyHandler) {
-        this.dogeContext = new Context(bridgeConstants.getDogeParams());
-        this.bridgeConstants = bridgeConstants;
+    public DogecoinWrapperImpl(AgentConstants agentConstants, File dataDirectory, OperatorKeyHandler keyHandler) {
+        this.dogeContext = new Context(agentConstants.getDogeParams());
+        this.agentConstants = agentConstants;
         this.dataDirectory = dataDirectory;
         this.keyHandler = keyHandler;
     }
@@ -53,7 +53,7 @@ public class DogecoinWrapperImpl implements DogecoinWrapper {
 
             private void coinsReceivedOrSent(Transaction tx) {
                 Context.propagate(dogeContext);
-                if (BridgeUtils.isLockTx(tx, vWallet, bridgeConstants, keyHandler) || BridgeUtils.isReleaseTx(tx, bridgeConstants, keyHandler)) {
+                if (BridgeUtils.isLockTx(tx, vWallet, agentConstants, keyHandler) || BridgeUtils.isReleaseTx(tx, agentConstants, keyHandler)) {
                     dwListener.onTransaction(tx);
                 }
             }
@@ -133,8 +133,8 @@ public class DogecoinWrapperImpl implements DogecoinWrapper {
         for (Transaction tx : kit.wallet().getTransactions(false)) {
             if (tx.getConfidence().getConfidenceType().equals(TransactionConfidence.ConfidenceType.BUILDING) &&
                 tx.getConfidence().getDepthInBlocks() >= minconfirmations) {
-                if (BridgeUtils.isLockTx(tx, kit.wallet(), bridgeConstants, keyHandler) && includeLock ||
-                    BridgeUtils.isReleaseTx(tx, bridgeConstants, keyHandler) && includeUnlock) {
+                if (BridgeUtils.isLockTx(tx, kit.wallet(), agentConstants, keyHandler) && includeLock ||
+                    BridgeUtils.isReleaseTx(tx, agentConstants, keyHandler) && includeUnlock) {
                     txs.add(tx);
                 }
             }

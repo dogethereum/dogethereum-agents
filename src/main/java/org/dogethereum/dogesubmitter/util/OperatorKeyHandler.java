@@ -39,7 +39,7 @@ public class OperatorKeyHandler {
 
     public OperatorKeyHandler() {
         SystemProperties config = SystemProperties.CONFIG;
-        this.dogeParams = config.getBridgeConstants().getDogeParams();
+        this.dogeParams = config.getAgentConstants().getDogeParams();
         this.filePath = config.operatorPrivateKeyFilePath();
         this.operatorAddressCreationTime = config.operatorAddressCreationTime();
         validateOperatorKeyFile();

@@ -6,19 +6,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * TestNet implementation of BridgeConstants
+ * TestNet implementation of AgentConstants
  */
-public class TestNetBridgeConstants extends BridgeConstants {
+public class TestNetAgentConstants extends AgentConstants {
 
-    private static final Logger logger = LoggerFactory.getLogger("TestNetBridgeConstants");
+    private static final Logger logger = LoggerFactory.getLogger("TestNetAgentConstants");
 
-    private static TestNetBridgeConstants instance = new TestNetBridgeConstants();
+    private static TestNetAgentConstants instance = new TestNetAgentConstants();
 
-    public static TestNetBridgeConstants getInstance() {
+    public static TestNetAgentConstants getInstance() {
         return instance;
     }
 
-    TestNetBridgeConstants() {
+    TestNetAgentConstants() {
         dogeParams = DogecoinMainNetParams.get();
         doge2EthMinimumAcceptableConfirmations = 7;
         updateBridgeExecutionPeriod = 1 * 60 * 1000; // 30 seconds

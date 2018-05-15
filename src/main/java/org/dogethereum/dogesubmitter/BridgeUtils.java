@@ -5,7 +5,7 @@ import org.bitcoinj.script.Script;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.wallet.Wallet;
-import org.dogethereum.dogesubmitter.constants.BridgeConstants;
+import org.dogethereum.dogesubmitter.constants.AgentConstants;
 import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +38,7 @@ public class BridgeUtils {
         }
     }
 
-    public static boolean isLockTx(Transaction tx, Wallet wallet, BridgeConstants bridgeConstants, OperatorKeyHandler keyHandler) {
+    public static boolean isLockTx(Transaction tx, Wallet wallet, AgentConstants agentConstants, OperatorKeyHandler keyHandler) {
         // First, check tx is not a release tx.
         int i = 0;
         for (TransactionInput transactionInput : tx.getInputs()) {
@@ -54,13 +54,13 @@ public class BridgeUtils {
         Coin valueSentToMe = tx.getValueSentToMe(wallet);
 
         int valueSentToMeSignum = valueSentToMe.signum();
-        if (valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue())) {
-            logger.warn("Someone sent to the operator less than {} satoshis", bridgeConstants.getMinimumLockTxValue());
+        if (valueSentToMe.isLessThan(agentConstants.getMinimumLockTxValue())) {
+            logger.warn("Someone sent to the operator less than {} satoshis", agentConstants.getMinimumLockTxValue());
         }
-        return (valueSentToMeSignum > 0 && !valueSentToMe.isLessThan(bridgeConstants.getMinimumLockTxValue()));
+        return (valueSentToMeSignum > 0 && !valueSentToMe.isLessThan(agentConstants.getMinimumLockTxValue()));
     }
 
-    public static boolean isReleaseTx(Transaction tx, BridgeConstants bridgeConstants, OperatorKeyHandler keyHandler) {
+    public static boolean isReleaseTx(Transaction tx, AgentConstants agentConstants, OperatorKeyHandler keyHandler) {
         int i = 0;
         for (TransactionInput transactionInput : tx.getInputs()) {
             try {

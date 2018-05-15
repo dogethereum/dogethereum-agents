@@ -23,7 +23,7 @@ public class OperatorPeersChecker {
     @PostConstruct
     public void setup() throws Exception {
         SystemProperties config = SystemProperties.CONFIG;
-        int defaultPort = config.getBridgeConstants().getDogeParams().getPort();
+        int defaultPort = config.getAgentConstants().getDogeParams().getPort();
         List<String> peerStrings = Lists.newArrayList("127.0.0.1");
         List<PeerAddress> peerAddresses = DogecoinPeerFactory.buildDogecoinPeerAddresses(defaultPort, peerStrings);
         if (peerAddresses == null || peerAddresses.isEmpty()) {

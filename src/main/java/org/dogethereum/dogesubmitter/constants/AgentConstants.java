@@ -6,7 +6,7 @@ import org.libdohj.params.AbstractDogecoinParams;
 /**
  * Agent and Bridge constants specific to each network (regtest, testnet, mainnet)
  */
-public class BridgeConstants {
+public class AgentConstants {
 
     protected AbstractDogecoinParams dogeParams;
     protected int doge2EthMinimumAcceptableConfirmations;

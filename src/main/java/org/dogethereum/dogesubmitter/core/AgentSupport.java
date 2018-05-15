@@ -133,7 +133,7 @@ public class AgentSupport {
 //            byte[] headerSize = calculateHeaderSize(serializedHeader);
 //            baosHeaders.write(headerSize);
 //            baosHeaders.write(serializedHeader);
-//            NetworkParameters params = config.getBridgeConstants().getDogeParams();
+//            NetworkParameters params = config.getAgentConstants().getDogeParams();
 //            AltcoinBlock block = new AltcoinBlock(params, serializedHeader);
 //            if (block.getAuxPoW() == null) {
 //                baosHashes.write(block.getScryptHash().getBytes());

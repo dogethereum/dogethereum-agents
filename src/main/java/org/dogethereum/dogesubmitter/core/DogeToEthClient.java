@@ -5,7 +5,7 @@ import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.bitcoinj.store.BlockStoreException;
-import org.dogethereum.dogesubmitter.constants.BridgeConstants;
+import org.dogethereum.dogesubmitter.constants.AgentConstants;
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
 import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapperListener;
 import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapper;
@@ -42,7 +42,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
 
     private SystemProperties config;
 
-    private BridgeConstants bridgeConstants;
+    private AgentConstants agentConstants;
 
 
     private DogecoinWrapper dogecoinWrapper;
@@ -59,18 +59,18 @@ public class DogeToEthClient implements DogecoinWrapperListener {
     public void setup() throws Exception {
         config = SystemProperties.CONFIG;
         if (config.isRelayEnabled()) {
-            bridgeConstants = config.getBridgeConstants();
+            agentConstants = config.getAgentConstants();
 
             this.dataDirectory = new File(config.dataDirectory());
             this.proofFile = new File(dataDirectory.getAbsolutePath() + "/DogeToEthClient.proofs");
             restoreProofsFromFile();
             setupDogecoinWrapper();
-            new Timer("Submitter update bridge").scheduleAtFixedRate(new UpdateBridgeTimerTask(), getFirstExecutionDate(), bridgeConstants.getUpdateBridgeExecutionPeriod());
+            new Timer("Submitter update bridge").scheduleAtFixedRate(new UpdateBridgeTimerTask(), getFirstExecutionDate(), agentConstants.getUpdateBridgeExecutionPeriod());
         }
     }
 
     private void setupDogecoinWrapper() throws UnknownHostException {
-        dogecoinWrapper = new DogecoinWrapperImpl(bridgeConstants, dataDirectory, keyHandler);
+        dogecoinWrapper = new DogecoinWrapperImpl(agentConstants, dataDirectory, keyHandler);
         //dogecoinWrapper.setup(this, this, agentSupport.getDogecoinPeerAddresses());
         dogecoinWrapper.setup(this, null);
         dogecoinWrapper.start();
@@ -141,7 +141,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
                     agentSupport.updateContractFacadesGasPrice();
                     updateBridgeDogeBlockchain();
                     // Don't relay tx if DogeRelay blockchain is not fully in sync - commented out because we don't need this
-                    //if (numberOfBlocksSent < bridgeConstants.getMaxDogeHeadersPerRound())
+                    //if (numberOfBlocksSent < agentConstants.getMaxDogeHeadersPerRound())
                     updateBridgeTransactions();
 //                      Just used for the release process
 //                      agentSupport.sendUpdateCollections();
@@ -209,7 +209,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
         }
         headersToSendToBridge = Lists.reverse(headersToSendToBridge);
         log.debug("Headers missing in the bridge {}.", headersToSendToBridge.size());
-        int to = Math.min(bridgeConstants.getMaxDogeHeadersPerRound(), headersToSendToBridge.size());
+        int to = Math.min(agentConstants.getMaxDogeHeadersPerRound(), headersToSendToBridge.size());
         List<Block> headersToSendToBridgeSubList = headersToSendToBridge.subList(0, to);
         agentSupport.sendStoreHeaders(headersToSendToBridgeSubList.toArray(new Block[]{}));
         log.debug("Invoked receiveHeaders with {} blocks. First {}, Last {}.", headersToSendToBridgeSubList.size(),
@@ -218,7 +218,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
     }
 
     public void updateBridgeTransactions() throws Exception {
-        Set<Transaction> operatorWalletTxSet = dogecoinWrapper.getTransactions(bridgeConstants.getDoge2EthMinimumAcceptableConfirmations(), true, true);
+        Set<Transaction> operatorWalletTxSet = dogecoinWrapper.getTransactions(agentConstants.getDoge2EthMinimumAcceptableConfirmations(), true, true);
         int numberOfTxsSent = 0;
         for (Transaction operatorWalletTx : operatorWalletTxSet) {
             if (!agentSupport.wasLockTxProcessed(operatorWalletTx.getHash())) {
@@ -236,7 +236,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
                         }
                     }
                     int contractHeight = agentSupport.getDogeBestBlockHeight();
-                    if (contractHeight < (txStoredBlock.getHeight() + bridgeConstants.getDoge2EthMinimumAcceptableConfirmations() -1 )) {
+                    if (contractHeight < (txStoredBlock.getHeight() + agentConstants.getDoge2EthMinimumAcceptableConfirmations() -1 )) {
                         log.debug("Tx not relayed yet because not enough confirmations yet {}. Contract height {}, Tx included in block {}",
                                   operatorWalletTx.getHash(), contractHeight, txStoredBlock.getHeight());
                         continue;
@@ -289,7 +289,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
 
     private void restoreProofsFromFile() throws IOException, ClassNotFoundException {
         if (proofFile.exists()) {
-            //NetworkParameters networkParameters = bridgeConstants.getDogeParams();
+            //NetworkParameters networkParameters = agentConstants.getDogeParams();
             synchronized (this) {
                 byte[] arr = Files.readAllBytes(proofFile.toPath());
                 try (

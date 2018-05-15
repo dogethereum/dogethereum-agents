@@ -41,7 +41,7 @@ public class SystemProperties {
 
     private String projectVersion = null;
     private String projectVersionModifier = null;
-    private BridgeConstants bridgeConstants;
+    private AgentConstants agentConstants;
 
     public SystemProperties() {
         this(ConfigFactory.empty());
@@ -154,21 +154,21 @@ public class SystemProperties {
         return (T) config.getAnyRef(propName);
     }
 
-    public BridgeConstants getBridgeConstants() {
-        if (bridgeConstants == null) {
+    public AgentConstants getAgentConstants() {
+        if (agentConstants == null) {
             String network = network();
             switch (network) {
                 case TESTNET:
-                    bridgeConstants = TestNetBridgeConstants.getInstance();
+                    agentConstants = TestNetAgentConstants.getInstance();
                     break;
                 case REGTEST:
-                    bridgeConstants = RegTestBridgeConstants.getInstance();
+                    agentConstants = RegTestAgentConstants.getInstance();
                     break;
                 default:
                     throw new RuntimeException("Unknown value for 'network': '" + config.getString("network") + "'");
             }
         }
-        return bridgeConstants;
+        return agentConstants;
     }
 
     public boolean isRelayEnabled() {
