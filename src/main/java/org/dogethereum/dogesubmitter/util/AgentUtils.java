@@ -1,4 +1,4 @@
-package org.dogethereum.dogesubmitter;
+package org.dogethereum.dogesubmitter.util;
 
 import org.bitcoinj.core.*;
 import org.bitcoinj.script.Script;
@@ -10,9 +10,9 @@ import org.dogethereum.dogesubmitter.util.OperatorPublicKeyHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class BridgeUtils {
+public class AgentUtils {
 
-    private static final Logger logger = LoggerFactory.getLogger("BridgeUtils");
+    private static final Logger logger = LoggerFactory.getLogger("AgentUtils");
 
     public static StoredBlock getStoredBlockAtHeight(BlockStore blockStore, int height) throws BlockStoreException {
         StoredBlock storedBlock = blockStore.getChainHead();

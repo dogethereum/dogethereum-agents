@@ -1,4 +1,4 @@
-package org.dogethereum.dogesubmitter.core;
+package org.dogethereum.dogesubmitter.core.eth;
 
 
 import lombok.extern.slf4j.Slf4j;
@@ -34,8 +34,8 @@ import java.util.concurrent.ExecutionException;
  * @author Oscar Guindzberg
  */
 @Component
-@Slf4j(topic = "AgentSupport")
-public class AgentSupport {
+@Slf4j(topic = "EthWrapper")
+public class EthWrapper {
 
     private Web3j web3;
     private DogeRelay dogeRelay;
@@ -45,7 +45,7 @@ public class AgentSupport {
     private BigInteger gasPriceMinimum;
 
     @Autowired
-    public AgentSupport() throws Exception {
+    public EthWrapper() throws Exception {
         config = SystemProperties.CONFIG;
         web3 = Web3j.build(new HttpService());  // defaults to http://localhost:8545/
         String dogeRelayContractAddress;
@@ -172,7 +172,7 @@ public class AgentSupport {
         return Hex.decode(size);
     }
 
-    public boolean wasLockTxProcessed(Sha256Hash txHash) throws Exception {
+    public boolean wasDogeTxProcessed(Sha256Hash txHash) throws Exception {
         return dogeToken.wasDogeTxProcessed(txHash.toBigInteger()).send();
 
     }

@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 
-public class FileUtil {
+public class FileUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger("file");
 
     public static boolean recursiveDelete(String fileName) {

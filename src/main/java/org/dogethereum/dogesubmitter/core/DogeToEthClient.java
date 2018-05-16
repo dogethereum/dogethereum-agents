@@ -9,6 +9,8 @@ import org.dogethereum.dogesubmitter.constants.AgentConstants;
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
 import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapperListener;
 import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapper;
+import org.dogethereum.dogesubmitter.core.dogecoin.Proof;
+import org.dogethereum.dogesubmitter.core.eth.EthWrapper;
 import org.dogethereum.dogesubmitter.util.OperatorPublicKeyHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,7 +35,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
     static final int MAXIMUM_REGISTER_DOGE_LOCK_TXS_PER_TURN = 40;
 
     @Autowired
-    private AgentSupport agentSupport;
+    private EthWrapper ethWrapper;
 
     @Autowired
     private OperatorPublicKeyHandler keyHandler;
@@ -69,7 +71,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
     private void setupDogecoinWrapper() throws UnknownHostException {
         dogecoinWrapper = new DogecoinWrapper(agentConstants, dataDirectory, keyHandler);
         // TODO: Make the dogecoin peer list configurable
-        // dogecoinWrapper.setup(this, this, agentSupport.getDogecoinPeerAddresses());
+        // dogecoinWrapper.setup(this, this, ethWrapper.getDogecoinPeerAddresses());
         dogecoinWrapper.setup(this, null);
         dogecoinWrapper.start();
     }
@@ -138,9 +140,9 @@ public class DogeToEthClient implements DogecoinWrapperListener {
         @Override
         public void run() {
             try {
-                if (!agentSupport.isEthNodeSyncing()) {
+                if (!ethWrapper.isEthNodeSyncing()) {
                     log.debug("UpdateBridgeTimerTask");
-                    agentSupport.updateContractFacadesGasPrice();
+                    ethWrapper.updateContractFacadesGasPrice();
                     if (config.isDogeBlockSubmitterEnabled()) {
                         updateBridgeDogeBlockchain();
                     }
@@ -157,7 +159,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
     }
 
     public int updateBridgeDogeBlockchain() throws Exception {
-        int bridgeDogeBlockchainBestChainHeight = agentSupport.getDogeBestBlockHeight();
+        int bridgeDogeBlockchainBestChainHeight = ethWrapper.getDogeBestBlockHeight();
         if (dogecoinWrapper.getBestChainHeight() <= bridgeDogeBlockchainBestChainHeight) {
             return 0;
         }
@@ -167,7 +169,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
         // Search the latest shared block between the agent and the bridge contract
 
         // Deprecated implementation not using a block locator
-//        String bridgeDogeBlockchainHeadHash = agentSupport.getBlockchainHeadHash();
+//        String bridgeDogeBlockchainHeadHash = ethWrapper.getBlockchainHeadHash();
 //        StoredBlock matchedBlock = null;
 //        StoredBlock storedBlock = dogecoinWrapper.getBlock(Sha256Hash.wrap(bridgeDogeBlockchainHeadHash));
 //        if (storedBlock != null) {
@@ -178,7 +180,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
 //        }
 
         // Implementation using a block locator
-        List<String> blockLocator = agentSupport.getDogeBlockchainBlockLocator();
+        List<String> blockLocator = ethWrapper.getDogeBlockchainBlockLocator();
         log.debug("Block locator size {}, first {}, last {}.", blockLocator.size(), blockLocator.get(0), blockLocator.get(blockLocator.size()-1));
         // find the last best chain block it has
         StoredBlock matchedBlock = null;
@@ -213,7 +215,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
         log.debug("Headers missing in the bridge {}.", headersToSendToBridge.size());
         int to = Math.min(agentConstants.getMaxDogeHeadersPerRound(), headersToSendToBridge.size());
         List<Block> headersToSendToBridgeSubList = headersToSendToBridge.subList(0, to);
-        agentSupport.sendStoreHeaders(headersToSendToBridgeSubList.toArray(new Block[]{}));
+        ethWrapper.sendStoreHeaders(headersToSendToBridgeSubList.toArray(new Block[]{}));
         log.debug("Invoked receiveHeaders with {} blocks. First {}, Last {}.", headersToSendToBridgeSubList.size(),
                      headersToSendToBridgeSubList.get(0).getHash(), headersToSendToBridgeSubList.get(headersToSendToBridgeSubList.size()-1).getHash());
         return headersToSendToBridgeSubList.size();
@@ -223,7 +225,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
         Set<Transaction> operatorWalletTxSet = dogecoinWrapper.getTransactions(agentConstants.getDoge2EthMinimumAcceptableConfirmations(), config.isDogeTxRelayerEnabled(), config.isOperatorEnabled());
         int numberOfTxsSent = 0;
         for (Transaction operatorWalletTx : operatorWalletTxSet) {
-            if (!agentSupport.wasLockTxProcessed(operatorWalletTx.getHash())) {
+            if (!ethWrapper.wasDogeTxProcessed(operatorWalletTx.getHash())) {
                 synchronized (this) {
                     List<Proof> proofs = txsToSendToEth.get(operatorWalletTx.getHash());
 
@@ -237,13 +239,13 @@ public class DogeToEthClient implements DogecoinWrapperListener {
                             pmt = proof.getPartialMerkleTree();
                         }
                     }
-                    int contractDogeBestBlockHeight = agentSupport.getDogeBestBlockHeight();
+                    int contractDogeBestBlockHeight = ethWrapper.getDogeBestBlockHeight();
                     if (contractDogeBestBlockHeight < (txStoredBlock.getHeight() + agentConstants.getDoge2EthMinimumAcceptableConfirmations() -1 )) {
                         log.debug("Tx not relayed yet because not enough confirmations yet {}. Contract height {}, Tx included in block {}",
                                   operatorWalletTx.getHash(), contractDogeBestBlockHeight, txStoredBlock.getHeight());
                         continue;
                     }
-                    agentSupport.sendRelayTx(operatorWalletTx, txStoredBlock.getHeader().getHash(), pmt);
+                    ethWrapper.sendRelayTx(operatorWalletTx, txStoredBlock.getHeader().getHash(), pmt);
                     numberOfTxsSent++;
                     // Send a maximum of 40 registerTransaction txs per turn
                     if (numberOfTxsSent >= MAXIMUM_REGISTER_DOGE_LOCK_TXS_PER_TURN) {

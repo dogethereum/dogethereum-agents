@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.dogethereum.dogesubmitter.constants.AgentConstants;
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
+import org.dogethereum.dogesubmitter.core.eth.EthWrapper;
 import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,7 +27,7 @@ import java.util.TimerTask;
 public class EthToDogeClient {
 
     @Autowired
-    private AgentSupport agentSupport;
+    private EthWrapper ethWrapper;
 
     private SystemProperties config;
 
@@ -59,11 +60,11 @@ public class EthToDogeClient {
             Context dogeContext = new Context(agentConstants.getDogeParams());
             peerGroup = new PeerGroup(dogeContext);
 //          TODO: Make the dogecoin peer list configurable
-//          if (agentSupport.getDogecoinPeerAddresses().size()>0) {
-//            for (PeerAddress peerAddress : agentSupport.getDogecoinPeerAddresses()) {
+//          if (ethWrapper.getDogecoinPeerAddresses().size()>0) {
+//            for (PeerAddress peerAddress : ethWrapper.getDogecoinPeerAddresses()) {
 //                peerGroup.addAddress(peerAddress);
 //            }
-//            peerGroup.setMaxConnections(agentSupport.getDogecoinPeerAddresses().size());
+//            peerGroup.setMaxConnections(ethWrapper.getDogecoinPeerAddresses().size());
 //          }
             final InetAddress localHost = InetAddress.getLocalHost();
             peerGroup.addAddress(localHost);
@@ -78,14 +79,14 @@ public class EthToDogeClient {
         @Override
         public void run() {
             try {
-                if (!agentSupport.isEthNodeSyncing()) {
+                if (!ethWrapper.isEthNodeSyncing()) {
                     long fromBlock = latestEthBlockProcessed + 1;
-                    long toBlock = agentSupport.getEthBlockCount() - config.getAgentConstants().getEth2DogeMinimumAcceptableConfirmations();
+                    long toBlock = ethWrapper.getEthBlockCount() - config.getAgentConstants().getEth2DogeMinimumAcceptableConfirmations();
                     // Ignore execution if nothing to process
                     if (fromBlock > toBlock) return;
-                    List<Long> newUnlockRequestIds = agentSupport.getNewUnlockRequestIds(fromBlock, toBlock);
+                    List<Long> newUnlockRequestIds = ethWrapper.getNewUnlockRequestIds(fromBlock, toBlock);
                     for (Long unlockRequestId : newUnlockRequestIds) {
-                        AgentSupport.Unlock unlock = agentSupport.getUnlock(unlockRequestId);
+                        EthWrapper.Unlock unlock = ethWrapper.getUnlock(unlockRequestId);
                         if (isMine(unlock)) {
                             Transaction tx = buildDogeTransaction(unlock);
                             broadcastDogeTransaction(tx);
@@ -106,7 +107,7 @@ public class EthToDogeClient {
         peerGroup.broadcastTransaction(tx);
     }
 
-    private Transaction buildDogeTransaction(AgentSupport.Unlock unlock) {
+    private Transaction buildDogeTransaction(EthWrapper.Unlock unlock) {
         ECKey operatorPrivateKey = operatorKeyHandler.getPrivateKey();
 
         NetworkParameters params = config.getAgentConstants().getDogeParams();
@@ -127,7 +128,7 @@ public class EthToDogeClient {
         return tx;
     }
 
-    private boolean isMine(AgentSupport.Unlock unlock) {
+    private boolean isMine(EthWrapper.Unlock unlock) {
         return true;
     }
 

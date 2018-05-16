@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
+import org.dogethereum.dogesubmitter.core.eth.EthWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -24,17 +25,17 @@ import java.util.TimerTask;
  * @author Oscar Guindzberg
  */
 @Service
-@Slf4j(topic = "DogeEthPriceOracle")
-public class DogeEthPriceOracle {
+@Slf4j(topic = "PriceOracleClient")
+public class PriceOracleClient {
 
     @Autowired
-    private AgentSupport agentSupport;
+    private EthWrapper ethWrapper;
 
     private SystemProperties config;
 
     private long latestPrice;
 
-    public DogeEthPriceOracle() {}
+    public PriceOracleClient() {}
 
 
     @PostConstruct
@@ -84,11 +85,11 @@ public class DogeEthPriceOracle {
         @Override
         public void run() {
             try {
-                if (!agentSupport.isEthNodeSyncing()) {
+                if (!ethWrapper.isEthNodeSyncing()) {
                     long price = getCoinmarketcapPrice();
                     if (priceHasChanged(price, latestPrice)) {
                         latestPrice = price;
-                        agentSupport.updatePrice(price);
+                        ethWrapper.updatePrice(price);
                     }
                 } else {
                     log.warn("UpdateDogeEthPriceTimerTask skipped because the eth node is syncing blocks");

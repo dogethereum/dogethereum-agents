@@ -1,4 +1,4 @@
-package org.dogethereum.dogesubmitter.core;
+package org.dogethereum.dogesubmitter.core.dogecoin;
 
 
 import lombok.EqualsAndHashCode;
