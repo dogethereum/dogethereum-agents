@@ -45,8 +45,12 @@ public class OperatorKeyHandler implements OperatorPublicKeyHandler {
         this.dogeParams = config.getAgentConstants().getDogeParams();
         this.filePath = config.operatorPrivateKeyFilePath();
         this.addressCreationTime = config.operatorAddressCreationTime();
-        validateOperatorKeyFile();
-        log.info("OperatorKeyHandler started. Operator address is {}, created on {}.", getAddress(), getOperatorAddressCreationDate());
+        if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
+            validateOperatorKeyFile();
+            log.info("OperatorKeyHandler started. Operator address is {}, created on {}.", getAddress(), getOperatorAddressCreationDate());
+        } else {
+            log.info("OperatorKeyHandler not started because it is not needed");
+        }
     }
 
     public byte[] getPrivateKeyBytes() {

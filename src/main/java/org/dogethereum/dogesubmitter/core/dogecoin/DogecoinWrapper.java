@@ -26,12 +26,14 @@ public class DogecoinWrapper {
     private AgentConstants agentConstants;
     private File dataDirectory;
     private OperatorPublicKeyHandler keyHandler;
+    private boolean walletEnabled;
 
-    public DogecoinWrapper(AgentConstants agentConstants, File dataDirectory, OperatorPublicKeyHandler keyHandler) {
+    public DogecoinWrapper(AgentConstants agentConstants, File dataDirectory, OperatorPublicKeyHandler keyHandler, boolean walletEnabled) {
         this.dogeContext = new Context(agentConstants.getDogeParams());
         this.agentConstants = agentConstants;
         this.dataDirectory = dataDirectory;
         this.keyHandler = keyHandler;
+        this.walletEnabled = walletEnabled;
     }
 
     public void setup(final DogecoinWrapperListener dwListener, List<PeerAddress> peerAddresses) {
@@ -39,16 +41,18 @@ public class DogecoinWrapper {
             @Override
             protected void onSetupCompleted() {
                 Context.propagate(dogeContext);
-                // When we receive a block that includes a tx that sends funds to eth via peg, store the PartialMerkleTree
-                vPeerGroup.addBlocksDownloadedEventListener((peer, block, filteredBlock, blocksLeft) -> {
-                    if (filteredBlock != null) {
-                        // filteredBlock may be null if we are downloading just headers before fastCatchupTimeSecs
-                        Context.propagate(dogeContext);
-                        dwListener.onBlock(filteredBlock);
-                    }
-                });
-                vWallet.addCoinsReceivedEventListener((wallet, tx, prevBalance, newBalance) -> coinsReceivedOrSent(tx));
-                vWallet.addCoinsSentEventListener((wallet, tx, prevBalance, newBalance) -> coinsReceivedOrSent(tx));
+                if (walletEnabled) {
+                    // When we receive a block that includes a tx that sends funds to eth via peg, store the PartialMerkleTree
+                    vPeerGroup.addBlocksDownloadedEventListener((peer, block, filteredBlock, blocksLeft) -> {
+                        if (filteredBlock != null) {
+                            // filteredBlock may be null if we are downloading just headers before fastCatchupTimeSecs
+                            Context.propagate(dogeContext);
+                            dwListener.onBlock(filteredBlock);
+                        }
+                    });
+                    vWallet.addCoinsReceivedEventListener((wallet, tx, prevBalance, newBalance) -> coinsReceivedOrSent(tx));
+                    vWallet.addCoinsSentEventListener((wallet, tx, prevBalance, newBalance) -> coinsReceivedOrSent(tx));
+                }
                 vPeerGroup.setDownloadTxDependencies(0);
             }
 
@@ -62,9 +66,11 @@ public class DogecoinWrapper {
             @Override
             protected Wallet createWallet() {
                 Wallet wallet = super.createWallet();
-                Address address = keyHandler.getAddress();
-                // Be notified when we receive doge so we call registerTransaction()
-                wallet.addWatchedAddress(address, keyHandler.getAddressCreationTime());
+                if (walletEnabled) {
+                    Address address = keyHandler.getAddress();
+                    // Be notified when we receive doge so we call registerTransaction()
+                    wallet.addWatchedAddress(address, keyHandler.getAddressCreationTime());
+                }
                 return wallet;
             }
             @Override

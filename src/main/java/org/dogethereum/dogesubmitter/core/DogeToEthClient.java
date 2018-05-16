@@ -69,7 +69,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
     }
 
     private void setupDogecoinWrapper() throws UnknownHostException {
-        dogecoinWrapper = new DogecoinWrapper(agentConstants, dataDirectory, keyHandler);
+        dogecoinWrapper = new DogecoinWrapper(agentConstants, dataDirectory, keyHandler, config.isDogeTxRelayerEnabled() || config.isOperatorEnabled());
         // TODO: Make the dogecoin peer list configurable
         // dogecoinWrapper.setup(this, this, ethWrapper.getDogecoinPeerAddresses());
         dogecoinWrapper.setup(this, null);
@@ -146,7 +146,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
                     if (config.isDogeBlockSubmitterEnabled()) {
                         updateBridgeDogeBlockchain();
                     }
-                    if (config.isDogeBlockSubmitterEnabled() || config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
+                    if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
                         updateBridgeTransactions();
                     }
                 } else {
