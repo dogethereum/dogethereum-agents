@@ -237,10 +237,10 @@ public class DogeToEthClient implements DogecoinWrapperListener {
                             pmt = proof.getPartialMerkleTree();
                         }
                     }
-                    int contractHeight = agentSupport.getDogeBestBlockHeight();
-                    if (contractHeight < (txStoredBlock.getHeight() + agentConstants.getDoge2EthMinimumAcceptableConfirmations() -1 )) {
+                    int contractDogeBestBlockHeight = agentSupport.getDogeBestBlockHeight();
+                    if (contractDogeBestBlockHeight < (txStoredBlock.getHeight() + agentConstants.getDoge2EthMinimumAcceptableConfirmations() -1 )) {
                         log.debug("Tx not relayed yet because not enough confirmations yet {}. Contract height {}, Tx included in block {}",
-                                  operatorWalletTx.getHash(), contractHeight, txStoredBlock.getHeight());
+                                  operatorWalletTx.getHash(), contractDogeBestBlockHeight, txStoredBlock.getHeight());
                         continue;
                     }
                     agentSupport.sendRelayTx(operatorWalletTx, txStoredBlock.getHeader().getHash(), pmt);
