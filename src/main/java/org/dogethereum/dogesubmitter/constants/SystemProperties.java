@@ -171,16 +171,20 @@ public class SystemProperties {
         return agentConstants;
     }
 
-    public boolean isRelayEnabled() {
-        return getBooleanProperty("relay.enabled", false);
+    public boolean isDogeBlockSubmitterEnabled() {
+        return getBooleanProperty("doge.block.submitter.enabled", false);
+    }
+
+    public boolean isDogeTxRelayerEnabled() {
+        return getBooleanProperty("doge.tx.relayer.enabled", false);
+    }
+
+    public boolean isOperatorEnabled() {
+        return getBooleanProperty("operator.enabled", false);
     }
 
     public boolean isPriceOracleEnabled() {
         return getBooleanProperty("price.oracle.enabled", false);
-    }
-
-    public boolean isEthToDogeEnabled() {
-        return getBooleanProperty("eth.to.doge.enabled", false);
     }
 
     public boolean isTestnet() {

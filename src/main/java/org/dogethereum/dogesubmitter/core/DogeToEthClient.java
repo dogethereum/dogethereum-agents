@@ -44,7 +44,6 @@ public class DogeToEthClient implements DogecoinWrapperListener {
 
     private AgentConstants agentConstants;
 
-
     private DogecoinWrapper dogecoinWrapper;
 
     private Map<Sha256Hash, List<Proof>> txsToSendToEth = new ConcurrentHashMap<>();
@@ -58,7 +57,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
     @PostConstruct
     public void setup() throws Exception {
         config = SystemProperties.CONFIG;
-        if (config.isRelayEnabled()) {
+        if (config.isDogeBlockSubmitterEnabled() || config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
             agentConstants = config.getAgentConstants();
 
             this.dataDirectory = new File(config.dataDirectory());
@@ -89,31 +88,33 @@ public class DogeToEthClient implements DogecoinWrapperListener {
 
     @Override
     public void onBlock(FilteredBlock filteredBlock) {
-        synchronized (this) {
-            log.debug("onBlock {}", filteredBlock.getHash());
-            List<Sha256Hash> hashes = new ArrayList<>();
-            PartialMerkleTree tree = filteredBlock.getPartialMerkleTree();
-            tree.getTxnHashAndMerkleRoot(hashes);
-            for (Sha256Hash txToSendToEth : txsToSendToEth.keySet()) {
-                if (hashes.contains(txToSendToEth)) {
-                    List<Proof> proofs = txsToSendToEth.get(txToSendToEth);
-                    boolean alreadyIncluded = false;
-                    for (Proof proof : proofs) {
-                        if (proof.getBlockHash().equals(filteredBlock.getHash())) {
-                            alreadyIncluded = true;
+        if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
+            synchronized (this) {
+                log.debug("onBlock {}", filteredBlock.getHash());
+                List<Sha256Hash> hashes = new ArrayList<>();
+                PartialMerkleTree tree = filteredBlock.getPartialMerkleTree();
+                tree.getTxnHashAndMerkleRoot(hashes);
+                for (Sha256Hash txToSendToEth : txsToSendToEth.keySet()) {
+                    if (hashes.contains(txToSendToEth)) {
+                        List<Proof> proofs = txsToSendToEth.get(txToSendToEth);
+                        boolean alreadyIncluded = false;
+                        for (Proof proof : proofs) {
+                            if (proof.getBlockHash().equals(filteredBlock.getHash())) {
+                                alreadyIncluded = true;
+                            }
                         }
-                    }
-                    if (!alreadyIncluded) {
-                        Proof proof = new Proof(filteredBlock.getHash(), tree);
-                        proofs.add(proof);
-                        log.info("New proof for tx " + txToSendToEth + " in block " + filteredBlock.getHash());
-                        try {
-                            flushProofs();
-                        } catch (IOException e) {
-                            log.error(e.getMessage(), e);
+                        if (!alreadyIncluded) {
+                            Proof proof = new Proof(filteredBlock.getHash(), tree);
+                            proofs.add(proof);
+                            log.info("New proof for tx " + txToSendToEth + " in block " + filteredBlock.getHash());
+                            try {
+                                flushProofs();
+                            } catch (IOException e) {
+                                log.error(e.getMessage(), e);
+                            }
+                        } else {
+                            log.info("Proof for tx " + txToSendToEth + " in block " + filteredBlock.getHash() + " already stored");
                         }
-                    } else {
-                        log.info("Proof for tx " + txToSendToEth + " in block " + filteredBlock.getHash() + " already stored");
                     }
                 }
             }
@@ -122,13 +123,15 @@ public class DogeToEthClient implements DogecoinWrapperListener {
 
     @Override
     public void onTransaction(Transaction tx) {
-        log.debug("onTransaction {}", tx.getHash());
-        synchronized (this) {
-            txsToSendToEth.put(tx.getHash(), new ArrayList<Proof>());
-            try {
-                flushProofs();
-            } catch (IOException e) {
-                log.error(e.getMessage(), e);
+        if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
+            log.debug("onTransaction {}", tx.getHash());
+            synchronized (this) {
+                txsToSendToEth.put(tx.getHash(), new ArrayList<Proof>());
+                try {
+                    flushProofs();
+                } catch (IOException e) {
+                    log.error(e.getMessage(), e);
+                }
             }
         }
     }
@@ -140,8 +143,12 @@ public class DogeToEthClient implements DogecoinWrapperListener {
                 if (!agentSupport.isEthNodeSyncing()) {
                     log.debug("UpdateBridgeTimerTask");
                     agentSupport.updateContractFacadesGasPrice();
-                    updateBridgeDogeBlockchain();
-                    updateBridgeTransactions();
+                    if (config.isDogeBlockSubmitterEnabled()) {
+                        updateBridgeDogeBlockchain();
+                    }
+                    if (config.isDogeBlockSubmitterEnabled() || config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
+                        updateBridgeTransactions();
+                    }
                 } else {
                     log.warn("UpdateBridgeTimerTask skipped because the eth node is syncing blocks");
                 }
@@ -215,7 +222,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
     }
 
     public void updateBridgeTransactions() throws Exception {
-        Set<Transaction> operatorWalletTxSet = dogecoinWrapper.getTransactions(agentConstants.getDoge2EthMinimumAcceptableConfirmations(), true, true);
+        Set<Transaction> operatorWalletTxSet = dogecoinWrapper.getTransactions(agentConstants.getDoge2EthMinimumAcceptableConfirmations(), config.isDogeTxRelayerEnabled(), config.isOperatorEnabled());
         int numberOfTxsSent = 0;
         for (Transaction operatorWalletTx : operatorWalletTxSet) {
             if (!agentSupport.wasLockTxProcessed(operatorWalletTx.getHash())) {
@@ -273,7 +280,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
 
     @PreDestroy
     public void tearDown() throws BlockStoreException, IOException {
-        if (config.isRelayEnabled()) {
+        if (config.isDogeBlockSubmitterEnabled() || config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
             log.info("DogeToEthClient tearDown starting...");
             dogecoinWrapper.stop();
 

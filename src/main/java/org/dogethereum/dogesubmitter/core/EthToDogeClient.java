@@ -47,7 +47,7 @@ public class EthToDogeClient {
     @PostConstruct
     public void setup() throws Exception {
         config = SystemProperties.CONFIG;
-        if (config.isEthToDogeEnabled()) {
+        if (config.isOperatorEnabled()) {
             // Set latestEthBlockProcessed to eth genesis block or eth checkpoint,
             // then read the latestEthBlockProcessed from file and overwrite it.
             this.latestEthBlockProcessed = config.getAgentConstants().getEthInitialCheckpoint();
