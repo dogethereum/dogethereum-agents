@@ -120,7 +120,7 @@ public class DogecoinWrapper {
         return kit.store().get(hash);
     }
 
-    public StoredBlock getBlockAtHeight(int height) throws BlockStoreException {
+    public StoredBlock getStoredBlockAtHeight(int height) throws BlockStoreException {
         return BridgeUtils.getStoredBlockAtHeight(kit.store(), height);
     }
 

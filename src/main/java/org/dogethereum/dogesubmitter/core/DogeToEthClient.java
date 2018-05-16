@@ -171,7 +171,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
 //        StoredBlock matchedBlock = null;
 //        StoredBlock storedBlock = dogecoinWrapper.getBlock(Sha256Hash.wrap(bridgeDogeBlockchainHeadHash));
 //        if (storedBlock != null) {
-//            StoredBlock storedBlockInBestChain = dogecoinWrapper.getBlockAtHeight(storedBlock.getHeight());
+//            StoredBlock storedBlockInBestChain = dogecoinWrapper.getStoredBlockAtHeight(storedBlock.getHeight());
 //            if (storedBlock.equals(storedBlockInBestChain)) {
 //                matchedBlock = storedBlockInBestChain;
 //            }
@@ -187,7 +187,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
             StoredBlock storedBlock = dogecoinWrapper.getBlock(Sha256Hash.wrap(blockHash));
             if (storedBlock == null)
                 continue;
-            StoredBlock storedBlockInBestChain = dogecoinWrapper.getBlockAtHeight(storedBlock.getHeight());
+            StoredBlock storedBlockInBestChain = dogecoinWrapper.getStoredBlockAtHeight(storedBlock.getHeight());
             if (storedBlock.equals(storedBlockInBestChain)) {
                 matchedBlock = storedBlockInBestChain;
                 break;
@@ -267,7 +267,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
                 StoredBlock storedBlock = dogecoinWrapper.getBlock(blockHash);
                 // Find out if that block is in the main chain
                 int height = storedBlock.getHeight();
-                StoredBlock storedBlockAtHeight = dogecoinWrapper.getBlockAtHeight(height);
+                StoredBlock storedBlockAtHeight = dogecoinWrapper.getStoredBlockAtHeight(height);
                 if (storedBlockAtHeight!=null && storedBlockAtHeight.getHeader().getHash().equals(blockHash)) {
                     return storedBlockAtHeight;
                 }
