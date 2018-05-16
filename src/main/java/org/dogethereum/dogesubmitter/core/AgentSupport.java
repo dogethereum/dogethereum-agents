@@ -173,7 +173,7 @@ public class AgentSupport {
     }
 
     public boolean wasLockTxProcessed(Sha256Hash txHash) throws Exception {
-        return dogeToken.wasLockTxProcessed(txHash.toBigInteger()).send();
+        return dogeToken.wasDogeTxProcessed(txHash.toBigInteger()).send();
 
     }
 
