@@ -58,12 +58,13 @@ public class EthToDogeClient {
             AgentConstants agentConstants = config.getAgentConstants();
             Context dogeContext = new Context(agentConstants.getDogeParams());
             peerGroup = new PeerGroup(dogeContext);
-//        if (agentSupport.getBitcoinPeerAddresses().size()>0) {
-//            for (PeerAddress peerAddress : agentSupport.getBitcoinPeerAddresses()) {
+//          TODO: Make the dogecoin peer list configurable
+//          if (agentSupport.getDogecoinPeerAddresses().size()>0) {
+//            for (PeerAddress peerAddress : agentSupport.getDogecoinPeerAddresses()) {
 //                peerGroup.addAddress(peerAddress);
 //            }
-//            peerGroup.setMaxConnections(agentSupport.getBitcoinPeerAddresses().size());
-//        }
+//            peerGroup.setMaxConnections(agentSupport.getDogecoinPeerAddresses().size());
+//          }
             final InetAddress localHost = InetAddress.getLocalHost();
             peerGroup.addAddress(localHost);
             peerGroup.setMaxConnections(1);

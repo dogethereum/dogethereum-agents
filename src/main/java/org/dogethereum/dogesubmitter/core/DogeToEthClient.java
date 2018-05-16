@@ -71,7 +71,8 @@ public class DogeToEthClient implements DogecoinWrapperListener {
 
     private void setupDogecoinWrapper() throws UnknownHostException {
         dogecoinWrapper = new DogecoinWrapperImpl(agentConstants, dataDirectory, keyHandler);
-        //dogecoinWrapper.setup(this, this, agentSupport.getDogecoinPeerAddresses());
+        // TODO: Make the dogecoin peer list configurable
+        // dogecoinWrapper.setup(this, this, agentSupport.getDogecoinPeerAddresses());
         dogecoinWrapper.setup(this, null);
         dogecoinWrapper.start();
     }
@@ -140,11 +141,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
                     log.debug("UpdateBridgeTimerTask");
                     agentSupport.updateContractFacadesGasPrice();
                     updateBridgeDogeBlockchain();
-                    // Don't relay tx if DogeRelay blockchain is not fully in sync - commented out because we don't need this
-                    //if (numberOfBlocksSent < agentConstants.getMaxDogeHeadersPerRound())
                     updateBridgeTransactions();
-//                      Just used for the release process
-//                      agentSupport.sendUpdateCollections();
                 } else {
                     log.warn("UpdateBridgeTimerTask skipped because the eth node is syncing blocks");
                 }
@@ -155,16 +152,16 @@ public class DogeToEthClient implements DogecoinWrapperListener {
     }
 
     public int updateBridgeDogeBlockchain() throws Exception {
-        //m_lastBlockHeight
         int bridgeDogeBlockchainBestChainHeight = agentSupport.getDogeBestBlockHeight();
         if (dogecoinWrapper.getBestChainHeight() <= bridgeDogeBlockchainBestChainHeight) {
             return 0;
         }
-
-        log.debug("DOGE blockchain height - Agent : {}, Bridge : {}.", dogecoinWrapper.getBestChainHeight(), bridgeDogeBlockchainBestChainHeight);
         // Agent's blockchain has more blocks than bridge's blockchain
+        log.debug("DOGE blockchain height - Agent : {}, Bridge : {}.", dogecoinWrapper.getBestChainHeight(), bridgeDogeBlockchainBestChainHeight);
 
-        //getBlockchainHeadHash
+        // Search the latest shared block between the agent and the bridge contract
+
+        // Deprecated implementation not using a block locator
 //        String bridgeDogeBlockchainHeadHash = agentSupport.getBlockchainHeadHash();
 //        StoredBlock matchedBlock = null;
 //        StoredBlock storedBlock = dogecoinWrapper.getBlock(Sha256Hash.wrap(bridgeDogeBlockchainHeadHash));
@@ -175,7 +172,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
 //            }
 //        }
 
-        // implementation using a block locator
+        // Implementation using a block locator
         List<String> blockLocator = agentSupport.getDogeBlockchainBlockLocator();
         log.debug("Block locator size {}, first {}, last {}.", blockLocator.size(), blockLocator.get(0), blockLocator.get(blockLocator.size()-1));
         // find the last best chain block it has
@@ -289,16 +286,13 @@ public class DogeToEthClient implements DogecoinWrapperListener {
 
     private void restoreProofsFromFile() throws IOException, ClassNotFoundException {
         if (proofFile.exists()) {
-            //NetworkParameters networkParameters = agentConstants.getDogeParams();
             synchronized (this) {
-                byte[] arr = Files.readAllBytes(proofFile.toPath());
                 try (
                     FileInputStream txsToSendToEthFileIs = new FileInputStream(proofFile);
                     ObjectInputStream txsToSendToEthObjectIs = new ObjectInputStream(txsToSendToEthFileIs);
                 ) {
                     this.txsToSendToEth = (Map<Sha256Hash, List<Proof>> ) txsToSendToEthObjectIs.readObject();
                 }
-
             }
         }
     }

@@ -45,7 +45,7 @@ public class DogeEthPriceOracle {
         }
     }
 
-    public long getPrice() {
+    public long getCoinmarketcapPrice() {
         String baseUrl = "https://api.coinmarketcap.com/v1/ticker/dogecoin/?convert=ETH";
 
         Client client = ClientBuilder.newClient();
@@ -57,7 +57,6 @@ public class DogeEthPriceOracle {
         client.register(provider);
         WebTarget endpoint = client.target(baseUrl);
         Response response = endpoint
-                //.request(MediaType.APPLICATION_JSON)
                 .request()
                 .get();
         switch (response.getStatus()) {
@@ -86,7 +85,7 @@ public class DogeEthPriceOracle {
         public void run() {
             try {
                 if (!agentSupport.isEthNodeSyncing()) {
-                    long price = getPrice();
+                    long price = getCoinmarketcapPrice();
                     if (priceHasChanged(price, latestPrice)) {
                         latestPrice = price;
                         agentSupport.updatePrice(price);

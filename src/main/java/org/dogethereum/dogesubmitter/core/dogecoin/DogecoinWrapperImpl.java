@@ -87,7 +87,8 @@ public class DogecoinWrapperImpl implements DogecoinWrapper {
             }
         };
 
-        //if (!peerAddresses.isEmpty()) {
+        // TODO: Make the dogecoin peer list configurable
+        // if (!peerAddresses.isEmpty()) {
         //    kit.setPeerNodes(peerAddresses.toArray(new PeerAddress[]{}));
         //}
         kit.connectToLocalHost();

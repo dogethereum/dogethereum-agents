@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Configuration;
 @ComponentScan
 @Slf4j(topic = "Main")
 public class Main {
-
     public static void main(String[] args) {
         SystemProperties config = SystemProperties.CONFIG;
         log.info("Running DogeSubmitter version: {}-{}", config.projectVersion(), config.projectVersionModifier());
@@ -18,5 +17,3 @@ public class Main {
         new AnnotationConfigApplicationContext(Main.class);
     }
 }
-
-// test
