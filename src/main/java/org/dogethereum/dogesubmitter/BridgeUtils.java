@@ -6,7 +6,7 @@ import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.wallet.Wallet;
 import org.dogethereum.dogesubmitter.constants.AgentConstants;
-import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
+import org.dogethereum.dogesubmitter.util.OperatorPublicKeyHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +38,7 @@ public class BridgeUtils {
         }
     }
 
-    public static boolean isLockTx(Transaction tx, Wallet wallet, AgentConstants agentConstants, OperatorKeyHandler keyHandler) {
+    public static boolean isLockTx(Transaction tx, Wallet wallet, AgentConstants agentConstants, OperatorPublicKeyHandler keyHandler) {
         // First, check tx is not a release tx.
         int i = 0;
         for (TransactionInput transactionInput : tx.getInputs()) {
@@ -60,7 +60,7 @@ public class BridgeUtils {
         return (valueSentToMeSignum > 0 && !valueSentToMe.isLessThan(agentConstants.getMinimumLockTxValue()));
     }
 
-    public static boolean isReleaseTx(Transaction tx, AgentConstants agentConstants, OperatorKeyHandler keyHandler) {
+    public static boolean isReleaseTx(Transaction tx, AgentConstants agentConstants, OperatorPublicKeyHandler keyHandler) {
         int i = 0;
         for (TransactionInput transactionInput : tx.getInputs()) {
             try {

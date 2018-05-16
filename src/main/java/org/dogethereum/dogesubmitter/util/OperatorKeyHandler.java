@@ -24,7 +24,10 @@ import java.util.List;
 
 @Component
 @Slf4j(topic = "OperatorKeyHandler")
-public class OperatorKeyHandler {
+/**
+ * Manages operator private key
+ */
+public class OperatorKeyHandler implements OperatorPublicKeyHandler {
 
     public static final int KEY_LENGTH = 32;
 
@@ -35,13 +38,13 @@ public class OperatorKeyHandler {
     private byte[] privateKey;
 
     // We ignore txs to the operator before this time
-    private long operatorAddressCreationTime;
+    private long addressCreationTime;
 
     public OperatorKeyHandler() {
         SystemProperties config = SystemProperties.CONFIG;
         this.dogeParams = config.getAgentConstants().getDogeParams();
         this.filePath = config.operatorPrivateKeyFilePath();
-        this.operatorAddressCreationTime = config.operatorAddressCreationTime();
+        this.addressCreationTime = config.operatorAddressCreationTime();
         validateOperatorKeyFile();
         log.info("OperatorKeyHandler started. Operator address is {}, created on {}.", getAddress(), getOperatorAddressCreationDate());
     }
@@ -66,21 +69,24 @@ public class OperatorKeyHandler {
         return ECKey.fromPrivate(getPrivateKeyBytes());
     }
 
+    @Override
     public Script getOutputScript() {
         return ScriptBuilder.createOutputScript(getAddress());
     }
 
+    @Override
     public Address getAddress() {
         return getPrivateKey().toAddress(dogeParams);
     }
 
 
-    public long getOperatorAddressCreationTime() {
-        return operatorAddressCreationTime;
+    @Override
+    public long getAddressCreationTime() {
+        return addressCreationTime;
     }
 
     private Date getOperatorAddressCreationDate() {
-        return new Date(getOperatorAddressCreationTime() * 1000);
+        return new Date(getAddressCreationTime() * 1000);
     }
 
 

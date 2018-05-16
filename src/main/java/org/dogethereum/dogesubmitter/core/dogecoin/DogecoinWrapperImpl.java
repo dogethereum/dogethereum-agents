@@ -10,7 +10,7 @@ import org.dogethereum.dogesubmitter.AltcoinLevelDBBlockStore;
 import org.dogethereum.dogesubmitter.BridgeUtils;
 import org.dogethereum.dogesubmitter.constants.AgentConstants;
 import org.dogethereum.dogesubmitter.util.FileUtil;
-import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
+import org.dogethereum.dogesubmitter.util.OperatorPublicKeyHandler;
 
 import java.io.File;
 import java.io.InputStream;
@@ -26,9 +26,9 @@ public class DogecoinWrapperImpl implements DogecoinWrapper {
     private Context dogeContext;
     private AgentConstants agentConstants;
     private File dataDirectory;
-    private OperatorKeyHandler keyHandler;
+    private OperatorPublicKeyHandler keyHandler;
 
-    public DogecoinWrapperImpl(AgentConstants agentConstants, File dataDirectory, OperatorKeyHandler keyHandler) {
+    public DogecoinWrapperImpl(AgentConstants agentConstants, File dataDirectory, OperatorPublicKeyHandler keyHandler) {
         this.dogeContext = new Context(agentConstants.getDogeParams());
         this.agentConstants = agentConstants;
         this.dataDirectory = dataDirectory;
@@ -66,7 +66,7 @@ public class DogecoinWrapperImpl implements DogecoinWrapper {
                 Wallet wallet = super.createWallet();
                 Address address = keyHandler.getAddress();
                 // Be notified when we receive doge so we call registerTransaction()
-                wallet.addWatchedAddress(address, keyHandler.getOperatorAddressCreationTime());
+                wallet.addWatchedAddress(address, keyHandler.getAddressCreationTime());
                 return wallet;
             }
             @Override

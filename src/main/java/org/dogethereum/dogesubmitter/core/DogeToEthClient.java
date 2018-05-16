@@ -10,7 +10,7 @@ import org.dogethereum.dogesubmitter.constants.SystemProperties;
 import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapperListener;
 import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapper;
 import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapperImpl;
-import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
+import org.dogethereum.dogesubmitter.util.OperatorPublicKeyHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +18,6 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.io.*;
 import java.net.UnknownHostException;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -38,7 +37,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
     private AgentSupport agentSupport;
 
     @Autowired
-    private OperatorKeyHandler keyHandler;
+    private OperatorPublicKeyHandler keyHandler;
 
     private SystemProperties config;
 
