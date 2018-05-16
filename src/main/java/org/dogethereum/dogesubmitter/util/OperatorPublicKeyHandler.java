@@ -4,7 +4,7 @@ import org.bitcoinj.core.Address;
 import org.bitcoinj.script.Script;
 
 /**
- * Operator public key information provider
+ * Exposes Operator public key related information
  */
 
 public interface OperatorPublicKeyHandler {
@@ -12,5 +12,8 @@ public interface OperatorPublicKeyHandler {
 
     Address getAddress();
 
+    /**
+     * Returns address creation time expressed in seconds since the epoch.
+     */
     long getAddressCreationTime();
 }

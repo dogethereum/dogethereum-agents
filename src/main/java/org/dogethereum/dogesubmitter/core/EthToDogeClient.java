@@ -39,7 +39,7 @@ public class EthToDogeClient {
     private PeerGroup peerGroup;
 
     @Autowired
-    private OperatorKeyHandler keyHandler;
+    private OperatorKeyHandler operatorKeyHandler;
 
     public EthToDogeClient() {}
 
@@ -107,7 +107,7 @@ public class EthToDogeClient {
     }
 
     private Transaction buildDogeTransaction(AgentSupport.Unlock unlock) {
-        ECKey operatorPrivateKey = keyHandler.getPrivateKey();
+        ECKey operatorPrivateKey = operatorKeyHandler.getPrivateKey();
 
         NetworkParameters params = config.getAgentConstants().getDogeParams();
         Transaction tx = new Transaction(params);
@@ -118,11 +118,11 @@ public class EthToDogeClient {
         tx.addOutput(Coin.valueOf(unlock.value - unlock.fee), Address.fromBase58(params, unlock.dogeAddress));
         long change = totalInputValue - unlock.value;
         if (change > 0) {
-            tx.addOutput(Coin.valueOf(change), operatorPrivateKey.toAddress(params));
+            tx.addOutput(Coin.valueOf(change), operatorKeyHandler.getAddress());
         }
         for (UTXO utxo : unlock.selectedUtxos) {
             TransactionOutPoint outPoint = new TransactionOutPoint(params, utxo.getIndex(), utxo.getHash());
-            tx.addSignedInput(outPoint, keyHandler.getOutputScript(),  operatorPrivateKey);
+            tx.addSignedInput(outPoint, operatorKeyHandler.getOutputScript(),  operatorPrivateKey);
         }
         return tx;
     }
