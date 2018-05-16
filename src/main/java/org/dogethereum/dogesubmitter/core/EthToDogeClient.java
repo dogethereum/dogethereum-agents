@@ -18,7 +18,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 /**
- * Sends release txs on the doge network
+ * Signs and broadcasts unlock txs on the doge network
  * @author Oscar Guindzberg
  */
 @Service
