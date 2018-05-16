@@ -16,16 +16,22 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 @EqualsAndHashCode
+/**
+ * Proof of inclusion of a tx in a Block
+ */
 public class Proof implements Serializable {
 
 
     private static final long serialVersionUID = 7608116934274420667L;
 
+    // The hash of block where the tx is included.
     private Sha256Hash blockHash;
+    // The tree that has the tx as a leaf and its root hash is in the block header
     private PartialMerkleTree partialMerkleTree;
 
     public Proof() {
     }
+
 
     public Proof(Sha256Hash blockHash, PartialMerkleTree partialMerkleTree) {
         this.blockHash = blockHash;
