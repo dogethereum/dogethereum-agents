@@ -21,7 +21,7 @@ import java.util.Set;
 /**
  * Implements DogecoinWrapper
  */
-public class DogecoinWrapperImpl implements DogecoinWrapper {
+public class DogecoinWrapperImpl {
     private WalletAppKit kit;
     private Context dogeContext;
     private AgentConstants agentConstants;
@@ -35,7 +35,6 @@ public class DogecoinWrapperImpl implements DogecoinWrapper {
         this.keyHandler = keyHandler;
     }
 
-    @Override
     public void setup(final DogecoinWrapperListener dwListener, List<PeerAddress> peerAddresses) {
         kit = new WalletAppKit(dogeContext, dataDirectory, "DogeToEthClient") {
             @Override
@@ -99,39 +98,32 @@ public class DogecoinWrapperImpl implements DogecoinWrapper {
         }
     }
 
-    @Override
     public void start() {
         Context.propagate(dogeContext);
         kit.startAsync().awaitRunning();
     }
 
-    @Override
     public void stop() {
         Context.propagate(dogeContext);
         kit.stopAsync().awaitTerminated();
     }
 
-    @Override
     public int getBestChainHeight() {
         return kit.chain().getBestChainHeight();
     }
 
-    @Override
     public StoredBlock getChainHead() {
         return kit.chain().getChainHead();
     }
 
-    @Override
     public StoredBlock getBlock(Sha256Hash hash) throws BlockStoreException {
         return kit.store().get(hash);
     }
 
-    @Override
     public StoredBlock getBlockAtHeight(int height) throws BlockStoreException {
         return BridgeUtils.getStoredBlockAtHeight(kit.store(), height);
     }
 
-    @Override
     public Set<Transaction> getTransactions(int minconfirmations, boolean includeLock, boolean includeUnlock) {
         Set<Transaction> txs = new HashSet<>();
         for (Transaction tx : kit.wallet().getTransactions(false)) {

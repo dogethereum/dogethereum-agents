@@ -8,7 +8,6 @@ import org.bitcoinj.store.BlockStoreException;
 import org.dogethereum.dogesubmitter.constants.AgentConstants;
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
 import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapperListener;
-import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapper;
 import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapperImpl;
 import org.dogethereum.dogesubmitter.util.OperatorPublicKeyHandler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +42,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
 
     private AgentConstants agentConstants;
 
-    private DogecoinWrapper dogecoinWrapper;
+    private DogecoinWrapperImpl dogecoinWrapper;
 
     private Map<Sha256Hash, List<Proof>> txsToSendToEth = new ConcurrentHashMap<>();
 
