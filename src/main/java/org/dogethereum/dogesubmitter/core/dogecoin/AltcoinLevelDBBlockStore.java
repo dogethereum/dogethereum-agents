@@ -1,4 +1,4 @@
-package org.dogethereum.dogesubmitter;
+package org.dogethereum.dogesubmitter.core.dogecoin;
 
 import org.bitcoinj.core.*;
 import org.bitcoinj.store.BlockStore;

@@ -1,4 +1,4 @@
-package org.dogethereum.dogesubmitter.core.dogecoin;
+package org.dogethereum.dogesubmitter.checker;
 
 import org.bitcoinj.core.PeerAddress;
 

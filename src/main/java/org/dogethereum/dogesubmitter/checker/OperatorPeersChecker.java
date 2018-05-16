@@ -4,7 +4,6 @@ import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.PeerAddress;
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
-import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinPeerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -15,6 +14,9 @@ import java.util.List;
 
 @Component
 @Slf4j(topic = "OperatorPeersChecker")
+/**
+ * Makes sure the dogecoin peer is up. Otherwise prevents the agent from starting (fail fast strategy)
+ */
 public class OperatorPeersChecker {
 
     public OperatorPeersChecker() {

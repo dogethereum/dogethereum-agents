@@ -6,10 +6,9 @@ import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.wallet.Wallet;
-import org.dogethereum.dogesubmitter.AltcoinLevelDBBlockStore;
-import org.dogethereum.dogesubmitter.BridgeUtils;
+import org.dogethereum.dogesubmitter.util.AgentUtils;
 import org.dogethereum.dogesubmitter.constants.AgentConstants;
-import org.dogethereum.dogesubmitter.util.FileUtil;
+import org.dogethereum.dogesubmitter.util.FileUtils;
 import org.dogethereum.dogesubmitter.util.OperatorPublicKeyHandler;
 
 import java.io.File;
@@ -55,7 +54,7 @@ public class DogecoinWrapper {
 
             private void coinsReceivedOrSent(Transaction tx) {
                 Context.propagate(dogeContext);
-                if (BridgeUtils.isLockTx(tx, vWallet, agentConstants, keyHandler) || BridgeUtils.isReleaseTx(tx, agentConstants, keyHandler)) {
+                if (AgentUtils.isLockTx(tx, vWallet, agentConstants, keyHandler) || AgentUtils.isReleaseTx(tx, agentConstants, keyHandler)) {
                     dwListener.onTransaction(tx);
                 }
             }
@@ -74,7 +73,7 @@ public class DogecoinWrapper {
             }
             @Override
             protected boolean chainFileDelete(File chainFile) {
-                return FileUtil.recursiveDelete(chainFile.getAbsolutePath());
+                return FileUtils.recursiveDelete(chainFile.getAbsolutePath());
             }
             @Override
             protected File getChainFile() {
@@ -121,7 +120,7 @@ public class DogecoinWrapper {
     }
 
     public StoredBlock getStoredBlockAtHeight(int height) throws BlockStoreException {
-        return BridgeUtils.getStoredBlockAtHeight(kit.store(), height);
+        return AgentUtils.getStoredBlockAtHeight(kit.store(), height);
     }
 
     public Set<Transaction> getTransactions(int minconfirmations, boolean includeLock, boolean includeUnlock) {
@@ -129,8 +128,8 @@ public class DogecoinWrapper {
         for (Transaction tx : kit.wallet().getTransactions(false)) {
             if (tx.getConfidence().getConfidenceType().equals(TransactionConfidence.ConfidenceType.BUILDING) &&
                 tx.getConfidence().getDepthInBlocks() >= minconfirmations) {
-                if (BridgeUtils.isLockTx(tx, kit.wallet(), agentConstants, keyHandler) && includeLock ||
-                    BridgeUtils.isReleaseTx(tx, agentConstants, keyHandler) && includeUnlock) {
+                if (AgentUtils.isLockTx(tx, kit.wallet(), agentConstants, keyHandler) && includeLock ||
+                    AgentUtils.isReleaseTx(tx, agentConstants, keyHandler) && includeUnlock) {
                     txs.add(tx);
                 }
             }
