@@ -8,7 +8,7 @@ import org.bitcoinj.store.BlockStoreException;
 import org.dogethereum.dogesubmitter.constants.AgentConstants;
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
 import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapperListener;
-import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapperImpl;
+import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapper;
 import org.dogethereum.dogesubmitter.util.OperatorPublicKeyHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -42,7 +42,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
 
     private AgentConstants agentConstants;
 
-    private DogecoinWrapperImpl dogecoinWrapper;
+    private DogecoinWrapper dogecoinWrapper;
 
     private Map<Sha256Hash, List<Proof>> txsToSendToEth = new ConcurrentHashMap<>();
 
@@ -67,7 +67,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
     }
 
     private void setupDogecoinWrapper() throws UnknownHostException {
-        dogecoinWrapper = new DogecoinWrapperImpl(agentConstants, dataDirectory, keyHandler);
+        dogecoinWrapper = new DogecoinWrapper(agentConstants, dataDirectory, keyHandler);
         // TODO: Make the dogecoin peer list configurable
         // dogecoinWrapper.setup(this, this, agentSupport.getDogecoinPeerAddresses());
         dogecoinWrapper.setup(this, null);

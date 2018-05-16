@@ -21,14 +21,14 @@ import java.util.Set;
 /**
  * Implements DogecoinWrapper
  */
-public class DogecoinWrapperImpl {
+public class DogecoinWrapper {
     private WalletAppKit kit;
     private Context dogeContext;
     private AgentConstants agentConstants;
     private File dataDirectory;
     private OperatorPublicKeyHandler keyHandler;
 
-    public DogecoinWrapperImpl(AgentConstants agentConstants, File dataDirectory, OperatorPublicKeyHandler keyHandler) {
+    public DogecoinWrapper(AgentConstants agentConstants, File dataDirectory, OperatorPublicKeyHandler keyHandler) {
         this.dogeContext = new Context(agentConstants.getDogeParams());
         this.agentConstants = agentConstants;
         this.dataDirectory = dataDirectory;
@@ -92,7 +92,7 @@ public class DogecoinWrapperImpl {
         //}
         kit.connectToLocalHost();
 
-        InputStream checkpoints = DogecoinWrapperImpl.class.getResourceAsStream("/" + dogeContext.getParams().getId() + ".checkpoints");
+        InputStream checkpoints = DogecoinWrapper.class.getResourceAsStream("/" + dogeContext.getParams().getId() + ".checkpoints");
         if (checkpoints != null) {
             kit.setCheckpoints(checkpoints);
         }
