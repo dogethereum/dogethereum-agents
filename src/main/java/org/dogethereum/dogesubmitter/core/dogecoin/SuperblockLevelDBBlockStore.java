@@ -10,6 +10,8 @@ import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.core.Context;
 
+import org.web3j.crypto.Hash;
+
 import org.fusesource.leveldbjni.*;
 import org.iq80.leveldb.*;
 
@@ -18,6 +20,8 @@ import com.google.common.base.Objects;
 import java.math.BigInteger;
 import java.io.*;
 import java.nio.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -36,8 +40,7 @@ public class SuperblockLevelDBBlockStore {
     private final Context context;
     private final File path;
     private DB db;
-    private final ByteBuffer buffer = ByteBuffer.allocate(Superblock.COMPACT_SERIALIZED_SIZE);
-    // TODO: hardcode genesis superblock. Keep in mind that it might not be necessary, since SuperblockChain is going to store superblocks here.
+//    private final ByteBuffer buffer = ByteBuffer.allocate(Superblock.COMPACT_SERIALIZED_SIZE); // TODO: see if this should be little endian
 
     public SuperblockLevelDBBlockStore(Context context, File directory) throws BlockStoreException {
         this(context, directory, JniDBFactory.factory); // this might not work, ask later
@@ -63,6 +66,7 @@ public class SuperblockLevelDBBlockStore {
 
     private synchronized void tryOpen(File directory, DBFactory dbFactory, Options options) throws IOException, BlockStoreException {
         db = dbFactory.open(directory, options);
+        initStoreIfNeeded();
     }
 
     /**
@@ -71,15 +75,16 @@ public class SuperblockLevelDBBlockStore {
      * @throws java.io.IOException
      * @throws BlockStoreException
      */
-    // TODO: see how to get rid of this method or integrate it with SuperblockChain
-    // this doesn't seem necessary honestly
-//    private synchronized void initStoreIfNeeded() throws java.io.IOException, BlockStoreException {
-//        if (db.get(CHAIN_HEAD_KEY) != null)
-//            return; // Already initialised.
-////        Superblock genesisBlock = chain.getGenesisBlock();
-////        put(genesisBlock);
-////        setChainHead(genesisBlock);
-//    }
+    private synchronized void initStoreIfNeeded() throws java.io.IOException, BlockStoreException {
+        if (db.get(CHAIN_HEAD_KEY) != null)
+            return; // Already initialised.
+        List<Sha256Hash> genesisList = new ArrayList<>();
+        genesisList.add(context.getParams().getGenesisBlock().getHash());
+        byte[] genesisHash = Hash.sha3("0000000000000000000000000000000000000000000000000000000000000000".getBytes());
+        Superblock genesisBlock = new Superblock(genesisList, BigInteger.valueOf(0), context.getParams().getGenesisBlock().getTimeSeconds(), genesisHash);
+        put(genesisBlock);
+        setChainHead(genesisBlock);
+    }
 
     /**
      * Write a superblock to the database.
@@ -87,9 +92,10 @@ public class SuperblockLevelDBBlockStore {
      * @throws java.io.IOException
      */
     public synchronized void put(Superblock block) throws java.io.IOException {
-        buffer.clear();
+//        buffer.clear();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        block.serialize(stream);
+        block.serializeForStorage(stream);
+        ByteBuffer buffer = ByteBuffer.allocate(stream.size());
         buffer.put(stream.toByteArray());
         db.put(block.getSuperblockHash(), buffer.array());
     }
@@ -155,7 +161,7 @@ public class SuperblockLevelDBBlockStore {
     }
 
     public synchronized byte[] getChainHeadHash() throws BlockStoreException, java.io.IOException {
-        return getChainHead().getSuperblockHash();
+        return db.get(CHAIN_HEAD_KEY);
     }
 
     /**
@@ -168,21 +174,23 @@ public class SuperblockLevelDBBlockStore {
         db.put(CHAIN_HEAD_KEY, chainHead.getSuperblockHash());
     }
 
-    /**
-     * Gets height of highest stored superblock so that SuperblockChain can stay synchronised.
-     * @return Height of superblock chain tip.
-     * @throws BlockStoreException
-     */
-    public synchronized int getHeight() throws BlockStoreException {
-        return getChainHead().getHeight();
-    }
+    // TODO: Move the following two methods to SuperblockChain
 
-    /**
-     * Gets height of latest hashed Doge block so that SuperblockChain can stay synchronised.
-     * @return Height of last Doge block in highest stored superblock.
-     * @throws BlockStoreException
-     */
-    public synchronized int getDogeHeight() throws BlockStoreException {
-        return getChainHead().getLastBlockHeight();
-    }
+//    /**
+//     * Gets height of highest stored superblock so that SuperblockChain can stay synchronised.
+//     * @return Height of superblock chain tip.
+//     * @throws BlockStoreException
+//     */
+//    public synchronized int getHeight() throws BlockStoreException {
+//        return getChainHead().getHeight();
+//    }
+
+//    /**
+//     * Gets height of latest hashed Doge block so that SuperblockChain can stay synchronised.
+//     * @return Height of last Doge block in highest stored superblock.
+//     * @throws BlockStoreException
+//     */
+//    public synchronized int getDogeHeight() throws BlockStoreException {
+//        return getChainHead().getLastBlockHeight();
+//    }
 }
