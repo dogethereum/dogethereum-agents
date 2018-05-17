@@ -41,7 +41,7 @@ public class SystemProperties {
 
     private String projectVersion = null;
     private String projectVersionModifier = null;
-    private BridgeConstants bridgeConstants;
+    private AgentConstants agentConstants;
 
     public SystemProperties() {
         this(ConfigFactory.empty());
@@ -154,33 +154,37 @@ public class SystemProperties {
         return (T) config.getAnyRef(propName);
     }
 
-    public BridgeConstants getBridgeConstants() {
-        if (bridgeConstants == null) {
+    public AgentConstants getAgentConstants() {
+        if (agentConstants == null) {
             String network = network();
             switch (network) {
                 case TESTNET:
-                    bridgeConstants = BridgeTestNetConstants.getInstance();
+                    agentConstants = TestNetAgentConstants.getInstance();
                     break;
                 case REGTEST:
-                    bridgeConstants = BridgeRegTestConstants.getInstance();
+                    agentConstants = RegTestAgentConstants.getInstance();
                     break;
                 default:
                     throw new RuntimeException("Unknown value for 'network': '" + config.getString("network") + "'");
             }
         }
-        return bridgeConstants;
+        return agentConstants;
     }
 
-    public boolean isRelayEnabled() {
-        return getBooleanProperty("relay.enabled", false);
+    public boolean isDogeBlockSubmitterEnabled() {
+        return getBooleanProperty("doge.block.submitter.enabled", false);
+    }
+
+    public boolean isDogeTxRelayerEnabled() {
+        return getBooleanProperty("doge.tx.relayer.enabled", false);
+    }
+
+    public boolean isOperatorEnabled() {
+        return getBooleanProperty("operator.enabled", false);
     }
 
     public boolean isPriceOracleEnabled() {
         return getBooleanProperty("price.oracle.enabled", false);
-    }
-
-    public boolean isEthToDogeEnabled() {
-        return getBooleanProperty("eth.to.doge.enabled", false);
     }
 
     public boolean isTestnet() {

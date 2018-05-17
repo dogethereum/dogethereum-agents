@@ -6,7 +6,8 @@
       <Pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{26} - %msg%n</Pattern>
     </layout>
   </appender>
-  
+
+  <logger name="org.springframework" level="INFO"/>
   <logger name="org.bitcoinj" level="INFO"/>
   <logger name="DogeToEthClient" level="INFO"/>
   <logger name="org.web3j.protocol.http" level="INFO"/>

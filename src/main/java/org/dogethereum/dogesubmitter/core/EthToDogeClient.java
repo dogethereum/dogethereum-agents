@@ -3,24 +3,23 @@ package org.dogethereum.dogesubmitter.core;
 
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
-import org.dogethereum.dogesubmitter.constants.BridgeConstants;
+import org.dogethereum.dogesubmitter.constants.AgentConstants;
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
+import org.dogethereum.dogesubmitter.core.eth.EthWrapper;
 import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.FileSystemUtils;
 
 import javax.annotation.PostConstruct;
 import java.io.*;
 import java.net.InetAddress;
-import java.nio.file.Files;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
 /**
- * Sends release txs on the doge network
+ * Signs and broadcasts unlock txs on the doge network
  * @author Oscar Guindzberg
  */
 @Service
@@ -28,7 +27,7 @@ import java.util.TimerTask;
 public class EthToDogeClient {
 
     @Autowired
-    private FederatorSupport federatorSupport;
+    private EthWrapper ethWrapper;
 
     private SystemProperties config;
 
@@ -41,7 +40,7 @@ public class EthToDogeClient {
     private PeerGroup peerGroup;
 
     @Autowired
-    private OperatorKeyHandler keyHandler;
+    private OperatorKeyHandler operatorKeyHandler;
 
     public EthToDogeClient() {}
 
@@ -49,20 +48,24 @@ public class EthToDogeClient {
     @PostConstruct
     public void setup() throws Exception {
         config = SystemProperties.CONFIG;
-        if (config.isEthToDogeEnabled()) {
+        if (config.isOperatorEnabled()) {
+            // Set latestEthBlockProcessed to eth genesis block or eth checkpoint,
+            // then read the latestEthBlockProcessed from file and overwrite it.
+            this.latestEthBlockProcessed = config.getAgentConstants().getEthInitialCheckpoint();
             this.dataDirectory = new File(config.dataDirectory());
             this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() + "/EthToDogeClientLatestEthBlockProcessedFile.dat");
             restoreLatestEthBlockProcessed();
 
-            BridgeConstants bridgeConstants = config.getBridgeConstants();
-            Context dogeContext = new Context(bridgeConstants.getDogeParams());
+            AgentConstants agentConstants = config.getAgentConstants();
+            Context dogeContext = new Context(agentConstants.getDogeParams());
             peerGroup = new PeerGroup(dogeContext);
-//        if (federatorSupport.getBitcoinPeerAddresses().size()>0) {
-//            for (PeerAddress peerAddress : federatorSupport.getBitcoinPeerAddresses()) {
+//          TODO: Make the dogecoin peer list configurable
+//          if (ethWrapper.getDogecoinPeerAddresses().size()>0) {
+//            for (PeerAddress peerAddress : ethWrapper.getDogecoinPeerAddresses()) {
 //                peerGroup.addAddress(peerAddress);
 //            }
-//            peerGroup.setMaxConnections(federatorSupport.getBitcoinPeerAddresses().size());
-//        }
+//            peerGroup.setMaxConnections(ethWrapper.getDogecoinPeerAddresses().size());
+//          }
             final InetAddress localHost = InetAddress.getLocalHost();
             peerGroup.addAddress(localHost);
             peerGroup.setMaxConnections(1);
@@ -76,20 +79,20 @@ public class EthToDogeClient {
         @Override
         public void run() {
             try {
-                if (!federatorSupport.isEthNodeSyncing()) {
-                    long ethBlockCount = federatorSupport.getEthBlockCount();
-                    long topBlock = ethBlockCount - ETH_REQUIRED_CONFIRMATIONS;
-                    // Ignore execution if using a fresh new blockchain (most likely during local tests)
-                    if (topBlock < 0) return;
-                    List<Long> newUnlockRequestIds = federatorSupport.getNewUnlockRequestIds(latestEthBlockProcessed, topBlock);
+                if (!ethWrapper.isEthNodeSyncing()) {
+                    long fromBlock = latestEthBlockProcessed + 1;
+                    long toBlock = ethWrapper.getEthBlockCount() - config.getAgentConstants().getEth2DogeMinimumAcceptableConfirmations();
+                    // Ignore execution if nothing to process
+                    if (fromBlock > toBlock) return;
+                    List<Long> newUnlockRequestIds = ethWrapper.getNewUnlockRequestIds(fromBlock, toBlock);
                     for (Long unlockRequestId : newUnlockRequestIds) {
-                        FederatorSupport.Unlock unlock = federatorSupport.getUnlock(unlockRequestId);
+                        EthWrapper.Unlock unlock = ethWrapper.getUnlock(unlockRequestId);
                         if (isMine(unlock)) {
                             Transaction tx = buildDogeTransaction(unlock);
                             broadcastDogeTransaction(tx);
                         }
                     }
-                    latestEthBlockProcessed = topBlock;
+                    latestEthBlockProcessed = toBlock;
                     flushLatestEthBlockProcessed();
                 } else {
                     log.warn("UpdateEthToDogeTimerTask skipped because the eth node is syncing blocks");
@@ -104,28 +107,28 @@ public class EthToDogeClient {
         peerGroup.broadcastTransaction(tx);
     }
 
-    private Transaction buildDogeTransaction(FederatorSupport.Unlock unlock) {
-        ECKey operatorPrivateKey = keyHandler.getPrivateKey();
+    private Transaction buildDogeTransaction(EthWrapper.Unlock unlock) {
+        ECKey operatorPrivateKey = operatorKeyHandler.getPrivateKey();
 
-        NetworkParameters params = config.getBridgeConstants().getDogeParams();
+        NetworkParameters params = config.getAgentConstants().getDogeParams();
         Transaction tx = new Transaction(params);
         long totalInputValue = 0;
         for (UTXO utxo : unlock.selectedUtxos) {
             totalInputValue += utxo.getValue().getValue();
         }
-        tx.addOutput(Coin.valueOf(unlock.value), Address.fromBase58(params, unlock.dogeAddress));
-        long change = totalInputValue - unlock.value - unlock.fee;
+        tx.addOutput(Coin.valueOf(unlock.value - unlock.fee), Address.fromBase58(params, unlock.dogeAddress));
+        long change = totalInputValue - unlock.value;
         if (change > 0) {
-            tx.addOutput(Coin.valueOf(change), operatorPrivateKey.toAddress(params));
+            tx.addOutput(Coin.valueOf(change), operatorKeyHandler.getAddress());
         }
         for (UTXO utxo : unlock.selectedUtxos) {
             TransactionOutPoint outPoint = new TransactionOutPoint(params, utxo.getIndex(), utxo.getHash());
-            tx.addSignedInput(outPoint, keyHandler.getOutputScript(),  operatorPrivateKey);
+            tx.addSignedInput(outPoint, operatorKeyHandler.getOutputScript(),  operatorPrivateKey);
         }
         return tx;
     }
 
-    private boolean isMine(FederatorSupport.Unlock unlock) {
+    private boolean isMine(EthWrapper.Unlock unlock) {
         return true;
     }
 

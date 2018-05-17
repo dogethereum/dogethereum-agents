@@ -1,7 +1,6 @@
-package org.dogethereum.dogesubmitter.core;
+package org.dogethereum.dogesubmitter.core.eth;
 
 
-import com.google.common.util.concurrent.SettableFuture;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
@@ -14,61 +13,29 @@ import org.libdohj.core.ScryptHash;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.web3j.abi.EventEncoder;
-import org.web3j.abi.TypeReference;
-import org.web3j.abi.datatypes.Event;
-import org.web3j.abi.datatypes.Utf8String;
-import org.web3j.abi.datatypes.generated.Uint256;
-import org.web3j.abi.datatypes.generated.Uint32;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
-import org.web3j.protocol.core.methods.request.EthFilter;
-import org.web3j.protocol.core.methods.response.EthLog;
-import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.tuples.generated.Tuple3;
 import org.web3j.tuples.generated.Tuple6;
 import org.web3j.tx.ClientTransactionManager;
-import org.web3j.tx.Contract;
 
 import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 /**
- * Helps the federator communication with the Eth blockchain.
+ * Helps the agent communication with the Eth blockchain.
  * @author Oscar Guindzberg
  */
 @Component
-@Slf4j(topic = "FederatorSupport")
-public class FederatorSupport {
-
-    //private Ethereum ethereum;
-
-    //private FederateKeyHandler keyHandler;
-
-    //private AccountBuilder accountBuilder;
-
-
-    //private Blockchain blockchain;
-
-    //PendingState pendingState;
-
-    //BigInteger gasPrice;
-
-    //private FedNodeSystemProperties config;
-
-    //private org.bitcoinj.core.ECKey publicKey;
-
-    //private NetworkParameters parameters;
-
-    //private String bridgeContractAddress;
+@Slf4j(topic = "EthWrapper")
+public class EthWrapper {
 
     private Web3j web3;
     private DogeRelay dogeRelay;
@@ -78,7 +45,7 @@ public class FederatorSupport {
     private BigInteger gasPriceMinimum;
 
     @Autowired
-    public FederatorSupport() throws Exception {
+    public EthWrapper() throws Exception {
         config = SystemProperties.CONFIG;
         web3 = Web3j.build(new HttpService());  // defaults to http://localhost:8545/
         String dogeRelayContractAddress;
@@ -109,42 +76,6 @@ public class FederatorSupport {
         dogeToken = DogeTokenExtended.load(dogeTokenContractAddress, web3, new ClientTransactionManager(web3, fromAddressPriceOracle), gasPriceMinimum, gasLimit);
         assert dogeToken.isValid();
     }
-
-//    @Autowired
-//    public FederatorSupport(Ethereum ethereum, AccountBuilder accountBuilder, Blockchain blockchain, PendingState pendingState, FedNodeSystemProperties config) {
-//        this.ethereum = ethereum;
-//        this.accountBuilder = accountBuilder;
-//        this.blockchain = blockchain;
-//        this.pendingState = pendingState;
-//        this.config = config;
-//        this.keyHandler = new FederateKeyHandler(this.config.federatorKeyFile());
-//        this.gasPrice = BigInteger.valueOf(config.federatorGasPrice());
-//        this.bridgeConstants = config.getBridgeConstants();
-//        this.parameters = this.bridgeConstants.getDogeParams();
-//        this.bridgeContractAddress = this.bridgeConstants.getBridgeContractAddress();
-//    }
-
-//    public Object callTx(CallTransaction.Function function) {
-//        ProgramResult res = ethereum.callConstantFunction(bridgeContractAddress, function);
-//        Object[] result = function.decodeResult(res.getHReturn());
-//        return result[0];
-//    }
-
-
-//    public byte[] getFederatorPubKeyBytes() {
-//        return this.getPubKey().getPubKey();
-//    }
-
-//    public org.bitcoinj.core.ECKey getPubKey() {
-//        if (this.publicKey == null) {
-//            this.publicKey = org.bitcoinj.core.ECKey.fromPrivate(this.getFederatorPrivKeyBytes());
-//        }
-//        return this.publicKey;
-//    }
-
-//    public List<PeerAddress> getDogecoinPeerAddresses() throws UnknownHostException {
-//        return DogecoinPeerFactory.buildDogecoinPeerAddresses(this.bridgeConstants.getDogeParams().getPort(), this.config.dogecoinPeerAddresses());
-//    }
 
     /**
      * Get the deployed contract address from a truffle json file
@@ -194,6 +125,7 @@ public class FederatorSupport {
 
     public void sendStoreHeaders(org.bitcoinj.core.Block headers[]) throws Exception {
         log.info("About to send to the bridge headers from {} to {}", headers[0].getHash(), headers[headers.length - 1].getHash());
+//  Commented out solution that used bulkStoreHeaders
 //        ByteArrayOutputStream baosHeaders = new ByteArrayOutputStream();
 //        ByteArrayOutputStream baosHashes = new ByteArrayOutputStream();
 //        for (int i = 0; i < headers.length; i++) {
@@ -201,7 +133,7 @@ public class FederatorSupport {
 //            byte[] headerSize = calculateHeaderSize(serializedHeader);
 //            baosHeaders.write(headerSize);
 //            baosHeaders.write(serializedHeader);
-//            NetworkParameters params = config.getBridgeConstants().getDogeParams();
+//            NetworkParameters params = config.getAgentConstants().getDogeParams();
 //            AltcoinBlock block = new AltcoinBlock(params, serializedHeader);
 //            if (block.getAuxPoW() == null) {
 //                baosHashes.write(block.getScryptHash().getBytes());
@@ -224,9 +156,9 @@ public class FederatorSupport {
             CompletableFuture<TransactionReceipt> futureReceipt = dogeRelay.storeBlockHeader(dogeHeader.bitcoinSerialize(), scryptHashBI).sendAsync();
             log.info("Sent storeBlockHeader {}", dogeHeader.getHash());
             futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
-                    log.info("StoreBlockHeader receipt {}.", toString(receipt))
+                    log.info("StoreBlockHeader receipt {}.", receipt.toString())
             );
-            // Sleep a couple of millis, executing on ganache I get some tx receipt with "no previous block" error
+            // Sleep a couple of millis. Before this "hack", when using ganache I used to get some tx receipt with "no previous block" error
             Thread.sleep(200);
         }
     }
@@ -240,8 +172,8 @@ public class FederatorSupport {
         return Hex.decode(size);
     }
 
-    public boolean wasLockTxProcessed(Sha256Hash txHash) throws Exception {
-        return dogeToken.wasLockTxProcessed(txHash.toBigInteger()).send();
+    public boolean wasDogeTxProcessed(Sha256Hash txHash) throws Exception {
+        return dogeToken.wasDogeTxProcessed(txHash.toBigInteger()).send();
 
     }
 
@@ -261,24 +193,8 @@ public class FederatorSupport {
         CompletableFuture<TransactionReceipt> futureReceipt = dogeRelayForRelayTx.relayTx(txSerialized, txIndex, siblingsBigInteger, blockHashBigInteger, targetContract).sendAsync();
         log.info("Sent relayTx {}", tx.getHash());
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
-                log.info("RelayTx receipt {}.", toString(receipt))
+                log.info("RelayTx receipt {}.", receipt.toString())
         );
-    }
-
-    private String toString(TransactionReceipt receipt) {
-        return receipt.toString();
-//        StringBuilder sb = new StringBuilder();
-//        sb.append("Logs[")
-//        for (Log receiptLog : receipt.getLogs()) {
-//            sb.append(" Log " + receiptLog.getData());
-//            for (String topic : receiptLog.getTopics()) {
-//                sb.append(" Topic " + receiptLog.getData());
-//            }
-//            sb.append(". ");
-//        }
-//        sb.append("], ");
-//        sb.append(receipt.getBlockHash());
-//        return sb.toString();
     }
 
     public boolean isEthNodeSyncing() throws IOException {
@@ -301,18 +217,12 @@ public class FederatorSupport {
 
 //    Used just for release process
 
-//    public void addSignature(List<byte[]> signatures, byte[] unlockId) {
-//        byte[] federatorPublicKeyBytes = this.getFederatorPubKeyBytes();
-//        dogeToken.
-//        this.sendEthTx(Bridge.ADD_SIGNATURE, federatorPublicKeyBytes, signatures, ethTxHash);
-//    }
-
     public void updatePrice(long price) {
         BigInteger priceBI = BigInteger.valueOf(price);
         CompletableFuture<TransactionReceipt> futureReceipt = dogeToken.setDogeEthPrice(priceBI).sendAsync();
         log.info("Sent update doge-eth price tx. Price: {}", price);
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
-                log.info("Update doge-eth price tx receipt {}.", toString(receipt))
+                log.info("Update doge-eth price tx receipt {}.", receipt.toString())
         );
     }
 
@@ -330,7 +240,6 @@ public class FederatorSupport {
     }
 
     public Unlock getUnlock(Long unlockRequestId) throws Exception {
-
         Tuple6<String, String, BigInteger, BigInteger, List<BigInteger>, BigInteger> tuple =
                 dogeToken.getUnlockPendingInvestorProof(BigInteger.valueOf(unlockRequestId)).send();
         Unlock unlock = new Unlock();
@@ -362,15 +271,4 @@ public class FederatorSupport {
         public long fee;
     }
 
-
-
-//    public StateForFederator getStateForFederator() throws IOException, ClassNotFoundException {
-//        byte[] result = (byte[]) this.callTx(Bridge.GET_STATE_FOR_DOGE_RELEASE_CLIENT);
-//        return new StateForFederator(result, this.parameters);
-//    }
-//
-//
-//    public void sendUpdateCollections() {
-//        this.sendEthTx(Bridge.UPDATE_COLLECTIONS);
-//    }
 }

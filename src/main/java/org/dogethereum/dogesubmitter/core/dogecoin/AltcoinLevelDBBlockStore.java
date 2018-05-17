@@ -1,15 +1,16 @@
-package org.dogethereum.dogesubmitter;
+package org.dogethereum.dogesubmitter.core.dogecoin;
 
 import org.bitcoinj.core.*;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
-import org.fusesource.leveldbjni.*;
+import org.fusesource.leveldbjni.JniDBFactory;
 import org.iq80.leveldb.*;
 
-import javax.annotation.*;
-import java.io.*;
+import javax.annotation.Nullable;
+import java.io.File;
+import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.*;
+import java.nio.ByteBuffer;
 
 import static com.google.common.base.Preconditions.checkState;
 import static org.bitcoinj.core.StoredBlock.CHAIN_WORK_BYTES;
