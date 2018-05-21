@@ -18,7 +18,6 @@ import java.util.List;
  * @author Catalina Juarros
  */
 
-// TODO: replace all instances of java.io.IOException with just IOException -- remember to do it in EVERY FILE
 // TODO: same thing with classes
 // TODO: check if data is big endian or little endian for documentation
 
@@ -29,13 +28,14 @@ public class Superblock {
     private Sha256Hash merkleRoot; // Root of a Merkle tree comprised of Dogecoin block hashes. 32 bytes.
     private BigInteger chainWork; // Total chain work put into this superblock -- same as total chain work put into last block. 32 bytes.
     private Sha256Hash lastDogeBlockHash; // SHA-256 hash of last mined Dogecoin block in the superblock. 32 bytes.
-    private long lastDogeBlockTime; // Timestamp of last mined Dogecoin block in the superblock. 4 bytes.
+    private long lastDogeBlockTime; // Timestamp of last mined Dogecoin block in the superblock. 32 bytes to comply with Solidity version.
     private byte[] prevSuperblockHash; // KECCAK-256 hash of previous superblock. 32 bytes.
 
 
     /* ---- EXTRA FIELDS ---- */
 
     private byte[] hash; // KECCAK-256 hash of superblock data
+    private long superblockHeight;
     private List<Sha256Hash> dogeBlockHashes;
 
 
@@ -45,16 +45,15 @@ public class Superblock {
     public static final int BIG_INTEGER_LENGTH = 32;
     public static final int UINT32_LENGTH = 4;
 
-    public static final int MERKLE_ROOT_PAYLOAD_OFFSET = 0;
-    public static final int CHAIN_WORK_PAYLOAD_OFFSET = MERKLE_ROOT_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
-    public static final int LAST_BLOCK_HASH_PAYLOAD_OFFSET = CHAIN_WORK_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
-    public static final int LAST_BLOCK_TIME_PAYLOAD_OFFSET = LAST_BLOCK_HASH_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
-    public static final int PREV_SUPERBLOCK_HASH_PAYLOAD_OFFSET = LAST_BLOCK_TIME_PAYLOAD_OFFSET + UINT32_LENGTH;
+    private static final int MERKLE_ROOT_PAYLOAD_OFFSET = 0;
+    private static final int CHAIN_WORK_PAYLOAD_OFFSET = MERKLE_ROOT_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
+    private static final int LAST_BLOCK_TIME_PAYLOAD_OFFSET = CHAIN_WORK_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
+    private static final int LAST_BLOCK_HASH_PAYLOAD_OFFSET = LAST_BLOCK_TIME_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
+    private static final int PREV_SUPERBLOCK_HASH_PAYLOAD_OFFSET = LAST_BLOCK_HASH_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
 
-    public static final int NUMBER_OF_HASHES_PAYLOAD_OFFSET = PREV_SUPERBLOCK_HASH_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
-    public static final int DOGE_BLOCK_HASHES_PAYLOAD_OFFSET = NUMBER_OF_HASHES_PAYLOAD_OFFSET + UINT32_LENGTH;
-
-    public static final int COMPACT_SERIALIZED_SIZE = DOGE_BLOCK_HASHES_PAYLOAD_OFFSET + HASH_BYTES_LENGTH * 100; // this is an upper bound, make it flexible later
+    private static final int SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET = PREV_SUPERBLOCK_HASH_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
+    private static final int NUMBER_OF_HASHES_PAYLOAD_OFFSET = SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET + UINT32_LENGTH;
+    private static final int DOGE_BLOCK_HASHES_PAYLOAD_OFFSET = NUMBER_OF_HASHES_PAYLOAD_OFFSET + UINT32_LENGTH;
 
 
     /* ---- CONSTRUCTION METHODS ---- */
@@ -64,42 +63,39 @@ public class Superblock {
      * the previous superblock's hash and the accumulated chain work from its last block.
      * Callers should ensure that `work` is indeed the chain work corresponding
      * to the last element of `blocks`.
-     * @param dogeBlockHashes List of hashes belonging to all Dogecoin blocks mined within the one hour lapse corresponding to this superblock.
+     * @param dogeBlockHashes List of hashes belonging to all Dogecoin blocks
+     *                        mined within the one hour lapse corresponding to this superblock.
      * @param chainWork Last Dogecoin block's accumulated chainwork.
      * @param prevSuperblockHash Previous superblock's SHA-256 hash.
      */
-    public Superblock(List<Sha256Hash> dogeBlockHashes, BigInteger chainWork, long lastDogeBlockTime, byte[] prevSuperblockHash) {
+    public Superblock(List<Sha256Hash> dogeBlockHashes, BigInteger chainWork, long lastDogeBlockTime, byte[] prevSuperblockHash, long superblockHeight) {
         // hash all the block dogeBlockHashes into a Merkle tree
         this.merkleRoot = calculateMerkleRoot(dogeBlockHashes);
         this.chainWork = chainWork;
-        this.lastDogeBlockHash = dogeBlockHashes.get(dogeBlockHashes.size() - 1);
         this.lastDogeBlockTime = lastDogeBlockTime;
+        this.lastDogeBlockHash = dogeBlockHashes.get(dogeBlockHashes.size() - 1);
         this.prevSuperblockHash = prevSuperblockHash.clone();
 
+        this.superblockHeight = superblockHeight;
         this.dogeBlockHashes = new ArrayList<>(dogeBlockHashes);
     }
 
     /**
      * Construct a Superblock object from an array representing a serialized superblock.
      * @param payload Serialized superblock.
-     * @throws ProtocolException if payload length doesn't match that of a serialized superblock.
+     * @throws ProtocolException
      */
     // TODO: see what to do with potential exceptions when reading block fields
     public Superblock(byte[] payload) throws ProtocolException {
-//        if (payload.length > COMPACT_SERIALIZED_SIZE) {
-//            throw new ProtocolException("Payload too long; does not represent a proper superblock.");
-//        } else if (payload.length < COMPACT_SERIALIZED_SIZE) {
-//            throw new ProtocolException("Payload too short; does not represent a proper superblock.");
-//        }
+        this.merkleRoot = Sha256Hash.wrapReversed(SuperblockUtils.readBytes(payload, MERKLE_ROOT_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
+        this.chainWork = new BigInteger(Utils.reverseBytes(SuperblockUtils.readBytes(payload, CHAIN_WORK_PAYLOAD_OFFSET, BIG_INTEGER_LENGTH)));
+        this.lastDogeBlockTime = SuperblockUtils.readPaddedUint32(payload, LAST_BLOCK_TIME_PAYLOAD_OFFSET);
+        this.lastDogeBlockHash = Sha256Hash.wrapReversed(SuperblockUtils.readBytes(payload, LAST_BLOCK_HASH_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
+        this.prevSuperblockHash = Utils.reverseBytes(SuperblockUtils.readBytes(payload, PREV_SUPERBLOCK_HASH_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
 
-        this.merkleRoot = Sha256Hash.wrapReversed(readBytes(payload, MERKLE_ROOT_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
-        this.chainWork = new BigInteger(Utils.reverseBytes(readBytes(payload, CHAIN_WORK_PAYLOAD_OFFSET, BIG_INTEGER_LENGTH))); // read 256 bits
-        this.lastDogeBlockHash = Sha256Hash.wrapReversed(readBytes(payload, LAST_BLOCK_HASH_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
-        this.lastDogeBlockTime = Utils.readUint32(payload, LAST_BLOCK_TIME_PAYLOAD_OFFSET);
-        this.prevSuperblockHash = Utils.reverseBytes(readBytes(payload, PREV_SUPERBLOCK_HASH_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
-
+        this.superblockHeight = Utils.readUint32(payload, SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET);
         long numberOfDogeBlockHashes = Utils.readUint32(payload, NUMBER_OF_HASHES_PAYLOAD_OFFSET);
-        this.dogeBlockHashes = deserializeHashes(payload, DOGE_BLOCK_HASHES_PAYLOAD_OFFSET, numberOfDogeBlockHashes); // TODO: figure out why this is size 0 when deserialising block
+        this.dogeBlockHashes = deserializeHashesLE(payload, DOGE_BLOCK_HASHES_PAYLOAD_OFFSET, numberOfDogeBlockHashes);
     }
 
     /**
@@ -151,7 +147,7 @@ public class Superblock {
      */
     private byte[] calculateHash() throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        serialize(outputStream);
+        serializeBE(outputStream);
         byte[] data = outputStream.toByteArray();
         return Hash.sha3(data);
     }
@@ -186,27 +182,39 @@ public class Superblock {
         return hash;
     }
 
+    public long getSuperblockHeight() {
+        return superblockHeight;
+    }
+
 
     /* ---- STORAGE AND READING ---- */
 
     /**
      * Serializes Merkle root, chain work, last block hash, last block time and previous superblock hash
-     * (in that order) to an output stream.
+     * (in that order) to an output stream in little-endian format.
      * This is the information that should be used for calculating the superblock hash,
      * sending the superblock to DogeRelay and defending it in the challenges.
      * @param stream Output stream where the information will be written. Modified by the function.
-     * @throws IOException
+     * @throws IOException if a byte operation fails.
      */
-    public void serialize(OutputStream stream) throws IOException {
+    public void serializeLE(OutputStream stream) throws IOException {
         stream.write(merkleRoot.getReversedBytes()); // 32
-        stream.write(Utils.reverseBytes(toBytes32(chainWork))); // 32
+        stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(chainWork))); // 32
+        stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(lastDogeBlockTime))); // 32
         stream.write(lastDogeBlockHash.getReversedBytes()); // 32
-        Utils.uint32ToByteStreamLE(lastDogeBlockTime, stream); // 4
         stream.write(Utils.reverseBytes(prevSuperblockHash)); // 32
     }
 
+    public void serializeBE(OutputStream stream) throws IOException {
+        stream.write(merkleRoot.getBytes());
+        stream.write(SuperblockUtils.toBytes32(chainWork));
+        stream.write(SuperblockUtils.toBytes32(lastDogeBlockTime));
+        stream.write(lastDogeBlockHash.getBytes());
+        stream.write(prevSuperblockHash);
+    }
+
     /**
-     * Serializes every superblock field into an output stream.
+     * Serializes every superblock field into an output stream in little-endian format.
      * Order: Merkle root, chain work, last block hash, last block time, previous superblock hash,
      * last block height, superblock height.
      * The last two fields should *not* be sent to DogeRelay, but they are necessary
@@ -216,77 +224,71 @@ public class Superblock {
      * @throws IOException
      */
     public void serializeForStorage(OutputStream stream) throws IOException {
-        serialize(stream);
+        serializeLE(stream);
 
+        Utils.uint32ToByteStreamLE(superblockHeight, stream);
         Utils.uint32ToByteStreamLE(dogeBlockHashes.size(), stream);
-        serializeHashes(dogeBlockHashes, stream);
+        serializeHashesLE(dogeBlockHashes, stream);
     }
 
-    public void serializeHashes(List<Sha256Hash> hashes, OutputStream stream) throws IOException {
+    /**
+     * Serializes a list of hashes into an output stream in little-endian format.
+     * This was designed as a helper method for serializeForStorage,
+     * but it might be useful for other purposes in the future,
+     * so it was made public.
+     * @param hashes List of Dogecoin block hashes.
+     * @param stream Output stream where the information will be written. Modified by the function.
+     * @throws IOException
+     */
+    public void serializeHashesLE(List<Sha256Hash> hashes, OutputStream stream) throws IOException {
         for (int i = 0; i < hashes.size(); i++)
             stream.write(hashes.get(i).getReversedBytes());
     }
 
-    public List<Sha256Hash> deserializeHashes(byte[] payload, int offset, long numberOfHashes) {
+    /**
+     * Given a little-endian byte array representing a superblock,
+     * deserializes its Dogecoin block hashes and returns them in a list.
+     * This was designed as a helper method for parsing a superblock,
+     * but it might be useful for other purposes in the future,
+     * so it was made public.
+     * @param payload Serialized superblock.
+     * @param offset Byte where the first hash starts.
+     * @param numberOfHashes How many hashes to read.
+     * @return List of hashes in the same order that they were stored in.
+     */
+    public List<Sha256Hash> deserializeHashesLE(byte[] payload, int offset, long numberOfHashes) {
         List<Sha256Hash> hashes = new ArrayList<>();
         int cursor = offset;
 
         for (int i = 0; i < numberOfHashes; i++) {
-            hashes.add(Sha256Hash.wrapReversed(readBytes(payload, cursor, HASH_BYTES_LENGTH)));
+            hashes.add(Sha256Hash.wrapReversed(SuperblockUtils.readBytes(payload, cursor, HASH_BYTES_LENGTH)));
             cursor += HASH_BYTES_LENGTH;
         }
 
         return hashes;
     }
 
-
-    /* ---- HELPERS & UTILITIES ----- */
-
-    public byte[] toBytes32(BigInteger n) throws IOException {
-        byte[] hex = n.toByteArray();
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        for (int i = hex.length; i < 32; i++) outputStream.write(0); // pad with 0s
-        outputStream.write(hex);
-        return outputStream.toByteArray();
-    }
-
-    public byte[] toBytes32(long n) throws IOException {
-        byte[] hex = longToBytes(n);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        for (int i = 8; i < 32; i++) outputStream.write(0); // pad with 0s
-        outputStream.write(hex);
-        return outputStream.toByteArray();
-    }
-
-    public byte[] toBytes32(int n) throws IOException {
-        byte[] hex = intToBytes(n);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        for (int i = 4; i < 32; i++) outputStream.write(0); // pad with 0s
-        outputStream.write(hex);
-        return outputStream.toByteArray();
-    }
-
-    public static byte[] longToBytes(long l) {
-        byte[] result = new byte[8];
-        for (int i = 7; i >= 0; i--) {
-            result[i] = (byte)(l & 0xFF);
-            l >>= 8;
+    public boolean equals(Superblock superblock) {
+        if (!this.merkleRoot.equals(superblock.merkleRoot))
+            return false;
+        if (!this.chainWork.equals(superblock.chainWork))
+            return false;
+        if (this.lastDogeBlockTime != superblock.lastDogeBlockTime)
+            return false;
+        if (!this.lastDogeBlockHash.equals(superblock.lastDogeBlockHash))
+            return false;
+        for (int i = 0; i < 32; i++) {
+            if (this.prevSuperblockHash[i] != superblock.prevSuperblockHash[i])
+                return false;
         }
-        return result;
-    }
 
-    public static byte[] intToBytes(int j) {
-        byte[] result = new byte[4];
-        for (int i = 3; i >= 0; i--) {
-            result[i] = (byte)(j & 0xFF);
-            j >>= 8;
+        if (this.superblockHeight != superblock.superblockHeight)
+            return false;
+        for (int i = 0; i < Math.min(this.dogeBlockHashes.size(), superblock.dogeBlockHashes.size()); i++) {
+            if (!this.dogeBlockHashes.get(i).equals(superblock.dogeBlockHashes.get(i)))
+                return false;
         }
-        return result;
-    }
 
-    protected byte[] readBytes(byte[] payload, int offset, int length) {
-        byte[] b = new byte[length];
-        System.arraycopy(payload, offset, b, 0, length);
-        return b;
+        return true;
     }
 }

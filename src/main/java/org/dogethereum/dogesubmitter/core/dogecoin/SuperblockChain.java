@@ -9,8 +9,8 @@ import org.bitcoinj.store.BlockStoreException;
 
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
 import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
-import org.dogethereum.dogesubmitter.constants.BridgeConstants;
-import org.dogethereum.dogesubmitter.util.FileUtil;
+import org.dogethereum.dogesubmitter.constants.*;
+import org.dogethereum.dogesubmitter.util.*;
 import org.dogethereum.dogesubmitter.core.dogecoin.Superblock;
 
 import org.libdohj.core.ScryptHash;
@@ -33,7 +33,6 @@ import java.util.*;
 @Slf4j(topic = "SuperblockChain")
 public class SuperblockChain {
     @Autowired
-    // TODO: look into using BlockChain instead of dogecoinWrapper.
     private DogecoinWrapper dogecoinWrapper; // Interface with the Doge blockchain
 //    private final Context context;
 
@@ -45,8 +44,13 @@ public class SuperblockChain {
     /* ---- CONSTRUCTION METHODS ---- */
 
     /**
-     * Class constructor
-     * @param dogecoinWrapper Dogecoin blockchain interface
+     * Class constructor.
+     * @param dogecoinWrapper Dogecoin blockchain interface.
+     *                        Must be the same `DogecoinWrapper` being used in the `DogeToEthClient` object
+     *                        where this SuperblockChain is being instantiated.
+     * @param context Dogecoin blockchain context. Same requirement as `dogecoinWrapper` regarding `DogeToEthClient`.
+     * @param directory Directory where a disk copy of the superblock chain will be kept.
+     * @throws BlockStoreException if superblockStorage is not properly initialized.
      */
     public SuperblockChain(DogecoinWrapper dogecoinWrapper, Context context, File directory) throws BlockStoreException {
         this.dogecoinWrapper = dogecoinWrapper;
@@ -56,8 +60,9 @@ public class SuperblockChain {
 
 
     /**
-     * Starts syncing
-     * @param updatePeriod
+     * Starts syncing.
+     * @param updatePeriod How often the SuperblockChain object will poll dogecoinWrapper for new Doge blocks
+     *                     and update its chain file accordingly.
      * @param executionDate
      * @throws BlockStoreException
      * @throws java.io.IOException
@@ -66,36 +71,22 @@ public class SuperblockChain {
         new Timer("Update superblock chain").scheduleAtFixedRate(new UpdateSuperblocksTimerTask(), executionDate, updatePeriod);
     }
 
-    // testing only for now
-//    private Superblock calculateGenesisBlock() throws BlockStoreException {
-//        // maybe this should be a void but I love functional programming too much
-//        List<AltcoinBlock> blocks = new ArrayList<>();
-//        byte[] previousSuperblockHash = Hash.sha3("0000000000000000000000000000000000000000000000000000000000000000".getBytes());
-//        AltcoinBlock dogeGenesis = (AltcoinBlock) dogecoinWrapper.getBlockAtHeight(0).getHeader();
-//
-//        int endHeight = fillWithBlocksStartingAtTime(dogeGenesis.getTime(), 0, blocks, 1) - 1; // height of last block in the superblock
-//        BigInteger chainWork = dogecoinWrapper.getBlockAtHeight(endHeight).getChainWork();
-//        Superblock superblock = new Superblock(blocks, previousSuperblockHash, chainWork, endHeight, 0);
-//        return superblock;
-//    }
-
     /**
      * Builds and maintains a chain of superblocks from the whole Dogecoin blockchain.
      * Writes it to disk as specified by SuperblockLevelDBBlockStore.
      * @throws BlockStoreException
-     * @throws java.io.IOException
+     * @throws IOException
      */
-    public void updateChain() throws Exception {
-//        Superblock lastCorrectSuperblock = findLastCorrectSuperblock(); // see if there's been a reorg
+    public void updateChain() throws Exception, BlockStoreException, IOException {
         Superblock bestSuperblock = getChainHead();
         Sha256Hash bestSuperblockLastBlockHash = bestSuperblock.getLastDogeBlockHash();
 
         // get all the Dogecoin blocks that haven't yet been hashed into a superblock
-        Stack<Sha256Hash> allDogeHashesToHash = getBlockHashesNewerThan(bestSuperblockLastBlockHash);
+        Stack<Sha256Hash> allDogeHashesToHash = getDogeBlockHashesNewerThan(bestSuperblockLastBlockHash);
         storeSuperblocks(allDogeHashesToHash, bestSuperblock.getSuperblockHash()); // group them in superblocks accordingly
     }
 
-    private Stack<Sha256Hash> getBlockHashesNewerThan(Sha256Hash blockHash) throws BlockStoreException {
+    private Stack<Sha256Hash> getDogeBlockHashesNewerThan(Sha256Hash blockHash) throws BlockStoreException {
         Stack<Sha256Hash> hashes = new Stack<>();
         StoredBlock currentStoredBlock = dogecoinWrapper.getChainHead();
 
@@ -129,6 +120,8 @@ public class SuperblockChain {
         byte[] nextSuperblockPrevHash = initialPreviousSuperblockHash.clone();
         StoredBlock nextSuperblockLastBlock;
 
+        long nextSuperblockHeight = getChainHeight() + 1;
+
         // build and store all superblocks whose last block was mined three hours ago or more
         while (!allDogeHashesToHash.empty() && nextSuperblockEndTime.before(getThreeHoursAgo())) {
             // Modify allDogeHashesToHash and get hashes for next superblock.
@@ -138,16 +131,18 @@ public class SuperblockChain {
             Superblock newSuperblock = new Superblock(nextSuperblockDogeHashes,
                     nextSuperblockLastBlock.getChainWork(),
                     nextSuperblockLastBlock.getHeader().getTimeSeconds(),
-                    nextSuperblockPrevHash);
+                    nextSuperblockPrevHash,
+                    nextSuperblockHeight);
 
             superblockStorage.put(newSuperblock);
             superblockStorage.setChainHead(newSuperblock);
 
             // set prev hash and end time for next superblock
-            nextSuperblockPrevHash = newSuperblock.getSuperblockHash().clone();
             if (!allDogeHashesToHash.empty()) {
+                nextSuperblockPrevHash = newSuperblock.getSuperblockHash().clone();
                 nextSuperblockStartTime = dogecoinWrapper.getBlock(allDogeHashesToHash.peek()).getHeader().getTime();
                 nextSuperblockEndTime = roundToNextWholeHour(nextSuperblockStartTime);
+                nextSuperblockHeight++;
             }
 
             nextSuperblockDogeHashes.clear();
@@ -183,19 +178,63 @@ public class SuperblockChain {
 
     /* ---- GETTERS ---- */
 
+    /**
+     * Get tip of superblock chain.
+     * @return Tip of superblock chain as saved on disk.
+     * @throws BlockStoreException
+     */
     public Superblock getChainHead() throws BlockStoreException {
         return superblockStorage.getChainHead();
     }
 
-//    public Superblock getGenesisBlock() {
-    //        return genesisBlock;
-//    }
+    /**
+     * Get height of tip of superblock chain.
+     * @return Height of tip of superblock chain as saved on disk.
+     * @throws BlockStoreException
+     */
+    public long getChainHeight() throws BlockStoreException {
+        return getChainHead().getSuperblockHeight();
+    }
+
+    /**
+     * Look up a superblock by its hash.
+     * @param superblockHash Keccak-256 hash of a superblock.
+     * @return Superblock with given hash if it's found in the database, null otherwise.
+     */
+    public Superblock getSuperblock(byte[] superblockHash) {
+        return superblockStorage.get(superblockHash);
+    }
+
+    /**
+     * Look up a superblock by its height.
+     * Slower than looking up by hash, as it traverses the chain backwards.
+     * @param superblockHeight Height of a superblock
+     * @return Superblock with the given height if said height is less than that of the chain tip,
+     *         null otherwise.
+     * @throws BlockStoreException
+     * @throws IOException If a superblock hash cannot be calculated.
+     */
+    public Superblock getSuperblockByHeight(long superblockHeight) throws BlockStoreException, IOException {
+        Superblock currentSuperblock = getChainHead();
+        if (superblockHeight > currentSuperblock.getSuperblockHeight())
+            return null; // Superblock does not exist.
+
+        // Superblock exists.
+        while (currentSuperblock.getSuperblockHeight() > superblockHeight)
+            currentSuperblock = getSuperblock(currentSuperblock.getPrevSuperblockHash());
+
+        return currentSuperblock;
+    }
 
 
     /* ---- HELPER METHODS AND CLASSES ---- */
 
-    // I hate that I have to define this inside the SuperblockChain class
-    // instead of just a function that can be applied to dates
+    /**
+     * Get the earliest timestamp after the given date that has 0 as its 'minutes' and 'seconds' fields.
+     * Useful for getting superblock end times.
+     * @param date A timestamp, usually that of the first Dogecoin block in a superblock.
+     * @return Earliest whole hour timestamp after `date`.
+     */
     private Date roundToNextWholeHour(Date date) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
@@ -205,6 +244,11 @@ public class SuperblockChain {
         return calendar.getTime();
     }
 
+    /**
+     * Get a timestamp from exactly three hours before system time.
+     * Useful for knowing when to stop building superblocks.
+     * @return Timestamp from three hours ago.
+     */
     private Date getThreeHoursAgo() {
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.HOUR, -3);
@@ -212,9 +256,8 @@ public class SuperblockChain {
     }
 
     /**
-     * Task to keep superblock chain updated whenever the agent is running
+     * Task to keep superblock chain updated whenever the agent is running.
      */
-    // TODO: move outside of SuperblockChain
     private class UpdateSuperblocksTimerTask extends TimerTask {
         @Override
         public void run() {

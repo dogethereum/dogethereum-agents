@@ -3,29 +3,42 @@ package org.dogethereum.dogesubmitter.core.eth;
 
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
+
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
 import org.dogethereum.dogesubmitter.contract.DogeRelay;
 import org.dogethereum.dogesubmitter.contract.DogeToken;
 import org.dogethereum.dogesubmitter.contract.DogeTokenExtended;
+import org.dogethereum.dogesubmitter.contract.ClaimManager;
+import org.dogethereum.dogesubmitter.contract.Superblocks;
+
+import org.dogethereum.dogesubmitter.core.dogecoin.Superblock;
+import org.dogethereum.dogesubmitter.core.dogecoin.SuperblockUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+
 import org.libdohj.core.ScryptHash;
+
 import org.spongycastle.util.encoders.Hex;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
+import org.web3j.protocol.core.RemoteCall;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
+
 import org.web3j.tuples.generated.Tuple3;
 import org.web3j.tuples.generated.Tuple6;
-import org.web3j.tuples.generated.Tuple7;
+
 import org.web3j.tx.ClientTransactionManager;
 
 import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -42,6 +55,8 @@ public class EthWrapper {
     private DogeRelay dogeRelay;
     private DogeRelay dogeRelayForRelayTx;
     private DogeTokenExtended dogeToken;
+    private ClaimManager claimManager;
+    private Superblocks superblocks;
     private SystemProperties config;
     private BigInteger gasPriceMinimum;
 
@@ -51,6 +66,8 @@ public class EthWrapper {
         web3 = Web3j.build(new HttpService());  // defaults to http://localhost:8545/
         String dogeRelayContractAddress;
         String dogeTokenContractAddress;
+        String claimManagerContractAddress;
+        String superblocksContractAddress;
         String fromAddressGeneralPurposeAndSendBlocks;
         String fromAddressRelayTxs;
         String fromAddressPriceOracle;
@@ -68,6 +85,8 @@ public class EthWrapper {
             fromAddressRelayTxs = config.addressRelayTxs();
             fromAddressPriceOracle = config.addressPriceOracle();
         }
+        claimManagerContractAddress = getContractAddress("ClaimManager");
+        superblocksContractAddress = getContractAddress("Superblocks");
         gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
         BigInteger gasLimit = BigInteger.valueOf(config.gasLimit());
         dogeRelay = DogeRelay.load(dogeRelayContractAddress, web3, new ClientTransactionManager(web3, fromAddressGeneralPurposeAndSendBlocks), gasPriceMinimum, gasLimit);
@@ -76,6 +95,9 @@ public class EthWrapper {
         assert dogeRelayForRelayTx.isValid();
         dogeToken = DogeTokenExtended.load(dogeTokenContractAddress, web3, new ClientTransactionManager(web3, fromAddressPriceOracle), gasPriceMinimum, gasLimit);
         assert dogeToken.isValid();
+        claimManager = ClaimManager.load(claimManagerContractAddress, web3, new ClientTransactionManager(web3, fromAddressGeneralPurposeAndSendBlocks), gasPriceMinimum, gasLimit);
+        assert claimManager.isValid();
+        superblocks = Superblocks.load(superblocksContractAddress, web3, new ClientTransactionManager(web3, fromAddressGeneralPurposeAndSendBlocks), gasPriceMinimum, gasLimit);
     }
 
     /**
@@ -105,6 +127,7 @@ public class EthWrapper {
         return hashBigIntegerToString(result);
     }
 
+
     private String hashBigIntegerToString(BigInteger input) {
         String input2 = input.toString(16);
         StringBuilder output = new StringBuilder(input2);
@@ -122,6 +145,48 @@ public class EthWrapper {
             formattedResult.add(hashBigIntegerToString(biHash));
         }
         return formattedResult;
+    }
+
+    /**
+     * Propose a series of superblocks to ClaimManager in order to keep DogeRelay updated.
+     * @param superblocksToSend Superblocks that are already stored in the local database,
+     *                          but still haven't been submitted to DogeRelay.
+     * @throws Exception If a superblock hash cannot be calculated.
+     */
+    public void sendStoreSuperblocks(Deque<Superblock> superblocksToSend) throws Exception {
+        log.info("About to send to the bridge superblocks from {} to {}",
+                superblocksToSend.peekFirst().getSuperblockHash(),
+                superblocksToSend.peekLast().getSuperblockHash());
+
+        for (Superblock superblock : superblocksToSend) {
+            CompletableFuture<TransactionReceipt> futureReceipt = proposeSuperblock(superblock);
+            log.info("Sent superblock {}", superblock.getSuperblockHash());
+            futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
+                log.info("proposeSuperblock receipt {}", receipt.toString())
+            );
+        }
+        // This is because sendStoreBlocks does it; look into it later
+        Thread.sleep(200);
+    }
+
+    /**
+     * Propose a superblock to ClaimManager.
+     * @param superblock Superblock to be proposed.
+     * @return
+     */
+    private CompletableFuture<TransactionReceipt> proposeSuperblock(Superblock superblock) {
+        return claimManager.proposeSuperblock(superblock.getMerkleRoot().getBytes(),
+                superblock.getChainWork(),
+                BigInteger.valueOf(superblock.getLastDogeBlockTime()),
+                superblock.getLastDogeBlockHash().getBytes(),
+                superblock.getPrevSuperblockHash()).sendAsync();
+    }
+
+    public List<byte[]> getSuperblockLocator() throws Exception {
+        return superblocks.getSuperblockLocator().send();
+//        List<byte[]> formattedResult = new ArrayList<>();
+//        for (byte[] biHash : result) formattedResult.add(biHash);
+//        return formattedResult;
     }
 
     public void sendStoreHeaders(org.bitcoinj.core.Block headers[]) throws Exception {

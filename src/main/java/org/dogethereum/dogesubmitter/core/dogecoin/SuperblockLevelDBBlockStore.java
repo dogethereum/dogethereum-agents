@@ -1,8 +1,7 @@
 package org.dogethereum.dogesubmitter.core.dogecoin;
 
 import jnr.ffi.annotations.Out;
-import org.dogethereum.dogesubmitter.BridgeUtils;
-import org.dogethereum.dogesubmitter.constants.BridgeConstants;
+import org.dogethereum.dogesubmitter.*;
 import org.dogethereum.dogesubmitter.core.dogecoin.Superblock;
 
 import org.bitcoinj.core.*;
@@ -20,10 +19,7 @@ import com.google.common.base.Objects;
 import java.math.BigInteger;
 import java.io.*;
 import java.nio.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 
 //import static com.google.common.base.Preconditions.checkState;
 
@@ -40,12 +36,24 @@ public class SuperblockLevelDBBlockStore {
     private final Context context;
     private final File path;
     private DB db;
-//    private final ByteBuffer buffer = ByteBuffer.allocate(Superblock.COMPACT_SERIALIZED_SIZE); // TODO: see if this should be little endian
 
+    /**
+     * Constructor.
+     * @param context
+     * @param directory
+     * @throws BlockStoreException
+     */
     public SuperblockLevelDBBlockStore(Context context, File directory) throws BlockStoreException {
         this(context, directory, JniDBFactory.factory); // this might not work, ask later
     }
 
+    /**
+     * Helper for previous constructor.
+     * @param context
+     * @param directory
+     * @param dbFactory
+     * @throws BlockStoreException
+     */
     public SuperblockLevelDBBlockStore(Context context, File directory, DBFactory dbFactory) throws BlockStoreException {
         this.context = context;
         this.path = directory;
@@ -72,16 +80,21 @@ public class SuperblockLevelDBBlockStore {
     /**
      * If the database hasn't been initialised, this method sets it up
      * by storing the genesis superblock.
+     * Genesis superblock spec:
+     * - its only block is the genesis block from whatever Doge network it's storing blocks from
+     * - since it doesn't have an actual block before it, its parent block hash is hardcoded
+     *   as the Keccak-256 hash of a string which consists of the character '0' 32 times
+     * - its chain work is 0
      * @throws java.io.IOException
      * @throws BlockStoreException
      */
-    private synchronized void initStoreIfNeeded() throws java.io.IOException, BlockStoreException {
+    private synchronized void initStoreIfNeeded() throws IOException, BlockStoreException {
         if (db.get(CHAIN_HEAD_KEY) != null)
             return; // Already initialised.
         List<Sha256Hash> genesisList = new ArrayList<>();
         genesisList.add(context.getParams().getGenesisBlock().getHash());
-        byte[] genesisHash = Hash.sha3("0000000000000000000000000000000000000000000000000000000000000000".getBytes());
-        Superblock genesisBlock = new Superblock(genesisList, BigInteger.valueOf(0), context.getParams().getGenesisBlock().getTimeSeconds(), genesisHash);
+        byte[] genesisParentHash = new byte[32]; // initialised with 0s
+        Superblock genesisBlock = new Superblock(genesisList, BigInteger.valueOf(0), context.getParams().getGenesisBlock().getTimeSeconds(), genesisParentHash, 0);
         put(genesisBlock);
         setChainHead(genesisBlock);
     }
@@ -91,7 +104,7 @@ public class SuperblockLevelDBBlockStore {
      * @param block superblock to be written
      * @throws java.io.IOException
      */
-    public synchronized void put(Superblock block) throws java.io.IOException {
+    public synchronized void put(Superblock block) throws IOException {
 //        buffer.clear();
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         block.serializeForStorage(stream);
@@ -160,7 +173,13 @@ public class SuperblockLevelDBBlockStore {
         return get(db.get(CHAIN_HEAD_KEY));
     }
 
-    public synchronized byte[] getChainHeadHash() throws BlockStoreException, java.io.IOException {
+    /**
+     * Gets hash of tip of superblock chain.
+     * @return Highest stored superblock's hash.
+     * @throws BlockStoreException
+     * @throws IOException
+     */
+    public synchronized byte[] getChainHeadHash() throws BlockStoreException, IOException {
         return db.get(CHAIN_HEAD_KEY);
     }
 
@@ -170,27 +189,8 @@ public class SuperblockLevelDBBlockStore {
      * @throws BlockStoreException
      * @throws java.io.IOException
      */
-    public synchronized void setChainHead(Superblock chainHead) throws BlockStoreException, java.io.IOException {
+    public synchronized void setChainHead(Superblock chainHead) throws BlockStoreException, IOException {
         db.put(CHAIN_HEAD_KEY, chainHead.getSuperblockHash());
     }
 
-    // TODO: Move the following two methods to SuperblockChain
-
-//    /**
-//     * Gets height of highest stored superblock so that SuperblockChain can stay synchronised.
-//     * @return Height of superblock chain tip.
-//     * @throws BlockStoreException
-//     */
-//    public synchronized int getHeight() throws BlockStoreException {
-//        return getChainHead().getHeight();
-//    }
-
-//    /**
-//     * Gets height of latest hashed Doge block so that SuperblockChain can stay synchronised.
-//     * @return Height of last Doge block in highest stored superblock.
-//     * @throws BlockStoreException
-//     */
-//    public synchronized int getDogeHeight() throws BlockStoreException {
-//        return getChainHead().getLastBlockHeight();
-//    }
 }
