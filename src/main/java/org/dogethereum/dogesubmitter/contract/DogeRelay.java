@@ -45,6 +45,7 @@ public class DogeRelay extends Contract {
 
     static {
         _addresses = new HashMap<>();
+        _addresses.put("1527182964555", "0x9de8df71a3e3f27782f44a20c075bb1162be36f0");
     }
 
     protected DogeRelay(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {

@@ -110,16 +110,16 @@ public class SuperblockLevelDBBlockStore {
         block.serializeForStorage(stream);
         ByteBuffer buffer = ByteBuffer.allocate(stream.size());
         buffer.put(stream.toByteArray());
-        db.put(block.getSuperblockHash(), buffer.array());
+        db.put(block.getSuperblockId(), buffer.array());
     }
 
     /**
      * Retrieve a deserialised superblock from the database.
-     * @param hash Keccak-256 hash of superblock
+     * @param superblockId Keccak-256 hash of superblock
      * @return superblock identified by hash
      */
-    public synchronized Superblock get(byte[] hash) {
-        byte[] bits = db.get(hash);
+    public synchronized Superblock get(byte[] superblockId) {
+        byte[] bits = db.get(superblockId);
         if (bits == null)
             return null;
         return new Superblock(bits);
@@ -179,7 +179,7 @@ public class SuperblockLevelDBBlockStore {
      * @throws BlockStoreException
      * @throws IOException
      */
-    public synchronized byte[] getChainHeadHash() throws BlockStoreException, IOException {
+    public synchronized byte[] getChainHeadId() throws BlockStoreException, IOException {
         return db.get(CHAIN_HEAD_KEY);
     }
 
@@ -190,7 +190,7 @@ public class SuperblockLevelDBBlockStore {
      * @throws java.io.IOException
      */
     public synchronized void setChainHead(Superblock chainHead) throws BlockStoreException, IOException {
-        db.put(CHAIN_HEAD_KEY, chainHead.getSuperblockHash());
+        db.put(CHAIN_HEAD_KEY, chainHead.getSuperblockId());
     }
 
 }

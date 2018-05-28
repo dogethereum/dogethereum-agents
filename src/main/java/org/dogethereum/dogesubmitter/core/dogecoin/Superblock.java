@@ -18,9 +18,6 @@ import java.util.List;
  * @author Catalina Juarros
  */
 
-// TODO: same thing with classes
-// TODO: check if data is big endian or little endian for documentation
-
 public class Superblock {
 
     /* ---- INFO FIELDS ---- */
@@ -29,12 +26,12 @@ public class Superblock {
     private BigInteger chainWork; // Total chain work put into this superblock -- same as total chain work put into last block. 32 bytes.
     private Sha256Hash lastDogeBlockHash; // SHA-256 hash of last mined Dogecoin block in the superblock. 32 bytes.
     private long lastDogeBlockTime; // Timestamp of last mined Dogecoin block in the superblock. 32 bytes to comply with Solidity version.
-    private byte[] prevSuperblockHash; // KECCAK-256 hash of previous superblock. 32 bytes.
+    private byte[] parentId; // KECCAK-256 hash of previous superblock. 32 bytes.
 
 
     /* ---- EXTRA FIELDS ---- */
 
-    private byte[] hash; // KECCAK-256 hash of superblock data
+    private byte[] superblockId; // KECCAK-256 hash of superblock data
     private long superblockHeight;
     private List<Sha256Hash> dogeBlockHashes;
 
@@ -49,9 +46,9 @@ public class Superblock {
     private static final int CHAIN_WORK_PAYLOAD_OFFSET = MERKLE_ROOT_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
     private static final int LAST_BLOCK_TIME_PAYLOAD_OFFSET = CHAIN_WORK_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
     private static final int LAST_BLOCK_HASH_PAYLOAD_OFFSET = LAST_BLOCK_TIME_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
-    private static final int PREV_SUPERBLOCK_HASH_PAYLOAD_OFFSET = LAST_BLOCK_HASH_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
+    private static final int PARENT_ID_PAYLOAD_OFFSET = LAST_BLOCK_HASH_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
 
-    private static final int SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET = PREV_SUPERBLOCK_HASH_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
+    private static final int SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET = PARENT_ID_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
     private static final int NUMBER_OF_HASHES_PAYLOAD_OFFSET = SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET + UINT32_LENGTH;
     private static final int DOGE_BLOCK_HASHES_PAYLOAD_OFFSET = NUMBER_OF_HASHES_PAYLOAD_OFFSET + UINT32_LENGTH;
 
@@ -66,15 +63,15 @@ public class Superblock {
      * @param dogeBlockHashes List of hashes belonging to all Dogecoin blocks
      *                        mined within the one hour lapse corresponding to this superblock.
      * @param chainWork Last Dogecoin block's accumulated chainwork.
-     * @param prevSuperblockHash Previous superblock's SHA-256 hash.
+     * @param parentId Previous superblock's SHA-256 hash.
      */
-    public Superblock(List<Sha256Hash> dogeBlockHashes, BigInteger chainWork, long lastDogeBlockTime, byte[] prevSuperblockHash, long superblockHeight) {
+    public Superblock(List<Sha256Hash> dogeBlockHashes, BigInteger chainWork, long lastDogeBlockTime, byte[] parentId, long superblockHeight) {
         // hash all the block dogeBlockHashes into a Merkle tree
         this.merkleRoot = calculateMerkleRoot(dogeBlockHashes);
         this.chainWork = chainWork;
         this.lastDogeBlockTime = lastDogeBlockTime;
         this.lastDogeBlockHash = dogeBlockHashes.get(dogeBlockHashes.size() - 1);
-        this.prevSuperblockHash = prevSuperblockHash.clone();
+        this.parentId = parentId.clone();
 
         this.superblockHeight = superblockHeight;
         this.dogeBlockHashes = new ArrayList<>(dogeBlockHashes);
@@ -89,9 +86,9 @@ public class Superblock {
     public Superblock(byte[] payload) throws ProtocolException {
         this.merkleRoot = Sha256Hash.wrapReversed(SuperblockUtils.readBytes(payload, MERKLE_ROOT_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
         this.chainWork = new BigInteger(Utils.reverseBytes(SuperblockUtils.readBytes(payload, CHAIN_WORK_PAYLOAD_OFFSET, BIG_INTEGER_LENGTH)));
-        this.lastDogeBlockTime = SuperblockUtils.readPaddedUint32(payload, LAST_BLOCK_TIME_PAYLOAD_OFFSET);
+        this.lastDogeBlockTime = Utils.readUint32(payload, LAST_BLOCK_TIME_PAYLOAD_OFFSET);
         this.lastDogeBlockHash = Sha256Hash.wrapReversed(SuperblockUtils.readBytes(payload, LAST_BLOCK_HASH_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
-        this.prevSuperblockHash = Utils.reverseBytes(SuperblockUtils.readBytes(payload, PREV_SUPERBLOCK_HASH_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
+        this.parentId = Utils.reverseBytes(SuperblockUtils.readBytes(payload, PARENT_ID_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
 
         this.superblockHeight = Utils.readUint32(payload, SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET);
         long numberOfDogeBlockHashes = Utils.readUint32(payload, NUMBER_OF_HASHES_PAYLOAD_OFFSET);
@@ -171,21 +168,24 @@ public class Superblock {
         return lastDogeBlockTime;
     }
 
-    public byte[] getPrevSuperblockHash() {
-        return prevSuperblockHash;
+    public byte[] getParentId() {
+        return parentId;
     }
 
-    public byte[] getSuperblockHash() throws IOException {
-        if (hash == null) {
-            hash = calculateHash();
+    public byte[] getSuperblockId() throws IOException {
+        if (superblockId == null) {
+            superblockId = calculateHash();
         }
-        return hash;
+        return superblockId;
     }
 
     public long getSuperblockHeight() {
         return superblockHeight;
     }
 
+    public List<Sha256Hash> getDogeBlockHashes() {
+        return dogeBlockHashes;
+    }
 
     /* ---- STORAGE AND READING ---- */
 
@@ -202,7 +202,7 @@ public class Superblock {
         stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(chainWork))); // 32
         stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(lastDogeBlockTime))); // 32
         stream.write(lastDogeBlockHash.getReversedBytes()); // 32
-        stream.write(Utils.reverseBytes(prevSuperblockHash)); // 32
+        stream.write(Utils.reverseBytes(parentId)); // 32
     }
 
     public void serializeBE(OutputStream stream) throws IOException {
@@ -210,7 +210,7 @@ public class Superblock {
         stream.write(SuperblockUtils.toBytes32(chainWork));
         stream.write(SuperblockUtils.toBytes32(lastDogeBlockTime));
         stream.write(lastDogeBlockHash.getBytes());
-        stream.write(prevSuperblockHash);
+        stream.write(parentId);
     }
 
     /**
@@ -268,6 +268,16 @@ public class Superblock {
         return hashes;
     }
 
+    /* ---- OTHER METHODS ---- */
+
+    public boolean hasDogeBlock(Sha256Hash hash) {
+        for (Sha256Hash h : dogeBlockHashes) {
+            if (h.equals(hash))
+                return true;
+        }
+        return false;
+    }
+
     public boolean equals(Superblock superblock) {
         if (!this.merkleRoot.equals(superblock.merkleRoot))
             return false;
@@ -278,7 +288,7 @@ public class Superblock {
         if (!this.lastDogeBlockHash.equals(superblock.lastDogeBlockHash))
             return false;
         for (int i = 0; i < 32; i++) {
-            if (this.prevSuperblockHash[i] != superblock.prevSuperblockHash[i])
+            if (this.parentId[i] != superblock.parentId[i])
                 return false;
         }
 

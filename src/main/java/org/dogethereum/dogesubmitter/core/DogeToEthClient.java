@@ -50,7 +50,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
     private SuperblockChain superblockChain;
     private File superblockChainFile;
 
-    private Map<Sha256Hash, List<Proof>> txsToSendToEth = new ConcurrentHashMap<>();
+    private Map<Sha256Hash, List<Proof>> txsToSendToEth = new ConcurrentHashMap<>(); // TODO: see if this also needs superblock proofs
 
     private File dataDirectory;
 
@@ -177,31 +177,28 @@ public class DogeToEthClient implements DogecoinWrapperListener {
      * @return Number of superblocks sent to the bridge.
      * @throws Exception
      */
-    public int updateBridgeSuperblockChain() throws Exception {
+    public long updateBridgeSuperblockChain() throws Exception {
+        // Get the best superblock from the relay that is also in the main chain.
         List<byte[]> superblockLocator = ethWrapper.getSuperblockLocator();
         Superblock matchedSuperblock = getEarliestMatchingSuperblock(superblockLocator);
 
         checkNotNull(matchedSuperblock, "No best chain superblock found");
-        log.debug("Matched superblock {}.", matchedSuperblock.getSuperblockHash());
+        log.debug("Matched superblock {}.", matchedSuperblock.getSuperblockId());
 
-        // We found the superblock in the agent's best chain. Send superblocks that the relay is missing.
-        Deque<Superblock> superblocksToSendToBridge = getSuperblocksNewerThan(matchedSuperblock.getSuperblockHash());
-        if (superblocksToSendToBridge.size() == 0) {
+        // We found the superblock in the agent's best chain. Send the earliest superblock that the relay is missing.
+        Superblock toSend = getNextSuperblockInMainChain(matchedSuperblock.getSuperblockId());
+
+        if (toSend == null) {
             log.debug("Bridge was just updated, no new superblocks to send. matchedSuperblock: {}.",
-                    matchedSuperblock.getSuperblockHash());
+                    matchedSuperblock.getSuperblockId());
             return 0;
         }
-        log.debug("Superblocks missing in the bridge: {}.", superblocksToSendToBridge.size());
 
-        // Unlike updateBridgeDogeBlockchain, this does not have an upper limit for sending superblocks,
-        // because we don't expect to send them as frequently as Doge blocks. This might change later.
-        ethWrapper.sendStoreSuperblocks(superblocksToSendToBridge);
-        log.debug("Invoked sendStoreSuperblocks with {} blocks. First: {}, last: {}.",
-                superblocksToSendToBridge.size(),
-                superblocksToSendToBridge.peekFirst().getSuperblockHash(),
-                superblocksToSendToBridge.peekLast().getSuperblockHash());
+        log.debug("First superblock missing in the bridge: {}.", toSend.getSuperblockId());
+        ethWrapper.sendStoreSuperblock(toSend);
+        log.debug("Invoked sendStoreSuperblocks with superblock {}.", toSend.getSuperblockId());
 
-        return superblocksToSendToBridge.size();
+        return toSend.getSuperblockHeight();
     }
 
     /**
@@ -226,7 +223,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
 
             Superblock bestRelaySuperblockInLocalChain = superblockChain.getSuperblockByHeight(bridgeSuperblock.getSuperblockHeight());
 
-            if (bridgeSuperblock.equals(bestRelaySuperblockInLocalChain)) {
+            if (Arrays.equals(bridgeSuperblock.getSuperblockId(), bestRelaySuperblockInLocalChain.getSuperblockId())) {
                 matchedSuperblock = bestRelaySuperblockInLocalChain;
                 break;
             }
@@ -250,13 +247,36 @@ public class DogeToEthClient implements DogecoinWrapperListener {
         Deque<Superblock> superblocks = new ArrayDeque<>();
         Superblock currentSuperblock = superblockChain.getChainHead();
 
-//        while (!currentSuperblock.getSuperblockHash().equals(superblockHash)) {
-        while (!Arrays.equals(currentSuperblock.getSuperblockHash(), superblockHash)) {
+        while (!Arrays.equals(currentSuperblock.getSuperblockId(), superblockHash)) {
             superblocks.addFirst(currentSuperblock);
-            currentSuperblock = superblockChain.getSuperblock(currentSuperblock.getPrevSuperblockHash());
+            currentSuperblock = superblockChain.getSuperblock(currentSuperblock.getParentId());
         }
 
         return superblocks;
+    }
+
+    /**
+     * Helper method for updateBridgeSuperblockChain().
+     * Find a superblock in the main chain with a given superblock as its parent.
+     * @param superblockId Parent of superblock being searched.
+     * @return Immediate child of given superblock if it's in the main chain and not the tip,
+     *         null if it's the tip.
+     * @throws BlockStoreException If the superblock whose hash is `superblockId` is not in the main chain.
+     */
+    private Superblock getNextSuperblockInMainChain(byte[] superblockId) throws BlockStoreException {
+        if (superblockChain.getSuperblock(superblockId).getSuperblockHeight() == superblockChain.getChainHeight()) {
+            // There's nothing above the tip of the chain.
+            return null;
+        }
+
+        // There's a superblock after superblockId. Find it.
+        Superblock currentSuperblock = superblockChain.getChainHead();
+
+        while (currentSuperblock != null && !Arrays.equals(currentSuperblock.getParentId(), superblockId))
+            currentSuperblock = superblockChain.getSuperblock(currentSuperblock.getParentId());
+
+        checkNotNull(currentSuperblock, "Block is not in the main chain.");
+        return currentSuperblock;
     }
 
     public int updateBridgeDogeBlockchain() throws Exception {
@@ -322,9 +342,11 @@ public class DogeToEthClient implements DogecoinWrapperListener {
         return headersToSendToBridgeSubList.size();
     }
 
+    // TODO: add superblock proofs
     public void updateBridgeTransactions() throws Exception {
         Set<Transaction> operatorWalletTxSet = dogecoinWrapper.getTransactions(agentConstants.getDoge2EthMinimumAcceptableConfirmations(), config.isDogeTxRelayerEnabled(), config.isOperatorEnabled());
         int numberOfTxsSent = 0;
+
         for (Transaction operatorWalletTx : operatorWalletTxSet) {
             if (!ethWrapper.wasDogeTxProcessed(operatorWalletTx.getHash())) {
                 synchronized (this) {
@@ -334,19 +356,26 @@ public class DogeToEthClient implements DogecoinWrapperListener {
                         continue;
 
                     StoredBlock txStoredBlock = findBestChainStoredBlockFor(operatorWalletTx);
-                    PartialMerkleTree pmt = null;
+                    byte[] includeBits = new byte[1]; // dummy
+                    PartialMerkleTree txPMT = null;
+
                     for (Proof proof : proofs) {
                         if (proof.getBlockHash().equals(txStoredBlock.getHeader().getHash())) {
-                            pmt = proof.getPartialMerkleTree();
+                            txPMT = proof.getPartialMerkleTree();
                         }
                     }
+
                     int contractDogeBestBlockHeight = ethWrapper.getDogeBestBlockHeight();
                     if (contractDogeBestBlockHeight < (txStoredBlock.getHeight() + agentConstants.getDoge2EthMinimumAcceptableConfirmations() -1 )) {
                         log.debug("Tx not relayed yet because not enough confirmations yet {}. Contract height {}, Tx included in block {}",
                                   operatorWalletTx.getHash(), contractDogeBestBlockHeight, txStoredBlock.getHeight());
                         continue;
                     }
-                    ethWrapper.sendRelayTx(operatorWalletTx, txStoredBlock.getHeader().getHash(), pmt);
+
+                    Superblock txSuperblock = findBestSuperblockFor(txStoredBlock.getHeader().getHash());
+                    PartialMerkleTree superblockPMT = PartialMerkleTree.buildFromLeaves(agentConstants.getDogeParams(), includeBits, txSuperblock.getDogeBlockHashes());
+
+                    ethWrapper.sendRelayTx(operatorWalletTx, txStoredBlock.getHeader().getHash(), txPMT, superblockPMT);
                     numberOfTxsSent++;
                     // Send a maximum of 40 registerTransaction txs per turn
                     if (numberOfTxsSent >= MAXIMUM_REGISTER_DOGE_LOCK_TXS_PER_TURN) {
@@ -377,6 +406,27 @@ public class DogeToEthClient implements DogecoinWrapperListener {
             }
 
         throw new IllegalStateException("Tx not in the best chain: " + tx.getHash());
+    }
+
+    /**
+     * Helper method for sending an SPV proof that a block is in the main chain of superblocks.
+     * Finds the highest superblock where the block identified by `hash` can be found.
+     * @param hash SHA-256 hash of a block that we want to prove is in the main chain.
+     * @return Highest stored superblock where the block can be found.
+     * @throws BlockStoreException
+     * @throws IllegalStateException If the block is not in the main chain.
+     */
+    private Superblock findBestSuperblockFor(Sha256Hash hash) throws BlockStoreException, IllegalStateException {
+        Superblock currentSuperblock = superblockChain.getChainHead();
+
+        while (currentSuperblock != null) {
+            if (currentSuperblock.hasDogeBlock(hash))
+                return currentSuperblock;
+            currentSuperblock = superblockChain.getSuperblock(currentSuperblock.getParentId());
+        }
+
+        // current superblock is null, i.e. block was not found in main chain
+        throw new IllegalStateException("Block not in the best chain: " + hash);
     }
 
     @PreDestroy

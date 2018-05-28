@@ -83,7 +83,7 @@ public class SuperblockChain {
 
         // get all the Dogecoin blocks that haven't yet been hashed into a superblock
         Stack<Sha256Hash> allDogeHashesToHash = getDogeBlockHashesNewerThan(bestSuperblockLastBlockHash);
-        storeSuperblocks(allDogeHashesToHash, bestSuperblock.getSuperblockHash()); // group them in superblocks accordingly
+        storeSuperblocks(allDogeHashesToHash, bestSuperblock.getSuperblockId()); // group them in superblocks accordingly
     }
 
     private Stack<Sha256Hash> getDogeBlockHashesNewerThan(Sha256Hash blockHash) throws BlockStoreException {
@@ -135,11 +135,11 @@ public class SuperblockChain {
                     nextSuperblockHeight);
 
             superblockStorage.put(newSuperblock);
-            superblockStorage.setChainHead(newSuperblock);
+            superblockStorage.setChainHead(newSuperblock); // TODO: only do this if its chainwork is more than the chain tip's!
 
             // set prev hash and end time for next superblock
             if (!allDogeHashesToHash.empty()) {
-                nextSuperblockPrevHash = newSuperblock.getSuperblockHash().clone();
+                nextSuperblockPrevHash = newSuperblock.getSuperblockId().clone();
                 nextSuperblockStartTime = dogecoinWrapper.getBlock(allDogeHashesToHash.peek()).getHeader().getTime();
                 nextSuperblockEndTime = roundToNextWholeHour(nextSuperblockStartTime);
                 nextSuperblockHeight++;
@@ -221,7 +221,7 @@ public class SuperblockChain {
 
         // Superblock exists.
         while (currentSuperblock.getSuperblockHeight() > superblockHeight)
-            currentSuperblock = getSuperblock(currentSuperblock.getPrevSuperblockHash());
+            currentSuperblock = getSuperblock(currentSuperblock.getParentId());
 
         return currentSuperblock;
     }
