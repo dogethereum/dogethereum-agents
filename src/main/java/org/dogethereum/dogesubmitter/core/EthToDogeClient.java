@@ -13,10 +13,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import java.io.*;
 import java.net.InetAddress;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 /**
  * Signs and broadcasts unlock txs on the doge network
@@ -71,7 +68,7 @@ public class EthToDogeClient {
             peerGroup.setMaxConnections(1);
             peerGroup.start();
 
-            new Timer("Eth to Doge client").scheduleAtFixedRate(new UpdateEthToDogeTimerTask(), Calendar.getInstance().getTime(), 30 * 1000);
+            new Timer("Eth to Doge client").scheduleAtFixedRate(new UpdateEthToDogeTimerTask(), Calendar.getInstance().getTime(), 15 * 1000);
         }
     }
 
@@ -84,10 +81,10 @@ public class EthToDogeClient {
                     long toBlock = ethWrapper.getEthBlockCount() - config.getAgentConstants().getEth2DogeMinimumAcceptableConfirmations();
                     // Ignore execution if nothing to process
                     if (fromBlock > toBlock) return;
-                    List<Long> newUnlockRequestIds = ethWrapper.getNewUnlockRequestIds(fromBlock, toBlock);
-                    for (Long unlockRequestId : newUnlockRequestIds) {
-                        EthWrapper.Unlock unlock = ethWrapper.getUnlock(unlockRequestId);
-                        if (isMine(unlock)) {
+                    List<EthWrapper.UnlockRequestEvent> newUnlockRequestEvents = ethWrapper.getNewUnlockRequests(fromBlock, toBlock);
+                    for (EthWrapper.UnlockRequestEvent unlockRequestEvent : newUnlockRequestEvents) {
+                        if (isMine(unlockRequestEvent)) {
+                            EthWrapper.Unlock unlock = ethWrapper.getUnlock(unlockRequestEvent.id);
                             Transaction tx = buildDogeTransaction(unlock);
                             broadcastDogeTransaction(tx);
                         }
@@ -128,8 +125,9 @@ public class EthToDogeClient {
         return tx;
     }
 
-    private boolean isMine(EthWrapper.Unlock unlock) {
-        return true;
+    // Is the unlock request for this operator?
+    private boolean isMine(EthWrapper.UnlockRequestEvent unlockRequestEvent) {
+        return Arrays.equals(unlockRequestEvent.operatorPublicKeyHash, operatorKeyHandler.getPublicKeyHash());
     }
 
     private void restoreLatestEthBlockProcessed() throws IOException {

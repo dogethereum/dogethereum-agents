@@ -4,6 +4,7 @@ import org.web3j.abi.EventEncoder;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Event;
 import org.web3j.abi.datatypes.Utf8String;
+import org.web3j.abi.datatypes.generated.Bytes20;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.abi.datatypes.generated.Uint32;
 import org.web3j.protocol.Web3j;
@@ -36,7 +37,7 @@ public class DogeTokenExtended extends DogeToken {
     public List<DogeToken.UnlockRequestEventResponse> getUnlockRequestEvents(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) throws IOException {
         final Event event = new Event("UnlockRequest",
                 Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Uint32>() {}, new TypeReference<org.web3j.abi.datatypes.Address>() {}, new TypeReference<Utf8String>() {}, new TypeReference<Uint256>() {}));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint32>() {}, new TypeReference<Bytes20>() {}));
         List<DogeToken.UnlockRequestEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
         filter.addSingleTopic(EventEncoder.encode(event));
@@ -48,9 +49,7 @@ public class DogeTokenExtended extends DogeToken {
             DogeToken.UnlockRequestEventResponse typedResponse = new DogeToken.UnlockRequestEventResponse();
             typedResponse.log = log;
             typedResponse.id = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
-            typedResponse.from = (String) eventValues.getNonIndexedValues().get(1).getValue();
-            typedResponse.dogeAddress = (String) eventValues.getNonIndexedValues().get(2).getValue();
-            typedResponse.value = (BigInteger) eventValues.getNonIndexedValues().get(3).getValue();
+            typedResponse.operatorPublicKeyHash = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
             result.add(typedResponse);
         }
         return result;

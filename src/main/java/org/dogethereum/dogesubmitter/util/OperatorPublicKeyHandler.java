@@ -12,6 +12,8 @@ public interface OperatorPublicKeyHandler {
 
     Address getAddress();
 
+    byte[] getPublicKeyHash();
+
     /**
      * Returns address creation time expressed in seconds since the epoch.
      */

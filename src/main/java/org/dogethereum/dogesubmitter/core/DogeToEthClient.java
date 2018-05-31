@@ -245,7 +245,8 @@ public class DogeToEthClient implements DogecoinWrapperListener {
                                   operatorWalletTx.getHash(), contractDogeBestBlockHeight, txStoredBlock.getHeight());
                         continue;
                     }
-                    ethWrapper.sendRelayTx(operatorWalletTx, txStoredBlock.getHeader().getHash(), pmt);
+
+                    ethWrapper.sendRelayTx(operatorWalletTx, operatorPublicKeyHandler.getPublicKeyHash(), txStoredBlock.getHeader().getHash(), pmt);
                     numberOfTxsSent++;
                     // Send a maximum of 40 registerTransaction txs per turn
                     if (numberOfTxsSent >= MAXIMUM_REGISTER_DOGE_LOCK_TXS_PER_TURN) {

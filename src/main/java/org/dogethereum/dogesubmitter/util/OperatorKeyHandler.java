@@ -83,6 +83,10 @@ public class OperatorKeyHandler implements OperatorPublicKeyHandler {
         return getPrivateKey().toAddress(dogeParams);
     }
 
+    @Override
+    public byte[] getPublicKeyHash() {
+        return getPrivateKey().getPubKeyHash();
+    }
 
     @Override
     public long getAddressCreationTime() {

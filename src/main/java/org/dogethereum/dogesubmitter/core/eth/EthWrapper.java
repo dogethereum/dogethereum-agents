@@ -19,6 +19,7 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.tuples.generated.Tuple3;
 import org.web3j.tuples.generated.Tuple6;
+import org.web3j.tuples.generated.Tuple7;
 import org.web3j.tx.ClientTransactionManager;
 
 import java.io.FileReader;
@@ -177,7 +178,7 @@ public class EthWrapper {
 
     }
 
-    public void sendRelayTx(org.bitcoinj.core.Transaction tx, Sha256Hash blockHash, PartialMerkleTree pmt) throws Exception {
+    public void sendRelayTx(org.bitcoinj.core.Transaction tx, byte[] operatorPublicKeyHash, Sha256Hash blockHash, PartialMerkleTree pmt) throws Exception {
         log.info("About to send to the bridge doge tx hash {}. Block hash {}", tx.getHash(), blockHash);
 
         byte[] txSerialized = tx.bitcoinSerialize();
@@ -190,7 +191,7 @@ public class EthWrapper {
         }
         BigInteger blockHashBigInteger = blockHash.toBigInteger();
         String targetContract = dogeToken.getContractAddress();
-        CompletableFuture<TransactionReceipt> futureReceipt = dogeRelayForRelayTx.relayTx(txSerialized, txIndex, siblingsBigInteger, blockHashBigInteger, targetContract).sendAsync();
+        CompletableFuture<TransactionReceipt> futureReceipt = dogeRelayForRelayTx.relayTx(txSerialized, operatorPublicKeyHash, txIndex, siblingsBigInteger, blockHashBigInteger, targetContract).sendAsync();
         log.info("Sent relayTx {}", tx.getHash());
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
                 log.info("RelayTx receipt {}.", receipt.toString())
@@ -230,17 +231,26 @@ public class EthWrapper {
         return web3.ethBlockNumber().send().getBlockNumber().longValue();
     }
 
-    public List<Long> getNewUnlockRequestIds(long latestEthBlockProcessed, long topBlock) throws ExecutionException, InterruptedException, IOException {
-        List<Long> result = new ArrayList<>();
+    public List<UnlockRequestEvent> getNewUnlockRequests(long latestEthBlockProcessed, long topBlock) throws ExecutionException, InterruptedException, IOException {
+        List<UnlockRequestEvent> result = new ArrayList<>();
         List<DogeToken.UnlockRequestEventResponse> unlockRequestEvents = dogeToken.getUnlockRequestEvents(DefaultBlockParameter.valueOf(BigInteger.valueOf(latestEthBlockProcessed)), DefaultBlockParameter.valueOf(BigInteger.valueOf(topBlock)));
         for (DogeToken.UnlockRequestEventResponse unlockRequestEvent : unlockRequestEvents) {
-            result.add(unlockRequestEvent.id.longValue());
+            UnlockRequestEvent unlockRequestEventEthWrapper = new UnlockRequestEvent();
+            unlockRequestEventEthWrapper.id = unlockRequestEvent.id.longValue();
+            unlockRequestEventEthWrapper.operatorPublicKeyHash = unlockRequestEvent.operatorPublicKeyHash;
+            result.add(unlockRequestEventEthWrapper);
         }
         return result;
     }
 
+    public static class UnlockRequestEvent {
+        public long id;
+        public byte[] operatorPublicKeyHash;
+    }
+
+
     public Unlock getUnlock(Long unlockRequestId) throws Exception {
-        Tuple6<String, String, BigInteger, BigInteger, List<BigInteger>, BigInteger> tuple =
+        Tuple7<String, String, BigInteger, BigInteger, List<BigInteger>, BigInteger, byte[]> tuple =
                 dogeToken.getUnlockPendingInvestorProof(BigInteger.valueOf(unlockRequestId)).send();
         Unlock unlock = new Unlock();
         unlock.from = tuple.getValue1();
@@ -248,11 +258,12 @@ public class EthWrapper {
         unlock.value = tuple.getValue3().longValue();
         unlock.timestamp =  tuple.getValue4().longValue();
         unlock.fee = tuple.getValue6().longValue();
+        unlock.operatorPublicKeyHash = tuple.getValue7();
 
         List<BigInteger> selectedUtxosIndexes = tuple.getValue5();
         List<UTXO> selectedUtxosOutpoints = new ArrayList<>();
         for (BigInteger selectedUtxo : selectedUtxosIndexes) {
-            Tuple3<BigInteger, BigInteger, BigInteger> utxo = dogeToken.utxos(selectedUtxo).send();
+            Tuple3<BigInteger, BigInteger, BigInteger> utxo = dogeToken.getUtxo(unlock.operatorPublicKeyHash, selectedUtxo).send();
             long value = utxo.getValue1().longValue();
             Sha256Hash txHash = Sha256Hash.wrap(hashBigIntegerToString(utxo.getValue2()));
             long outputIndex = utxo.getValue3().longValue();
@@ -269,6 +280,7 @@ public class EthWrapper {
         public long timestamp;
         public List<UTXO> selectedUtxos;
         public long fee;
+        public byte[] operatorPublicKeyHash;
     }
 
 }
