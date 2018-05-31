@@ -21,7 +21,7 @@ public class RegTestAgentConstants extends AgentConstants {
     RegTestAgentConstants() {
         dogeParams = DogecoinRegTestParams.get();
         doge2EthMinimumAcceptableConfirmations = 7;
-        updateBridgeExecutionPeriod = 20 * 1000; // 10 seconds
+        updateBridgeExecutionPeriod = 10 * 1000; // 10 seconds
         maxDogeHeadersPerRound = 5;
         minimumLockTxValue = Coin.valueOf(1000000);
 
