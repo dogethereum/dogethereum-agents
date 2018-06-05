@@ -43,8 +43,8 @@ public class SuperblockLevelDBBlockStore {
      * @param directory
      * @throws BlockStoreException
      */
-    public SuperblockLevelDBBlockStore(Context context, File directory) throws BlockStoreException {
-        this(context, directory, JniDBFactory.factory); // this might not work, ask later
+    public SuperblockLevelDBBlockStore(Context context, File directory, NetworkParameters params) throws BlockStoreException {
+        this(context, directory, JniDBFactory.factory, params); // this might not work, ask later
     }
 
     /**
@@ -54,27 +54,27 @@ public class SuperblockLevelDBBlockStore {
      * @param dbFactory
      * @throws BlockStoreException
      */
-    public SuperblockLevelDBBlockStore(Context context, File directory, DBFactory dbFactory) throws BlockStoreException {
+    public SuperblockLevelDBBlockStore(Context context, File directory, DBFactory dbFactory, NetworkParameters params) throws BlockStoreException {
         this.context = context;
         this.path = directory;
         Options options = new Options();
         options.createIfMissing();
 
         try {
-            tryOpen(directory, dbFactory, options);
+            tryOpen(directory, dbFactory, options, params);
         } catch (IOException e) {
             try {
                 dbFactory.repair(directory, options);
-                tryOpen(directory, dbFactory, options);
+                tryOpen(directory, dbFactory, options, params);
             } catch (IOException e1) {
                 throw new BlockStoreException(e1);
             }
         }
     }
 
-    private synchronized void tryOpen(File directory, DBFactory dbFactory, Options options) throws IOException, BlockStoreException {
+    private synchronized void tryOpen(File directory, DBFactory dbFactory, Options options, NetworkParameters params) throws IOException, BlockStoreException {
         db = dbFactory.open(directory, options);
-        initStoreIfNeeded();
+        initStoreIfNeeded(params);
     }
 
     /**
@@ -88,13 +88,13 @@ public class SuperblockLevelDBBlockStore {
      * @throws java.io.IOException
      * @throws BlockStoreException
      */
-    private synchronized void initStoreIfNeeded() throws IOException, BlockStoreException {
+    private synchronized void initStoreIfNeeded(NetworkParameters params) throws IOException, BlockStoreException {
         if (db.get(CHAIN_HEAD_KEY) != null)
             return; // Already initialised.
         List<Sha256Hash> genesisList = new ArrayList<>();
         genesisList.add(context.getParams().getGenesisBlock().getHash());
         byte[] genesisParentHash = new byte[32]; // initialised with 0s
-        Superblock genesisBlock = new Superblock(genesisList, BigInteger.valueOf(0), context.getParams().getGenesisBlock().getTimeSeconds(), genesisParentHash, 0);
+        Superblock genesisBlock = new Superblock(params, genesisList, BigInteger.valueOf(0), context.getParams().getGenesisBlock().getTimeSeconds(), genesisParentHash, 0);
         put(genesisBlock);
         setChainHead(genesisBlock);
     }

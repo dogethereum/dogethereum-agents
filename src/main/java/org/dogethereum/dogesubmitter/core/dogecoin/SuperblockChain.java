@@ -37,8 +37,7 @@ public class SuperblockChain {
 //    private final Context context;
 
     private SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
-
-    private ArrayList<AltcoinBlock> currentBlocksToHash; // Dogecoin blocks queued for being hashed into a superblock
+    private NetworkParameters params;
 
 
     /* ---- CONSTRUCTION METHODS ---- */
@@ -52,10 +51,11 @@ public class SuperblockChain {
      * @param directory Directory where a disk copy of the superblock chain will be kept.
      * @throws BlockStoreException if superblockStorage is not properly initialized.
      */
-    public SuperblockChain(DogecoinWrapper dogecoinWrapper, Context context, File directory) throws BlockStoreException {
+    public SuperblockChain(DogecoinWrapper dogecoinWrapper, Context context, File directory, NetworkParameters params) throws BlockStoreException {
         this.dogecoinWrapper = dogecoinWrapper;
         File chainFile = new File(directory.getAbsolutePath() + "/SuperblockChain"); //TODO: look into file types
-        this.superblockStorage = new SuperblockLevelDBBlockStore(context, chainFile);
+        this.superblockStorage = new SuperblockLevelDBBlockStore(context, chainFile, params);
+        this.params = params;
     }
 
 
@@ -83,7 +83,7 @@ public class SuperblockChain {
 
         // get all the Dogecoin blocks that haven't yet been hashed into a superblock
         Stack<Sha256Hash> allDogeHashesToHash = getDogeBlockHashesNewerThan(bestSuperblockLastBlockHash);
-        storeSuperblocks(allDogeHashesToHash, bestSuperblock.getSuperblockId()); // group them in superblocks accordingly
+        storeSuperblocks(allDogeHashesToHash, bestSuperblock.getSuperblockId(), this.params); // group them in superblocks accordingly
     }
 
     private Stack<Sha256Hash> getDogeBlockHashesNewerThan(Sha256Hash blockHash) throws BlockStoreException {
@@ -108,7 +108,7 @@ public class SuperblockChain {
      * @param initialPreviousSuperblockHash Keccak-256 hash of the last stored superblock.
      * @throws Exception
      */
-    private void storeSuperblocks(Stack<Sha256Hash> allDogeHashesToHash, byte[] initialPreviousSuperblockHash) throws Exception {
+    private void storeSuperblocks(Stack<Sha256Hash> allDogeHashesToHash, byte[] initialPreviousSuperblockHash, NetworkParameters params) throws Exception {
         if (allDogeHashesToHash.empty())
             return;
 
@@ -123,12 +123,13 @@ public class SuperblockChain {
         long nextSuperblockHeight = getChainHeight() + 1;
 
         // build and store all superblocks whose last block was mined three hours ago or more
-        while (!allDogeHashesToHash.empty() && nextSuperblockEndTime.before(getThreeHoursAgo())) {
+        while (!allDogeHashesToHash.empty() && nextSuperblockEndTime.before(SuperblockUtils.getThreeHoursAgo())) {
             // Modify allDogeHashesToHash and get hashes for next superblock.
             nextSuperblockDogeHashes = popBlocksBeforeTime(allDogeHashesToHash, nextSuperblockEndTime);
             nextSuperblockLastBlock = dogecoinWrapper.getBlock(nextSuperblockDogeHashes.get(nextSuperblockDogeHashes.size() - 1));
 
-            Superblock newSuperblock = new Superblock(nextSuperblockDogeHashes,
+            Superblock newSuperblock = new Superblock(params,
+                    nextSuperblockDogeHashes,
                     nextSuperblockLastBlock.getChainWork(),
                     nextSuperblockLastBlock.getHeader().getTimeSeconds(),
                     nextSuperblockPrevHash,
@@ -241,17 +242,6 @@ public class SuperblockChain {
         calendar.add(Calendar.HOUR, 1);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
-        return calendar.getTime();
-    }
-
-    /**
-     * Get a timestamp from exactly three hours before system time.
-     * Useful for knowing when to stop building superblocks.
-     * @return Timestamp from three hours ago.
-     */
-    private Date getThreeHoursAgo() {
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.HOUR, -3);
         return calendar.getTime();
     }
 

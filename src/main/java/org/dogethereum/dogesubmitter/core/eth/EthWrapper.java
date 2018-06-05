@@ -35,10 +35,12 @@ import org.web3j.tuples.generated.Tuple6;
 
 import org.web3j.tx.ClientTransactionManager;
 
+import java.io.ByteArrayOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -312,9 +314,15 @@ public class EthWrapper {
 
     }
 
-    // TODO: add Doge block header and superblock hash
-    public void sendRelayTx(org.bitcoinj.core.Transaction tx, Sha256Hash blockHash, PartialMerkleTree txPMT, PartialMerkleTree superblockPMT) throws Exception {
-        log.info("About to send to the bridge doge tx hash {}. Block hash {}", tx.getHash(), blockHash);
+    public boolean isApproved(byte[] superblockId) throws Exception {
+        return getSuperblockStatus(superblockId).equals(STATUS_APPROVED);
+    }
+
+    // TODO: test
+    public void sendRelayTx(org.bitcoinj.core.Transaction tx, AltcoinBlock block, Superblock superblock, PartialMerkleTree txPMT, PartialMerkleTree superblockPMT) throws Exception {
+        byte[] dogeBlockHeader = Arrays.copyOfRange(block.bitcoinSerialize(), 0, 80);
+        Sha256Hash dogeBlockHash = block.getHash();
+        log.info("About to send to the bridge doge tx hash {}. Block hash {}", tx.getHash(), dogeBlockHash);
 
         byte[] txSerialized = tx.bitcoinSerialize();
 
@@ -325,20 +333,23 @@ public class EthWrapper {
         for (Sha256Hash sha256Hash : txSiblingsSha256Hash) {
             txSiblingsBigInteger.add(sha256Hash.toBigInteger());
         }
-        BigInteger blockHashBigInteger = blockHash.toBigInteger();
+        BigInteger dogeBlockHashBigInteger = dogeBlockHash.toBigInteger();
 
         // Construct SPV proof for block
-        // TODO: same as above, but for proof that a block is in a superblock
-        BigInteger dogeBlockIndex = BigInteger.valueOf(superblockPMT.getTransactionIndex(blockHash));
-        List<Sha256Hash> dogeBlockSiblingsSha256Hash = superblockPMT.getTransactionPath(blockHash);
+        // FIXME: superblockPMT is apparently incorrect
+        BigInteger dogeBlockIndex = BigInteger.valueOf(superblockPMT.getTransactionIndex(dogeBlockHash));
+        List<Sha256Hash> dogeBlockSiblingsSha256Hash = superblockPMT.getTransactionPath(dogeBlockHash);
         List<BigInteger> dogeBlockSiblingsBigInteger = new ArrayList<>();
         for (Sha256Hash sha256Hash : dogeBlockSiblingsSha256Hash)
             dogeBlockSiblingsBigInteger.add(sha256Hash.toBigInteger());
 
+        BigInteger superblockMerkleRootBigInteger = superblock.getMerkleRoot().toBigInteger();
+
         String targetContract = dogeToken.getContractAddress();
 
-        // TODO: see if relayTx needs any changes to its interface in order to send superblock proofs
-        CompletableFuture<TransactionReceipt> futureReceipt = dogeRelayForRelayTx.relayTx(txSerialized, txIndex, txSiblingsBigInteger, blockHashBigInteger, targetContract).sendAsync();
+        Sha256Hash merkle = superblockPMT.getTxnHashAndMerkleRoot(superblock.getDogeBlockHashes());
+
+        CompletableFuture<TransactionReceipt> futureReceipt = dogeRelayForRelayTx.relayTx(txSerialized, txIndex, txSiblingsBigInteger, dogeBlockHeader, dogeBlockIndex, dogeBlockSiblingsBigInteger, superblockMerkleRootBigInteger, superblock.getSuperblockId(), targetContract).sendAsync();
         log.info("Sent relayTx {}", tx.getHash());
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
                 log.info("RelayTx receipt {}.", receipt.toString())

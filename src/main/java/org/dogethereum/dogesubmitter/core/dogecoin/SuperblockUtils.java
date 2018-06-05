@@ -1,9 +1,15 @@
 package org.dogethereum.dogesubmitter.core.dogecoin;
 
+import org.bitcoinj.core.Block;
+import org.bitcoinj.core.UnsafeByteArrayOutputStream;
+import org.bitcoinj.core.Utils;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.util.Calendar;
+import java.util.Date;
 
 /**
  * Parsing library for superblocks.
@@ -73,5 +79,36 @@ public class SuperblockUtils {
                 ((bytes[realOffset + 1] & 0xffl) << 8) |
                 ((bytes[realOffset + 2] & 0xffl) << 16) |
                 ((bytes[realOffset + 3] & 0xffl) << 24);
+    }
+
+
+    /**
+     * Get a timestamp from exactly three hours before system time.
+     * Useful for knowing when to stop building superblocks.
+     * @return Timestamp from three hours ago.
+     */
+    public static Date getThreeHoursAgo() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.HOUR, -3);
+        return calendar.getTime();
+    }
+
+    /**
+     * Today in OOP STRIKES AGAIN: this was somehow not a public method in bitcoinj,
+     * so I had to WRITE THE EXACT SAME CODE from Block.writeHeader().
+     * @param block Dogecoin block.
+     * @return Serialized block header.
+     */
+    public static byte[] serializeBlockHeader(Block block) throws IOException {
+        ByteArrayOutputStream stream = new UnsafeByteArrayOutputStream(80);
+
+        Utils.uint32ToByteStreamLE(block.getVersion(), stream);
+        stream.write(block.getPrevBlockHash().getReversedBytes());
+        stream.write(block.getMerkleRoot().getReversedBytes());
+        Utils.uint32ToByteStreamLE(block.getTimeSeconds(), stream);
+        Utils.uint32ToByteStreamLE(block.getDifficultyTarget(), stream);
+        Utils.uint32ToByteStreamLE(block.getNonce(), stream);
+
+        return stream.toByteArray();
     }
 }

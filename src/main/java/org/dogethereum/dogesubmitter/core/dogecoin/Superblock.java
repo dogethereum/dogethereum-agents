@@ -34,6 +34,7 @@ public class Superblock {
     private byte[] superblockId; // KECCAK-256 hash of superblock data
     private long superblockHeight;
     private List<Sha256Hash> dogeBlockHashes;
+    private PartialMerkleTree partialMerkleTree;
 
 
     /* ---- CONSTANTS ---- */
@@ -65,16 +66,20 @@ public class Superblock {
      * @param chainWork Last Dogecoin block's accumulated chainwork.
      * @param parentId Previous superblock's SHA-256 hash.
      */
-    public Superblock(List<Sha256Hash> dogeBlockHashes, BigInteger chainWork, long lastDogeBlockTime, byte[] parentId, long superblockHeight) {
+    public Superblock(NetworkParameters params, List<Sha256Hash> dogeBlockHashes, BigInteger chainWork, long lastDogeBlockTime, byte[] parentId, long superblockHeight) {
         // hash all the block dogeBlockHashes into a Merkle tree
-        this.merkleRoot = calculateMerkleRoot(dogeBlockHashes);
+        byte[] includeBits = new byte[(int) Math.ceil(dogeBlockHashes.size() / 8.0)];
+        for (int i = 0; i < dogeBlockHashes.size(); i++)
+            Utils.setBitLE(includeBits, i);
+        this.partialMerkleTree = PartialMerkleTree.buildFromLeaves(params, includeBits, dogeBlockHashes);
+        this.superblockHeight = superblockHeight;
+        this.dogeBlockHashes = new ArrayList<>(dogeBlockHashes);
+
+        this.merkleRoot = partialMerkleTree.getTxnHashAndMerkleRoot(dogeBlockHashes);
         this.chainWork = chainWork;
         this.lastDogeBlockTime = lastDogeBlockTime;
         this.lastDogeBlockHash = dogeBlockHashes.get(dogeBlockHashes.size() - 1);
         this.parentId = parentId.clone();
-
-        this.superblockHeight = superblockHeight;
-        this.dogeBlockHashes = new ArrayList<>(dogeBlockHashes);
     }
 
     /**
@@ -276,6 +281,14 @@ public class Superblock {
                 return true;
         }
         return false;
+    }
+
+    public int getDogeBlockLeafIndex(Sha256Hash hash) {
+        for (int i = 0; i < dogeBlockHashes.size(); i++) {
+            if (dogeBlockHashes.get(i).equals(hash))
+                return i;
+        }
+        return -1; // TODO: raise exception
     }
 
     public boolean equals(Superblock superblock) {
