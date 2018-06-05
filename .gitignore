@@ -1,5 +1,6 @@
 src/main/resources/dogesubmitter.local.conf
 src/main/resources/dogesubmitter.ropsten.conf
+src/main/java/test/SuperblockChainTest.java
 
 *.iml
 *.log
