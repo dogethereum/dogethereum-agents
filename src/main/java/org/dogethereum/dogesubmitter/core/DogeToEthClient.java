@@ -64,7 +64,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
             this.proofFile = new File(dataDirectory.getAbsolutePath() + "/DogeToEthClient.proofs");
             restoreProofsFromFile();
             setupDogecoinWrapper();
-            new Timer("Submitter update bridge").scheduleAtFixedRate(new UpdateBridgeTimerTask(), getFirstExecutionDate(), agentConstants.getUpdateBridgeExecutionPeriod());
+            new Timer("Doge to Eth client").scheduleAtFixedRate(new UpdateBridgeTimerTask(), getFirstExecutionDate(), agentConstants.getUpdateBridgeExecutionPeriod());
         }
     }
 

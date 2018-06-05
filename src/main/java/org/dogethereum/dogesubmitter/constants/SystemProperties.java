@@ -44,34 +44,13 @@ public class SystemProperties {
     private AgentConstants agentConstants;
 
     public SystemProperties() {
-        this(ConfigFactory.empty());
-    }
-
-    public SystemProperties(File configFile) {
-        this(ConfigFactory.parseFile(configFile));
-    }
-
-    public SystemProperties(String configResource) {
-        this(ConfigFactory.parseResources(configResource));
-    }
-
-    public SystemProperties(Config apiConfig) {
         try {
             Config javaSystemProperties = ConfigFactory.load("no-such-resource-only-system-props");
-            Config referenceConfig = ConfigFactory.parseResources("dogesubmitter.conf");
-            log.info("Config ( {} ): default properties from resource 'dogesubmitter.conf'", referenceConfig.entrySet().isEmpty() ? NO : YES);
-            String res = System.getProperty("dogesubmitter.conf.res");
-            Config cmdLineConfigRes = res != null ? ConfigFactory.parseResources(res) : ConfigFactory.empty();
-            log.info("Config ( {} ): user properties from -Ddogesubmitter.conf.res resource '{}'", cmdLineConfigRes.entrySet().isEmpty() ? NO : YES, res);
             String file = System.getProperty("dogesubmitter.conf.file");
             Config cmdLineConfigFile = file != null ? ConfigFactory.parseFile(new File(file)) : ConfigFactory.empty();
             log.info("Config ( {} ): user properties from -Ddogesubmitter.conf.file file '{}'", cmdLineConfigFile.entrySet().isEmpty() ? NO : YES, file);
-            log.info("Config ( {} ): config passed via constructor", apiConfig.entrySet().isEmpty() ? NO : YES);
             config = javaSystemProperties
-                    .withFallback(apiConfig)
-                    .withFallback(cmdLineConfigFile)
-                    .withFallback(cmdLineConfigRes)
-                    .withFallback(referenceConfig);
+                    .withFallback(cmdLineConfigFile);
 
             log.debug("Config trace: " + config.root().render(ConfigRenderOptions.defaults().
                     setComments(false).setJson(false)));
