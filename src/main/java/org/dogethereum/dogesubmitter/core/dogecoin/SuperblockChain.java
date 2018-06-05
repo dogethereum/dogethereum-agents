@@ -2,28 +2,14 @@ package org.dogethereum.dogesubmitter.core.dogecoin;
 
 import org.apache.commons.lang3.time.DateUtils;
 import org.bitcoinj.core.AltcoinBlock;
-import org.bitcoinj.core.Sha256Hash;
-import org.bitcoinj.core.Utils;
 import org.bitcoinj.core.*;
-import org.bitcoinj.kits.WalletAppKit;
-import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
-import org.bitcoinj.store.LevelDBBlockStore;
-import org.bitcoinj.wallet.Wallet;
 
-import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
-import org.dogethereum.dogesubmitter.constants.BridgeConstants;
-import org.dogethereum.dogesubmitter.util.FileUtil;
-import org.dogethereum.dogesubmitter.core.dogecoin.Superblock;
-
-import org.libdohj.core.ScryptHash;
-import org.spongycastle.util.Store;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.web3j.crypto.Hash;
 
 import javax.annotation.PostConstruct;
 import java.io.File;
-import java.io.InputStream;
 import java.math.BigInteger;
 import java.util.*;
 
@@ -61,7 +47,7 @@ public class SuperblockChain {
     private int fillWithBlocksStartingAtTime(Date initialDate, int initialHeight, List<AltcoinBlock> blocks) throws BlockStoreException {
         int bestChainHeight = dogecoinWrapper.getBestChainHeight();
         int currentHeight = initialHeight;
-        AltcoinBlock currentBlock = (AltcoinBlock) dogecoinWrapper.getBlockAtHeight(initialHeight).getHeader();
+        AltcoinBlock currentBlock = (AltcoinBlock) dogecoinWrapper.getStoredBlockAtHeight(initialHeight).getHeader();
         Date currentDate = currentBlock.getTime();
 
         // While the current block was *not* mined an hour or more after the initial date,
@@ -74,7 +60,7 @@ public class SuperblockChain {
         while (DateUtils.truncatedCompareTo(initialDate, currentDate, Calendar.HOUR) >= 0 && currentHeight < bestChainHeight) {
             blocks.add(currentBlock);
             currentHeight++; // loop condition ensures that this height will always be valid
-            currentBlock = (AltcoinBlock) dogecoinWrapper.getBlockAtHeight(currentHeight).getHeader();
+            currentBlock = (AltcoinBlock) dogecoinWrapper.getStoredBlockAtHeight(currentHeight).getHeader();
             currentDate = currentBlock.getTime();
         }
 
@@ -95,7 +81,7 @@ public class SuperblockChain {
         int bestChainHeight = dogecoinWrapper.getBestChainHeight();
         int currentHeight = 0;
 
-        StoredBlock currentStoredBlock = dogecoinWrapper.getBlockAtHeight(currentHeight); // start with genesis block
+        StoredBlock currentStoredBlock = dogecoinWrapper.getStoredBlockAtHeight(currentHeight); // start with genesis block
         BigInteger currentWork = currentStoredBlock.getChainWork(); // chain work for the block that will be built from currentBlocksToHash
         AltcoinBlock currentBlock = (AltcoinBlock) currentStoredBlock.getHeader(); // first block of the next superblock
         Date currentInitialDate = currentBlock.getTime(); // timestamp of the first block of the next superblock
@@ -110,7 +96,7 @@ public class SuperblockChain {
 
             // update necessary fields for next superblock
             if (currentHeight <= bestChainHeight) {
-                currentStoredBlock = dogecoinWrapper.getBlockAtHeight(currentHeight);
+                currentStoredBlock = dogecoinWrapper.getStoredBlockAtHeight(currentHeight);
                 currentWork = currentStoredBlock.getChainWork();
                 currentBlock = (AltcoinBlock) currentStoredBlock.getHeader();
                 currentInitialDate = currentBlock.getTime();
