@@ -8,8 +8,8 @@ import org.dogethereum.dogesubmitter.constants.SystemProperties;
 import org.dogethereum.dogesubmitter.contract.DogeRelay;
 import org.dogethereum.dogesubmitter.contract.DogeToken;
 import org.dogethereum.dogesubmitter.contract.DogeTokenExtended;
-import org.dogethereum.dogesubmitter.contract.ClaimManager;
-import org.dogethereum.dogesubmitter.contract.Superblocks;
+import org.dogethereum.dogesubmitter.contract.DogeClaimManager;
+import org.dogethereum.dogesubmitter.contract.DogeSuperblocks;
 
 import org.dogethereum.dogesubmitter.core.dogecoin.Superblock;
 import org.dogethereum.dogesubmitter.core.dogecoin.SuperblockUtils;
@@ -32,6 +32,7 @@ import org.web3j.protocol.http.HttpService;
 
 import org.web3j.tuples.generated.Tuple3;
 import org.web3j.tuples.generated.Tuple6;
+import org.web3j.tuples.generated.Tuple7;
 
 import org.web3j.tx.ClientTransactionManager;
 
@@ -58,8 +59,8 @@ public class EthWrapper {
     private DogeRelay dogeRelay;
     private DogeRelay dogeRelayForRelayTx;
     private DogeTokenExtended dogeToken;
-    private ClaimManager claimManager;
-    private Superblocks superblocks;
+    private DogeClaimManager claimManager;
+    private DogeSuperblocks superblocks;
     private SystemProperties config;
     private BigInteger gasPriceMinimum;
 
@@ -98,8 +99,8 @@ public class EthWrapper {
             fromAddressRelayTxs = config.addressRelayTxs();
             fromAddressPriceOracle = config.addressPriceOracle();
         }
-        claimManagerContractAddress = getContractAddress("ClaimManager");
-        superblocksContractAddress = getContractAddress("Superblocks");
+        claimManagerContractAddress = getContractAddress("DogeClaimManager");
+        superblocksContractAddress = getContractAddress("DogeSuperblocks");
         gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
         BigInteger gasLimit = BigInteger.valueOf(config.gasLimit());
         dogeRelay = DogeRelay.load(dogeRelayContractAddress, web3, new ClientTransactionManager(web3, fromAddressGeneralPurposeAndSendBlocks), gasPriceMinimum, gasLimit);
@@ -108,9 +109,9 @@ public class EthWrapper {
         assert dogeRelayForRelayTx.isValid();
         dogeToken = DogeTokenExtended.load(dogeTokenContractAddress, web3, new ClientTransactionManager(web3, fromAddressPriceOracle), gasPriceMinimum, gasLimit);
         assert dogeToken.isValid();
-        claimManager = ClaimManager.load(claimManagerContractAddress, web3, new ClientTransactionManager(web3, fromAddressGeneralPurposeAndSendBlocks), gasPriceMinimum, gasLimit);
+        claimManager = DogeClaimManager.load(claimManagerContractAddress, web3, new ClientTransactionManager(web3, fromAddressGeneralPurposeAndSendBlocks), gasPriceMinimum, gasLimit);
         assert claimManager.isValid();
-        superblocks = Superblocks.load(superblocksContractAddress, web3, new ClientTransactionManager(web3, fromAddressGeneralPurposeAndSendBlocks), gasPriceMinimum, gasLimit);
+        superblocks = DogeSuperblocks.load(superblocksContractAddress, web3, new ClientTransactionManager(web3, fromAddressGeneralPurposeAndSendBlocks), gasPriceMinimum, gasLimit);
     }
 
     /**
@@ -161,8 +162,8 @@ public class EthWrapper {
     }
 
     /**
-     * Propose a series of superblocks to ClaimManager in order to keep DogeRelay updated.
-     * @param superblocksToSend Superblocks that are already stored in the local database,
+     * Propose a series of superblocks to DogeClaimManager in order to keep DogeRelay updated.
+     * @param superblocksToSend DogeSuperblocks that are already stored in the local database,
      *                          but still haven't been submitted to DogeRelay.
      * @throws Exception If a superblock hash cannot be calculated.
      */
@@ -177,7 +178,6 @@ public class EthWrapper {
             futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
                 log.info("proposeSuperblock receipt {}", receipt.toString())
             );
-            log.info("pepe");
         }
         // This is because sendStoreBlocks does it; TODO: look into it later
         Thread.sleep(200);
@@ -208,7 +208,7 @@ public class EthWrapper {
     }
 
     /**
-     * Propose a superblock to ClaimManager.
+     * Propose a superblock to DogeClaimManager.
      * @param superblock Superblock to be proposed.
      * @return
      */
@@ -318,7 +318,29 @@ public class EthWrapper {
         return getSuperblockStatus(superblockId).equals(STATUS_APPROVED);
     }
 
-    // TODO: test
+    // Old version until migration to superblocks is completed
+    public void sendRelayTx(org.bitcoinj.core.Transaction tx, byte[] operatorPublicKeyHash, Sha256Hash blockHash, PartialMerkleTree pmt) throws Exception {
+        log.info("About to send to the bridge doge tx hash {}. Block hash {}", tx.getHash(), blockHash);
+
+        byte[] txSerialized = tx.bitcoinSerialize();
+
+        BigInteger txIndex = BigInteger.valueOf(pmt.getTransactionIndex(tx.getHash()));
+        List<Sha256Hash> siblingsSha256Hash = pmt.getTransactionPath(tx.getHash());
+        List<BigInteger> siblingsBigInteger = new ArrayList<>();
+        for (Sha256Hash sha256Hash : siblingsSha256Hash) {
+            siblingsBigInteger.add(sha256Hash.toBigInteger());
+        }
+        BigInteger blockHashBigInteger = blockHash.toBigInteger();
+        String targetContract = dogeToken.getContractAddress();
+        CompletableFuture<TransactionReceipt> futureReceipt = dogeRelayForRelayTx.relayTx(txSerialized, operatorPublicKeyHash, txIndex, siblingsBigInteger, blockHashBigInteger, targetContract).sendAsync();
+        log.info("Sent relayTx {}", tx.getHash());
+        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
+                log.info("RelayTx receipt {}.", receipt.toString())
+        );
+    }
+    
+    // TODO: test with operator enabled
+
     public void sendRelayTx(org.bitcoinj.core.Transaction tx, AltcoinBlock block, Superblock superblock, PartialMerkleTree txPMT, PartialMerkleTree superblockPMT) throws Exception {
         byte[] dogeBlockHeader = Arrays.copyOfRange(block.bitcoinSerialize(), 0, 80);
         Sha256Hash dogeBlockHash = block.getHash();
@@ -336,7 +358,6 @@ public class EthWrapper {
         BigInteger dogeBlockHashBigInteger = dogeBlockHash.toBigInteger();
 
         // Construct SPV proof for block
-        // FIXME: superblockPMT is apparently incorrect
         BigInteger dogeBlockIndex = BigInteger.valueOf(superblockPMT.getTransactionIndex(dogeBlockHash));
         List<Sha256Hash> dogeBlockSiblingsSha256Hash = superblockPMT.getTransactionPath(dogeBlockHash);
         List<BigInteger> dogeBlockSiblingsBigInteger = new ArrayList<>();
@@ -347,9 +368,7 @@ public class EthWrapper {
 
         String targetContract = dogeToken.getContractAddress();
 
-        Sha256Hash merkle = superblockPMT.getTxnHashAndMerkleRoot(superblock.getDogeBlockHashes());
-
-        CompletableFuture<TransactionReceipt> futureReceipt = dogeRelayForRelayTx.relayTx(txSerialized, txIndex, txSiblingsBigInteger, dogeBlockHeader, dogeBlockIndex, dogeBlockSiblingsBigInteger, superblockMerkleRootBigInteger, superblock.getSuperblockId(), targetContract).sendAsync();
+        CompletableFuture<TransactionReceipt> futureReceipt = dogeRelayForRelayTx.relayTx(txSerialized, txIndex, txSiblingsBigInteger, dogeBlockHeader, dogeBlockIndex, dogeBlockSiblingsBigInteger, superblock.getSuperblockId(), targetContract).sendAsync();
         log.info("Sent relayTx {}", tx.getHash());
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
                 log.info("RelayTx receipt {}.", receipt.toString())

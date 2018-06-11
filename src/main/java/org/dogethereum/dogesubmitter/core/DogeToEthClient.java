@@ -39,7 +39,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
     private EthWrapper ethWrapper;
 
     @Autowired
-    private OperatorPublicKeyHandler keyHandler;
+    private OperatorPublicKeyHandler operatorPublicKeyHandler;
 
     private SystemProperties config;
 
@@ -69,10 +69,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
             this.proofFile = new File(dataDirectory.getAbsolutePath() + "/DogeToEthClient.proofs");
             restoreProofsFromFile();
             setupDogecoinWrapper();
-
-            // int numberOfFederators = bridgeConstants.getFederatorPublicKeys().size();
-            int numberOfFederators = 1;
-            new Timer("Submitter update bridge").scheduleAtFixedRate(new UpdateBridgeTimerTask(), getFirstExecutionDate(), agentConstants.getUpdateBridgeExecutionPeriod() * numberOfFederators);
+            new Timer("Doge to Eth client").scheduleAtFixedRate(new UpdateBridgeTimerTask(), getFirstExecutionDate(), agentConstants.getUpdateBridgeExecutionPeriod());
 
             Context context = new Context(agentConstants.getDogeParams());
 
@@ -82,7 +79,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
     }
 
     private void setupDogecoinWrapper() throws UnknownHostException {
-        dogecoinWrapper = new DogecoinWrapper(agentConstants, dataDirectory, keyHandler, config.isDogeTxRelayerEnabled() || config.isOperatorEnabled());
+        dogecoinWrapper = new DogecoinWrapper(agentConstants, dataDirectory, operatorPublicKeyHandler, config.isDogeTxRelayerEnabled() || config.isOperatorEnabled());
         // TODO: Make the dogecoin peer list configurable
         // dogecoinWrapper.setup(this, this, ethWrapper.getDogecoinPeerAddresses());
         dogecoinWrapper.setup(this, null);
@@ -157,7 +154,6 @@ public class DogeToEthClient implements DogecoinWrapperListener {
                     log.debug("UpdateBridgeTimerTask");
                     ethWrapper.updateContractFacadesGasPrice();
                     if (config.isDogeBlockSubmitterEnabled()) {
-//                        updateBridgeDogeBlockchain();
                         updateBridgeSuperblockChain();
                     }
                     if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
