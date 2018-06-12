@@ -23,7 +23,7 @@ public class RegTestAgentConstants extends AgentConstants {
         doge2EthMinimumAcceptableConfirmations = 7;
         updateBridgeExecutionPeriod = 10 * 1000; // 10 seconds
         maxDogeHeadersPerRound = 5;
-        minimumLockTxValue = Coin.valueOf(1000000);
+        minimumLockTxValue = Coin.valueOf(150000000); // 1.5 doge
 
         // Unlock mechanism specific start
         eth2DogeMinimumAcceptableConfirmations = 5;
