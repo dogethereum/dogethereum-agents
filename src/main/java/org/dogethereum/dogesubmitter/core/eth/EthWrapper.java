@@ -3,29 +3,46 @@ package org.dogethereum.dogesubmitter.core.eth;
 
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
+
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
 import org.dogethereum.dogesubmitter.contract.DogeRelay;
 import org.dogethereum.dogesubmitter.contract.DogeToken;
 import org.dogethereum.dogesubmitter.contract.DogeTokenExtended;
+import org.dogethereum.dogesubmitter.contract.DogeClaimManager;
+import org.dogethereum.dogesubmitter.contract.DogeSuperblocks;
+
+import org.dogethereum.dogesubmitter.core.dogecoin.Superblock;
+import org.dogethereum.dogesubmitter.core.dogecoin.SuperblockUtils;
+import org.dogethereum.dogesubmitter.core.dogecoin.SuperblockChain;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+
 import org.libdohj.core.ScryptHash;
+
 import org.spongycastle.util.encoders.Hex;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
+import org.web3j.protocol.core.RemoteCall;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
+
 import org.web3j.tuples.generated.Tuple3;
 import org.web3j.tuples.generated.Tuple6;
 import org.web3j.tuples.generated.Tuple7;
+
 import org.web3j.tx.ClientTransactionManager;
 
+import java.io.ByteArrayOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -42,8 +59,20 @@ public class EthWrapper {
     private DogeRelay dogeRelay;
     private DogeRelay dogeRelayForRelayTx;
     private DogeTokenExtended dogeToken;
+    private DogeClaimManager claimManager;
+    private DogeSuperblocks superblocks;
     private SystemProperties config;
     private BigInteger gasPriceMinimum;
+
+
+    /* ---- SUPERBLOCK STATUS CODES ---- */
+
+    private static final BigInteger STATUS_UNINITIALIZED = BigInteger.valueOf(0);
+    private static final BigInteger STATUS_NEW = BigInteger.valueOf(1);
+    private static final BigInteger STATUS_IN_BATTLE = BigInteger.valueOf(2);
+    private static final BigInteger STATUS_SEMI_APPROVED = BigInteger.valueOf(3);
+    private static final BigInteger STATUS_APPROVED = BigInteger.valueOf(4);
+    private static final BigInteger STATUS_INVALID = BigInteger.valueOf(5);
 
     @Autowired
     public EthWrapper() throws Exception {
@@ -51,6 +80,8 @@ public class EthWrapper {
         web3 = Web3j.build(new HttpService());  // defaults to http://localhost:8545/
         String dogeRelayContractAddress;
         String dogeTokenContractAddress;
+        String claimManagerContractAddress;
+        String superblocksContractAddress;
         String fromAddressGeneralPurposeAndSendBlocks;
         String fromAddressRelayTxs;
         String fromAddressPriceOracle;
@@ -68,6 +99,8 @@ public class EthWrapper {
             fromAddressRelayTxs = config.addressRelayTxs();
             fromAddressPriceOracle = config.addressPriceOracle();
         }
+        claimManagerContractAddress = getContractAddress("DogeClaimManager");
+        superblocksContractAddress = getContractAddress("DogeSuperblocks");
         gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
         BigInteger gasLimit = BigInteger.valueOf(config.gasLimit());
         dogeRelay = DogeRelay.load(dogeRelayContractAddress, web3, new ClientTransactionManager(web3, fromAddressGeneralPurposeAndSendBlocks), gasPriceMinimum, gasLimit);
@@ -76,6 +109,9 @@ public class EthWrapper {
         assert dogeRelayForRelayTx.isValid();
         dogeToken = DogeTokenExtended.load(dogeTokenContractAddress, web3, new ClientTransactionManager(web3, fromAddressPriceOracle), gasPriceMinimum, gasLimit);
         assert dogeToken.isValid();
+        claimManager = DogeClaimManager.load(claimManagerContractAddress, web3, new ClientTransactionManager(web3, fromAddressGeneralPurposeAndSendBlocks), gasPriceMinimum, gasLimit);
+        assert claimManager.isValid();
+        superblocks = DogeSuperblocks.load(superblocksContractAddress, web3, new ClientTransactionManager(web3, fromAddressGeneralPurposeAndSendBlocks), gasPriceMinimum, gasLimit);
     }
 
     /**
@@ -105,6 +141,7 @@ public class EthWrapper {
         return hashBigIntegerToString(result);
     }
 
+
     private String hashBigIntegerToString(BigInteger input) {
         String input2 = input.toString(16);
         StringBuilder output = new StringBuilder(input2);
@@ -122,6 +159,105 @@ public class EthWrapper {
             formattedResult.add(hashBigIntegerToString(biHash));
         }
         return formattedResult;
+    }
+
+    /**
+     * Propose a series of superblocks to DogeClaimManager in order to keep DogeRelay updated.
+     * @param superblocksToSend DogeSuperblocks that are already stored in the local database,
+     *                          but still haven't been submitted to DogeRelay.
+     * @throws Exception If a superblock hash cannot be calculated.
+     */
+    public void sendStoreSuperblocks(Deque<Superblock> superblocksToSend) throws Exception {
+        log.info("About to send to the bridge superblocks from {} to {}",
+                superblocksToSend.peekFirst().getSuperblockId(),
+                superblocksToSend.peekLast().getSuperblockId());
+
+        for (Superblock superblock : superblocksToSend) {
+            CompletableFuture<TransactionReceipt> futureReceipt = proposeSuperblock(superblock);
+            log.info("Sent superblock {}", superblock.getSuperblockId());
+            futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
+                log.info("proposeSuperblock receipt {}", receipt.toString())
+            );
+        }
+        // This is because sendStoreBlocks does it; TODO: look into it later
+        Thread.sleep(200);
+    }
+
+    public void sendStoreSuperblock(Superblock superblock) throws Exception {
+        log.info("About to send superblock {} to the bridge.", superblock.getSuperblockId());
+
+        // Check if the parent has been approved before sending this superblock.
+        byte[] parentId = superblock.getParentId();
+        if (!(getSuperblockStatus(parentId).equals(STATUS_APPROVED) || getSuperblockStatus(parentId).equals(STATUS_SEMI_APPROVED))) {
+            log.info("Superblock {} not sent because its parent was neither approved nor semi approved.", superblock.getSuperblockId());
+            return;
+        }
+
+//        BigInteger bondedDeposit = getBondedDeposit(superblock.getSuperblockId());
+
+        // TODO: see how much wei we should actually send and whether it's a paremeter for this method
+        CompletableFuture<TransactionReceipt> depositsReceipt = makeClaimDeposit(BigInteger.valueOf(1000));
+
+        // The parent is either approved or semi approved. We can send the superblock.
+        CompletableFuture<TransactionReceipt> futureReceipt = proposeSuperblock(superblock);
+        log.info("Sent superblock {}", superblock.getSuperblockId());
+        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
+            log.info("proposeSuperblock receipt {}", receipt.toString())
+        );
+        Thread.sleep(200);
+    }
+
+    /**
+     * Propose a superblock to DogeClaimManager.
+     * @param superblock Superblock to be proposed.
+     * @return
+     */
+    private CompletableFuture<TransactionReceipt> proposeSuperblock(Superblock superblock) {
+        return claimManager.proposeSuperblock(superblock.getMerkleRoot().getBytes(),
+                superblock.getChainWork(),
+                BigInteger.valueOf(superblock.getLastDogeBlockTime()),
+                superblock.getLastDogeBlockHash().getBytes(),
+                superblock.getParentId()
+        ).sendAsync();
+    }
+
+    /**
+     * Get 9 ancestors of the relay's top superblock:
+     * ancestor -1 (parent), ancestor -5, ancestor -25, ancestor -125, ...
+     * @return List of 9 ancestors where result[i] = ancestor -(5**i).
+     * @throws Exception
+     */
+    public List<byte[]> getSuperblockLocator() throws Exception {
+        return superblocks.getSuperblockLocator().send();
+    }
+
+    public BigInteger getSuperblockStatus(byte[] superblockId) throws Exception {
+        return superblocks.getSuperblockStatus(superblockId).send();
+    }
+
+    private CompletableFuture<TransactionReceipt> makeClaimDeposit(BigInteger weiValue) throws InterruptedException {
+        CompletableFuture<TransactionReceipt> futureReceipt = claimManager.makeDeposit(weiValue).sendAsync();
+        log.info("Deposited {} wei.", weiValue);
+
+        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
+            log.info("makeClaimDeposit receipt {}", receipt.toString())
+        );
+        Thread.sleep(200); // in case the transaction takes some time to complete
+
+        return futureReceipt;
+    }
+
+    private BigInteger getBondedDeposit(byte[] claimId) throws Exception {
+        String fromAddressGeneralPurposeAndSendBlocks;
+
+        if (config.isRegtest()) {
+            List<String> accounts = web3.ethAccounts().send().getAccounts();
+            fromAddressGeneralPurposeAndSendBlocks = accounts.get(0);
+        } else {
+            fromAddressGeneralPurposeAndSendBlocks = config.addressGeneralPurposeAndSendBlocks();
+        }
+
+        return claimManager.getBondedDeposit(claimId, fromAddressGeneralPurposeAndSendBlocks).send();
     }
 
     public void sendStoreHeaders(org.bitcoinj.core.Block headers[]) throws Exception {
@@ -178,6 +314,11 @@ public class EthWrapper {
 
     }
 
+    public boolean isApproved(byte[] superblockId) throws Exception {
+        return getSuperblockStatus(superblockId).equals(STATUS_APPROVED);
+    }
+
+    // Old version until migration to superblocks is completed
     public void sendRelayTx(org.bitcoinj.core.Transaction tx, byte[] operatorPublicKeyHash, Sha256Hash blockHash, PartialMerkleTree pmt) throws Exception {
         log.info("About to send to the bridge doge tx hash {}. Block hash {}", tx.getHash(), blockHash);
 
@@ -192,6 +333,42 @@ public class EthWrapper {
         BigInteger blockHashBigInteger = blockHash.toBigInteger();
         String targetContract = dogeToken.getContractAddress();
         CompletableFuture<TransactionReceipt> futureReceipt = dogeRelayForRelayTx.relayTx(txSerialized, operatorPublicKeyHash, txIndex, siblingsBigInteger, blockHashBigInteger, targetContract).sendAsync();
+        log.info("Sent relayTx {}", tx.getHash());
+        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
+                log.info("RelayTx receipt {}.", receipt.toString())
+        );
+    }
+
+    // TODO: test with operator enabled
+
+    public void sendRelayTx(org.bitcoinj.core.Transaction tx, AltcoinBlock block, Superblock superblock, PartialMerkleTree txPMT, PartialMerkleTree superblockPMT) throws Exception {
+        byte[] dogeBlockHeader = Arrays.copyOfRange(block.bitcoinSerialize(), 0, 80);
+        Sha256Hash dogeBlockHash = block.getHash();
+        log.info("About to send to the bridge doge tx hash {}. Block hash {}", tx.getHash(), dogeBlockHash);
+
+        byte[] txSerialized = tx.bitcoinSerialize();
+
+        // Construct SPV proof for transaction
+        BigInteger txIndex = BigInteger.valueOf(txPMT.getTransactionIndex(tx.getHash()));
+        List<Sha256Hash> txSiblingsSha256Hash = txPMT.getTransactionPath(tx.getHash());
+        List<BigInteger> txSiblingsBigInteger = new ArrayList<>();
+        for (Sha256Hash sha256Hash : txSiblingsSha256Hash) {
+            txSiblingsBigInteger.add(sha256Hash.toBigInteger());
+        }
+        BigInteger dogeBlockHashBigInteger = dogeBlockHash.toBigInteger();
+
+        // Construct SPV proof for block
+        BigInteger dogeBlockIndex = BigInteger.valueOf(superblockPMT.getTransactionIndex(dogeBlockHash));
+        List<Sha256Hash> dogeBlockSiblingsSha256Hash = superblockPMT.getTransactionPath(dogeBlockHash);
+        List<BigInteger> dogeBlockSiblingsBigInteger = new ArrayList<>();
+        for (Sha256Hash sha256Hash : dogeBlockSiblingsSha256Hash)
+            dogeBlockSiblingsBigInteger.add(sha256Hash.toBigInteger());
+
+        BigInteger superblockMerkleRootBigInteger = superblock.getMerkleRoot().toBigInteger();
+
+        String targetContract = dogeToken.getContractAddress();
+
+        CompletableFuture<TransactionReceipt> futureReceipt = dogeRelayForRelayTx.relayTx(txSerialized, txIndex, txSiblingsBigInteger, dogeBlockHeader, dogeBlockIndex, dogeBlockSiblingsBigInteger, superblock.getSuperblockId(), targetContract).sendAsync();
         log.info("Sent relayTx {}", tx.getHash());
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
                 log.info("RelayTx receipt {}.", receipt.toString())

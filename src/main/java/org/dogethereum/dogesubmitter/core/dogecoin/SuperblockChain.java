@@ -1,143 +1,262 @@
 package org.dogethereum.dogesubmitter.core.dogecoin;
 
+import lombok.extern.slf4j.Slf4j;
+
 import org.apache.commons.lang3.time.DateUtils;
 import org.bitcoinj.core.AltcoinBlock;
 import org.bitcoinj.core.*;
 import org.bitcoinj.store.BlockStoreException;
 
+import org.dogethereum.dogesubmitter.constants.SystemProperties;
+import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
+import org.dogethereum.dogesubmitter.constants.*;
+import org.dogethereum.dogesubmitter.util.*;
+import org.dogethereum.dogesubmitter.core.dogecoin.Superblock;
+
+import org.libdohj.core.ScryptHash;
+import org.spongycastle.util.Store;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.FileSystemUtils;
 import org.web3j.crypto.Hash;
 
 import javax.annotation.PostConstruct;
-import java.io.File;
+import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
 /**
- * Keeps a chain of superblocks in disk and provides information about it.
+ * Provides methods for interacting with a superblock chain.
+ * Storage is managed by SuperblockLevelDBBlockStore.
  * @author Catalina Juarros
  */
 
+@Slf4j(topic = "SuperblockChain")
 public class SuperblockChain {
     @Autowired
     private DogecoinWrapper dogecoinWrapper; // Interface with the Doge blockchain
+//    private final Context context;
 
-    // Where the superblock chain is going to be stored in the disk
-    private File dataDirectory;
-    private File chainFile;
+    private SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
+    private NetworkParameters params;
 
-    private int bestSuperblockHeight;
+
+    /* ---- CONSTRUCTION METHODS ---- */
 
     /**
-     * Class constructor
-     * @param dogecoinWrapper Dogecoin blockchain interface
+     * Class constructor.
+     * @param dogecoinWrapper Dogecoin blockchain interface.
+     *                        Must be the same `DogecoinWrapper` being used in the `DogeToEthClient` object
+     *                        where this SuperblockChain is being instantiated.
+     * @param context Dogecoin blockchain context. Same requirement as `dogecoinWrapper` regarding `DogeToEthClient`.
+     * @param directory Directory where a disk copy of the superblock chain will be kept.
+     * @throws BlockStoreException if superblockStorage is not properly initialized.
      */
-    public SuperblockChain(DogecoinWrapper dogecoinWrapper) {
+    public SuperblockChain(DogecoinWrapper dogecoinWrapper, Context context, File directory, NetworkParameters params) throws BlockStoreException {
         this.dogecoinWrapper = dogecoinWrapper;
+        File chainFile = new File(directory.getAbsolutePath() + "/SuperblockChain"); //TODO: look into file types
+        this.superblockStorage = new SuperblockLevelDBBlockStore(context, chainFile, params);
+        this.params = params;
     }
 
+
     /**
-     * Gets necessary blocks for building a superblock starting at a given time
-     * @param initialDate Timestamp of the first block in the superblock
-     * @param initialHeight Height of the first block in the superblock
-     * @param blocks List to add the blocks to
-     * @return Height of the earliest Doge block that was not added to the list
-     * @throws BlockStoreException
-     */
-    private int fillWithBlocksStartingAtTime(Date initialDate, int initialHeight, List<AltcoinBlock> blocks) throws BlockStoreException {
-        int bestChainHeight = dogecoinWrapper.getBestChainHeight();
-        int currentHeight = initialHeight;
-        AltcoinBlock currentBlock = (AltcoinBlock) dogecoinWrapper.getStoredBlockAtHeight(initialHeight).getHeader();
-        Date currentDate = currentBlock.getTime();
-
-        // While the current block was *not* mined an hour or more after the initial date,
-        // keep adding blocks to the array.
-        // This is equivalent to saying the current block's truncated date
-        // is less than or equal to the initial date.
-        // It's allowed to be less than the initial date
-        // because a Dogecoin timestamp can be less than that of a previous block
-        // and still be valid.
-        while (DateUtils.truncatedCompareTo(initialDate, currentDate, Calendar.HOUR) >= 0 && currentHeight < bestChainHeight) {
-            blocks.add(currentBlock);
-            currentHeight++; // loop condition ensures that this height will always be valid
-            currentBlock = (AltcoinBlock) dogecoinWrapper.getStoredBlockAtHeight(currentHeight).getHeader();
-            currentDate = currentBlock.getTime();
-        }
-
-        return currentHeight;
-    }
-
-    @PostConstruct
-    /**
-     * Builds a chain of superblocks from the whole Dogecoin blockchain.
-     * Right now this is only for testing. It will be useful when it writes to disk.
+     * Starts syncing.
+     * @param updatePeriod How often the SuperblockChain object will poll dogecoinWrapper for new Doge blocks
+     *                     and update its chain file accordingly.
+     * @param executionDate
      * @throws BlockStoreException
      * @throws java.io.IOException
      */
-    public void buildChainFromGenesis() throws BlockStoreException, java.io.IOException {
-        List<Superblock> superblocks = new ArrayList<>(); // entire chain of superblocks
-        List<AltcoinBlock> currentBlocksToHash = new ArrayList<>(); // Dogecoin blocks for the next superblock
+    public void initialize(int updatePeriod, Date executionDate) throws BlockStoreException, java.io.IOException {
+        new Timer("Update superblock chain").scheduleAtFixedRate(new UpdateSuperblocksTimerTask(), executionDate, updatePeriod);
+    }
 
-        int bestChainHeight = dogecoinWrapper.getBestChainHeight();
-        int currentHeight = 0;
+    /**
+     * Builds and maintains a chain of superblocks from the whole Dogecoin blockchain.
+     * Writes it to disk as specified by SuperblockLevelDBBlockStore.
+     * @throws BlockStoreException
+     * @throws IOException
+     */
+    public void updateChain() throws Exception, BlockStoreException, IOException {
+        Superblock bestSuperblock = getChainHead();
+        Sha256Hash bestSuperblockLastBlockHash = bestSuperblock.getLastDogeBlockHash();
 
-        StoredBlock currentStoredBlock = dogecoinWrapper.getStoredBlockAtHeight(currentHeight); // start with genesis block
-        BigInteger currentWork = currentStoredBlock.getChainWork(); // chain work for the block that will be built from currentBlocksToHash
-        AltcoinBlock currentBlock = (AltcoinBlock) currentStoredBlock.getHeader(); // first block of the next superblock
-        Date currentInitialDate = currentBlock.getTime(); // timestamp of the first block of the next superblock
+        // get all the Dogecoin blocks that haven't yet been hashed into a superblock
+        Stack<Sha256Hash> allDogeHashesToHash = getDogeBlockHashesNewerThan(bestSuperblockLastBlockHash);
+        storeSuperblocks(allDogeHashesToHash, bestSuperblock.getSuperblockId(), this.params); // group them in superblocks accordingly
+    }
 
-        byte[] previousSuperblockHash = Hash.sha3("0000000000000000000000000000000000000000000000000000000000000000".getBytes());
+    private Stack<Sha256Hash> getDogeBlockHashesNewerThan(Sha256Hash blockHash) throws BlockStoreException {
+        Stack<Sha256Hash> hashes = new Stack<>();
+        StoredBlock currentStoredBlock = dogecoinWrapper.getChainHead();
 
-        while (currentHeight < bestChainHeight) {
-            // builds list and advances height
-            currentHeight = fillWithBlocksStartingAtTime(currentInitialDate, currentHeight, currentBlocksToHash);
-            Superblock newSuperblock = new Superblock(currentBlocksToHash, previousSuperblockHash, currentWork, currentHeight);
-            superblocks.add(newSuperblock);
+        while (!currentStoredBlock.getHeader().getHash().equals(blockHash)) {
+            hashes.push(currentStoredBlock.getHeader().getHash());
+            currentStoredBlock = dogecoinWrapper.getBlock(currentStoredBlock.getHeader().getPrevBlockHash());
+        }
 
-            // update necessary fields for next superblock
-            if (currentHeight <= bestChainHeight) {
-                currentStoredBlock = dogecoinWrapper.getStoredBlockAtHeight(currentHeight);
-                currentWork = currentStoredBlock.getChainWork();
-                currentBlock = (AltcoinBlock) currentStoredBlock.getHeader();
-                currentInitialDate = currentBlock.getTime();
-                previousSuperblockHash = newSuperblock.getHash();
+        return hashes;
+    }
+
+    /**
+     * Given a stack of blocks to hash, builds and stores superblocks based on the blocks' timestamps.
+     * @param allDogeHashesToHash All the Dogecoin blocks that come after the last block of the last stored superblock.
+     *                            This stack should be sorted from least to most recently mined,
+     *                            i.e. the top block's hash should be the previous block hash of the block underneath it and so on.
+     *                            Modified by function: all the blocks up to and not including the first ('highest') one
+     *                            that was mined under three hours ago are popped.
+     * @param initialPreviousSuperblockHash Keccak-256 hash of the last stored superblock.
+     * @throws Exception
+     */
+    private void storeSuperblocks(Stack<Sha256Hash> allDogeHashesToHash, byte[] initialPreviousSuperblockHash, NetworkParameters params) throws Exception {
+        if (allDogeHashesToHash.empty())
+            return;
+
+        List<Sha256Hash> nextSuperblockDogeHashes = new ArrayList<>();
+
+        Date nextSuperblockStartTime = dogecoinWrapper.getBlock(allDogeHashesToHash.peek()).getHeader().getTime();
+        Date nextSuperblockEndTime = roundToNextWholeHour(nextSuperblockStartTime);
+
+        byte[] nextSuperblockPrevHash = initialPreviousSuperblockHash.clone();
+        StoredBlock nextSuperblockLastBlock;
+
+        long nextSuperblockHeight = getChainHeight() + 1;
+
+        // build and store all superblocks whose last block was mined three hours ago or more
+        while (!allDogeHashesToHash.empty() && nextSuperblockEndTime.before(SuperblockUtils.getThreeHoursAgo())) {
+            // Modify allDogeHashesToHash and get hashes for next superblock.
+            nextSuperblockDogeHashes = popBlocksBeforeTime(allDogeHashesToHash, nextSuperblockEndTime);
+            nextSuperblockLastBlock = dogecoinWrapper.getBlock(nextSuperblockDogeHashes.get(nextSuperblockDogeHashes.size() - 1));
+
+            Superblock newSuperblock = new Superblock(params,
+                    nextSuperblockDogeHashes,
+                    nextSuperblockLastBlock.getChainWork(),
+                    nextSuperblockLastBlock.getHeader().getTimeSeconds(),
+                    nextSuperblockPrevHash,
+                    nextSuperblockHeight);
+
+            superblockStorage.put(newSuperblock);
+            superblockStorage.setChainHead(newSuperblock); // TODO: only do this if its chainwork is more than the chain tip's!
+
+            // set prev hash and end time for next superblock
+            if (!allDogeHashesToHash.empty()) {
+                nextSuperblockPrevHash = newSuperblock.getSuperblockId().clone();
+                nextSuperblockStartTime = dogecoinWrapper.getBlock(allDogeHashesToHash.peek()).getHeader().getTime();
+                nextSuperblockEndTime = roundToNextWholeHour(nextSuperblockStartTime);
+                nextSuperblockHeight++;
             }
+
+            nextSuperblockDogeHashes.clear();
         }
     }
 
-//    public void buildChainFromHeight(int initialHeight) throws BlockStoreException, java.io.IOException {
-//        int bestChainHeight = dogecoinWrapper.getBestChainHeight();
-//        StoredBlock currentStoredBlock = dogecoinWrapper.getBlockAtHeight(initialHeight);
-//        AltcoinBlock currentBlock = (AltcoinBlock) currentStoredBlock.getHeader();
-//        long firstBlockOfSuperblockTime = currentStoredBlock.getHeader().getTimeSeconds(); // timestamp of the first block in the superblock being built
-//        byte[] previousSuperblockHash = new byte[1]; // dummy value for now
-//        BigInteger currentInitialWork = currentStoredBlock.getChainWork(); // chain work of the first block in the superblock being built
-//
-//        // list of blocks that a superblock will be composed of
-//        // this must be cleared after the superblock is built
-//        List<AltcoinBlock> blocksToHash = new ArrayList<>();
-//        blocksToHash.add(currentBlock);
-//        // I'll probably do without this when I figure out how to write a superblock to disk
-//        List<Superblock> superblocks = new ArrayList<>();
-//
-//        for (int i = initialHeight + 1; i < bestChainHeight; i++) {
-//            currentStoredBlock = dogecoinWrapper.getBlockAtHeight(i);
-//            currentBlock = (AltcoinBlock) currentStoredBlock.getHeader();
-//
-//            if (currentBlock.getTimeSeconds() - firstBlockOfSuperblockTime > 3600) {
-//                // blocksToHash already contains blocks mined within an hour,
-//                // so they must be hashed into a superblock and the list must be cleared
-//                Superblock newSuperblock = new Superblock(blocksToHash, previousSuperblockHash, currentInitialWork);
-//                superblocks.add(newSuperblock);
-//                previousSuperblockHash = newSuperblock.getHash(); // TODO: maybe I need to hash the whole data - ask later
-//
-//                // restart list and set currentBlock as the first block of the next superblock
-//                blocksToHash = new ArrayList<>();
-//                blocksToHash.add(currentBlock);
-//                currentInitialWork = currentStoredBlock.getChainWork();
-//            } else {
-//                blocksToHash.add(currentBlock);
-//            }
-//        }
-//    }
+    /**
+     * Given a stack of blocks sorted from least to most recently mined,
+     * returns a list of hashes belonging those which were mined before a certain time.
+     * These blocks can be used for constructing a superblock mined before a certain time.
+     * @param hashStack All the Dogecoin blocks that come after the last block of the last stored superblock.
+     *                  Must not be empty.
+     *                  Modified by function: all the blocks up to and not including the first ('highest') one
+     *                  that was mined after endTime are popped.
+     * @param endTime Time limit of the superblock that this method is being used to construct.
+     * @return List of superblocks mined before endTime, sorted from least to most recently mined.
+     * @throws Exception if list is empty.
+     */
+    private List<Sha256Hash> popBlocksBeforeTime(Stack<Sha256Hash> hashStack, Date endTime) throws Exception {
+        if (hashStack.empty()) {
+            throw new Exception("List of blocks to pop must not be empty.");
+        }
+
+        List<Sha256Hash> poppedBlocks = new ArrayList<>();
+
+        while (!hashStack.empty() && dogecoinWrapper.getBlock(hashStack.peek()).getHeader().getTime().before(endTime)) {
+            poppedBlocks.add(hashStack.pop());
+        }
+
+        return poppedBlocks;
+    }
+
+
+    /* ---- GETTERS ---- */
+
+    /**
+     * Get tip of superblock chain.
+     * @return Tip of superblock chain as saved on disk.
+     * @throws BlockStoreException
+     */
+    public Superblock getChainHead() throws BlockStoreException {
+        return superblockStorage.getChainHead();
+    }
+
+    /**
+     * Get height of tip of superblock chain.
+     * @return Height of tip of superblock chain as saved on disk.
+     * @throws BlockStoreException
+     */
+    public long getChainHeight() throws BlockStoreException {
+        return getChainHead().getSuperblockHeight();
+    }
+
+    /**
+     * Look up a superblock by its hash.
+     * @param superblockHash Keccak-256 hash of a superblock.
+     * @return Superblock with given hash if it's found in the database, null otherwise.
+     */
+    public Superblock getSuperblock(byte[] superblockHash) {
+        return superblockStorage.get(superblockHash);
+    }
+
+    /**
+     * Look up a superblock by its height.
+     * Slower than looking up by hash, as it traverses the chain backwards.
+     * @param superblockHeight Height of a superblock
+     * @return Superblock with the given height if said height is less than that of the chain tip,
+     *         null otherwise.
+     * @throws BlockStoreException
+     * @throws IOException If a superblock hash cannot be calculated.
+     */
+    public Superblock getSuperblockByHeight(long superblockHeight) throws BlockStoreException, IOException {
+        Superblock currentSuperblock = getChainHead();
+        if (superblockHeight > currentSuperblock.getSuperblockHeight())
+            return null; // Superblock does not exist.
+
+        // Superblock exists.
+        while (currentSuperblock.getSuperblockHeight() > superblockHeight)
+            currentSuperblock = getSuperblock(currentSuperblock.getParentId());
+
+        return currentSuperblock;
+    }
+
+
+    /* ---- HELPER METHODS AND CLASSES ---- */
+
+    /**
+     * Get the earliest timestamp after the given date that has 0 as its 'minutes' and 'seconds' fields.
+     * Useful for getting superblock end times.
+     * @param date A timestamp, usually that of the first Dogecoin block in a superblock.
+     * @return Earliest whole hour timestamp after `date`.
+     */
+    private Date roundToNextWholeHour(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.add(Calendar.HOUR, 1);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        return calendar.getTime();
+    }
+
+    /**
+     * Task to keep superblock chain updated whenever the agent is running.
+     */
+    private class UpdateSuperblocksTimerTask extends TimerTask {
+        @Override
+        public void run() {
+            try {
+                log.debug("UpdateSuperblocksTimerTask");
+                updateChain();
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+            }
+        }
+    }
 }
