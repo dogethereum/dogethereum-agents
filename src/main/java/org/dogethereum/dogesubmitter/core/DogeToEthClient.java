@@ -157,7 +157,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
                         updateBridgeSuperblockChain();
                     }
                     if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
-                        updateBridgeTransactions();
+                        updateBridgeTransactionsSuperblocks();
                     }
                 } else {
                     log.warn("UpdateBridgeTimerTask skipped because the eth node is syncing blocks");
@@ -340,6 +340,44 @@ public class DogeToEthClient implements DogecoinWrapperListener {
     }
 
     public void updateBridgeTransactions() throws Exception {
+        Set<Transaction> operatorWalletTxSet = dogecoinWrapper.getTransactions(agentConstants.getDoge2EthMinimumAcceptableConfirmations(), config.isDogeTxRelayerEnabled(), config.isOperatorEnabled());
+        int numberOfTxsSent = 0;
+        for (Transaction operatorWalletTx : operatorWalletTxSet) {
+            if (!ethWrapper.wasDogeTxProcessed(operatorWalletTx.getHash())) {
+                synchronized (this) {
+                    List<Proof> proofs = txsToSendToEth.get(operatorWalletTx.getHash());
+
+                    if (proofs == null || proofs.isEmpty())
+                        continue;
+
+                    StoredBlock txStoredBlock = findBestChainStoredBlockFor(operatorWalletTx);
+                    PartialMerkleTree pmt = null;
+                    for (Proof proof : proofs) {
+                        if (proof.getBlockHash().equals(txStoredBlock.getHeader().getHash())) {
+                            pmt = proof.getPartialMerkleTree();
+                        }
+                    }
+                    int contractDogeBestBlockHeight = ethWrapper.getDogeBestBlockHeight();
+                    if (contractDogeBestBlockHeight < (txStoredBlock.getHeight() + agentConstants.getDoge2EthMinimumAcceptableConfirmations() -1 )) {
+                        log.debug("Tx not relayed yet because not enough confirmations yet {}. Contract height {}, Tx included in block {}",
+                                operatorWalletTx.getHash(), contractDogeBestBlockHeight, txStoredBlock.getHeight());
+                        continue;
+                    }
+
+                    ethWrapper.sendRelayTx(operatorWalletTx, operatorPublicKeyHandler.getPublicKeyHash(), txStoredBlock.getHeader().getHash(), pmt);
+                    numberOfTxsSent++;
+                    // Send a maximum of 40 registerTransaction txs per turn
+                    if (numberOfTxsSent >= MAXIMUM_REGISTER_DOGE_LOCK_TXS_PER_TURN) {
+                        break;
+                    }
+                    log.debug("Invoked registerTransaction for tx {}", operatorWalletTx.getHash());
+                }
+            }
+        }
+    }
+
+    // Temporary
+    public void updateBridgeTransactionsSuperblocks() throws Exception {
         Set<Transaction> operatorWalletTxSet = dogecoinWrapper.getTransactions(agentConstants.getDoge2EthMinimumAcceptableConfirmations(), config.isDogeTxRelayerEnabled(), config.isOperatorEnabled());
         int numberOfTxsSent = 0;
 

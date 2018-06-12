@@ -196,7 +196,7 @@ public class EthWrapper {
 //        BigInteger bondedDeposit = getBondedDeposit(superblock.getSuperblockId());
 
         // TODO: see how much wei we should actually send and whether it's a paremeter for this method
-        CompletableFuture<TransactionReceipt> depositsReceipt = makeDeposit(BigInteger.valueOf(1000));
+        CompletableFuture<TransactionReceipt> depositsReceipt = makeClaimDeposit(BigInteger.valueOf(1000));
 
         // The parent is either approved or semi approved. We can send the superblock.
         CompletableFuture<TransactionReceipt> futureReceipt = proposeSuperblock(superblock);
