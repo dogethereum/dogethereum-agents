@@ -235,12 +235,12 @@ public class EthWrapper {
         return superblocks.getSuperblockStatus(superblockId).send();
     }
 
-    private CompletableFuture<TransactionReceipt> makeDeposit(BigInteger weiValue) throws InterruptedException {
+    private CompletableFuture<TransactionReceipt> makeClaimDeposit(BigInteger weiValue) throws InterruptedException {
         CompletableFuture<TransactionReceipt> futureReceipt = claimManager.makeDeposit(weiValue).sendAsync();
         log.info("Deposited {} wei.", weiValue);
 
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
-            log.info("makeDeposit receipt {}", receipt.toString())
+            log.info("makeClaimDeposit receipt {}", receipt.toString())
         );
         Thread.sleep(200); // in case the transaction takes some time to complete
 
@@ -338,7 +338,7 @@ public class EthWrapper {
                 log.info("RelayTx receipt {}.", receipt.toString())
         );
     }
-    
+
     // TODO: test with operator enabled
 
     public void sendRelayTx(org.bitcoinj.core.Transaction tx, AltcoinBlock block, Superblock superblock, PartialMerkleTree txPMT, PartialMerkleTree superblockPMT) throws Exception {
