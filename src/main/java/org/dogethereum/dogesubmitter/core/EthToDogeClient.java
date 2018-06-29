@@ -19,6 +19,7 @@ import java.util.*;
 /**
  * Signs and broadcasts unlock txs on the doge network
  * @author Oscar Guindzberg
+ * @author Catalina Juarros
  */
 @Service
 @Slf4j(topic = "EthToDogeClient")

@@ -1,5 +1,6 @@
 package org.dogethereum.dogesubmitter.core.dogecoin;
 
+import com.sun.org.apache.bcel.internal.generic.CALOAD;
 import org.bitcoinj.core.Block;
 import org.bitcoinj.core.UnsafeByteArrayOutputStream;
 import org.bitcoinj.core.Utils;
@@ -16,6 +17,15 @@ import java.util.Date;
  * @author Catalina Juarros
  */
 public class SuperblockUtils {
+
+    /* ---- SUPERBLOCK STATUS CODES ---- */
+
+    public static final BigInteger STATUS_UNINITIALIZED = BigInteger.valueOf(0);
+    public static final BigInteger STATUS_NEW = BigInteger.valueOf(1);
+    public static final BigInteger STATUS_IN_BATTLE = BigInteger.valueOf(2);
+    public static final BigInteger STATUS_SEMI_APPROVED = BigInteger.valueOf(3);
+    public static final BigInteger STATUS_APPROVED = BigInteger.valueOf(4);
+    public static final BigInteger STATUS_INVALID = BigInteger.valueOf(5);
 
     public static byte[] toBytes32(BigInteger n) throws IOException {
         byte[] hex = n.toByteArray();
@@ -94,7 +104,51 @@ public class SuperblockUtils {
     }
 
     /**
-     * Today in OOP STRIKES AGAIN: this was somehow not a public method in bitcoinj,
+     * Get a timestamp from exactly n seconds before system time.
+     * Useful for knowing when to stop building superblocks.
+     * @param n Superblock timeout.
+     * @return Timestamp from n seconds ago.
+     */
+    public static Date getNSecondsAgo(int n) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.SECOND, -n);
+        return calendar.getTime();
+    }
+
+    /**
+     * Get the earliest timestamp after the given date that has 0 as its 'minutes' and 'seconds' fields.
+     * Useful for getting superblock end times.
+     * @param date A timestamp, usually that of the first Dogecoin block in a superblock.
+     * @return Earliest whole hour timestamp after `date`.
+     */
+    public static Date roundToNextWholeHour(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.add(Calendar.HOUR, 1);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        return calendar.getTime();
+    }
+
+    public static Date roundToNNextWholeHours(Date date, int n) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.add(Calendar.HOUR, n);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        return calendar.getTime();
+    }
+
+    public static Date roundToNNextWholeMinutes(Date date, int n) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.set(Calendar.MINUTE, n);
+        calendar.set(Calendar.SECOND, 0);
+        return calendar.getTime();
+    }
+
+    /**
+     * Today in BAD OOP STRIKES AGAIN: this was somehow not a public method in bitcoinj,
      * so I had to WRITE THE EXACT SAME CODE from Block.writeHeader().
      * @param block Dogecoin block.
      * @return Serialized block header.
@@ -110,5 +164,13 @@ public class SuperblockUtils {
         Utils.uint32ToByteStreamLE(block.getNonce(), stream);
 
         return stream.toByteArray();
+    }
+
+    private boolean checkStatus(Superblock superblock, BigInteger status) {
+        return superblock.getStatus().equals(status);
+    }
+
+    public static boolean approvedOrSemi(Superblock superblock) {
+        return (superblock.getStatus().equals(STATUS_APPROVED) || superblock.getStatus().equals(STATUS_SEMI_APPROVED));
     }
 }

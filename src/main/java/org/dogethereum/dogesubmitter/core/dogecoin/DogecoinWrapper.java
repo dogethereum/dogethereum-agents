@@ -36,7 +36,6 @@ public class DogecoinWrapper {
     private File proofFile;
 
 
-
     @Autowired
     public DogecoinWrapper(OperatorPublicKeyHandler operatorPublicKeyHandler) throws Exception {
         this.operatorPublicKeyHandler = operatorPublicKeyHandler;

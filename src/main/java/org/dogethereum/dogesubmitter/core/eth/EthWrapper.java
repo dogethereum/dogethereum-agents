@@ -5,15 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
-import org.dogethereum.dogesubmitter.contract.DogeRelay;
-import org.dogethereum.dogesubmitter.contract.DogeToken;
-import org.dogethereum.dogesubmitter.contract.DogeTokenExtended;
-import org.dogethereum.dogesubmitter.contract.DogeClaimManager;
-import org.dogethereum.dogesubmitter.contract.DogeSuperblocks;
+import org.dogethereum.dogesubmitter.contract.*;
 
 import org.dogethereum.dogesubmitter.core.dogecoin.Superblock;
 import org.dogethereum.dogesubmitter.core.dogecoin.SuperblockUtils;
 import org.dogethereum.dogesubmitter.core.dogecoin.SuperblockChain;
+import org.dogethereum.dogesubmitter.core.dogecoin.SuperblockUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
@@ -27,6 +24,9 @@ import org.springframework.stereotype.Component;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.RemoteCall;
+import org.web3j.protocol.core.Request;
+import org.web3j.protocol.core.methods.response.EthBlock;
+import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 
@@ -44,12 +44,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
+import java.util.Date;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Helps the agent communication with the Eth blockchain.
  * @author Oscar Guindzberg
+ * @author Catalina Juarros
  */
 @Component
 @Slf4j(topic = "EthWrapper")
@@ -59,20 +63,11 @@ public class EthWrapper {
     private DogeRelay dogeRelay;
     private DogeRelay dogeRelayForRelayTx;
     private DogeTokenExtended dogeToken;
-    private DogeClaimManager claimManager;
-    private DogeSuperblocks superblocks;
+    private DogeClaimManagerExtended claimManager;
+    private DogeSuperblocksExtended superblocks;
     private SystemProperties config;
     private BigInteger gasPriceMinimum;
 
-
-    /* ---- SUPERBLOCK STATUS CODES ---- */
-
-    private static final BigInteger STATUS_UNINITIALIZED = BigInteger.valueOf(0);
-    private static final BigInteger STATUS_NEW = BigInteger.valueOf(1);
-    private static final BigInteger STATUS_IN_BATTLE = BigInteger.valueOf(2);
-    private static final BigInteger STATUS_SEMI_APPROVED = BigInteger.valueOf(3);
-    private static final BigInteger STATUS_APPROVED = BigInteger.valueOf(4);
-    private static final BigInteger STATUS_INVALID = BigInteger.valueOf(5);
 
     @Autowired
     public EthWrapper() throws Exception {
@@ -85,6 +80,7 @@ public class EthWrapper {
         String fromAddressGeneralPurposeAndSendBlocks;
         String fromAddressRelayTxs;
         String fromAddressPriceOracle;
+
         if (config.isRegtest()) {
             dogeRelayContractAddress = getContractAddress("DogeRelay");
             dogeTokenContractAddress = getContractAddress("DogeToken");
@@ -99,19 +95,27 @@ public class EthWrapper {
             fromAddressRelayTxs = config.addressRelayTxs();
             fromAddressPriceOracle = config.addressPriceOracle();
         }
+
         claimManagerContractAddress = getContractAddress("DogeClaimManager");
         superblocksContractAddress = getContractAddress("DogeSuperblocks");
         gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
         BigInteger gasLimit = BigInteger.valueOf(config.gasLimit());
-        dogeRelay = DogeRelay.load(dogeRelayContractAddress, web3, new ClientTransactionManager(web3, fromAddressGeneralPurposeAndSendBlocks), gasPriceMinimum, gasLimit);
+
+        dogeRelay = DogeRelay.load(dogeRelayContractAddress, web3, new ClientTransactionManager(web3,
+                fromAddressGeneralPurposeAndSendBlocks), gasPriceMinimum, gasLimit);
         assert dogeRelay.isValid();
-        dogeRelayForRelayTx = DogeRelay.load(dogeRelayContractAddress, web3, new ClientTransactionManager(web3, fromAddressRelayTxs), gasPriceMinimum, gasLimit);
+        dogeRelayForRelayTx = DogeRelay.load(dogeRelayContractAddress, web3, new ClientTransactionManager(web3,
+                fromAddressRelayTxs), gasPriceMinimum, gasLimit);
         assert dogeRelayForRelayTx.isValid();
-        dogeToken = DogeTokenExtended.load(dogeTokenContractAddress, web3, new ClientTransactionManager(web3, fromAddressPriceOracle), gasPriceMinimum, gasLimit);
+        dogeToken = DogeTokenExtended.load(dogeTokenContractAddress, web3, new ClientTransactionManager(web3,
+                fromAddressPriceOracle), gasPriceMinimum, gasLimit);
         assert dogeToken.isValid();
-        claimManager = DogeClaimManager.load(claimManagerContractAddress, web3, new ClientTransactionManager(web3, fromAddressGeneralPurposeAndSendBlocks), gasPriceMinimum, gasLimit);
+        claimManager = DogeClaimManagerExtended.load(claimManagerContractAddress, web3, new ClientTransactionManager(
+                web3, fromAddressGeneralPurposeAndSendBlocks), gasPriceMinimum, gasLimit);
         assert claimManager.isValid();
-        superblocks = DogeSuperblocks.load(superblocksContractAddress, web3, new ClientTransactionManager(web3, fromAddressGeneralPurposeAndSendBlocks), gasPriceMinimum, gasLimit);
+        superblocks = DogeSuperblocksExtended.load(superblocksContractAddress, web3, new ClientTransactionManager(web3,
+                fromAddressGeneralPurposeAndSendBlocks), gasPriceMinimum, gasLimit);
+        assert superblocks.isValid();
     }
 
     /**
@@ -124,12 +128,10 @@ public class EthWrapper {
         String basePath = config.truffleBuildContractsDirectory();
         FileReader dogeRelaySpecFile = new FileReader(basePath + "/" + contractName + ".json");
         JSONParser parser = new JSONParser();
-        Object obj = parser.parse(dogeRelaySpecFile);
-        JSONObject jsonObject =  (JSONObject) obj;
-        JSONObject jsonObject2 =  (JSONObject) jsonObject.get("networks");
-        JSONObject jsonObject3 =  (JSONObject) jsonObject2.values().iterator().next();
-        String value4 = (String) jsonObject3.get("address");
-        return value4;
+        JSONObject parsedSpecFile =  (JSONObject) parser.parse(dogeRelaySpecFile);
+        JSONObject networks =  (JSONObject) parsedSpecFile.get("networks");
+        JSONObject data =  (JSONObject) networks.values().iterator().next();
+        return (String) data.get("address");
     }
 
     public int getDogeBestBlockHeight() throws Exception {
@@ -183,12 +185,18 @@ public class EthWrapper {
         Thread.sleep(200);
     }
 
+    /**
+     * Propose a superblock to DogeClaimManager in order to keep DogeRelay updated.
+     * @param superblock Oldest superblock that is already stored in the local database,
+     *                   but still hasn't been submitted to DogeRelay.
+     * @throws Exception If superblock hash cannot be calculated.
+     */
     public void sendStoreSuperblock(Superblock superblock) throws Exception {
         log.info("About to send superblock {} to the bridge.", superblock.getSuperblockId());
 
         // Check if the parent has been approved before sending this superblock.
         byte[] parentId = superblock.getParentId();
-        if (!(getSuperblockStatus(parentId).equals(STATUS_APPROVED) || getSuperblockStatus(parentId).equals(STATUS_SEMI_APPROVED))) {
+        if (!(isApproved(parentId) || isSemiApproved(parentId))) {
             log.info("Superblock {} not sent because its parent was neither approved nor semi approved.", superblock.getSuperblockId());
             return;
         }
@@ -229,10 +237,6 @@ public class EthWrapper {
      */
     public List<byte[]> getSuperblockLocator() throws Exception {
         return superblocks.getSuperblockLocator().send();
-    }
-
-    public BigInteger getSuperblockStatus(byte[] superblockId) throws Exception {
-        return superblocks.getSuperblockStatus(superblockId).send();
     }
 
     private CompletableFuture<TransactionReceipt> makeClaimDeposit(BigInteger weiValue) throws InterruptedException {
@@ -301,6 +305,7 @@ public class EthWrapper {
     }
 
     // Return the size of the header as a 4-byte byte[]
+
     private byte[] calculateHeaderSize (byte[] header) {
         String size = BigInteger.valueOf(header.length).toString(16);
         while (size.length() < 8) {
@@ -308,15 +313,26 @@ public class EthWrapper {
         }
         return Hex.decode(size);
     }
-
     public boolean wasDogeTxProcessed(Sha256Hash txHash) throws Exception {
         return dogeToken.wasDogeTxProcessed(txHash.toBigInteger()).send();
 
     }
 
-    public boolean isApproved(byte[] superblockId) throws Exception {
-        return getSuperblockStatus(superblockId).equals(STATUS_APPROVED);
+
+    /* ---- SUPERBLOCK STATUS CHECKS ---- */
+
+    public BigInteger getSuperblockStatus(byte[] superblockId) throws Exception {
+        return superblocks.getSuperblockStatus(superblockId).send();
     }
+
+    public boolean isApproved(byte[] superblockId) throws Exception {
+        return getSuperblockStatus(superblockId).equals(SuperblockUtils.STATUS_APPROVED);
+    }
+
+    public boolean isSemiApproved(byte[] superblockId) throws Exception {
+        return getSuperblockStatus(superblockId).equals(SuperblockUtils.STATUS_SEMI_APPROVED);
+    }
+
 
     // Old version until migration to superblocks is completed
     public void sendRelayTx(org.bitcoinj.core.Transaction tx, byte[] operatorPublicKeyHash, Sha256Hash blockHash, PartialMerkleTree pmt) throws Exception {
@@ -341,7 +357,7 @@ public class EthWrapper {
 
     // TODO: test with operator enabled
 
-    public void sendRelayTx(org.bitcoinj.core.Transaction tx, AltcoinBlock block, Superblock superblock, PartialMerkleTree txPMT, PartialMerkleTree superblockPMT) throws Exception {
+    public void sendRelayTx(org.bitcoinj.core.Transaction tx, byte[] operatorPublicKeyHash, AltcoinBlock block, Superblock superblock, PartialMerkleTree txPMT, PartialMerkleTree superblockPMT) throws Exception {
         byte[] dogeBlockHeader = Arrays.copyOfRange(block.bitcoinSerialize(), 0, 80);
         Sha256Hash dogeBlockHash = block.getHash();
         log.info("About to send to the bridge doge tx hash {}. Block hash {}", tx.getHash(), dogeBlockHash);
@@ -368,11 +384,16 @@ public class EthWrapper {
 
         String targetContract = dogeToken.getContractAddress();
 
-        CompletableFuture<TransactionReceipt> futureReceipt = dogeRelayForRelayTx.relayTx(txSerialized, txIndex, txSiblingsBigInteger, dogeBlockHeader, dogeBlockIndex, dogeBlockSiblingsBigInteger, superblock.getSuperblockId(), targetContract).sendAsync();
+        CompletableFuture<TransactionReceipt> futureReceipt = dogeRelayForRelayTx.relayTx(txSerialized, operatorPublicKeyHash, txIndex, txSiblingsBigInteger, dogeBlockHeader, dogeBlockIndex, dogeBlockSiblingsBigInteger, superblock.getSuperblockId(), targetContract).sendAsync();
         log.info("Sent relayTx {}", tx.getHash());
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
                 log.info("RelayTx receipt {}.", receipt.toString())
         );
+    }
+
+    // Right now this is just for testing, look into security measures later
+    public void checkClaimFinished(byte[] superblockId) {
+        RemoteCall<TransactionReceipt> transactionReceipt = claimManager.checkClaimFinished(superblockId);
     }
 
     public boolean isEthNodeSyncing() throws IOException {
@@ -391,8 +412,6 @@ public class EthWrapper {
         dogeToken.setGasPrice(gasPrice);
     }
 
-
-
 //    Used just for release process
 
     public void updatePrice(long price) {
@@ -408,6 +427,9 @@ public class EthWrapper {
         return web3.ethBlockNumber().send().getBlockNumber().longValue();
     }
 
+
+    /* ---- EVENT RETRIEVAL METHODS AND CLASSES ---- */
+
     public List<UnlockRequestEvent> getNewUnlockRequests(long latestEthBlockProcessed, long topBlock) throws ExecutionException, InterruptedException, IOException {
         List<UnlockRequestEvent> result = new ArrayList<>();
         List<DogeToken.UnlockRequestEventResponse> unlockRequestEvents = dogeToken.getUnlockRequestEvents(DefaultBlockParameter.valueOf(BigInteger.valueOf(latestEthBlockProcessed)), DefaultBlockParameter.valueOf(BigInteger.valueOf(topBlock)));
@@ -421,10 +443,168 @@ public class EthWrapper {
     }
 
     public static class UnlockRequestEvent {
+
         public long id;
         public byte[] operatorPublicKeyHash;
     }
 
+    /* TODO */
+    /* Before deciding what data type this should return, write a rough sketch of SuperblockDefenderClient
+     * and see what it works with. */
+
+    public List<SuperblockEvent> getNewSuperblocks(long latestEthBlockProcessed, long topBlock) throws IOException {
+        List<SuperblockEvent> result = new ArrayList<>();
+        List<DogeSuperblocks.NewSuperblockEventResponse> newSuperblockEvents =
+                superblocks.getNewSuperblockEvents(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(latestEthBlockProcessed)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(topBlock)));
+
+        for (DogeSuperblocks.NewSuperblockEventResponse response : newSuperblockEvents) {
+            SuperblockEvent newSuperblockEvent = new SuperblockEvent();
+            newSuperblockEvent.superblockId = response.superblockId;
+            newSuperblockEvent.who = response.who;
+            result.add(newSuperblockEvent);
+        }
+
+        return result;
+    }
+
+    public List<SuperblockEvent> getApprovedSuperblocks(long latestEthBlockProcessed, long topBlock)
+            throws IOException {
+        List<SuperblockEvent> result = new ArrayList<>();
+        List<DogeSuperblocks.ApprovedSuperblockEventResponse> approvedSuperblockEvents =
+                superblocks.getApprovedSuperblockEvents(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(latestEthBlockProcessed)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(topBlock)));
+
+        for (DogeSuperblocks.ApprovedSuperblockEventResponse response : approvedSuperblockEvents) {
+            SuperblockEvent approvedSuperblockEvent = new SuperblockEvent();
+            approvedSuperblockEvent.superblockId = response.superblockId;
+            approvedSuperblockEvent.who = response.who;
+            result.add(approvedSuperblockEvent);
+        }
+
+        return result;
+    }
+
+    public List<SuperblockEvent> getChallengedSuperblocks(long latestEthBlockProcessed, long topBlock)
+            throws IOException {
+        List<SuperblockEvent> result = new ArrayList<>();
+        List<DogeSuperblocks.ChallengeSuperblockEventResponse> challengeSuperblockEvents =
+                superblocks.getChallengeSuperblockEvents(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(latestEthBlockProcessed)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(topBlock)));
+
+        for (DogeSuperblocks.ChallengeSuperblockEventResponse response : challengeSuperblockEvents) {
+            SuperblockEvent challengeSuperblockEvent = new SuperblockEvent();
+            challengeSuperblockEvent.superblockId = response.superblockId;
+            challengeSuperblockEvent.who = response.who;
+            result.add(challengeSuperblockEvent);
+        }
+
+        return result;
+    }
+
+    public List<SuperblockEvent> getSemiApprovedSuperblocks(long latestEthBlockProcessed, long topBlock)
+            throws IOException {
+        List<SuperblockEvent> result = new ArrayList<>();
+        List<DogeSuperblocks.SemiApprovedSuperblockEventResponse> semiApprovedSuperblockEvents =
+                superblocks.getSemiApprovedSuperblockEvents(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(latestEthBlockProcessed)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(topBlock)));
+
+        for (DogeSuperblocks.SemiApprovedSuperblockEventResponse response : semiApprovedSuperblockEvents) {
+            SuperblockEvent semiApprovedSuperblockEvent = new SuperblockEvent();
+            semiApprovedSuperblockEvent.superblockId = response.superblockId;
+            semiApprovedSuperblockEvent.who = response.who;
+            result.add(semiApprovedSuperblockEvent);
+        }
+
+        return result;
+    }
+
+    public List<SuperblockEvent> getInvalidSuperblocks(long latestEthBlockProcessed, long topBlock)
+            throws IOException {
+        List<SuperblockEvent> result = new ArrayList<>();
+        List<DogeSuperblocks.InvalidSuperblockEventResponse> invalidSuperblockEvents =
+                superblocks.getInvalidSuperblockEvents(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(latestEthBlockProcessed)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(topBlock)));
+
+        for (DogeSuperblocks.InvalidSuperblockEventResponse response : invalidSuperblockEvents) {
+            SuperblockEvent invalidSuperblockEvent = new SuperblockEvent();
+            invalidSuperblockEvent.superblockId = response.superblockId;
+            invalidSuperblockEvent.who = response.who;
+            result.add(invalidSuperblockEvent);
+        }
+
+        return result;
+    }
+
+    public static class SuperblockEvent {
+
+        public byte[] superblockId;
+        public String who;
+    }
+
+    public List<QueryEvent> getBlockHeaderQueries(long latestEthBlockProcessed, long topBlock)
+            throws IOException {
+        List<QueryEvent> result = new ArrayList<>();
+        List<DogeClaimManager.QueryBlockHeaderEventResponse> queryBlockHeaderEvents =
+                claimManager.getQueryBlockHeaderEventResponses(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(latestEthBlockProcessed)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(topBlock)));
+
+        for (DogeClaimManager.QueryBlockHeaderEventResponse response : queryBlockHeaderEvents) {
+            QueryEvent queryBlockHeaderEvent = new QueryEvent();
+            queryBlockHeaderEvent.sessionId = response.sessionId;
+            queryBlockHeaderEvent.claimant = response.claimant;
+            result.add(queryBlockHeaderEvent);
+        }
+
+        return result;
+    }
+
+    public List<QueryEvent> getMerkleRootHashesQueries(long latestEthBlockProcessed, long topBlock)
+            throws IOException {
+        List<QueryEvent> result = new ArrayList<>();
+        List<DogeClaimManager.QueryMerkleRootHashesEventResponse> queryMerkleRootHashesEvents =
+                claimManager.getQueryMerkleRootHashesEventResponses(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(latestEthBlockProcessed)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(topBlock)));
+
+        for (DogeClaimManager.QueryMerkleRootHashesEventResponse response : queryMerkleRootHashesEvents) {
+            QueryEvent queryMerkleRootHashesEvent = new QueryEvent();
+            queryMerkleRootHashesEvent.sessionId = response.sessionId;
+            queryMerkleRootHashesEvent.claimant = response.claimant;
+            result.add(queryMerkleRootHashesEvent);
+        }
+
+        return result;
+    }
+
+    public static class QueryEvent {
+
+        public byte[] sessionId;
+        public String claimant;
+    }
+
+
+    /* ---- LOG PROCESSING METHODS ---- */
+
+    public BigInteger getEthTimestampRaw(Log eventLog) throws InterruptedException, ExecutionException {
+        String ethBlockHash = eventLog.getBlockHash();
+        CompletableFuture<EthBlock> ethBlockCompletableFuture =
+                web3.ethGetBlockByHash(ethBlockHash, true).sendAsync();
+        checkNotNull(ethBlockCompletableFuture, "Error retrieving completable future");
+        EthBlock ethBlock = ethBlockCompletableFuture.get();
+        return ethBlock.getBlock().getTimestamp();
+    }
+
+    public Date getEthTimestampDate(Log eventLog) throws InterruptedException, ExecutionException {
+        BigInteger rawTimestamp = getEthTimestampRaw(eventLog);
+        return new Date(rawTimestamp.longValue() * 1000);
+    }
 
     public Unlock getUnlock(Long unlockRequestId) throws Exception {
         Tuple7<String, String, BigInteger, BigInteger, List<BigInteger>, BigInteger, byte[]> tuple =
@@ -458,6 +638,21 @@ public class EthWrapper {
         public List<UTXO> selectedUtxos;
         public long fee;
         public byte[] operatorPublicKeyHash;
+    }
+
+
+    /* ---- GETTERS ---- */
+
+    public BigInteger getSuperblockDuration() throws Exception {
+        return claimManager.superblockDuration().send();
+    }
+
+    public BigInteger getSuperblockDelay() throws Exception {
+        return claimManager.superblockDelay().send();
+    }
+
+    public BigInteger getSuperblockTimeout() throws Exception {
+        return claimManager.superblockTimeout().send();
     }
 
 }

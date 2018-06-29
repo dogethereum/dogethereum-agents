@@ -1,5 +1,6 @@
 package org.dogethereum.dogesubmitter.core.dogecoin;
 
+import com.sun.org.apache.bcel.internal.generic.NEW;
 import jnr.ffi.annotations.Out;
 import org.bitcoinj.core.*;
 
@@ -33,8 +34,9 @@ public class Superblock {
 
     private byte[] superblockId; // KECCAK-256 hash of superblock data
     private long superblockHeight;
+    private BigInteger status;
+    private long newSuperblockEventTime;
     private List<Sha256Hash> dogeBlockHashes;
-    private PartialMerkleTree partialMerkleTree;
 
 
     /* ---- CONSTANTS ---- */
@@ -50,7 +52,9 @@ public class Superblock {
     private static final int PARENT_ID_PAYLOAD_OFFSET = LAST_BLOCK_HASH_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
 
     private static final int SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET = PARENT_ID_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
-    private static final int NUMBER_OF_HASHES_PAYLOAD_OFFSET = SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET + UINT32_LENGTH;
+    private static final int STATUS_PAYLOAD_OFFSET = SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET + UINT32_LENGTH;
+    private static final int NEW_EVENT_TIME_OFFSET = STATUS_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
+    private static final int NUMBER_OF_HASHES_PAYLOAD_OFFSET = NEW_EVENT_TIME_OFFSET + UINT32_LENGTH;
     private static final int DOGE_BLOCK_HASHES_PAYLOAD_OFFSET = NUMBER_OF_HASHES_PAYLOAD_OFFSET + UINT32_LENGTH;
 
 
@@ -66,14 +70,20 @@ public class Superblock {
      * @param chainWork Last Dogecoin block's accumulated chainwork.
      * @param parentId Previous superblock's SHA-256 hash.
      */
-    public Superblock(NetworkParameters params, List<Sha256Hash> dogeBlockHashes, BigInteger chainWork, long lastDogeBlockTime, byte[] parentId, long superblockHeight) {
+    public Superblock(NetworkParameters params, List<Sha256Hash> dogeBlockHashes, BigInteger chainWork,
+                      long lastDogeBlockTime, byte[] parentId, long superblockHeight, BigInteger status,
+                      long newSuperblockEventTime) {
+        // set helper fields
+        this.superblockHeight = superblockHeight;
+        this.status = status;
+        this.newSuperblockEventTime = newSuperblockEventTime;
+        this.dogeBlockHashes = new ArrayList<>(dogeBlockHashes);
+
         // hash all the block dogeBlockHashes into a Merkle tree
         byte[] includeBits = new byte[(int) Math.ceil(dogeBlockHashes.size() / 8.0)];
         for (int i = 0; i < dogeBlockHashes.size(); i++)
             Utils.setBitLE(includeBits, i);
-        this.partialMerkleTree = PartialMerkleTree.buildFromLeaves(params, includeBits, dogeBlockHashes);
-        this.superblockHeight = superblockHeight;
-        this.dogeBlockHashes = new ArrayList<>(dogeBlockHashes);
+        PartialMerkleTree partialMerkleTree = PartialMerkleTree.buildFromLeaves(params, includeBits, dogeBlockHashes);
 
         this.merkleRoot = partialMerkleTree.getTxnHashAndMerkleRoot(dogeBlockHashes);
         this.chainWork = chainWork;
@@ -89,20 +99,28 @@ public class Superblock {
      */
     // TODO: see what to do with potential exceptions when reading block fields
     public Superblock(byte[] payload) throws ProtocolException {
-        this.merkleRoot = Sha256Hash.wrapReversed(SuperblockUtils.readBytes(payload, MERKLE_ROOT_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
-        this.chainWork = new BigInteger(Utils.reverseBytes(SuperblockUtils.readBytes(payload, CHAIN_WORK_PAYLOAD_OFFSET, BIG_INTEGER_LENGTH)));
+        this.merkleRoot = Sha256Hash.wrapReversed(SuperblockUtils.readBytes(
+                payload, MERKLE_ROOT_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
+        this.chainWork = new BigInteger(Utils.reverseBytes(SuperblockUtils.readBytes(
+                payload, CHAIN_WORK_PAYLOAD_OFFSET, BIG_INTEGER_LENGTH)));
         this.lastDogeBlockTime = Utils.readUint32(payload, LAST_BLOCK_TIME_PAYLOAD_OFFSET);
-        this.lastDogeBlockHash = Sha256Hash.wrapReversed(SuperblockUtils.readBytes(payload, LAST_BLOCK_HASH_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
-        this.parentId = Utils.reverseBytes(SuperblockUtils.readBytes(payload, PARENT_ID_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
+        this.lastDogeBlockHash = Sha256Hash.wrapReversed(SuperblockUtils.readBytes(
+                payload, LAST_BLOCK_HASH_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
+        this.parentId = Utils.reverseBytes(SuperblockUtils.readBytes(
+                payload, PARENT_ID_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
 
         this.superblockHeight = Utils.readUint32(payload, SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET);
+        this.status = new BigInteger(Utils.reverseBytes(SuperblockUtils.readBytes(payload,
+                SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET, BIG_INTEGER_LENGTH)));
+        this.newSuperblockEventTime = Utils.readUint32(payload, NEW_EVENT_TIME_OFFSET);
         long numberOfDogeBlockHashes = Utils.readUint32(payload, NUMBER_OF_HASHES_PAYLOAD_OFFSET);
         this.dogeBlockHashes = deserializeHashesLE(payload, DOGE_BLOCK_HASHES_PAYLOAD_OFFSET, numberOfDogeBlockHashes);
     }
 
     /**
      * Calculate the Merkle root hash of a tree containing all the blocks in `blocks`.
-     * @param hashes List of hashes belonging to all Dogecoin blocks mined within the one hour lapse corresponding to this superblock.
+     * @param hashes List of hashes belonging to all Dogecoin blocks mined within the one hour lapse
+     *               corresponding to this superblock.
      * @return Root of a Merkle tree with all these blocks as its leaves.
      */
     public Sha256Hash calculateMerkleRoot(List<Sha256Hash> hashes) {
@@ -112,7 +130,8 @@ public class Superblock {
 
     /**
      * Build a Merkle tree with all the blocks in `blocks` as its leaves.
-     * @param hashes List of hashes belonging to all Dogecoin blocks mined within the one hour lapse corresponding to this superblock.
+     * @param hashes List of hashes belonging to all Dogecoin blocks mined within the one hour lapse
+     *               corresponding to this superblock.
      * @return Merkle tree in List<> format, with its lower levels first and its root as the last element.
      */
     // TODO: discuss replacing with PartialMerkleTree.buildFromLeaves()
@@ -129,7 +148,8 @@ public class Superblock {
         for (int levelSize = hashes.size(); levelSize > 1; levelSize = (levelSize + 1) / 2) {
             // hashes each pair of nodes
             for (int left = 0; left < levelSize; left += 2) {
-                // The right hand node can be the same as the left hand, in the case where we don't have enough transactions.
+                // The right hand node can be the same as the left hand,
+                // in the case where we don't have enough transactions.
                 int right = Math.min(left + 1, levelSize - 1); // in case left needs to be hashed with itself
                 byte[] leftBytes = tree.get(levelOffset + left);
                 byte[] rightBytes = tree.get(levelOffset + right);
@@ -192,6 +212,18 @@ public class Superblock {
         return dogeBlockHashes;
     }
 
+    public BigInteger getStatus() {
+        return status;
+    }
+
+
+    /* ---- SETTERS ---- */
+
+    public void setStatus(BigInteger status) {
+        this.status = status;
+    }
+
+
     /* ---- STORAGE AND READING ---- */
 
     /**
@@ -232,6 +264,8 @@ public class Superblock {
         serializeLE(stream);
 
         Utils.uint32ToByteStreamLE(superblockHeight, stream);
+        stream.write(SuperblockUtils.toBytes32(status));
+        Utils.uint32ToByteStreamLE(newSuperblockEventTime, stream);
         Utils.uint32ToByteStreamLE(dogeBlockHashes.size(), stream);
         serializeHashesLE(dogeBlockHashes, stream);
     }
@@ -273,6 +307,7 @@ public class Superblock {
         return hashes;
     }
 
+
     /* ---- OTHER METHODS ---- */
 
     public boolean hasDogeBlock(Sha256Hash hash) {
@@ -291,6 +326,7 @@ public class Superblock {
         return -1; // TODO: raise exception
     }
 
+    // TODO: see if this can be removed
     public boolean equals(Superblock superblock) {
         if (!this.merkleRoot.equals(superblock.merkleRoot))
             return false;

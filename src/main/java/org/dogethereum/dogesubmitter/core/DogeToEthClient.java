@@ -24,6 +24,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * Manages the process of informing DogeRelay news about the dogecoin blockchain
  * @author Oscar Guindzberg
+ * @author Catalina Juarros
  */
 @Service
 @Slf4j(topic = "DogeToEthClient")
@@ -44,8 +45,8 @@ public class DogeToEthClient {
     @Autowired
     private DogecoinWrapper dogecoinWrapper;
 
+    @Autowired
     private SuperblockChain superblockChain;
-    private File superblockChainFile;
 
     public DogeToEthClient() {}
 
@@ -81,10 +82,10 @@ public class DogeToEthClient {
                     log.debug("UpdateBridgeTimerTask");
                     ethWrapper.updateContractFacadesGasPrice();
                     if (config.isDogeBlockSubmitterEnabled()) {
-                        updateBridgeDogeBlockchain();
+                        updateBridgeSuperblockChain();
                     }
                     if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
-                        updateBridgeTransactions();
+                        updateBridgeTransactionsSuperblocks();
                     }
                 } else {
                     log.warn("UpdateBridgeTimerTask skipped because the eth node is syncing blocks");
@@ -145,7 +146,8 @@ public class DogeToEthClient {
             if (bridgeSuperblock == null)
                 continue;
 
-            Superblock bestRelaySuperblockInLocalChain = superblockChain.getSuperblockByHeight(bridgeSuperblock.getSuperblockHeight());
+            Superblock bestRelaySuperblockInLocalChain =
+                    superblockChain.getSuperblockByHeight(bridgeSuperblock.getSuperblockHeight());
 
             if (Arrays.equals(bridgeSuperblock.getSuperblockId(), bestRelaySuperblockInLocalChain.getSuperblockId())) {
                 matchedSuperblock = bestRelaySuperblockInLocalChain;
@@ -305,7 +307,9 @@ public class DogeToEthClient {
 
     // Temporary
     public void updateBridgeTransactionsSuperblocks() throws Exception {
-        Set<Transaction> operatorWalletTxSet = dogecoinWrapper.getTransactions(agentConstants.getDoge2EthMinimumAcceptableConfirmations(), config.isDogeTxRelayerEnabled(), config.isOperatorEnabled());
+        Set<Transaction> operatorWalletTxSet = dogecoinWrapper.getTransactions(
+                agentConstants.getDoge2EthMinimumAcceptableConfirmations(), config.isDogeTxRelayerEnabled(),
+                config.isOperatorEnabled());
         int numberOfTxsSent = 0;
 
         for (Transaction operatorWalletTx : operatorWalletTxSet) {
@@ -328,8 +332,10 @@ public class DogeToEthClient {
                     Superblock txSuperblock = findBestSuperblockFor(txStoredBlock.getHeader().getHash());
 
                     if (!ethWrapper.isApproved(txSuperblock.getSuperblockId())) {
-                        log.debug("Tx {} not relayed because the superblock it's in hasn't been approved yet. Block hash: {}, superblock ID: {}",
-                                operatorWalletTx.getHash(), txStoredBlock.getHeader().getHash(), Sha256Hash.wrap(txSuperblock.getSuperblockId()));
+                        log.debug("Tx {} not relayed because the superblock it's in hasn't been approved yet." +
+                                        "Block hash: {}, superblock ID: {}",
+                                operatorWalletTx.getHash(), txStoredBlock.getHeader().getHash(),
+                                Sha256Hash.wrap(txSuperblock.getSuperblockId()));
                         continue;
                     }
 
@@ -338,11 +344,14 @@ public class DogeToEthClient {
 //                    includeBits[dogeBlockIndex] = 1;
                     byte[] includeBits = new byte[(int) Math.ceil(txSuperblock.getDogeBlockHashes().size() / 8.0)];
                     Utils.setBitLE(includeBits, dogeBlockIndex);
-                    PartialMerkleTree superblockPMT = PartialMerkleTree.buildFromLeaves(agentConstants.getDogeParams(), includeBits, txSuperblock.getDogeBlockHashes());
+                    PartialMerkleTree superblockPMT = PartialMerkleTree.buildFromLeaves(agentConstants.getDogeParams(),
+                            includeBits, txSuperblock.getDogeBlockHashes());
 
-                    ethWrapper.sendRelayTx(operatorWalletTx, (AltcoinBlock) txStoredBlock.getHeader(), txSuperblock, txPMT, superblockPMT);
+                    ethWrapper.sendRelayTx(operatorWalletTx, operatorPublicKeyHandler.getPublicKeyHash(),
+                            (AltcoinBlock) txStoredBlock.getHeader(), txSuperblock, txPMT, superblockPMT);
                     numberOfTxsSent++;
                     // Send a maximum of 40 registerTransaction txs per turn
+
                     if (numberOfTxsSent >= MAXIMUM_REGISTER_DOGE_LOCK_TXS_PER_TURN) {
                         break;
                     }

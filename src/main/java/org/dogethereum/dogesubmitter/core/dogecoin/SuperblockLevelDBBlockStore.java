@@ -32,10 +32,14 @@ import java.util.*;
 
 public class SuperblockLevelDBBlockStore {
     private static final byte[] CHAIN_HEAD_KEY = "chainhead".getBytes(); // to store chain head hash
+    private static final byte[] APPROVED_HEAD_KEY = "approvedhead".getBytes(); // to store approved head hash
 
     private final Context context;
     private final File path;
     private DB db;
+
+
+    /* ---- ESSENTIAL DATABASE METHODS ---- */
 
     /**
      * Constructor.
@@ -43,7 +47,8 @@ public class SuperblockLevelDBBlockStore {
      * @param directory
      * @throws BlockStoreException
      */
-    public SuperblockLevelDBBlockStore(Context context, File directory, NetworkParameters params) throws BlockStoreException {
+    public SuperblockLevelDBBlockStore(Context context, File directory, NetworkParameters params)
+            throws BlockStoreException {
         this(context, directory, JniDBFactory.factory, params); // this might not work, ask later
     }
 
@@ -54,7 +59,8 @@ public class SuperblockLevelDBBlockStore {
      * @param dbFactory
      * @throws BlockStoreException
      */
-    public SuperblockLevelDBBlockStore(Context context, File directory, DBFactory dbFactory, NetworkParameters params) throws BlockStoreException {
+    public SuperblockLevelDBBlockStore(Context context, File directory, DBFactory dbFactory, NetworkParameters params)
+            throws BlockStoreException {
         this.context = context;
         this.path = directory;
         Options options = new Options();
@@ -72,7 +78,8 @@ public class SuperblockLevelDBBlockStore {
         }
     }
 
-    private synchronized void tryOpen(File directory, DBFactory dbFactory, Options options, NetworkParameters params) throws IOException, BlockStoreException {
+    private synchronized void tryOpen(File directory, DBFactory dbFactory, Options options, NetworkParameters params)
+            throws IOException, BlockStoreException {
         db = dbFactory.open(directory, options);
         initStoreIfNeeded(params);
     }
@@ -94,9 +101,13 @@ public class SuperblockLevelDBBlockStore {
         List<Sha256Hash> genesisList = new ArrayList<>();
         genesisList.add(context.getParams().getGenesisBlock().getHash());
         byte[] genesisParentHash = new byte[32]; // initialised with 0s
-        Superblock genesisBlock = new Superblock(params, genesisList, BigInteger.valueOf(0), context.getParams().getGenesisBlock().getTimeSeconds(), genesisParentHash, 0);
+        Superblock genesisBlock = new Superblock(
+                params, genesisList, BigInteger.valueOf(0), context.getParams().getGenesisBlock().getTimeSeconds(),
+                genesisParentHash, 0, SuperblockUtils.STATUS_APPROVED, 0);
+        // todo: see if this is OK
         put(genesisBlock);
         setChainHead(genesisBlock);
+        setApprovedHead(genesisBlock);
     }
 
     /**
@@ -164,22 +175,24 @@ public class SuperblockLevelDBBlockStore {
         JniDBFactory.factory.destroy(path, new Options());
     }
 
+
+    /* ---- CHAIN HEAD METHODS ---- */
+
     /**
-     * Gets tip of superblock chain.
+     * Gets tip of superblock chain. Not necessarily approved.
      * @return Highest stored superblock.
      * @throws BlockStoreException
      */
     public synchronized Superblock getChainHead() throws BlockStoreException {
-        return get(db.get(CHAIN_HEAD_KEY));
+        return get(getChainHeadId());
     }
 
     /**
-     * Gets hash of tip of superblock chain.
+     * Gets hash of tip of superblock chain. Not necessarily approved.
      * @return Highest stored superblock's hash.
      * @throws BlockStoreException
-     * @throws IOException
      */
-    public synchronized byte[] getChainHeadId() throws BlockStoreException, IOException {
+    public synchronized byte[] getChainHeadId() throws BlockStoreException {
         return db.get(CHAIN_HEAD_KEY);
     }
 
@@ -187,10 +200,54 @@ public class SuperblockLevelDBBlockStore {
      * Sets tip of superblock chain.
      * @param chainHead Last stored superblock.
      * @throws BlockStoreException
-     * @throws java.io.IOException
      */
     public synchronized void setChainHead(Superblock chainHead) throws BlockStoreException, IOException {
         db.put(CHAIN_HEAD_KEY, chainHead.getSuperblockId());
+    }
+
+    /**
+     * Return tip work.
+     * @return Chain head's accumulated work.
+     * @throws BlockStoreException
+     */
+    public synchronized BigInteger getChainHeadWork() throws BlockStoreException {
+        return getChainHead().getChainWork();
+    }
+
+
+    /* ---- APPROVED HEAD METHODS ---- */
+
+    public synchronized Superblock getApprovedHead() throws BlockStoreException {
+        return get(getApprovedHeadId());
+    }
+
+    public synchronized byte[] getApprovedHeadId() throws BlockStoreException {
+        return db.get(APPROVED_HEAD_KEY);
+    }
+
+    /**
+     * Set highest approved or semi-approved superblock.
+     * @param approvedHead Superblock to be set as head.
+     * @throws BlockStoreException
+     * @throws IOException
+     * @throws IllegalArgumentException If superblock status is neither approved nor semi-approved.
+     */
+    public synchronized void setApprovedHead(Superblock approvedHead)
+            throws BlockStoreException, IOException, IllegalArgumentException {
+        if (!SuperblockUtils.approvedOrSemi(approvedHead)) {
+            throw new IllegalArgumentException("Superblock must be approved or semi approved.");
+        }
+
+        db.put(APPROVED_HEAD_KEY, approvedHead.getSuperblockId());
+    }
+
+
+    /* ---- OTHER METHODS ---- */
+
+    public synchronized void setStatus(byte[] superblockId, BigInteger status) throws IOException {
+        Superblock superblock = get(superblockId);
+        superblock.setStatus(status);
+        put(superblock);
     }
 
 }
