@@ -14,3 +14,4 @@ build
 target
 
 src/main/resources/dogethereum-agents.conf
+storage/
