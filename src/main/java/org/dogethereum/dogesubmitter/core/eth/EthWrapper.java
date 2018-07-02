@@ -197,7 +197,8 @@ public class EthWrapper implements SuperblockConstantProvider {
         // Check if the parent has been approved before sending this superblock.
         byte[] parentId = superblock.getParentId();
         if (!(isApproved(parentId) || isSemiApproved(parentId))) {
-            log.info("Superblock {} not sent because its parent was neither approved nor semi approved.", superblock.getSuperblockId());
+            log.info("Superblock {} not sent because its parent was neither approved nor semi approved.",
+                    superblock.getSuperblockId());
             return;
         }
 
@@ -357,7 +358,9 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     // TODO: test with operator enabled
 
-    public void sendRelayTx(org.bitcoinj.core.Transaction tx, byte[] operatorPublicKeyHash, AltcoinBlock block, Superblock superblock, PartialMerkleTree txPMT, PartialMerkleTree superblockPMT) throws Exception {
+    public void sendRelayTx(org.bitcoinj.core.Transaction tx, byte[] operatorPublicKeyHash, AltcoinBlock block,
+                            Superblock superblock, PartialMerkleTree txPMT, PartialMerkleTree superblockPMT)
+            throws Exception {
         byte[] dogeBlockHeader = Arrays.copyOfRange(block.bitcoinSerialize(), 0, 80);
         Sha256Hash dogeBlockHash = block.getHash();
         log.info("About to send to the bridge doge tx hash {}. Block hash {}", tx.getHash(), dogeBlockHash);
@@ -384,7 +387,9 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         String targetContract = dogeToken.getContractAddress();
 
-        CompletableFuture<TransactionReceipt> futureReceipt = dogeRelayForRelayTx.relayTx(txSerialized, operatorPublicKeyHash, txIndex, txSiblingsBigInteger, dogeBlockHeader, dogeBlockIndex, dogeBlockSiblingsBigInteger, superblock.getSuperblockId(), targetContract).sendAsync();
+        CompletableFuture<TransactionReceipt> futureReceipt = dogeRelayForRelayTx.relayTx(txSerialized,
+                operatorPublicKeyHash, txIndex, txSiblingsBigInteger, dogeBlockHeader, dogeBlockIndex,
+                dogeBlockSiblingsBigInteger, superblock.getSuperblockId(), targetContract).sendAsync();
         log.info("Sent relayTx {}", tx.getHash());
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
                 log.info("RelayTx receipt {}.", receipt.toString())
@@ -430,9 +435,12 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     /* ---- EVENT RETRIEVAL METHODS AND CLASSES ---- */
 
-    public List<UnlockRequestEvent> getNewUnlockRequests(long latestEthBlockProcessed, long topBlock) throws ExecutionException, InterruptedException, IOException {
+    public List<UnlockRequestEvent> getNewUnlockRequests(long latestEthBlockProcessed, long topBlock)
+            throws ExecutionException, InterruptedException, IOException {
         List<UnlockRequestEvent> result = new ArrayList<>();
-        List<DogeToken.UnlockRequestEventResponse> unlockRequestEvents = dogeToken.getUnlockRequestEvents(DefaultBlockParameter.valueOf(BigInteger.valueOf(latestEthBlockProcessed)), DefaultBlockParameter.valueOf(BigInteger.valueOf(topBlock)));
+        List<DogeToken.UnlockRequestEventResponse> unlockRequestEvents = dogeToken.getUnlockRequestEvents(
+                DefaultBlockParameter.valueOf(BigInteger.valueOf(latestEthBlockProcessed)),
+                DefaultBlockParameter.valueOf(BigInteger.valueOf(topBlock)));
         for (DogeToken.UnlockRequestEventResponse unlockRequestEvent : unlockRequestEvents) {
             UnlockRequestEvent unlockRequestEventEthWrapper = new UnlockRequestEvent();
             unlockRequestEventEthWrapper.id = unlockRequestEvent.id.longValue();
