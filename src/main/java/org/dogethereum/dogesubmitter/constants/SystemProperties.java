@@ -202,6 +202,14 @@ public class SystemProperties {
         return getStringProperty("dogeToken.contract.address", null);
     }
 
+    public String dogeClaimManagerContractAddress() {
+        return getStringProperty("dogeClaimManager.contract.address", null);
+    }
+
+    public String dogeSuperblocksContractAddress() {
+        return getStringProperty("dogeSuperblocks.contract.address", null);
+    }
+
     public String addressPriceOracle() {
         return getStringProperty("address.price.oracle", null);
     }
