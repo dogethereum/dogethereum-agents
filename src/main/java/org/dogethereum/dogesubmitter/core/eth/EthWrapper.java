@@ -7,9 +7,7 @@ import org.bitcoinj.core.*;
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
 import org.dogethereum.dogesubmitter.contract.*;
 
-import org.dogethereum.dogesubmitter.core.dogecoin.Superblock;
-import org.dogethereum.dogesubmitter.core.dogecoin.SuperblockUtils;
-import org.dogethereum.dogesubmitter.core.dogecoin.SuperblockChain;
+import org.dogethereum.dogesubmitter.core.dogecoin.*;
 import org.dogethereum.dogesubmitter.core.dogecoin.SuperblockUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -57,7 +55,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 @Component
 @Slf4j(topic = "EthWrapper")
-public class EthWrapper {
+public class EthWrapper implements SuperblockConstantProvider {
 
     private Web3j web3;
     private DogeRelay dogeRelay;
@@ -84,6 +82,8 @@ public class EthWrapper {
         if (config.isRegtest()) {
             dogeRelayContractAddress = getContractAddress("DogeRelay");
             dogeTokenContractAddress = getContractAddress("DogeToken");
+            claimManagerContractAddress = getContractAddress("DogeClaimManager");
+            superblocksContractAddress = getContractAddress("DogeSuperblocks");
             List<String> accounts = web3.ethAccounts().send().getAccounts();
             fromAddressGeneralPurposeAndSendBlocks = accounts.get(0);
             fromAddressRelayTxs = accounts.get(1);
@@ -91,13 +91,13 @@ public class EthWrapper {
         } else {
             dogeRelayContractAddress = config.dogeRelayContractAddress();
             dogeTokenContractAddress = config.dogeTokenContractAddress();
+            claimManagerContractAddress = config.dogeClaimManagerContractAddress();
+            superblocksContractAddress = config.dogeSuperblocksContractAddress();
             fromAddressGeneralPurposeAndSendBlocks = config.addressGeneralPurposeAndSendBlocks();
             fromAddressRelayTxs = config.addressRelayTxs();
             fromAddressPriceOracle = config.addressPriceOracle();
         }
 
-        claimManagerContractAddress = getContractAddress("DogeClaimManager");
-        superblocksContractAddress = getContractAddress("DogeSuperblocks");
         gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
         BigInteger gasLimit = BigInteger.valueOf(config.gasLimit());
 
@@ -448,9 +448,6 @@ public class EthWrapper {
         public byte[] operatorPublicKeyHash;
     }
 
-    /* TODO */
-    /* Before deciding what data type this should return, write a rough sketch of SuperblockDefenderClient
-     * and see what it works with. */
 
     public List<SuperblockEvent> getNewSuperblocks(long latestEthBlockProcessed, long topBlock) throws IOException {
         List<SuperblockEvent> result = new ArrayList<>();
@@ -546,6 +543,7 @@ public class EthWrapper {
         public byte[] superblockId;
         public String who;
     }
+
 
     public List<QueryEvent> getBlockHeaderQueries(long latestEthBlockProcessed, long topBlock)
             throws IOException {
