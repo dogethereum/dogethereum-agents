@@ -8,7 +8,6 @@ import org.bitcoinj.core.*;
 import org.bitcoinj.store.BlockStoreException;
 import org.dogethereum.dogesubmitter.constants.AgentConstants;
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
-import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapperListener;
 import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapper;
 import org.dogethereum.dogesubmitter.core.dogecoin.Proof;
 import org.dogethereum.dogesubmitter.core.eth.EthWrapper;
@@ -17,11 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.io.*;
-import java.net.UnknownHostException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -31,7 +27,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 @Service
 @Slf4j(topic = "DogeToEthClient")
-public class DogeToEthClient implements DogecoinWrapperListener {
+public class DogeToEthClient {
 
     static final int MAXIMUM_REGISTER_DOGE_LOCK_TXS_PER_TURN = 40;
 
@@ -45,16 +41,11 @@ public class DogeToEthClient implements DogecoinWrapperListener {
 
     private AgentConstants agentConstants;
 
+    @Autowired
     private DogecoinWrapper dogecoinWrapper;
 
     private SuperblockChain superblockChain;
     private File superblockChainFile;
-
-    private Map<Sha256Hash, List<Proof>> txsToSendToEth = new ConcurrentHashMap<>();
-
-    private File dataDirectory;
-
-    private File proofFile;
 
     public DogeToEthClient() {}
 
@@ -65,30 +56,15 @@ public class DogeToEthClient implements DogecoinWrapperListener {
         if (config.isDogeBlockSubmitterEnabled() || config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
             agentConstants = config.getAgentConstants();
 
-            this.dataDirectory = new File(config.dataDirectory());
-            this.proofFile = new File(dataDirectory.getAbsolutePath() + "/DogeToEthClient.proofs");
-            restoreProofsFromFile();
-            setupDogecoinWrapper();
             new Timer("Doge to Eth client").scheduleAtFixedRate(new UpdateBridgeTimerTask(), getFirstExecutionDate(), agentConstants.getUpdateBridgeExecutionPeriod());
 
             Context context = new Context(agentConstants.getDogeParams());
 
-            superblockChain = new SuperblockChain(dogecoinWrapper, context, dataDirectory, agentConstants.getDogeParams());
-            superblockChain.initialize(agentConstants.getUpdateBridgeExecutionPeriod(), getFirstExecutionDate());
+            //superblockChain = new SuperblockChain(dogecoinWrapper, context, dataDirectory, agentConstants.getDogeParams());
+            //superblockChain.initialize(agentConstants.getUpdateBridgeExecutionPeriod(), getFirstExecutionDate());
         }
     }
 
-    private void setupDogecoinWrapper() throws UnknownHostException {
-        dogecoinWrapper = new DogecoinWrapper(agentConstants, dataDirectory, operatorPublicKeyHandler, config.isDogeTxRelayerEnabled() || config.isOperatorEnabled());
-        // TODO: Make the dogecoin peer list configurable
-        // dogecoinWrapper.setup(this, this, ethWrapper.getDogecoinPeerAddresses());
-        dogecoinWrapper.setup(this, null);
-        dogecoinWrapper.start();
-    }
-
-    public Map<Sha256Hash, List<Proof>> getTransactionsToSendToEth() {
-        return txsToSendToEth;
-    }
 
     public Date getFirstExecutionDate() {
         Calendar firstExecution = Calendar.getInstance();
@@ -96,55 +72,6 @@ public class DogeToEthClient implements DogecoinWrapperListener {
         return firstExecution.getTime();
     }
 
-    @Override
-    public void onBlock(FilteredBlock filteredBlock) {
-        if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
-            synchronized (this) {
-                log.debug("onBlock {}", filteredBlock.getHash());
-                List<Sha256Hash> hashes = new ArrayList<>();
-                PartialMerkleTree tree = filteredBlock.getPartialMerkleTree();
-                tree.getTxnHashAndMerkleRoot(hashes);
-                for (Sha256Hash txToSendToEth : txsToSendToEth.keySet()) {
-                    if (hashes.contains(txToSendToEth)) {
-                        List<Proof> proofs = txsToSendToEth.get(txToSendToEth);
-                        boolean alreadyIncluded = false;
-                        for (Proof proof : proofs) {
-                            if (proof.getBlockHash().equals(filteredBlock.getHash())) {
-                                alreadyIncluded = true;
-                            }
-                        }
-                        if (!alreadyIncluded) {
-                            Proof proof = new Proof(filteredBlock.getHash(), tree);
-                            proofs.add(proof);
-                            log.info("New proof for tx " + txToSendToEth + " in block " + filteredBlock.getHash());
-                            try {
-                                flushProofs();
-                            } catch (IOException e) {
-                                log.error(e.getMessage(), e);
-                            }
-                        } else {
-                            log.info("Proof for tx " + txToSendToEth + " in block " + filteredBlock.getHash() + " already stored");
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    @Override
-    public void onTransaction(Transaction tx) {
-        if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
-            log.debug("onTransaction {}", tx.getHash());
-            synchronized (this) {
-                txsToSendToEth.put(tx.getHash(), new ArrayList<Proof>());
-                try {
-                    flushProofs();
-                } catch (IOException e) {
-                    log.error(e.getMessage(), e);
-                }
-            }
-        }
-    }
 
     private class UpdateBridgeTimerTask extends TimerTask {
         @Override
@@ -154,10 +81,10 @@ public class DogeToEthClient implements DogecoinWrapperListener {
                     log.debug("UpdateBridgeTimerTask");
                     ethWrapper.updateContractFacadesGasPrice();
                     if (config.isDogeBlockSubmitterEnabled()) {
-                        updateBridgeSuperblockChain();
+                        updateBridgeDogeBlockchain();
                     }
                     if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
-                        updateBridgeTransactionsSuperblocks();
+                        updateBridgeTransactions();
                     }
                 } else {
                     log.warn("UpdateBridgeTimerTask skipped because the eth node is syncing blocks");
@@ -345,7 +272,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
         for (Transaction operatorWalletTx : operatorWalletTxSet) {
             if (!ethWrapper.wasDogeTxProcessed(operatorWalletTx.getHash())) {
                 synchronized (this) {
-                    List<Proof> proofs = txsToSendToEth.get(operatorWalletTx.getHash());
+                    List<Proof> proofs = dogecoinWrapper.getTransactionsToSendToEth().get(operatorWalletTx.getHash());
 
                     if (proofs == null || proofs.isEmpty())
                         continue;
@@ -384,7 +311,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
         for (Transaction operatorWalletTx : operatorWalletTxSet) {
             if (!ethWrapper.wasDogeTxProcessed(operatorWalletTx.getHash())) {
                 synchronized (this) {
-                    List<Proof> proofs = txsToSendToEth.get(operatorWalletTx.getHash());
+                    List<Proof> proofs = dogecoinWrapper.getTransactionsToSendToEth().get(operatorWalletTx.getHash());
 
                     if (proofs == null || proofs.isEmpty())
                         continue;
@@ -467,46 +394,7 @@ public class DogeToEthClient implements DogecoinWrapperListener {
         throw new IllegalStateException("Block not in the best chain: " + hash);
     }
 
-    @PreDestroy
-    public void tearDown() throws BlockStoreException, IOException {
-        if (config.isDogeBlockSubmitterEnabled() || config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
-            log.info("DogeToEthClient tearDown starting...");
-            dogecoinWrapper.stop();
 
-            synchronized (this) {
-                flushProofs();
-            }
-            log.info("DogeToEthClient tearDown finished.");
-        }
-    }
-
-    private void restoreProofsFromFile() throws IOException, ClassNotFoundException {
-        if (proofFile.exists()) {
-            synchronized (this) {
-                try (
-                    FileInputStream txsToSendToEthFileIs = new FileInputStream(proofFile);
-                    ObjectInputStream txsToSendToEthObjectIs = new ObjectInputStream(txsToSendToEthFileIs);
-                ) {
-                    this.txsToSendToEth = (Map<Sha256Hash, List<Proof>> ) txsToSendToEthObjectIs.readObject();
-                }
-            }
-        }
-    }
-
-
-    private void flushProofs() throws IOException {
-        if (!dataDirectory.exists()) {
-            if (!dataDirectory.mkdirs()) {
-                throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());
-            }
-        }
-        try (
-            FileOutputStream txsToSendToEthFileOs = new FileOutputStream(proofFile);
-            ObjectOutputStream txsToSendToEthObjectOs = new ObjectOutputStream(txsToSendToEthFileOs);
-        ) {
-            txsToSendToEthObjectOs.writeObject(this.txsToSendToEth);
-        }
-    }
 
 }
 
