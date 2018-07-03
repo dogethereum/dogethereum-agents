@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.dogethereum.dogesubmitter.constants.AgentConstants;
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
+import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapper;
 import org.dogethereum.dogesubmitter.core.eth.EthWrapper;
 import org.dogethereum.dogesubmitter.util.OperatorKeyHandler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +35,8 @@ public class EthToDogeClient {
     private File dataDirectory;
     private File latestEthBlockProcessedFile;
 
-    private PeerGroup peerGroup;
+    @Autowired
+    private DogecoinWrapper dogecoinWrapper;
 
     @Autowired
     private OperatorKeyHandler operatorKeyHandler;
@@ -52,21 +54,6 @@ public class EthToDogeClient {
             this.dataDirectory = new File(config.dataDirectory());
             this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() + "/EthToDogeClientLatestEthBlockProcessedFile.dat");
             restoreLatestEthBlockProcessed();
-
-            AgentConstants agentConstants = config.getAgentConstants();
-            Context dogeContext = new Context(agentConstants.getDogeParams());
-            peerGroup = new PeerGroup(dogeContext);
-//          TODO: Make the dogecoin peer list configurable
-//          if (ethWrapper.getDogecoinPeerAddresses().size()>0) {
-//            for (PeerAddress peerAddress : ethWrapper.getDogecoinPeerAddresses()) {
-//                peerGroup.addAddress(peerAddress);
-//            }
-//            peerGroup.setMaxConnections(ethWrapper.getDogecoinPeerAddresses().size());
-//          }
-            final InetAddress localHost = InetAddress.getLocalHost();
-            peerGroup.addAddress(localHost);
-            peerGroup.setMaxConnections(1);
-            peerGroup.start();
 
             new Timer("Eth to Doge client").scheduleAtFixedRate(new UpdateEthToDogeTimerTask(), Calendar.getInstance().getTime(), 15 * 1000);
         }
@@ -86,7 +73,7 @@ public class EthToDogeClient {
                         if (isMine(unlockRequestEvent)) {
                             EthWrapper.Unlock unlock = ethWrapper.getUnlock(unlockRequestEvent.id);
                             Transaction tx = buildDogeTransaction(unlock);
-                            broadcastDogeTransaction(tx);
+                            dogecoinWrapper.broadcastDogecoinTransaction(tx);
                         }
                     }
                     latestEthBlockProcessed = toBlock;
@@ -98,10 +85,6 @@ public class EthToDogeClient {
                 log.error(e.getMessage(), e);
             }
         }
-    }
-
-    private void broadcastDogeTransaction(Transaction tx) {
-        peerGroup.broadcastTransaction(tx);
     }
 
     private Transaction buildDogeTransaction(EthWrapper.Unlock unlock) {

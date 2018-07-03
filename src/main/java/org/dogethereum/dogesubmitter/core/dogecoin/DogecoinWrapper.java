@@ -256,4 +256,7 @@ public class DogecoinWrapper {
     }
 
 
+    public void broadcastDogecoinTransaction(Transaction tx) {
+        kit.peerGroup().broadcastTransaction(tx);
+    }
 }
