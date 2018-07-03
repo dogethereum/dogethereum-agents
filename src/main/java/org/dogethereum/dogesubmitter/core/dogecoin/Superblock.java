@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Date;
 
 /**
  * Constructs a superblock from a sequence of block hashes.
@@ -124,7 +125,7 @@ public class Superblock {
      * @return Root of a Merkle tree with all these blocks as its leaves.
      */
     public Sha256Hash calculateMerkleRoot(List<Sha256Hash> hashes) {
-        List<byte[]> tree = buildMerkleTree(hashes); // TODO: discuss replacing with PartialMerkleTree.buildFromLeaves()
+        List<byte[]> tree = buildMerkleTree(hashes);
         return Sha256Hash.wrap(tree.get(tree.size() - 1));
     }
 
@@ -134,7 +135,6 @@ public class Superblock {
      *               corresponding to this superblock.
      * @return Merkle tree in List<> format, with its lower levels first and its root as the last element.
      */
-    // TODO: discuss replacing with PartialMerkleTree.buildFromLeaves()
     private List<byte[]> buildMerkleTree(List<Sha256Hash> hashes) {
         // adapted from bitcoinj's implementation of Merkle trees for transactions
         List<byte[]> tree = new ArrayList<>(); // check if this should be a List or an ArrayList
@@ -208,12 +208,16 @@ public class Superblock {
         return superblockHeight;
     }
 
-    public List<Sha256Hash> getDogeBlockHashes() {
-        return dogeBlockHashes;
-    }
-
     public BigInteger getStatus() {
         return status;
+    }
+
+    public Date getNewEventDate() {
+        return new Date(newSuperblockEventTime*1000);
+    }
+
+    public List<Sha256Hash> getDogeBlockHashes() {
+        return dogeBlockHashes;
     }
 
 

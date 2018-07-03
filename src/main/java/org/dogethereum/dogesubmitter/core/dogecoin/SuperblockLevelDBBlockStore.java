@@ -32,7 +32,6 @@ import java.util.*;
 
 public class SuperblockLevelDBBlockStore {
     private static final byte[] CHAIN_HEAD_KEY = "chainhead".getBytes(); // to store chain head hash
-    private static final byte[] APPROVED_HEAD_KEY = "approvedhead".getBytes(); // to store approved head hash
 
     private final Context context;
     private final File path;
@@ -107,7 +106,6 @@ public class SuperblockLevelDBBlockStore {
         // todo: see if this is OK
         put(genesisBlock);
         setChainHead(genesisBlock);
-        setApprovedHead(genesisBlock);
     }
 
     /**
@@ -212,33 +210,6 @@ public class SuperblockLevelDBBlockStore {
      */
     public synchronized BigInteger getChainHeadWork() throws BlockStoreException {
         return getChainHead().getChainWork();
-    }
-
-
-    /* ---- APPROVED HEAD METHODS ---- */
-
-    public synchronized Superblock getApprovedHead() throws BlockStoreException {
-        return get(getApprovedHeadId());
-    }
-
-    public synchronized byte[] getApprovedHeadId() throws BlockStoreException {
-        return db.get(APPROVED_HEAD_KEY);
-    }
-
-    /**
-     * Set highest approved or semi-approved superblock.
-     * @param approvedHead Superblock to be set as head.
-     * @throws BlockStoreException
-     * @throws IOException
-     * @throws IllegalArgumentException If superblock status is neither approved nor semi-approved.
-     */
-    public synchronized void setApprovedHead(Superblock approvedHead)
-            throws BlockStoreException, IOException, IllegalArgumentException {
-        if (!SuperblockUtils.approvedOrSemi(approvedHead)) {
-            throw new IllegalArgumentException("Superblock must be approved or semi approved.");
-        }
-
-        db.put(APPROVED_HEAD_KEY, approvedHead.getSuperblockId());
     }
 
 

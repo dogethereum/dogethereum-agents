@@ -24,10 +24,10 @@ import java.util.TimerTask;
 
 public class SuperblockChainClient {
     @Autowired
-    SuperblockChain superblockChain;
+    private SuperblockChain superblockChain;
 
     @Autowired
-    DogecoinWrapper dogecoinWrapper;
+    private DogecoinWrapper dogecoinWrapper;
 
 
     /**

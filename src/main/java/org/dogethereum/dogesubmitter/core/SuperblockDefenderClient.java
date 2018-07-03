@@ -8,19 +8,17 @@ import org.bitcoinj.core.Transaction;
 import org.dogethereum.dogesubmitter.constants.AgentConstants;
 import org.dogethereum.dogesubmitter.constants.SystemProperties;
 import org.dogethereum.dogesubmitter.contract.DogeSuperblocks;
-import org.dogethereum.dogesubmitter.core.dogecoin.DogecoinWrapper;
-import org.dogethereum.dogesubmitter.core.dogecoin.SuperblockChain;
+import org.dogethereum.dogesubmitter.core.dogecoin.*;
 import org.dogethereum.dogesubmitter.core.eth.EthWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.net.InetAddress;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Monitors the Ethereum blockchain for superblock-related events
@@ -34,6 +32,7 @@ public class SuperblockDefenderClient {
     @Autowired
     private DogecoinWrapper dogecoinWrapper;
     private EthWrapper ethWrapper;
+    @Autowired
     private SuperblockChain superblockChain;
 
     private SystemProperties config;
@@ -104,6 +103,9 @@ public class SuperblockDefenderClient {
         }
     }
 
+
+    /* ---- STATUS SETTERS ---- */
+
     private void setNewSuperblocks(long fromBlock, long toBlock) throws IOException {
         List<EthWrapper.SuperblockEvent> newSuperblockEvents =
                 ethWrapper.getNewSuperblocks(fromBlock, toBlock);
@@ -111,11 +113,60 @@ public class SuperblockDefenderClient {
         for (EthWrapper.SuperblockEvent newSuperblock : newSuperblockEvents) {
             if (isMine(newSuperblock)) { // todo: thing with 'who' field
                 log.info("Updating info for new superblock {}.", Sha256Hash.wrap(newSuperblock.superblockId));
+                superblockChain.setStatus(newSuperblock.superblockId, SuperblockUtils.STATUS_NEW);
             }
         }
     }
 
-    private void confirmSuperblocks() {}
+    private void setApprovedSuperblocks(long fromBlock, long toBlock) throws IOException {
+        List<EthWrapper.SuperblockEvent> approvedSuperblockEvents =
+                ethWrapper.getApprovedSuperblocks(fromBlock, toBlock);
+
+        for (EthWrapper.SuperblockEvent approvedSuperblock : approvedSuperblockEvents) {
+            if (isMine(approvedSuperblock)) {
+                log.info("Updating info for approved superblock {}.", Sha256Hash.wrap(approvedSuperblock.superblockId));
+                superblockChain.setStatus(approvedSuperblock.superblockId, SuperblockUtils.STATUS_NEW);
+            }
+        }
+    }
+
+    private void setSemiApprovedSuperblocks(long fromBlock, long toBlock) throws IOException {
+        List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
+                ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
+
+        for (EthWrapper.SuperblockEvent semiApprovedSuperblock : semiApprovedSuperblockEvents) {
+            if (isMine(semiApprovedSuperblock)) {
+                log.info("Updating info for approved superblock {}.",
+                        Sha256Hash.wrap(semiApprovedSuperblock.superblockId));
+                superblockChain.setStatus(semiApprovedSuperblock.superblockId, SuperblockUtils.STATUS_NEW);
+            }
+        }
+    }
+
+
+    /* ---- CONFIRMING/DEFENDING ---- */
+
+    /**
+     * Find earliest superblock that's unchallenged and stored locally,
+     * but not confirmed in DogeRelay, and confirm it if its timeout has passed
+     * and it either received no challenges or won all battles.
+     * @throws Exception
+     */
+    private void confirmEarliestApprovableSuperblock() throws Exception {
+        byte[] bestSuperblockId = ethWrapper.getBestSuperblockId();
+        Superblock currentSuperblock = superblockChain.getChainHead();
+
+        while (!Arrays.equals(currentSuperblock.getParentId(), bestSuperblockId)) {
+            currentSuperblock = superblockChain.getSuperblock(currentSuperblock.getParentId());
+        }
+
+        byte[] toConfirmId = currentSuperblock.getSuperblockId();
+
+        if (timeoutPassed(currentSuperblock) && ethWrapper.isNew(toConfirmId)) {
+            log.info("Confirming superblock {}", Sha256Hash.wrap(toConfirmId));
+            ethWrapper.checkClaimFinished(toConfirmId);
+        }
+    }
 
     private void respondToBlockHeaderQueries(long fromBlock, long toBlock) throws IOException {
         List<EthWrapper.QueryEvent> queryBlockHeaderEvents =
@@ -125,11 +176,16 @@ public class SuperblockDefenderClient {
             if (isMine(queryBlockHeader)) {
                 log.info("Header requested for superblock {}. Responding now.",
                         Sha256Hash.wrap(queryBlockHeader.sessionId));
+
+                ethWrapper.respondBlockHeader(queryBlockHeader.sessionId, null);
             }
 
             // Call respondBlockHeader
         }
     }
+
+
+    /* ---- HELPER METHODS ---- */
 
     // TODO: figure out what 'who' field should be compared to
     private boolean isMine(EthWrapper.SuperblockEvent superblockEvent) {
@@ -138,6 +194,15 @@ public class SuperblockDefenderClient {
 
     private boolean isMine(EthWrapper.QueryEvent queryEvent) {
         return true;
+    }
+
+    private boolean timeoutPassed(Superblock superblock) throws Exception {
+        return superblock.getNewEventDate().before(getTimeoutDate());
+    }
+
+    private Date getTimeoutDate() throws Exception {
+        int superblockTimeout = ethWrapper.getSuperblockTimeout().intValue();
+        return SuperblockUtils.getNSecondsAgo(superblockTimeout);
     }
 
 

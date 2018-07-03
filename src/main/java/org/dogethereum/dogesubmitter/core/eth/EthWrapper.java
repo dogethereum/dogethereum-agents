@@ -334,6 +334,26 @@ public class EthWrapper implements SuperblockConstantProvider {
         return getSuperblockStatus(superblockId).equals(SuperblockUtils.STATUS_SEMI_APPROVED);
     }
 
+    public boolean isNew(byte[] superblockId) throws Exception {
+        return getSuperblockStatus(superblockId).equals(SuperblockUtils.STATUS_NEW);
+    }
+
+    public boolean isInBattle(byte[] superblockId) throws Exception {
+        return getSuperblockStatus(superblockId).equals(SuperblockUtils.STATUS_IN_BATTLE);
+    }
+
+    public boolean isInvalid(byte[] superblockId) throws Exception {
+        return getSuperblockStatus(superblockId).equals(SuperblockUtils.STATUS_INVALID);
+    }
+
+    public boolean isUninitialized(byte[] superblockId) throws Exception {
+        return getSuperblockStatus(superblockId).equals(SuperblockUtils.STATUS_UNINITIALIZED);
+    }
+
+    public boolean statusAllowsConfirmation(byte[] superblockId) throws Exception {
+        return isSemiApproved(superblockId) || isNew(superblockId);
+    }
+
 
     // Old version until migration to superblocks is completed
     public void sendRelayTx(org.bitcoinj.core.Transaction tx, byte[] operatorPublicKeyHash, Sha256Hash blockHash, PartialMerkleTree pmt) throws Exception {
@@ -398,7 +418,10 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     // Right now this is just for testing, look into security measures later
     public void checkClaimFinished(byte[] superblockId) {
-        RemoteCall<TransactionReceipt> transactionReceipt = claimManager.checkClaimFinished(superblockId);
+        CompletableFuture<TransactionReceipt> futureReceipt = claimManager.checkClaimFinished(superblockId).sendAsync();
+        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
+                log.info("checkClaimFinished receipt {}", receipt.toString())
+        );
     }
 
     public boolean isEthNodeSyncing() throws IOException {
@@ -553,34 +576,35 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
 
-    public List<QueryEvent> getBlockHeaderQueries(long latestEthBlockProcessed, long topBlock)
+    public List<QueryBlockHeaderEvent> getBlockHeaderQueries(long latestEthBlockProcessed, long topBlock)
             throws IOException {
-        List<QueryEvent> result = new ArrayList<>();
+        List<QueryBlockHeaderEvent> result = new ArrayList<>();
         List<DogeClaimManager.QueryBlockHeaderEventResponse> queryBlockHeaderEvents =
                 claimManager.getQueryBlockHeaderEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(latestEthBlockProcessed)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(topBlock)));
 
         for (DogeClaimManager.QueryBlockHeaderEventResponse response : queryBlockHeaderEvents) {
-            QueryEvent queryBlockHeaderEvent = new QueryEvent();
+            QueryBlockHeaderEvent queryBlockHeaderEvent = new QueryBlockHeaderEvent();
             queryBlockHeaderEvent.sessionId = response.sessionId;
             queryBlockHeaderEvent.claimant = response.claimant;
+            queryBlockHeaderEvent.dogeBlockHash = response.blockHash;
             result.add(queryBlockHeaderEvent);
         }
 
         return result;
     }
 
-    public List<QueryEvent> getMerkleRootHashesQueries(long latestEthBlockProcessed, long topBlock)
+    public List<QueryBlockHeaderEvent> getMerkleRootHashesQueries(long latestEthBlockProcessed, long topBlock)
             throws IOException {
-        List<QueryEvent> result = new ArrayList<>();
+        List<QueryBlockHeaderEvent> result = new ArrayList<>();
         List<DogeClaimManager.QueryMerkleRootHashesEventResponse> queryMerkleRootHashesEvents =
                 claimManager.getQueryMerkleRootHashesEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(latestEthBlockProcessed)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(topBlock)));
 
         for (DogeClaimManager.QueryMerkleRootHashesEventResponse response : queryMerkleRootHashesEvents) {
-            QueryEvent queryMerkleRootHashesEvent = new QueryEvent();
+            QueryBlockHeaderEvent queryMerkleRootHashesEvent = new QueryBlockHeaderEvent();
             queryMerkleRootHashesEvent.sessionId = response.sessionId;
             queryMerkleRootHashesEvent.claimant = response.claimant;
             result.add(queryMerkleRootHashesEvent);
@@ -589,11 +613,33 @@ public class EthWrapper implements SuperblockConstantProvider {
         return result;
     }
 
+    public static class QueryBlockHeaderEvent {
+        public byte[] sessionId;
+        public String claimant;
+        public byte[] dogeBlockHash;
+    }
+
     public static class QueryEvent {
 
         public byte[] sessionId;
         public String claimant;
     }
+
+
+    /* ---- BATTLE METHODS ---- */
+
+    public void respondBlockHeader(byte[] sessionId, AltcoinBlock dogeBlock) {
+        byte[] scryptHashBytes = dogeBlock.getScryptHash().getBytes(); // TODO: check if this should be reversed
+        byte[] blockHeaderBytes = dogeBlock.bitcoinSerialize();
+        CompletableFuture<TransactionReceipt> futureReceipt = claimManager.respondBlockHeader(
+                sessionId, scryptHashBytes, blockHeaderBytes).sendAsync();
+        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
+                log.info("Responded to block header query for session {}, Doge block {}",
+                        Sha256Hash.wrap(sessionId), dogeBlock.getHash())
+        );
+    }
+
+//    public void respondMerkleRootHashes()
 
 
     /* ---- LOG PROCESSING METHODS ---- */
@@ -659,6 +705,10 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     public BigInteger getSuperblockTimeout() throws Exception {
         return claimManager.superblockTimeout().send();
+    }
+
+    public byte[] getBestSuperblockId() throws Exception {
+        return superblocks.getBestSuperblock().send();
     }
 
 }
