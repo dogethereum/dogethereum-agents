@@ -103,7 +103,7 @@ public class EthToDogeClient {
         }
         for (UTXO utxo : unlock.selectedUtxos) {
             TransactionOutPoint outPoint = new TransactionOutPoint(params, utxo.getIndex(), utxo.getHash());
-            tx.addSignedInput(outPoint, operatorKeyHandler.getOutputScript(),  operatorPrivateKey);
+            tx.addSignedInput(outPoint, operatorKeyHandler.getOutputScript(),  operatorPrivateKey, Transaction.SigHash.ALL, true);
         }
         return tx;
     }
