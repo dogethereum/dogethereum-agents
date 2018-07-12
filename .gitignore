@@ -1,0 +1,17 @@
+src/main/resources/dogethereum-agents.local.conf
+src/main/resources/dogethereum-agents.ropsten.conf
+src/main/java/test/SuperblockChainTest.java
+
+*.iml
+*.log
+
+.idea
+.gradle
+
+classes
+logs
+build
+target
+
+src/main/resources/dogethereum-agents.conf
+storage/
