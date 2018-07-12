@@ -1,5 +1,8 @@
 src/main/resources/dogethereum-agents.local.conf
 src/main/resources/dogethereum-agents.ropsten.conf
+src/main/resources/dogethereum-agents.conf
+src/main/resources/operator0.key
+
 src/main/java/test/SuperblockChainTest.java
 
 *.iml
@@ -13,5 +16,4 @@ logs
 build
 target
 
-src/main/resources/dogethereum-agents.conf
 storage/
