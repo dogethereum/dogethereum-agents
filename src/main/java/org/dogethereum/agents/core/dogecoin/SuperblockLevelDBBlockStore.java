@@ -93,6 +93,7 @@ public class SuperblockLevelDBBlockStore {
         byte[] genesisParentHash = new byte[32]; // initialised with 0s
         Superblock genesisBlock = new Superblock(
                 params, genesisList, BigInteger.valueOf(0), context.getParams().getGenesisBlock().getTimeSeconds(),
+                0, context.getParams().getGenesisBlock().getDifficultyTarget(),
                 genesisParentHash, 0, SuperblockUtils.STATUS_APPROVED, 0);
         // todo: see if this is OK
         put(genesisBlock);

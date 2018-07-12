@@ -123,20 +123,22 @@ public class SuperblockChain {
 
         List<Sha256Hash> nextSuperblockDogeHashes = new ArrayList<>();
         byte[] nextSuperblockPrevHash = initialPreviousSuperblockHash.clone();
-        StoredBlock nextSuperblockLastBlock;
         long nextSuperblockHeight = getChainHeight() + 1;
 
         // build and store all superblocks whose last block was mined three hours ago or more
         while (!allDogeHashesToHash.empty() && nextSuperblockEndTime.before(getStopTime())) {
             // Modify allDogeHashesToHash and get hashes for next superblock.
             nextSuperblockDogeHashes = popBlocksBeforeTime(allDogeHashesToHash, nextSuperblockEndTime);
-            nextSuperblockLastBlock = dogecoinWrapper.getBlock(
+            StoredBlock nextSuperblockLastBlock = dogecoinWrapper.getBlock(
                     nextSuperblockDogeHashes.get(nextSuperblockDogeHashes.size() - 1));
+            StoredBlock nextSuperblockPreviousToLastBlock = dogecoinWrapper.getBlock(nextSuperblockLastBlock.getHeader().getHash());
 
             Superblock newSuperblock = new Superblock(this.params,
                     nextSuperblockDogeHashes,
                     nextSuperblockLastBlock.getChainWork(),
                     nextSuperblockLastBlock.getHeader().getTimeSeconds(),
+                    nextSuperblockPreviousToLastBlock.getHeader().getTimeSeconds(),
+                    nextSuperblockLastBlock.getHeader().getDifficultyTarget(),
                     nextSuperblockPrevHash,
                     nextSuperblockHeight,
                     SuperblockUtils.STATUS_UNINITIALIZED,
