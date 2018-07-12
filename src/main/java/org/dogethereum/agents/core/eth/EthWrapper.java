@@ -307,7 +307,9 @@ public class EthWrapper implements SuperblockConstantProvider {
         return claimManager.proposeSuperblock(superblock.getMerkleRoot().getBytes(),
                 superblock.getChainWork(),
                 BigInteger.valueOf(superblock.getLastDogeBlockTime()),
+                BigInteger.valueOf(superblock.getPreviousToLastDogeBlockTime()),
                 superblock.getLastDogeBlockHash().getBytes(),
+                BigInteger.valueOf(superblock.getLastDogeBlockBits()),
                 superblock.getParentId()
         ).sendAsync();
     }
@@ -509,7 +511,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         for (DogeClaimManager.QueryBlockHeaderEventResponse response : queryBlockHeaderEvents) {
             QueryBlockHeaderEvent queryBlockHeaderEvent = new QueryBlockHeaderEvent();
             queryBlockHeaderEvent.sessionId = response.sessionId;
-            queryBlockHeaderEvent.claimant = response.claimant;
+            queryBlockHeaderEvent.submitter = response.submitter;
             queryBlockHeaderEvent.dogeBlockHash = response.blockHash;
             result.add(queryBlockHeaderEvent);
         }
@@ -517,18 +519,18 @@ public class EthWrapper implements SuperblockConstantProvider {
         return result;
     }
 
-    public List<QueryBlockHeaderEvent> getMerkleRootHashesQueries(long startBlock, long endBlock)
+    public List<QueryMerkleRootHashesEvent> getMerkleRootHashesQueries(long startBlock, long endBlock)
             throws IOException {
-        List<QueryBlockHeaderEvent> result = new ArrayList<>();
+        List<QueryMerkleRootHashesEvent> result = new ArrayList<>();
         List<DogeClaimManager.QueryMerkleRootHashesEventResponse> queryMerkleRootHashesEvents =
                 claimManager.getQueryMerkleRootHashesEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
         for (DogeClaimManager.QueryMerkleRootHashesEventResponse response : queryMerkleRootHashesEvents) {
-            QueryBlockHeaderEvent queryMerkleRootHashesEvent = new QueryBlockHeaderEvent();
+            QueryMerkleRootHashesEvent queryMerkleRootHashesEvent = new QueryMerkleRootHashesEvent();
             queryMerkleRootHashesEvent.sessionId = response.sessionId;
-            queryMerkleRootHashesEvent.claimant = response.claimant;
+            queryMerkleRootHashesEvent.submitter = response.submitter;
             result.add(queryMerkleRootHashesEvent);
         }
 
@@ -537,8 +539,13 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     public static class QueryBlockHeaderEvent {
         public byte[] sessionId;
-        public String claimant;
+        public String submitter;
         public byte[] dogeBlockHash;
+    }
+
+    public static class QueryMerkleRootHashesEvent {
+        public byte[] sessionId;
+        public String submitter;
     }
 
     public static class QueryEvent {
