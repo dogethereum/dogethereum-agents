@@ -18,6 +18,7 @@ import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.abi.datatypes.generated.Uint256;
+import org.web3j.abi.datatypes.generated.Uint8;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
@@ -25,7 +26,8 @@ import org.web3j.protocol.core.RemoteCall;
 import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
-import org.web3j.tuples.generated.Tuple8;
+import org.web3j.tuples.generated.Tuple12;
+import org.web3j.tuples.generated.Tuple2;
 import org.web3j.tx.Contract;
 import org.web3j.tx.TransactionManager;
 import rx.Observable;
@@ -57,37 +59,37 @@ public class DogeBattleManager extends Contract {
         super(BINARY, contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
 
-    public List<NewSessionEventResponse> getNewSessionEvents(TransactionReceipt transactionReceipt) {
-        final Event event = new Event("NewSession", 
+    public List<NewBattleEventResponse> getNewBattleEvents(TransactionReceipt transactionReceipt) {
+        final Event event = new Event("NewBattle", 
                 Arrays.<TypeReference<?>>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Address>() {}));
         List<Contract.EventValuesWithLog> valueList = extractEventParametersWithLog(event, transactionReceipt);
-        ArrayList<NewSessionEventResponse> responses = new ArrayList<NewSessionEventResponse>(valueList.size());
+        ArrayList<NewBattleEventResponse> responses = new ArrayList<NewBattleEventResponse>(valueList.size());
         for (Contract.EventValuesWithLog eventValues : valueList) {
-            NewSessionEventResponse typedResponse = new NewSessionEventResponse();
+            NewBattleEventResponse typedResponse = new NewBattleEventResponse();
             typedResponse.log = eventValues.getLog();
             typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            typedResponse.claimant = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            typedResponse.submitter = (String) eventValues.getNonIndexedValues().get(1).getValue();
             typedResponse.challenger = (String) eventValues.getNonIndexedValues().get(2).getValue();
             responses.add(typedResponse);
         }
         return responses;
     }
 
-    public Observable<NewSessionEventResponse> newSessionEventObservable(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
-        final Event event = new Event("NewSession", 
+    public Observable<NewBattleEventResponse> newBattleEventObservable(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
+        final Event event = new Event("NewBattle", 
                 Arrays.<TypeReference<?>>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Address>() {}));
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
         filter.addSingleTopic(EventEncoder.encode(event));
-        return web3j.ethLogObservable(filter).map(new Func1<Log, NewSessionEventResponse>() {
+        return web3j.ethLogObservable(filter).map(new Func1<Log, NewBattleEventResponse>() {
             @Override
-            public NewSessionEventResponse call(Log log) {
+            public NewBattleEventResponse call(Log log) {
                 Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
-                NewSessionEventResponse typedResponse = new NewSessionEventResponse();
+                NewBattleEventResponse typedResponse = new NewBattleEventResponse();
                 typedResponse.log = log;
                 typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-                typedResponse.claimant = (String) eventValues.getNonIndexedValues().get(1).getValue();
+                typedResponse.submitter = (String) eventValues.getNonIndexedValues().get(1).getValue();
                 typedResponse.challenger = (String) eventValues.getNonIndexedValues().get(2).getValue();
                 return typedResponse;
             }
@@ -129,36 +131,36 @@ public class DogeBattleManager extends Contract {
         });
     }
 
-    public List<ClaimantConvictedEventResponse> getClaimantConvictedEvents(TransactionReceipt transactionReceipt) {
-        final Event event = new Event("ClaimantConvicted", 
+    public List<SubmitterConvictedEventResponse> getSubmitterConvictedEvents(TransactionReceipt transactionReceipt) {
+        final Event event = new Event("SubmitterConvicted", 
                 Arrays.<TypeReference<?>>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
         List<Contract.EventValuesWithLog> valueList = extractEventParametersWithLog(event, transactionReceipt);
-        ArrayList<ClaimantConvictedEventResponse> responses = new ArrayList<ClaimantConvictedEventResponse>(valueList.size());
+        ArrayList<SubmitterConvictedEventResponse> responses = new ArrayList<SubmitterConvictedEventResponse>(valueList.size());
         for (Contract.EventValuesWithLog eventValues : valueList) {
-            ClaimantConvictedEventResponse typedResponse = new ClaimantConvictedEventResponse();
+            SubmitterConvictedEventResponse typedResponse = new SubmitterConvictedEventResponse();
             typedResponse.log = eventValues.getLog();
             typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            typedResponse.claimant = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            typedResponse.submitter = (String) eventValues.getNonIndexedValues().get(1).getValue();
             responses.add(typedResponse);
         }
         return responses;
     }
 
-    public Observable<ClaimantConvictedEventResponse> claimantConvictedEventObservable(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
-        final Event event = new Event("ClaimantConvicted", 
+    public Observable<SubmitterConvictedEventResponse> submitterConvictedEventObservable(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
+        final Event event = new Event("SubmitterConvicted", 
                 Arrays.<TypeReference<?>>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
         filter.addSingleTopic(EventEncoder.encode(event));
-        return web3j.ethLogObservable(filter).map(new Func1<Log, ClaimantConvictedEventResponse>() {
+        return web3j.ethLogObservable(filter).map(new Func1<Log, SubmitterConvictedEventResponse>() {
             @Override
-            public ClaimantConvictedEventResponse call(Log log) {
+            public SubmitterConvictedEventResponse call(Log log) {
                 Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
-                ClaimantConvictedEventResponse typedResponse = new ClaimantConvictedEventResponse();
+                SubmitterConvictedEventResponse typedResponse = new SubmitterConvictedEventResponse();
                 typedResponse.log = log;
                 typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-                typedResponse.claimant = (String) eventValues.getNonIndexedValues().get(1).getValue();
+                typedResponse.submitter = (String) eventValues.getNonIndexedValues().get(1).getValue();
                 return typedResponse;
             }
         });
@@ -174,7 +176,7 @@ public class DogeBattleManager extends Contract {
             QueryMerkleRootHashesEventResponse typedResponse = new QueryMerkleRootHashesEventResponse();
             typedResponse.log = eventValues.getLog();
             typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            typedResponse.claimant = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            typedResponse.submitter = (String) eventValues.getNonIndexedValues().get(1).getValue();
             responses.add(typedResponse);
         }
         return responses;
@@ -193,7 +195,7 @@ public class DogeBattleManager extends Contract {
                 QueryMerkleRootHashesEventResponse typedResponse = new QueryMerkleRootHashesEventResponse();
                 typedResponse.log = log;
                 typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-                typedResponse.claimant = (String) eventValues.getNonIndexedValues().get(1).getValue();
+                typedResponse.submitter = (String) eventValues.getNonIndexedValues().get(1).getValue();
                 return typedResponse;
             }
         });
@@ -246,7 +248,7 @@ public class DogeBattleManager extends Contract {
             QueryBlockHeaderEventResponse typedResponse = new QueryBlockHeaderEventResponse();
             typedResponse.log = eventValues.getLog();
             typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            typedResponse.claimant = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            typedResponse.submitter = (String) eventValues.getNonIndexedValues().get(1).getValue();
             typedResponse.blockHash = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
             responses.add(typedResponse);
         }
@@ -266,7 +268,7 @@ public class DogeBattleManager extends Contract {
                 QueryBlockHeaderEventResponse typedResponse = new QueryBlockHeaderEventResponse();
                 typedResponse.log = log;
                 typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-                typedResponse.claimant = (String) eventValues.getNonIndexedValues().get(1).getValue();
+                typedResponse.submitter = (String) eventValues.getNonIndexedValues().get(1).getValue();
                 typedResponse.blockHash = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
                 return typedResponse;
             }
@@ -284,7 +286,7 @@ public class DogeBattleManager extends Contract {
             typedResponse.log = eventValues.getLog();
             typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
             typedResponse.challenger = (String) eventValues.getNonIndexedValues().get(1).getValue();
-            typedResponse.scryptBlockHash = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
+            typedResponse.blockScryptHash = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
             typedResponse.blockHeader = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
             responses.add(typedResponse);
         }
@@ -305,21 +307,21 @@ public class DogeBattleManager extends Contract {
                 typedResponse.log = log;
                 typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
                 typedResponse.challenger = (String) eventValues.getNonIndexedValues().get(1).getValue();
-                typedResponse.scryptBlockHash = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
+                typedResponse.blockScryptHash = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
                 typedResponse.blockHeader = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
                 return typedResponse;
             }
         });
     }
 
-    public List<SessionErrorEventResponse> getSessionErrorEvents(TransactionReceipt transactionReceipt) {
-        final Event event = new Event("SessionError", 
+    public List<ErrorBattleEventResponse> getErrorBattleEvents(TransactionReceipt transactionReceipt) {
+        final Event event = new Event("ErrorBattle", 
                 Arrays.<TypeReference<?>>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Uint256>() {}));
         List<Contract.EventValuesWithLog> valueList = extractEventParametersWithLog(event, transactionReceipt);
-        ArrayList<SessionErrorEventResponse> responses = new ArrayList<SessionErrorEventResponse>(valueList.size());
+        ArrayList<ErrorBattleEventResponse> responses = new ArrayList<ErrorBattleEventResponse>(valueList.size());
         for (Contract.EventValuesWithLog eventValues : valueList) {
-            SessionErrorEventResponse typedResponse = new SessionErrorEventResponse();
+            ErrorBattleEventResponse typedResponse = new ErrorBattleEventResponse();
             typedResponse.log = eventValues.getLog();
             typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
             typedResponse.err = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
@@ -328,17 +330,17 @@ public class DogeBattleManager extends Contract {
         return responses;
     }
 
-    public Observable<SessionErrorEventResponse> sessionErrorEventObservable(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
-        final Event event = new Event("SessionError", 
+    public Observable<ErrorBattleEventResponse> errorBattleEventObservable(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
+        final Event event = new Event("ErrorBattle", 
                 Arrays.<TypeReference<?>>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Uint256>() {}));
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
         filter.addSingleTopic(EventEncoder.encode(event));
-        return web3j.ethLogObservable(filter).map(new Func1<Log, SessionErrorEventResponse>() {
+        return web3j.ethLogObservable(filter).map(new Func1<Log, ErrorBattleEventResponse>() {
             @Override
-            public SessionErrorEventResponse call(Log log) {
+            public ErrorBattleEventResponse call(Log log) {
                 Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
-                SessionErrorEventResponse typedResponse = new SessionErrorEventResponse();
+                ErrorBattleEventResponse typedResponse = new ErrorBattleEventResponse();
                 typedResponse.log = log;
                 typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
                 typedResponse.err = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
@@ -361,16 +363,30 @@ public class DogeBattleManager extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteCall<Tuple8<byte[], byte[], String, String, BigInteger, BigInteger, BigInteger, BigInteger>> sessions(byte[] param0) {
+    public RemoteCall<BigInteger> superblockDelay() {
+        final Function function = new Function("superblockDelay", 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
+    public RemoteCall<BigInteger> numScryptHashVerifications() {
+        final Function function = new Function("numScryptHashVerifications", 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
+    public RemoteCall<Tuple12<byte[], byte[], String, String, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger, byte[], BigInteger>> sessions(byte[] param0) {
         final Function function = new Function("sessions", 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(param0)), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Address>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}));
-        return new RemoteCall<Tuple8<byte[], byte[], String, String, BigInteger, BigInteger, BigInteger, BigInteger>>(
-                new Callable<Tuple8<byte[], byte[], String, String, BigInteger, BigInteger, BigInteger, BigInteger>>() {
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Address>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Uint8>() {}));
+        return new RemoteCall<Tuple12<byte[], byte[], String, String, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger, byte[], BigInteger>>(
+                new Callable<Tuple12<byte[], byte[], String, String, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger, byte[], BigInteger>>() {
                     @Override
-                    public Tuple8<byte[], byte[], String, String, BigInteger, BigInteger, BigInteger, BigInteger> call() throws Exception {
+                    public Tuple12<byte[], byte[], String, String, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger, byte[], BigInteger> call() throws Exception {
                         List<Type> results = executeCallMultipleValueReturn(function);
-                        return new Tuple8<byte[], byte[], String, String, BigInteger, BigInteger, BigInteger, BigInteger>(
+                        return new Tuple12<byte[], byte[], String, String, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger, byte[], BigInteger>(
                                 (byte[]) results.get(0).getValue(), 
                                 (byte[]) results.get(1).getValue(), 
                                 (String) results.get(2).getValue(), 
@@ -378,27 +394,60 @@ public class DogeBattleManager extends Contract {
                                 (BigInteger) results.get(4).getValue(), 
                                 (BigInteger) results.get(5).getValue(), 
                                 (BigInteger) results.get(6).getValue(), 
-                                (BigInteger) results.get(7).getValue());
+                                (BigInteger) results.get(7).getValue(), 
+                                (BigInteger) results.get(8).getValue(), 
+                                (BigInteger) results.get(9).getValue(), 
+                                (byte[]) results.get(10).getValue(), 
+                                (BigInteger) results.get(11).getValue());
                     }
                 });
     }
 
-    public static RemoteCall<DogeBattleManager> deploy(Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit, BigInteger _superblockTimeout) {
-        String encodedConstructor = FunctionEncoder.encodeConstructor(Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_superblockTimeout)));
+    public RemoteCall<Tuple2<byte[], byte[]>> scryptHashVerifications(byte[] param0) {
+        final Function function = new Function("scryptHashVerifications", 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(param0)), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}));
+        return new RemoteCall<Tuple2<byte[], byte[]>>(
+                new Callable<Tuple2<byte[], byte[]>>() {
+                    @Override
+                    public Tuple2<byte[], byte[]> call() throws Exception {
+                        List<Type> results = executeCallMultipleValueReturn(function);
+                        return new Tuple2<byte[], byte[]>(
+                                (byte[]) results.get(0).getValue(), 
+                                (byte[]) results.get(1).getValue());
+                    }
+                });
+    }
+
+    public RemoteCall<BigInteger> superblockDuration() {
+        final Function function = new Function("superblockDuration", 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
+    public static RemoteCall<DogeBattleManager> deploy(Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit, BigInteger _network, BigInteger _superblockDuration, BigInteger _superblockDelay, BigInteger _superblockTimeout) {
+        String encodedConstructor = FunctionEncoder.encodeConstructor(Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint8(_network), 
+                new org.web3j.abi.datatypes.generated.Uint256(_superblockDuration), 
+                new org.web3j.abi.datatypes.generated.Uint256(_superblockDelay), 
+                new org.web3j.abi.datatypes.generated.Uint256(_superblockTimeout)));
         return deployRemoteCall(DogeBattleManager.class, web3j, credentials, gasPrice, gasLimit, BINARY, encodedConstructor);
     }
 
-    public static RemoteCall<DogeBattleManager> deploy(Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit, BigInteger _superblockTimeout) {
-        String encodedConstructor = FunctionEncoder.encodeConstructor(Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_superblockTimeout)));
+    public static RemoteCall<DogeBattleManager> deploy(Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit, BigInteger _network, BigInteger _superblockDuration, BigInteger _superblockDelay, BigInteger _superblockTimeout) {
+        String encodedConstructor = FunctionEncoder.encodeConstructor(Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint8(_network), 
+                new org.web3j.abi.datatypes.generated.Uint256(_superblockDuration), 
+                new org.web3j.abi.datatypes.generated.Uint256(_superblockDelay), 
+                new org.web3j.abi.datatypes.generated.Uint256(_superblockTimeout)));
         return deployRemoteCall(DogeBattleManager.class, web3j, transactionManager, gasPrice, gasLimit, BINARY, encodedConstructor);
     }
 
-    public RemoteCall<TransactionReceipt> beginBattleSession(byte[] claimId, String challenger, String claimant) {
+    public RemoteCall<TransactionReceipt> beginBattleSession(byte[] superblockId, String submitter, String challenger) {
         final Function function = new Function(
                 "beginBattleSession", 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(claimId), 
-                new org.web3j.abi.datatypes.Address(challenger), 
-                new org.web3j.abi.datatypes.Address(claimant)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(superblockId), 
+                new org.web3j.abi.datatypes.Address(submitter), 
+                new org.web3j.abi.datatypes.Address(challenger)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
@@ -407,15 +456,6 @@ public class DogeBattleManager extends Contract {
         final Function function = new Function(
                 "queryMerkleRootHashes", 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(sessionId)), 
-                Collections.<TypeReference<?>>emptyList());
-        return executeRemoteCallTransaction(function);
-    }
-
-    public RemoteCall<TransactionReceipt> queryBlockHeader(byte[] sessionId, byte[] blockHash) {
-        final Function function = new Function(
-                "queryBlockHeader", 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(sessionId), 
-                new org.web3j.abi.datatypes.generated.Bytes32(blockHash)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
@@ -430,19 +470,28 @@ public class DogeBattleManager extends Contract {
         return executeRemoteCallTransaction(function);
     }
 
-    public RemoteCall<TransactionReceipt> respondBlockHeader(byte[] sessionId, byte[] scryptBlockHash, byte[] blockHeader) {
+    public RemoteCall<TransactionReceipt> queryBlockHeader(byte[] sessionId, byte[] blockHash) {
+        final Function function = new Function(
+                "queryBlockHeader", 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(sessionId), 
+                new org.web3j.abi.datatypes.generated.Bytes32(blockHash)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public RemoteCall<TransactionReceipt> respondBlockHeader(byte[] sessionId, byte[] blockScryptHash, byte[] blockHeader) {
         final Function function = new Function(
                 "respondBlockHeader", 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(sessionId), 
-                new org.web3j.abi.datatypes.generated.Bytes32(scryptBlockHash), 
+                new org.web3j.abi.datatypes.generated.Bytes32(blockScryptHash), 
                 new org.web3j.abi.datatypes.DynamicBytes(blockHeader)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
-    public RemoteCall<TransactionReceipt> performVerification(byte[] sessionId) {
+    public RemoteCall<TransactionReceipt> verifySuperblock(byte[] sessionId) {
         final Function function = new Function(
-                "performVerification", 
+                "verifySuperblock", 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(sessionId)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
@@ -472,12 +521,12 @@ public class DogeBattleManager extends Contract {
         return _addresses.get(networkId);
     }
 
-    public static class NewSessionEventResponse {
+    public static class NewBattleEventResponse {
         public Log log;
 
         public byte[] sessionId;
 
-        public String claimant;
+        public String submitter;
 
         public String challenger;
     }
@@ -490,12 +539,12 @@ public class DogeBattleManager extends Contract {
         public String challenger;
     }
 
-    public static class ClaimantConvictedEventResponse {
+    public static class SubmitterConvictedEventResponse {
         public Log log;
 
         public byte[] sessionId;
 
-        public String claimant;
+        public String submitter;
     }
 
     public static class QueryMerkleRootHashesEventResponse {
@@ -503,7 +552,7 @@ public class DogeBattleManager extends Contract {
 
         public byte[] sessionId;
 
-        public String claimant;
+        public String submitter;
     }
 
     public static class RespondMerkleRootHashesEventResponse {
@@ -521,7 +570,7 @@ public class DogeBattleManager extends Contract {
 
         public byte[] sessionId;
 
-        public String claimant;
+        public String submitter;
 
         public byte[] blockHash;
     }
@@ -533,12 +582,12 @@ public class DogeBattleManager extends Contract {
 
         public String challenger;
 
-        public byte[] scryptBlockHash;
+        public byte[] blockScryptHash;
 
         public byte[] blockHeader;
     }
 
-    public static class SessionErrorEventResponse {
+    public static class ErrorBattleEventResponse {
         public Log log;
 
         public byte[] sessionId;

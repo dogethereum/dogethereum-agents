@@ -51,7 +51,8 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
             QueryBlockHeaderEventResponse queryBlockHeaderEventResponse = new QueryBlockHeaderEventResponse();
             queryBlockHeaderEventResponse.log = eventValues.getLog();
             queryBlockHeaderEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            queryBlockHeaderEventResponse.claimant = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            queryBlockHeaderEventResponse.submitter = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            queryBlockHeaderEventResponse.blockHash = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
             result.add(queryBlockHeaderEventResponse);
         }
 
@@ -79,7 +80,7 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
                     new QueryMerkleRootHashesEventResponse();
             queryMerkleRootHashesEventResponse.log = eventValues.getLog();
             queryMerkleRootHashesEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            queryMerkleRootHashesEventResponse.claimant = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            queryMerkleRootHashesEventResponse.submitter = (String) eventValues.getNonIndexedValues().get(1).getValue();
             result.add(queryMerkleRootHashesEventResponse);
         }
 
