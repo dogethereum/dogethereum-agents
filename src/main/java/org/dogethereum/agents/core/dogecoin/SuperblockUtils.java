@@ -50,6 +50,15 @@ public class SuperblockUtils {
         return outputStream.toByteArray();
     }
 
+    public static byte[] toUint32(long l) {
+        byte[] result = new byte[4];
+        for (int i = 3; i >= 0; i--) {
+            result[i] = (byte)(l & 0xFF);
+            l >>= 8;
+        }
+        return result;
+    }
+
     public static byte[] longToBytes(long l) {
         byte[] result = new byte[8];
         for (int i = 7; i >= 0; i--) {
