@@ -6,19 +6,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * RegTest implementation of AgentConstants
+ * AgentConstants for local tests.
+ * Uses Doge RegTest and Eth Ganache.
  */
-public class RegTestAgentConstants extends AgentConstants {
+public class LocalAgentConstants extends AgentConstants {
 
-    private static final Logger log = LoggerFactory.getLogger("RegTestAgentConstants");
+    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
 
-    private static RegTestAgentConstants instance = new RegTestAgentConstants();
+    private static LocalAgentConstants instance = new LocalAgentConstants();
 
-    public static RegTestAgentConstants getInstance() {
+    public static LocalAgentConstants getInstance() {
         return instance;
     }
 
-    RegTestAgentConstants() {
+    LocalAgentConstants() {
         dogeParams = DogecoinRegTestParams.get();
         doge2EthMinimumAcceptableConfirmations = 7;
         updateBridgeExecutionPeriod = 10 * 1000; // 10 seconds

@@ -25,8 +25,8 @@ import java.util.Properties;
 @Slf4j(topic = "SystemProperties")
 public class SystemProperties {
 
-    private static final String REGTEST = "regtest";
-    private static final String TESTNET = "testnet";
+    private static final String LOCAL = "local";
+    private static final String INTEGRATION = "integration";
 
     private static final String YES = "yes";
     private static final String NO = "no";
@@ -132,16 +132,16 @@ public class SystemProperties {
 
     public AgentConstants getAgentConstants() {
         if (agentConstants == null) {
-            String network = network();
-            switch (network) {
-                case TESTNET:
-                    agentConstants = TestNetAgentConstants.getInstance();
+            String constants = constants();
+            switch (constants) {
+                case INTEGRATION:
+                    agentConstants = IntegrationAgentConstants.getInstance();
                     break;
-                case REGTEST:
-                    agentConstants = RegTestAgentConstants.getInstance();
+                case LOCAL:
+                    agentConstants = LocalAgentConstants.getInstance();
                     break;
                 default:
-                    throw new RuntimeException("Unknown value for 'network': '" + config.getString("network") + "'");
+                    throw new RuntimeException("Unknown value for 'constants': '" + constants + "'");
             }
         }
         return agentConstants;
@@ -163,16 +163,16 @@ public class SystemProperties {
         return getBooleanProperty("price.oracle.enabled", false);
     }
 
-    public boolean isTestnet() {
-        return TESTNET.equals(network());
+    public boolean isIntegration() {
+        return INTEGRATION.equals(constants());
     }
 
-    public boolean isRegtest() {
-        return REGTEST.equals(network());
+    public boolean isLocal() {
+        return LOCAL.equals(constants());
     }
 
-    public String network() {
-        return config.hasPath("network") ? config.getString("network") : null;
+    public String constants() {
+        return config.hasPath("constants") ? config.getString("constants") : null;
     }
 
     public String projectVersion() {

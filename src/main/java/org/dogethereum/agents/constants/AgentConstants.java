@@ -4,7 +4,8 @@ import org.bitcoinj.core.Coin;
 import org.libdohj.params.AbstractDogecoinParams;
 
 /**
- * Agent and Bridge constants specific to each network (regtest, testnet, mainnet)
+ * Agent and Bridge constants.
+ * Subclasses are customizations for each network (doge regtest and eth ropsten, doge mainnet and eth ropsten, doge mainnet and eth prod)
  */
 public class AgentConstants {
 
