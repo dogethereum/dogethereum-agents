@@ -41,8 +41,8 @@ public class IntegrationAgentConstants extends AgentConstants {
         BigInteger chainWork = new BigInteger("3294865331135006206033");
         long lastDogeBlockTime = 1531295965l;
         long previousToLastDogeBlockTime = 1531295930l;
-        long lastDogeBlockBits = 436591711;
         Sha256Hash lastDogeBlockHash = Sha256Hash.wrap("c577a73270eb1fccd4a702402089f653c771749763e0d7ebb877f47e81eb4395");
+        long lastDogeBlockBits = 436591711;
         byte[] genesisSuperblockParentId = new byte[32]; // initialised with 0s
         long superblockHeight = 0;
         BigInteger status = SuperblockUtils.STATUS_APPROVED;
