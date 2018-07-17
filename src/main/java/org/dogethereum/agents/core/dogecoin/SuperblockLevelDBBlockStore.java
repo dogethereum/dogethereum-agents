@@ -4,6 +4,8 @@ import org.bitcoinj.core.*;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.core.Context;
 
+import org.dogethereum.agents.constants.AgentConstants;
+import org.dogethereum.agents.constants.SystemProperties;
 import org.fusesource.leveldbjni.*;
 import org.iq80.leveldb.*;
 
@@ -88,15 +90,12 @@ public class SuperblockLevelDBBlockStore {
     private synchronized void initStoreIfNeeded(NetworkParameters params) throws IOException, BlockStoreException {
         if (db.get(CHAIN_HEAD_KEY) != null)
             return; // Already initialised.
-        List<Sha256Hash> genesisList = new ArrayList<>();
-        genesisList.add(context.getParams().getGenesisBlock().getHash());
-        byte[] genesisParentHash = new byte[32]; // initialised with 0s
-        Superblock genesisBlock = new Superblock(
-                params, genesisList, BigInteger.valueOf(0), context.getParams().getGenesisBlock().getTimeSeconds(),
-                0, context.getParams().getGenesisBlock().getDifficultyTarget(),
-                genesisParentHash, 0, SuperblockUtils.STATUS_APPROVED);
-        put(genesisBlock);
-        setChainHead(genesisBlock);
+        SystemProperties config = SystemProperties.CONFIG;
+        AgentConstants agentConstants = config.getAgentConstants();
+        Superblock genesisSuperblock = agentConstants.getGenesisSuperblock();
+        // todo: see if this is OK
+        put(genesisSuperblock);
+        setChainHead(genesisSuperblock);
     }
 
     /**

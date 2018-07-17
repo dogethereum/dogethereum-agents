@@ -1,6 +1,7 @@
 package org.dogethereum.agents.constants;
 
 import org.bitcoinj.core.Coin;
+import org.dogethereum.agents.core.dogecoin.Superblock;
 import org.libdohj.params.AbstractDogecoinParams;
 
 /**
@@ -14,6 +15,7 @@ public class AgentConstants {
     protected int updateBridgeExecutionPeriod;
     protected int maxDogeHeadersPerRound;
     protected Coin minimumLockTxValue;
+    protected Superblock genesisSuperblock;
 
     public AbstractDogecoinParams getDogeParams() {
         return dogeParams;
@@ -36,6 +38,10 @@ public class AgentConstants {
     }
     public int getEthInitialCheckpoint() {
         return ethInitialCheckpoint;
+    }
+
+    public Superblock getGenesisSuperblock() {
+        return genesisSuperblock;
     }
     // Unlock mechanism specific end
 
