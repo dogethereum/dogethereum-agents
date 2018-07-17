@@ -80,11 +80,6 @@ public class Superblock {
     public Superblock(NetworkParameters params, List<Sha256Hash> dogeBlockHashes, BigInteger chainWork,
                       long lastDogeBlockTime, long previousToLastDogeBlockTime, long lastDogeBlockBits,
                       byte[] parentId, long superblockHeight, BigInteger status) {
-        // set helper fields
-        this.superblockHeight = superblockHeight;
-        this.status = status;
-        this.dogeBlockHashes = new ArrayList<>(dogeBlockHashes);
-
         // hash all the block dogeBlockHashes into a Merkle tree
         byte[] includeBits = new byte[(int) Math.ceil(dogeBlockHashes.size() / 8.0)];
         for (int i = 0; i < dogeBlockHashes.size(); i++)
@@ -99,6 +94,11 @@ public class Superblock {
         this.lastDogeBlockHash = dogeBlockHashes.get(dogeBlockHashes.size() - 1);
         this.lastDogeBlockBits = lastDogeBlockBits;
         this.parentId = parentId.clone();
+
+        // set helper fields
+        this.superblockHeight = superblockHeight;
+        this.status = status;
+        this.dogeBlockHashes = new ArrayList<>(dogeBlockHashes);
     }
 
     /**
