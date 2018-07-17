@@ -26,7 +26,7 @@ import java.util.*;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Manages the process of informing DogeRelay news about the dogecoin blockchain
+ * Manages the process of informing Dogethereum Contracts news about the dogecoin blockchain
  * @author Oscar Guindzberg
  * @author Catalina Juarros
  */
@@ -209,112 +209,6 @@ public class DogeToEthClient {
 
         checkNotNull(currentSuperblock, "Block is not in the main chain.");
         return currentSuperblock;
-    }
-
-    public int updateBridgeDogeBlockchain() throws Exception {
-        int bridgeDogeBlockchainBestChainHeight = ethWrapper.getDogeBestBlockHeight();
-        if (dogecoinWrapper.getBestChainHeight() <= bridgeDogeBlockchainBestChainHeight) {
-            return 0;
-        }
-        // Agent's blockchain has more blocks than bridge's blockchain
-        log.debug("DOGE blockchain height - Agent : {}, Bridge : {}.", dogecoinWrapper.getBestChainHeight(), bridgeDogeBlockchainBestChainHeight);
-
-        // Search the latest shared block between the agent and the bridge contract
-
-        // Deprecated implementation not using a block locator
-//        String bridgeDogeBlockchainHeadHash = ethWrapper.getBlockchainHeadHash();
-//        StoredBlock matchedBlock = null;
-//        StoredBlock storedBlock = dogecoinWrapper.getBlock(Sha256Hash.wrap(bridgeDogeBlockchainHeadHash));
-//        if (storedBlock != null) {
-//            StoredBlock storedBlockInBestChain = dogecoinWrapper.getStoredBlockAtHeight(storedBlock.getHeight());
-//            if (storedBlock.equals(storedBlockInBestChain)) {
-//                matchedBlock = storedBlockInBestChain;
-//            }
-//        }
-
-        // Implementation using a block locator
-        List<String> blockLocator = ethWrapper.getDogeBlockchainBlockLocator();
-        log.debug("Block locator size {}, first {}, last {}.", blockLocator.size(), blockLocator.get(0), blockLocator.get(blockLocator.size()-1));
-        // find the last best chain block it has
-        StoredBlock matchedBlock = null;
-        for (int i = 0; i < blockLocator.size(); i++) {
-            String blockHash = (String) blockLocator.get(i);
-            StoredBlock storedBlock = dogecoinWrapper.getBlock(Sha256Hash.wrap(blockHash));
-            if (storedBlock == null)
-                continue;
-            StoredBlock storedBlockInBestChain = dogecoinWrapper.getStoredBlockAtHeight(storedBlock.getHeight());
-            if (storedBlock.equals(storedBlockInBestChain)) {
-                matchedBlock = storedBlockInBestChain;
-                break;
-            }
-        }
-
-        checkNotNull(matchedBlock, "No best chain block found");
-
-        log.debug("Matched block {}.", matchedBlock.getHeader().getHash());
-
-        // We found the block in the agent's best chain. Send receiveHeaders with the blocks it is missing.
-        StoredBlock current = dogecoinWrapper.getChainHead();
-        List<Block> headersToSendToBridge = new LinkedList<>();
-        while (!current.equals(matchedBlock)) {
-            headersToSendToBridge.add(current.getHeader());
-            current = dogecoinWrapper.getBlock(current.getHeader().getPrevBlockHash());
-        }
-        if (headersToSendToBridge.size() == 0) {
-            log.debug("Bridge was just updated, no new blocks to send, matchedBlock: {}.", matchedBlock.getHeader().getHash());
-            return 0;
-        }
-        headersToSendToBridge = Lists.reverse(headersToSendToBridge);
-        log.debug("Headers missing in the bridge {}.", headersToSendToBridge.size());
-        int to = Math.min(agentConstants.getMaxDogeHeadersPerRound(), headersToSendToBridge.size());
-        List<Block> headersToSendToBridgeSubList = headersToSendToBridge.subList(0, to);
-        ethWrapper.sendStoreHeaders(headersToSendToBridgeSubList.toArray(new Block[]{}));
-        log.debug("Invoked receiveHeaders with {} blocks. First {}, Last {}.", headersToSendToBridgeSubList.size(),
-                headersToSendToBridgeSubList.get(0).getHash(), headersToSendToBridgeSubList.get(headersToSendToBridgeSubList.size()-1).getHash());
-        return headersToSendToBridgeSubList.size();
-    }
-
-    public void updateBridgeTransactions() throws Exception {
-        Set<Transaction> operatorWalletTxSet = dogecoinWrapper.getTransactions(
-                agentConstants.getDoge2EthMinimumAcceptableConfirmations(), config.isDogeTxRelayerEnabled(),
-                config.isOperatorEnabled());
-
-        int numberOfTxsSent = 0;
-        for (Transaction operatorWalletTx : operatorWalletTxSet) {
-            if (!ethWrapper.wasDogeTxProcessed(operatorWalletTx.getHash())) {
-                synchronized (this) {
-                    List<Proof> proofs = dogecoinWrapper.getTransactionsToSendToEth().get(operatorWalletTx.getHash());
-
-                    if (proofs == null || proofs.isEmpty())
-                        continue;
-
-                    StoredBlock txStoredBlock = findBestChainStoredBlockFor(operatorWalletTx);
-                    PartialMerkleTree pmt = null;
-                    for (Proof proof : proofs) {
-                        if (proof.getBlockHash().equals(txStoredBlock.getHeader().getHash())) {
-                            pmt = proof.getPartialMerkleTree();
-                        }
-                    }
-                    int contractDogeBestBlockHeight = ethWrapper.getDogeBestBlockHeight();
-                    if (contractDogeBestBlockHeight < (txStoredBlock.getHeight() +
-                            agentConstants.getDoge2EthMinimumAcceptableConfirmations() -1 )) {
-                        log.debug("Tx not relayed yet because not enough confirmations yet {}. Contract height {}," +
-                                        "Tx included in block {}",
-                                operatorWalletTx.getHash(), contractDogeBestBlockHeight, txStoredBlock.getHeight());
-                        continue;
-                    }
-
-                    ethWrapper.sendRelayTx(operatorWalletTx, operatorPublicKeyHandler.getPublicKeyHash(),
-                            txStoredBlock.getHeader().getHash(), pmt);
-                    numberOfTxsSent++;
-                    // Send a maximum of 40 registerTransaction txs per turn
-                    if (numberOfTxsSent >= MAXIMUM_REGISTER_DOGE_LOCK_TXS_PER_TURN) {
-                        break;
-                    }
-                    log.debug("Invoked registerTransaction for tx {}", operatorWalletTx.getHash());
-                }
-            }
-        }
     }
 
     // Temporary
