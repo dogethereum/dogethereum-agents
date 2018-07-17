@@ -36,7 +36,6 @@ public class Superblock {
     private byte[] superblockId; // KECCAK-256 hash of superblock data
     private long superblockHeight;
     private BigInteger status;
-    private long newSuperblockEventTime;
     private List<Sha256Hash> dogeBlockHashes;
 
 
@@ -49,15 +48,16 @@ public class Superblock {
     private static final int MERKLE_ROOT_PAYLOAD_OFFSET = 0;
     private static final int CHAIN_WORK_PAYLOAD_OFFSET = MERKLE_ROOT_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
     private static final int LAST_BLOCK_TIME_PAYLOAD_OFFSET = CHAIN_WORK_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
-    private static final int PREVIOUS_TO_LAST_BLOCK_TIME_PAYLOAD_OFFSET = LAST_BLOCK_TIME_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
-    private static final int LAST_BLOCK_HASH_PAYLOAD_OFFSET = PREVIOUS_TO_LAST_BLOCK_TIME_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
+    private static final int PREVIOUS_TO_LAST_BLOCK_TIME_PAYLOAD_OFFSET =
+            LAST_BLOCK_TIME_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
+    private static final int LAST_BLOCK_HASH_PAYLOAD_OFFSET =
+            PREVIOUS_TO_LAST_BLOCK_TIME_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
     private static final int LAST_BLOCK_BITS_PAYLOAD_OFFSET = LAST_BLOCK_HASH_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
-    private static final int PARENT_ID_PAYLOAD_OFFSET = LAST_BLOCK_BITS_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
+    private static final int PARENT_ID_PAYLOAD_OFFSET = LAST_BLOCK_BITS_PAYLOAD_OFFSET + UINT32_LENGTH;
 
     private static final int SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET = PARENT_ID_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
     private static final int STATUS_PAYLOAD_OFFSET = SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET + UINT32_LENGTH;
-    private static final int NEW_EVENT_TIME_OFFSET = STATUS_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
-    private static final int NUMBER_OF_HASHES_PAYLOAD_OFFSET = NEW_EVENT_TIME_OFFSET + UINT32_LENGTH;
+    private static final int NUMBER_OF_HASHES_PAYLOAD_OFFSET = STATUS_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
     private static final int DOGE_BLOCK_HASHES_PAYLOAD_OFFSET = NUMBER_OF_HASHES_PAYLOAD_OFFSET + UINT32_LENGTH;
 
 
@@ -75,12 +75,10 @@ public class Superblock {
      */
     public Superblock(NetworkParameters params, List<Sha256Hash> dogeBlockHashes, BigInteger chainWork,
                       long lastDogeBlockTime, long previousToLastDogeBlockTime, long lastDogeBlockBits,
-                      byte[] parentId, long superblockHeight, BigInteger status,
-                      long newSuperblockEventTime) {
+                      byte[] parentId, long superblockHeight, BigInteger status) {
         // set helper fields
         this.superblockHeight = superblockHeight;
         this.status = status;
-        this.newSuperblockEventTime = newSuperblockEventTime;
         this.dogeBlockHashes = new ArrayList<>(dogeBlockHashes);
 
         // hash all the block dogeBlockHashes into a Merkle tree
@@ -121,7 +119,6 @@ public class Superblock {
         this.superblockHeight = Utils.readUint32(payload, SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET);
         this.status = new BigInteger(Utils.reverseBytes(SuperblockUtils.readBytes(payload,
                 SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET, BIG_INTEGER_LENGTH)));
-        this.newSuperblockEventTime = Utils.readUint32(payload, NEW_EVENT_TIME_OFFSET);
         long numberOfDogeBlockHashes = Utils.readUint32(payload, NUMBER_OF_HASHES_PAYLOAD_OFFSET);
         this.dogeBlockHashes = deserializeHashesLE(payload, DOGE_BLOCK_HASHES_PAYLOAD_OFFSET, numberOfDogeBlockHashes);
     }
@@ -229,10 +226,6 @@ public class Superblock {
         return status;
     }
 
-    public Date getNewEventDate() {
-        return new Date(newSuperblockEventTime*1000);
-    }
-
     public List<Sha256Hash> getDogeBlockHashes() {
         return dogeBlockHashes;
     }
@@ -251,7 +244,7 @@ public class Superblock {
      * Serializes Merkle root, chain work, last block hash, last block time and previous superblock hash
      * (in that order) to an output stream in little-endian format.
      * This is the information that should be used for calculating the superblock hash,
-     * sending the superblock to DogeRelay and defending it in the challenges.
+     * sending the superblock to Dogethereum Contracts and defending it in the challenges.
      * @param stream Output stream where the information will be written. Modified by the function.
      * @throws IOException if a byte operation fails.
      */
@@ -261,7 +254,7 @@ public class Superblock {
         stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(lastDogeBlockTime))); // 32
         stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(previousToLastDogeBlockTime))); // 32
         stream.write(lastDogeBlockHash.getReversedBytes()); // 32
-        stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(lastDogeBlockBits))); // 32
+        stream.write(Utils.reverseBytes(SuperblockUtils.toUint32(lastDogeBlockBits))); // 4
         stream.write(Utils.reverseBytes(parentId)); // 32
     }
 
@@ -279,7 +272,7 @@ public class Superblock {
      * Serializes every superblock field into an output stream in little-endian format.
      * Order: Merkle root, chain work, last block hash, last block time, previous superblock hash,
      * last block height, superblock height.
-     * The last two fields should *not* be sent to DogeRelay, but they are necessary
+     * The last few fields should *not* be sent to Dogethereum Contracts, but they are necessary
      * for rebuilding a superblock with auxiliary information from a serialized byte array.
      * Therefore, this method should only be used for storing superblocks.
      * @param stream Output stream where the information will be written. Modified by the function.
@@ -290,7 +283,6 @@ public class Superblock {
 
         Utils.uint32ToByteStreamLE(superblockHeight, stream);
         stream.write(SuperblockUtils.toBytes32(status));
-        Utils.uint32ToByteStreamLE(newSuperblockEventTime, stream);
         Utils.uint32ToByteStreamLE(dogeBlockHashes.size(), stream);
         serializeHashesLE(dogeBlockHashes, stream);
     }

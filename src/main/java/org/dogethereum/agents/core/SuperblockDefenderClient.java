@@ -137,7 +137,7 @@ public class SuperblockDefenderClient {
 
     /**
      * Find earliest superblock that's unchallenged and stored locally,
-     * but not confirmed in DogeRelay, and confirm it if its timeout has passed
+     * but not confirmed in Dogethereum Contracts, and confirm it if its timeout has passed
      * and it either received no challenges or won all battles.
      * @throws Exception
      */
@@ -196,9 +196,8 @@ public class SuperblockDefenderClient {
         return true;
     }
 
-
     private boolean timeoutPassed(Superblock superblock) throws Exception {
-        return superblock.getNewEventDate().before(getTimeoutDate());
+        return ethWrapper.getNewEventTimestampDate(superblock.getSuperblockId()).before(getTimeoutDate());
     }
 
     private Date getTimeoutDate() throws Exception {
