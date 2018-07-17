@@ -64,14 +64,18 @@ public class Superblock {
     /* ---- CONSTRUCTION METHODS ---- */
 
     /**
-     * Construct a Superblock object from a list of Dogecoin blocks,
-     * the previous superblock's hash and the accumulated chain work from its last block.
-     * Callers should ensure that `work` is indeed the chain work corresponding
-     * to the last element of `blocks`.
+     * Construct a Superblock object from a list of Dogecoin block hashes.
+     * @param params
      * @param dogeBlockHashes List of hashes belonging to all Dogecoin blocks
      *                        mined within the one hour lapse corresponding to this superblock.
      * @param chainWork Last Dogecoin block's accumulated chainwork.
+     * @param lastDogeBlockTime
+     * @param previousToLastDogeBlockTime
+     * @param lastDogeBlockBits
      * @param parentId Previous superblock's SHA-256 hash.
+     * @param superblockHeight
+     * @param status
+     * @param newSuperblockEventTime
      */
     public Superblock(NetworkParameters params, List<Sha256Hash> dogeBlockHashes, BigInteger chainWork,
                       long lastDogeBlockTime, long previousToLastDogeBlockTime, long lastDogeBlockBits,
@@ -97,6 +101,38 @@ public class Superblock {
         this.parentId = parentId.clone();
     }
 
+    /**
+     * Construct a Superblock from the block hashes merkle root
+     * @param merkleRoot
+     * @param chainWork
+     * @param lastDogeBlockTime
+     * @param previousToLastDogeBlockTime
+     * @param lastDogeBlockHash
+     * @param lastDogeBlockBits
+     * @param parentId
+     * @param superblockHeight
+     * @param status
+     * @param newSuperblockEventTime
+     */
+    public Superblock(Sha256Hash merkleRoot, BigInteger chainWork,
+                      long lastDogeBlockTime, long previousToLastDogeBlockTime,
+                      Sha256Hash lastDogeBlockHash, long lastDogeBlockBits,
+                      byte[] parentId, long superblockHeight, BigInteger status,
+                      long newSuperblockEventTime) {
+        this.merkleRoot = merkleRoot;
+        this.chainWork = chainWork;
+        this.lastDogeBlockTime = lastDogeBlockTime;
+        this.previousToLastDogeBlockTime = previousToLastDogeBlockTime;
+        this.lastDogeBlockHash = lastDogeBlockHash;
+        this.lastDogeBlockBits = lastDogeBlockBits;
+        this.parentId = parentId;
+
+        // set helper fields
+        this.superblockHeight = superblockHeight;
+        this.status = status;
+        this.newSuperblockEventTime = newSuperblockEventTime;
+        this.dogeBlockHashes = null;
+    }
     /**
      * Construct a Superblock object from an array representing a serialized superblock.
      * @param payload Serialized superblock.
