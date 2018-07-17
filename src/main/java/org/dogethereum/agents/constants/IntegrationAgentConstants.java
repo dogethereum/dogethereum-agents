@@ -53,9 +53,9 @@ public class IntegrationAgentConstants extends AgentConstants {
                 genesisSuperblockParentId, superblockHeight, status, newSuperblockEventTime);
 
         // Unlock mechanism specific start
-        eth2DogeMinimumAcceptableConfirmations = 20;
+        eth2DogeMinimumAcceptableConfirmations = 10;
         dogeBroadcastingMinimumAcceptableBlocks = 30;
-        ethInitialCheckpoint = 3069702;
+        ethInitialCheckpoint = 3657000;
         // Unlock mechanism specific emd
     }
 }
