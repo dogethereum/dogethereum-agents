@@ -45,7 +45,8 @@ public class SystemProperties {
             Config javaSystemProperties = ConfigFactory.load("no-such-resource-only-system-props");
             String file = System.getProperty("dogethereum.agents.conf.file");
             Config cmdLineConfigFile = file != null ? ConfigFactory.parseFile(new File(file)) : ConfigFactory.empty();
-            log.info("Config ( {} ): user properties from -Ddogethereum.agents.conf.file file '{}'", cmdLineConfigFile.entrySet().isEmpty() ? NO : YES, file);
+            log.info("Config ( {} ): user properties from -Ddogethereum.agents.conf.file file '{}'",
+                    cmdLineConfigFile.entrySet().isEmpty() ? NO : YES, file);
             config = javaSystemProperties
                     .withFallback(cmdLineConfigFile);
 
