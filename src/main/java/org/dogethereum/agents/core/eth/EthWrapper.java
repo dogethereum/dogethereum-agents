@@ -55,8 +55,6 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     private Web3j web3;
 
-    private DogeRelay dogeRelay;
-    private DogeRelay dogeRelayForRelayTx;
     private DogeTokenExtended dogeToken;
     private DogeClaimManagerExtended claimManager;
     private DogeSuperblocksExtended superblocks;
@@ -72,7 +70,6 @@ public class EthWrapper implements SuperblockConstantProvider {
     public EthWrapper() throws Exception {
         config = SystemProperties.CONFIG;
         web3 = Web3j.build(new HttpService());  // defaults to http://localhost:8545/
-        String dogeRelayContractAddress;
         String dogeTokenContractAddress;
         String claimManagerContractAddress;
         String superblocksContractAddress;
@@ -81,7 +78,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         String fromAddressPriceOracle;
 
         if (config.isLocal()) {
-            dogeRelayContractAddress = getContractAddress("DogeRelay");
             dogeTokenContractAddress = getContractAddress("DogeToken");
             claimManagerContractAddress = getContractAddress("DogeClaimManager");
             superblocksContractAddress = getContractAddress("DogeSuperblocks");
@@ -90,7 +86,6 @@ public class EthWrapper implements SuperblockConstantProvider {
             fromAddressRelayTxs = accounts.get(1);
             fromAddressPriceOracle = accounts.get(2);
         } else {
-            dogeRelayContractAddress = config.dogeRelayContractAddress();
             dogeTokenContractAddress = config.dogeTokenContractAddress();
             claimManagerContractAddress = config.dogeClaimManagerContractAddress();
             superblocksContractAddress = config.dogeSuperblocksContractAddress();
@@ -102,14 +97,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
         BigInteger gasLimit = BigInteger.valueOf(config.gasLimit());
 
-        dogeRelay = DogeRelay.load(dogeRelayContractAddress, web3,
-                                   new ClientTransactionManager(web3, fromAddressGeneralPurposeAndSendBlocks),
-                                   gasPriceMinimum, gasLimit);
-        assert dogeRelay.isValid();
-        dogeRelayForRelayTx = DogeRelay.load(dogeRelayContractAddress, web3,
-                                             new ClientTransactionManager(web3, fromAddressRelayTxs),
-                                             gasPriceMinimum, gasLimit);
-        assert dogeRelayForRelayTx.isValid();
         dogeToken = DogeTokenExtended.load(dogeTokenContractAddress, web3,
                                            new ClientTransactionManager(web3, fromAddressPriceOracle),
                                            gasPriceMinimum, gasLimit);
@@ -156,8 +143,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         } else {
             gasPrice = gasPriceMinimum;
         }
-        dogeRelay.setGasPrice(gasPrice);
-        dogeRelayForRelayTx.setGasPrice(gasPrice);
+
         dogeToken.setGasPrice(gasPrice);
         claimManager.setGasPrice(gasPrice);
         superblocks.setGasPrice(gasPrice);
@@ -176,78 +162,15 @@ public class EthWrapper implements SuperblockConstantProvider {
         return output.toString();
     }
 
-    /* ---------------------------------- */
-    /* --- Relay Doge blocks section ---- */
-    /* ---------------------------------- */
-
-    public int getDogeBestBlockHeight() throws Exception {
-        return dogeRelay.getBestBlockHeight().send().intValue();
-    }
-
-    public String getDogeBestBlockHash() throws Exception {
-        BigInteger result = dogeRelay.getBestBlockHash().send();
-        return bigIntegerToHexStringPad64(result);
-    }
-
-
-    public List<String> getDogeBlockchainBlockLocator() throws Exception {
-        List<BigInteger> dogeBlockHashesBI = dogeRelay.getBlockLocator().send();
-        List<String> dogeBlockHashesString = new ArrayList<>();
-        for (BigInteger dogeBlockHashBI : dogeBlockHashesBI) {
-            dogeBlockHashesString.add(bigIntegerToHexStringPad64(dogeBlockHashBI));
-        }
-        return dogeBlockHashesString;
-    }
-
-    public void sendStoreHeaders(org.bitcoinj.core.Block headers[]) throws Exception {
-        log.info("About to send to the bridge headers from {} to {}", headers[0].getHash(), headers[headers.length - 1].getHash());
-//  Commented out solution that used bulkStoreHeaders
-//        ByteArrayOutputStream baosHeaders = new ByteArrayOutputStream();
-//        ByteArrayOutputStream baosHashes = new ByteArrayOutputStream();
-//        for (int i = 0; i < headers.length; i++) {
-//            byte[] serializedHeader = headers[i].bitcoinSerialize();
-//            byte[] headerSize = calculateHeaderSize(serializedHeader);
-//            baosHeaders.write(headerSize);
-//            baosHeaders.write(serializedHeader);
-//            NetworkParameters params = config.getAgentConstants().getDogeParams();
-//            AltcoinBlock block = new AltcoinBlock(params, serializedHeader);
-//            if (block.getAuxPoW() == null) {
-//                baosHashes.write(block.getScryptHash().getBytes());
-//            } else {
-//                baosHashes.write(block.getAuxPoW().getParentBlockHeader().getScryptHash().getBytes());
-//            }
-//        }
-//
-//        CompletableFuture<TransactionReceipt> futureReceipt = dogeRelay.bulkStoreHeaders(baosHeaders.toByteArray(), baosHashes.toByteArray(), BigInteger.valueOf(headers.length)).sendAsync();
-//        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) -> log.info("BulkStoreHeaders receipt {}.", toString(receipt)) );
-        for (Block header : headers) {
-            AltcoinBlock dogeHeader = (AltcoinBlock) header;
-            ScryptHash scryptHash;
-            if (dogeHeader.getAuxPoW() == null) {
-                scryptHash = dogeHeader.getScryptHash();
-            } else {
-                scryptHash = dogeHeader.getAuxPoW().getParentBlockHeader().getScryptHash();
-            }
-            BigInteger scryptHashBI = ScryptHash.wrapReversed(scryptHash.getBytes()).toBigInteger();
-            CompletableFuture<TransactionReceipt> futureReceipt = dogeRelay.storeBlockHeader(dogeHeader.bitcoinSerialize(), scryptHashBI).sendAsync();
-            log.info("Sent storeBlockHeader {}", dogeHeader.getHash());
-            futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
-                    log.info("StoreBlockHeader receipt {}.", receipt.toString())
-            );
-            // Sleep a couple of millis. Before this "hack", when using ganache I used to get some tx receipt with "no previous block" error
-            Thread.sleep(200);
-        }
-    }
-
 
     /* ---------------------------------- */
     /* - Relay Doge superblocks section - */
     /* ---------------------------------- */
 
     /**
-     * Propose a series of superblocks to DogeClaimManager in order to keep DogeRelay updated.
+     * Propose a series of superblocks to DogeClaimManager in order to keep Dogethereum Contracts updated.
      * @param superblocksToSend DogeSuperblocks that are already stored in the local database,
-     *                          but still haven't been submitted to DogeRelay.
+     *                          but still haven't been submitted to Dogethereum Contracts.
      * @throws Exception If a superblock hash cannot be calculated.
      */
     public void sendStoreSuperblocks(Deque<Superblock> superblocksToSend) throws Exception {
@@ -267,9 +190,9 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     /**
-     * Propose a superblock to DogeClaimManager in order to keep DogeRelay updated.
+     * Propose a superblock to DogeClaimManager in order to keep Dogethereum Contracts updated.
      * @param superblock Oldest superblock that is already stored in the local database,
-     *                   but still hasn't been submitted to DogeRelay.
+     *                   but still hasn't been submitted to Dogethereum Contracts.
      * @throws Exception If superblock hash cannot be calculated.
      */
     public void sendStoreSuperblock(Superblock superblock) throws Exception {
@@ -360,6 +283,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         return Hex.decode(size);
     }
 
+
     /* ---- SUPERBLOCK STATUS CHECKS ---- */
 
     public BigInteger getSuperblockStatus(byte[] superblockId) throws Exception {
@@ -401,6 +325,7 @@ public class EthWrapper implements SuperblockConstantProvider {
                 log.info("checkClaimFinished receipt {}", receipt.toString())
         );
     }
+
 
     /* ---- EVENT RETRIEVAL METHODS AND CLASSES ---- */
 
@@ -568,7 +493,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         );
     }
 
-//    public void respondMerkleRootHashes()
 
     /* ---- LOG PROCESSING METHODS ---- */
 
@@ -585,6 +509,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         BigInteger rawTimestamp = getEthTimestampRaw(eventLog);
         return new Date(rawTimestamp.longValue() * 1000);
     }
+
 
     /* ---- GETTERS ---- */
 
@@ -604,6 +529,14 @@ public class EthWrapper implements SuperblockConstantProvider {
         return superblocks.getBestSuperblock().send();
     }
 
+    public BigInteger getNewEventTimestampBigInteger(byte[] superblockId) throws Exception {
+        return claimManager.getNewSuperblockEventTimestamp(superblockId).send();
+    }
+
+    public Date getNewEventTimestampDate(byte[] superblockId) throws Exception {
+        return new Date(getNewEventTimestampBigInteger(superblockId).longValue());
+    }
+
 
     /* ---------------------------------- */
     /* ----- Relay Doge tx section ------ */
@@ -611,27 +544,6 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     public boolean wasDogeTxProcessed(Sha256Hash txHash) throws Exception {
         return dogeToken.wasDogeTxProcessed(txHash.toBigInteger()).send();
-    }
-
-    // Old version until migration to superblocks is completed
-    public void sendRelayTx(org.bitcoinj.core.Transaction tx, byte[] operatorPublicKeyHash, Sha256Hash blockHash, PartialMerkleTree pmt) throws Exception {
-        log.info("About to send to the bridge doge tx hash {}. Block hash {}", tx.getHash(), blockHash);
-
-        byte[] txSerialized = tx.bitcoinSerialize();
-
-        BigInteger txIndex = BigInteger.valueOf(pmt.getTransactionIndex(tx.getHash()));
-        List<Sha256Hash> siblingsSha256Hash = pmt.getTransactionPath(tx.getHash());
-        List<BigInteger> siblingsBigInteger = new ArrayList<>();
-        for (Sha256Hash sha256Hash : siblingsSha256Hash) {
-            siblingsBigInteger.add(sha256Hash.toBigInteger());
-        }
-        BigInteger blockHashBigInteger = blockHash.toBigInteger();
-        String targetContract = dogeToken.getContractAddress();
-        CompletableFuture<TransactionReceipt> futureReceipt = dogeRelayForRelayTx.relayTx(txSerialized, operatorPublicKeyHash, txIndex, siblingsBigInteger, blockHashBigInteger, targetContract).sendAsync();
-        log.info("Sent relayTx {}", tx.getHash());
-        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
-                log.info("RelayTx receipt {}.", receipt.toString())
-        );
     }
 
     // TODO: test with operator enabled
@@ -664,7 +576,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         String targetContract = dogeToken.getContractAddress();
 
-        CompletableFuture<TransactionReceipt> futureReceipt = dogeRelayForRelayTx.relayTx(txSerialized,
+        CompletableFuture<TransactionReceipt> futureReceipt = superblocks.relayTx(txSerialized,
                 operatorPublicKeyHash, txIndex, txSiblingsBigInteger, dogeBlockHeader, dogeBlockIndex,
                 dogeBlockSiblingsBigInteger, superblock.getSuperblockId(), targetContract).sendAsync();
         log.info("Sent relayTx {}", tx.getHash());
@@ -672,6 +584,7 @@ public class EthWrapper implements SuperblockConstantProvider {
                 log.info("RelayTx receipt {}.", receipt.toString())
         );
     }
+
 
     /* ---------------------------------- */
     /* --------- Unlock section --------- */
