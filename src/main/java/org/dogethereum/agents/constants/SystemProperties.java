@@ -164,6 +164,10 @@ public class SystemProperties {
         return getBooleanProperty("price.oracle.enabled", false);
     }
 
+    public boolean isDogeBlockChallengerEnabled() {
+        return getBooleanProperty("doge.block.challenger.enabled", false);
+    }
+
     public boolean isIntegration() {
         return INTEGRATION.equals(constants());
     }
