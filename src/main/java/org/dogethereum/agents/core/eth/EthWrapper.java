@@ -254,6 +254,10 @@ public class EthWrapper implements SuperblockConstantProvider {
         return superblocks.getSuperblockLocator().send();
     }
 
+    public boolean wasSuperblockAlreadySubmitted(byte[] superblockId) throws Exception {
+        return !superblocks.getSuperblockIndex(superblockId).send().equals(BigInteger.ZERO);
+    }
+
     private CompletableFuture<TransactionReceipt> makeClaimDeposit(BigInteger weiValue) throws InterruptedException {
         CompletableFuture<TransactionReceipt> futureReceipt = claimManager.makeDeposit(weiValue).sendAsync();
         log.info("Deposited {} wei.", weiValue);
