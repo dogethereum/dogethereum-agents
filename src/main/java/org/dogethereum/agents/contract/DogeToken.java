@@ -55,7 +55,7 @@ public class DogeToken extends Contract {
 
     static {
         _addresses = new HashMap<>();
-        _addresses.put("32001", "0x07d2b99c35c01612b6b4f5b4ff0baf4a8d9c3da5");
+        _addresses.put("32001", "0x8d0f2dc53d27c216ed66ac1517dd31d67fb25a82");
     }
 
     protected DogeToken(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
