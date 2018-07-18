@@ -172,6 +172,8 @@ public class SystemProperties {
         return LOCAL.equals(constants());
     }
 
+    public boolean isProduction() { return false; }
+
     public String constants() {
         return config.hasPath("constants") ? config.getString("constants") : null;
     }

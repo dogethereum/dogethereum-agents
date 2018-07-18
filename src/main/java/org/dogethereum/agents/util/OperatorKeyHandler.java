@@ -110,15 +110,18 @@ public class OperatorKeyHandler implements OperatorPublicKeyHandler {
             throw new RuntimeException ("Operator Key File '" + this.filePath + "' does not exist");
         }
 
-        try {
-            List<PosixFilePermission> permissions = new ArrayList<>(Files.getPosixFilePermissions(Paths.get(this.filePath)));
-            if (permissions.size() == 1 && permissions.get(0).equals(PosixFilePermission.OWNER_READ)) {
-                //do-nothing, everything ok so far.
-            } else {
+        SystemProperties config = SystemProperties.CONFIG;
+        if (config.isProduction()) {
+            try {
+                List<PosixFilePermission> permissions = new ArrayList<>(Files.getPosixFilePermissions(Paths.get(this.filePath)));
+                if (permissions.size() == 1 && permissions.get(0).equals(PosixFilePermission.OWNER_READ)) {
+                    //do-nothing, everything ok so far.
+                } else {
+                    throw new RuntimeException("Error validating Operator file permissions.");
+                }
+            } catch (IOException e) {
                 throw new RuntimeException("Error validating Operator file permissions.");
             }
-        } catch (IOException e) {
-            throw new RuntimeException("Error validating Operator file permissions.");
         }
 
         try {
