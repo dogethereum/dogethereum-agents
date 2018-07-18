@@ -156,9 +156,7 @@ public class SuperblockDefenderClient {
 
         byte[] toConfirmId = currentSuperblock.getSuperblockId();
 
-        // TODO: if superblock is in battle, and the latest challenge was replied and there where no challenges in the latest N blocks/seconds
-        // checkClaimFinished should be called too.
-        if (timeoutPassed(currentSuperblock) && ethWrapper.isSuperblockNew(toConfirmId)) {
+        if (newAndTimeoutPassed(currentSuperblock) || inBattleAndSemiApprovable(currentSuperblock)) {
             log.info("Confirming superblock {}", Sha256Hash.wrap(toConfirmId));
             ethWrapper.checkClaimFinished(toConfirmId);
         }
@@ -196,13 +194,45 @@ public class SuperblockDefenderClient {
         return true;
     }
 
-    private boolean timeoutPassed(Superblock superblock) throws Exception {
-        return ethWrapper.getNewEventTimestampDate(superblock.getSuperblockId()).before(getTimeoutDate());
+    private boolean submittedTimeoutPassed(byte[] superblockId) throws Exception {
+        return ethWrapper.getNewEventTimestampDate(superblockId).before(getTimeoutDate());
     }
 
     private Date getTimeoutDate() throws Exception {
         int superblockTimeout = ethWrapper.getSuperblockTimeout().intValue();
         return SuperblockUtils.getNSecondsAgo(superblockTimeout);
+    }
+
+    private boolean challengeTimeoutPassed(byte[] superblockId) throws Exception {
+        return ethWrapper.getClaimChallengeTimeoutDate(superblockId).before(getTimeoutDate());
+    }
+
+    private boolean newAndTimeoutPassed(Superblock superblock) throws Exception {
+        byte[] superblockId = superblock.getSuperblockId();
+        return (ethWrapper.isSuperblockNew(superblockId) && submittedTimeoutPassed(superblockId));
+    }
+
+    /**
+     * Check if a given superblock is in battle,
+     * @param superblock
+     * @return
+     * @throws Exception
+     */
+    private boolean inBattleAndSemiApprovable(Superblock superblock) throws Exception {
+        byte[] superblockId = superblock.getSuperblockId();
+        if (!ethWrapper.isSuperblockInBattle(superblockId))
+            return false;
+        if (!challengeTimeoutPassed(superblockId))
+            return false;
+        if (!ethWrapper.getClaimDecided(superblockId))
+            return false;
+        if (ethWrapper.getClaimVerificationOngoing(superblockId))
+            return false;
+        // TODO: see if the following check is even necessary at all
+        if (ethWrapper.getClaimInvalid(superblockId))
+            return false;
+        // TODO: add check for pending challengers with SuperblockBattleDecided event
+        return true;
     }
 
 
