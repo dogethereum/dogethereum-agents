@@ -2,6 +2,7 @@ package org.dogethereum.agents.core.dogecoin;
 
 import org.bitcoinj.core.*;
 
+import org.spongycastle.util.encoders.Hex;
 import org.web3j.crypto.Hash;
 
 import java.io.ByteArrayOutputStream;
@@ -406,5 +407,22 @@ public class Superblock {
         }
 
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return "Superblock{" +
+                "merkleRoot=" + merkleRoot +
+                ", chainWork=" + chainWork +
+                ", lastDogeBlockTime=" + lastDogeBlockTime +
+                ", previousToLastDogeBlockTime=" + previousToLastDogeBlockTime +
+                ", lastDogeBlockHash=" + lastDogeBlockHash +
+                ", lastDogeBlockBits=" + lastDogeBlockBits +
+                ", parentId=" + Hex.toHexString(parentId) +
+                ", superblockId=" + Hex.toHexString(superblockId) +
+                ", superblockHeight=" + superblockHeight +
+                ", status=" + status +
+                ", newSuperblockEventTime=" + newSuperblockEventTime +
+                '}';
     }
 }
