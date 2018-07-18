@@ -94,6 +94,7 @@ public class SuperblockDefenderClient {
 
 
     /* ---- STATUS SETTERS ---- */
+    // TODO: these might not be necessary if all status checks are handled through EthWrapper and extra databases
 
     private void setNewSuperblocks(long fromBlock, long toBlock) throws IOException {
         List<EthWrapper.SuperblockEvent> newSuperblockEvents =
@@ -139,6 +140,8 @@ public class SuperblockDefenderClient {
      * Find earliest superblock that's unchallenged and stored locally,
      * but not confirmed in Dogethereum Contracts, and confirm it if its timeout has passed
      * and it either received no challenges or won all battles.
+     * If the superblock is indeed confirmed, its status in Dogethereum Contracts
+     * will be set to Approved if it received no challenges and SemiApproved otherwise.
      * @throws Exception
      */
     private void confirmEarliestApprovableSuperblock() throws Exception {
@@ -222,14 +225,11 @@ public class SuperblockDefenderClient {
         byte[] superblockId = superblock.getSuperblockId();
         if (!ethWrapper.isSuperblockInBattle(superblockId))
             return false;
-        if (!challengeTimeoutPassed(superblockId))
-            return false;
-        if (!ethWrapper.getClaimDecided(superblockId))
+        if (ethWrapper.getClaimInvalid(superblockId))
             return false;
         if (ethWrapper.getClaimVerificationOngoing(superblockId))
             return false;
-        // TODO: see if the following check is even necessary at all
-        if (ethWrapper.getClaimInvalid(superblockId))
+        if (!challengeTimeoutPassed(superblockId))
             return false;
         // TODO: add check for pending challengers with SuperblockBattleDecided event
         return true;
