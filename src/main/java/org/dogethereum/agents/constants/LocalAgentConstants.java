@@ -38,7 +38,7 @@ public class LocalAgentConstants extends AgentConstants {
         genesisSuperblock = new Superblock(
                 dogeParams, genesisSuperblockBlockList, BigInteger.valueOf(0), dogeParams.getGenesisBlock().getTimeSeconds(),
                 0, dogeParams.getGenesisBlock().getDifficultyTarget(),
-                genesisSuperblockParentId, 0, SuperblockUtils.STATUS_APPROVED, 0);
+                genesisSuperblockParentId, 0, SuperblockUtils.STATUS_APPROVED);
 
         // Unlock mechanism specific start
         eth2DogeMinimumAcceptableConfirmations = 5;

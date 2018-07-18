@@ -131,7 +131,6 @@ public class Superblock {
         // set helper fields
         this.superblockHeight = superblockHeight;
         this.status = status;
-        this.newSuperblockEventTime = newSuperblockEventTime;
         this.dogeBlockHashes = new ArrayList<>();
     }
     /**
@@ -422,7 +421,6 @@ public class Superblock {
                 ", superblockId=" + Hex.toHexString(superblockId) +
                 ", superblockHeight=" + superblockHeight +
                 ", status=" + status +
-                ", newSuperblockEventTime=" + newSuperblockEventTime +
                 '}';
     }
 }
