@@ -206,6 +206,12 @@ public class EthWrapper implements SuperblockConstantProvider {
             return;
         }
 
+        if (getClaimExists(superblock.getSuperblockId())) {
+            log.info("Superblock {} has already been sent. Returning.",
+                    Sha256Hash.wrap(superblock.getSuperblockId()));
+            return;
+        }
+
 //        BigInteger bondedDeposit = getBondedDeposit(superblock.getSuperblockId());
 
         // TODO: see how much wei we should actually send and whether it's a paremeter for this method
