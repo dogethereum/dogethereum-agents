@@ -132,7 +132,7 @@ public class Superblock {
         this.superblockHeight = superblockHeight;
         this.status = status;
         this.newSuperblockEventTime = newSuperblockEventTime;
-        this.dogeBlockHashes = null;
+        this.dogeBlockHashes = new ArrayList<>();
     }
     /**
      * Construct a Superblock object from an array representing a serialized superblock.
