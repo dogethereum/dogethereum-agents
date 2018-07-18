@@ -196,13 +196,13 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @throws Exception If superblock hash cannot be calculated.
      */
     public void sendStoreSuperblock(Superblock superblock) throws Exception {
-        log.info("About to send superblock {} to the bridge.", superblock.getSuperblockId());
+        log.info("About to send superblock {} to the bridge.", Sha256Hash.wrap(superblock.getSuperblockId()));
 
         // Check if the parent has been approved before sending this superblock.
         byte[] parentId = superblock.getParentId();
         if (!(isSuperblockApproved(parentId) || isSuperblockSemiApproved(parentId))) {
             log.info("Superblock {} not sent because its parent was neither approved nor semi approved.",
-                    superblock.getSuperblockId());
+                    Sha256Hash.wrap(superblock.getSuperblockId()));
             return;
         }
 
@@ -214,7 +214,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         // The parent is either approved or semi approved. We can send the superblock.
         CompletableFuture<TransactionReceipt> futureReceipt = proposeSuperblock(superblock);
-        log.info("Sent superblock {}", superblock.getSuperblockId());
+        log.info("Sent superblock {}", Sha256Hash.wrap(superblock.getSuperblockId()));
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
             log.info("proposeSuperblock receipt {}", receipt.toString())
         );
@@ -535,6 +535,37 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     public Date getNewEventTimestampDate(byte[] superblockId) throws Exception {
         return new Date(getNewEventTimestampBigInteger(superblockId).longValue());
+    }
+
+
+    /* ---------------------------------- */
+    /* ---- DogeClaimManager section ---- */
+    /* ---------------------------------- */
+
+    /* ---- GETTERS ---- */
+
+    public boolean getClaimExists(byte[] superblockId) throws Exception {
+        return claimManager.getClaimExists(superblockId).send();
+    }
+
+    public boolean getClaimDecided(byte[] superblockId) throws Exception {
+        return claimManager.getClaimDecided(superblockId).send();
+    }
+
+    public boolean getClaimInvalid(byte[] superblockId) throws Exception {
+        return claimManager.getClaimInvalid(superblockId).send();
+    }
+
+    public boolean getClaimVerificationOngoing(byte[] superblockId) throws Exception {
+        return claimManager.getClaimVerificationOngoing(superblockId).send();
+    }
+
+    public BigInteger getClaimChallengeTimeoutBigInteger(byte[] superblockId) throws Exception {
+        return claimManager.getClaimChallengeTimeout(superblockId).send();
+    }
+
+    public Date getClaimChallengeTimeoutDate(byte[] superblockId) throws Exception {
+        return new Date(getClaimChallengeTimeoutBigInteger(superblockId).longValue());
     }
 
 
