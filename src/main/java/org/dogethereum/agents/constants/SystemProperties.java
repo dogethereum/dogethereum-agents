@@ -27,6 +27,7 @@ public class SystemProperties {
 
     private static final String LOCAL = "local";
     private static final String INTEGRATION = "integration";
+    private static final String ETHGANACHE_DOGEMAIN = "ethganachedogemain";
 
     private static final String YES = "yes";
     private static final String NO = "no";
@@ -141,6 +142,9 @@ public class SystemProperties {
                 case LOCAL:
                     agentConstants = LocalAgentConstants.getInstance();
                     break;
+                case ETHGANACHE_DOGEMAIN:
+                    agentConstants = EthGanacheDogeMainAgentConstants.getInstance();
+                    break;
                 default:
                     throw new RuntimeException("Unknown value for 'constants': '" + constants + "'");
             }
@@ -168,12 +172,8 @@ public class SystemProperties {
         return getBooleanProperty("doge.block.challenger.enabled", false);
     }
 
-    public boolean isIntegration() {
-        return INTEGRATION.equals(constants());
-    }
-
-    public boolean isLocal() {
-        return LOCAL.equals(constants());
+    public boolean isGanache() {
+        return LOCAL.equals(constants()) || ETHGANACHE_DOGEMAIN.equals(constants());
     }
 
     public boolean isProduction() { return false; }

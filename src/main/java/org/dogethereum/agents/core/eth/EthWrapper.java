@@ -77,7 +77,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         String fromAddressRelayTxs;
         String fromAddressPriceOracle;
 
-        if (config.isLocal()) {
+        if (config.isGanache()) {
             dogeTokenContractAddress = getContractAddress("DogeToken");
             claimManagerContractAddress = getContractAddress("DogeClaimManager");
             superblocksContractAddress = getContractAddress("DogeSuperblocks");
@@ -268,7 +268,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     private BigInteger getBondedDeposit(byte[] claimId) throws Exception {
         String fromAddressGeneralPurposeAndSendBlocks;
 
-        if (config.isLocal()) {
+        if (config.isGanache()) {
             List<String> accounts = web3.ethAccounts().send().getAccounts();
             fromAddressGeneralPurposeAndSendBlocks = accounts.get(0);
         } else {
