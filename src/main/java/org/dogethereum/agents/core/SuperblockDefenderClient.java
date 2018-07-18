@@ -231,7 +231,8 @@ public class SuperblockDefenderClient {
             return false;
         if (!challengeTimeoutPassed(superblockId))
             return false;
-        // TODO: add check for pending challengers with SuperblockBattleDecided event
+        if (ethWrapper.getClaimRemainingChallengers(superblockId) > 0)
+            return false;
         return true;
     }
 

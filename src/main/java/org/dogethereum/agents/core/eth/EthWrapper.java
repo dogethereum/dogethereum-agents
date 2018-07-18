@@ -548,6 +548,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* ---- DogeClaimManager section ---- */
     /* ---------------------------------- */
 
+
     /* ---- GETTERS ---- */
 
     public boolean getClaimExists(byte[] superblockId) throws Exception {
@@ -573,6 +574,13 @@ public class EthWrapper implements SuperblockConstantProvider {
     public Date getClaimChallengeTimeoutDate(byte[] superblockId) throws Exception {
         return new Date(getClaimChallengeTimeoutBigInteger(superblockId).longValue());
     }
+
+    public int getClaimRemainingChallengers(byte[] superblockId) throws Exception {
+        return claimManager.getClaimRemainingChallengers(superblockId).send().intValue();
+    }
+
+
+    /* ---- EVENT RETRIEVAL METHODS AND CLASSES ---- */
 
 
     /* ---------------------------------- */
