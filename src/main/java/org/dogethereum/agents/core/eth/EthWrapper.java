@@ -62,6 +62,8 @@ public class EthWrapper implements SuperblockConstantProvider {
     private SystemProperties config;
     private BigInteger gasPriceMinimum;
 
+    private String fromAddressGeneralPurposeAndSendBlocks;
+
     /* ---------------------------------- */
     /* ------ General code section ------ */
     /* ---------------------------------- */
@@ -73,7 +75,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         String dogeTokenContractAddress;
         String claimManagerContractAddress;
         String superblocksContractAddress;
-        String fromAddressGeneralPurposeAndSendBlocks;
         String fromAddressRelayTxs;
         String fromAddressPriceOracle;
 
@@ -266,15 +267,6 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     private BigInteger getBondedDeposit(byte[] claimId) throws Exception {
-        String fromAddressGeneralPurposeAndSendBlocks;
-
-        if (config.isGanache()) {
-            List<String> accounts = web3.ethAccounts().send().getAccounts();
-            fromAddressGeneralPurposeAndSendBlocks = accounts.get(0);
-        } else {
-            fromAddressGeneralPurposeAndSendBlocks = config.addressGeneralPurposeAndSendBlocks();
-        }
-
         return claimManager.getBondedDeposit(claimId, fromAddressGeneralPurposeAndSendBlocks).send();
     }
 
