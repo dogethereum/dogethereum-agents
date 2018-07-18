@@ -45,6 +45,7 @@ public class GenesisSuperblockGeneratorMain {
         c.refresh();
         DogecoinWrapper dogecoinWrapper = c.getBean(DogecoinWrapper.class);
         Superblock s = getGenesisSuperblock(dogecoinWrapper);
+        s.getSuperblockId();
         System.out.println(s);
     }
 
@@ -54,7 +55,7 @@ public class GenesisSuperblockGeneratorMain {
         NetworkParameters params = agentConstants.getDogeParams();
 
         BufferedReader reader = new BufferedReader(
-                new FileReader(baseDir + subDir + "/dogemain-2299155-to-2299210"));
+                new FileReader(baseDir + subDir + "/dogemain-2309215-to-2309216"));
         List<Sha256Hash> dogeBlockHashes = parseBlockHashes(reader);
         byte[] genesisParentHash = new byte[32]; // initialised with 0s
         StoredBlock lastDogeBlock = dogecoinWrapper.getBlock(dogeBlockHashes.get(dogeBlockHashes.size() - 1));
