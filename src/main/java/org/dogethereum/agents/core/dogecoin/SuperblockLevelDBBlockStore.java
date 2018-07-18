@@ -95,7 +95,6 @@ public class SuperblockLevelDBBlockStore {
                 params, genesisList, BigInteger.valueOf(0), context.getParams().getGenesisBlock().getTimeSeconds(),
                 0, context.getParams().getGenesisBlock().getDifficultyTarget(),
                 genesisParentHash, 0, SuperblockUtils.STATUS_APPROVED);
-        // todo: see if this is OK
         put(genesisBlock);
         setChainHead(genesisBlock);
     }
