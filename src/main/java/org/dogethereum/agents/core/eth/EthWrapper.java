@@ -176,8 +176,8 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     public void sendStoreSuperblocks(Deque<Superblock> superblocksToSend) throws Exception {
         log.info("About to send to the bridge superblocks from {} to {}",
-                superblocksToSend.peekFirst().getSuperblockId(),
-                superblocksToSend.peekLast().getSuperblockId());
+                Hex.toHexString(superblocksToSend.peekFirst().getSuperblockId()),
+                Hex.toHexString(superblocksToSend.peekLast().getSuperblockId()));
 
         for (Superblock superblock : superblocksToSend) {
             CompletableFuture<TransactionReceipt> futureReceipt = proposeSuperblock(superblock);
@@ -197,7 +197,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @throws Exception If superblock hash cannot be calculated.
      */
     public void sendStoreSuperblock(Superblock superblock) throws Exception {
-        log.info("About to send superblock {} to the bridge.", Sha256Hash.wrap(superblock.getSuperblockId()));
+        log.info("About to send superblock {} to the bridge.", Hex.toHexString(superblock.getSuperblockId()));
 
         // Check if the parent has been approved before sending this superblock.
         byte[] parentId = superblock.getParentId();
@@ -221,7 +221,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         // The parent is either approved or semi approved. We can send the superblock.
         CompletableFuture<TransactionReceipt> futureReceipt = proposeSuperblock(superblock);
-        log.info("Sent superblock {}", Sha256Hash.wrap(superblock.getSuperblockId()));
+        log.info("Sent superblock {}", Hex.toHexString(superblock.getSuperblockId()));
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
             log.info("proposeSuperblock receipt {}", receipt.toString())
         );
