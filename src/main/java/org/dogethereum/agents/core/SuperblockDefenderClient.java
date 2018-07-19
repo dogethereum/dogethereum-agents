@@ -1,6 +1,10 @@
 package org.dogethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
+import org.bitcoinj.core.AltcoinBlock;
+import org.bitcoinj.core.Sha256Hash;
+import org.bitcoinj.core.StoredBlock;
+import org.bitcoinj.store.BlockStoreException;
 import org.dogethereum.agents.constants.SystemProperties;
 import org.dogethereum.agents.core.dogecoin.*;
 import org.dogethereum.agents.core.eth.EthWrapper;
@@ -178,16 +182,32 @@ public class SuperblockDefenderClient {
         }
     }
 
-    private void respondToBlockHeaderQueries(long fromBlock, long toBlock) throws IOException {
+    private void respondToBlockHeaderQueries(long fromBlock, long toBlock) throws IOException, BlockStoreException {
         List<EthWrapper.QueryBlockHeaderEvent> queryBlockHeaderEvents =
                 ethWrapper.getBlockHeaderQueries(fromBlock, toBlock);
 
         for (EthWrapper.QueryBlockHeaderEvent queryBlockHeader : queryBlockHeaderEvents) {
             if (isMine(queryBlockHeader)) {
-                log.info("Header requested for superblock {}. Responding now.",
+                log.info("Header requested for session {}. Responding now.",
                         Hex.toHexString(queryBlockHeader.sessionId));
 
-                ethWrapper.respondBlockHeader(queryBlockHeader.sessionId, null);
+                StoredBlock dogeBlock = dogecoinWrapper.getBlock(Sha256Hash.wrap(queryBlockHeader.dogeBlockHash));
+                ethWrapper.respondBlockHeader(queryBlockHeader.sessionId, (AltcoinBlock) dogeBlock.getHeader());
+            }
+        }
+    }
+
+    private void respondToMerkleRootHashesQueries(long fromBlock, long toBlock) throws IOException {
+        List<EthWrapper.QueryMerkleRootHashesEvent> queryMerkleRootHashesEvents =
+                ethWrapper.getMerkleRootHashesQueries(fromBlock, toBlock);
+
+        for (EthWrapper.QueryMerkleRootHashesEvent queryMerkleRootHashes : queryMerkleRootHashesEvents) {
+            if (isMine(queryMerkleRootHashes)) {
+                log.info("Merkle root hashes requested for session {}. Responding now.",
+                        Hex.toHexString(queryMerkleRootHashes.sessionId));
+
+                Superblock superblock = superblockChain.getSuperblock(queryMerkleRootHashes.superblockId);
+                ethWrapper.respondMerkleRootHashes(queryMerkleRootHashes.sessionId, superblock.getDogeBlockHashes());
             }
         }
     }

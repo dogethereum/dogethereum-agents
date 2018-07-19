@@ -452,6 +452,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (DogeClaimManager.QueryMerkleRootHashesEventResponse response : queryMerkleRootHashesEvents) {
             QueryMerkleRootHashesEvent queryMerkleRootHashesEvent = new QueryMerkleRootHashesEvent();
+            queryMerkleRootHashesEvent.superblockId = response.superblockId;
             queryMerkleRootHashesEvent.sessionId = response.sessionId;
             queryMerkleRootHashesEvent.submitter = response.submitter;
             result.add(queryMerkleRootHashesEvent);
@@ -467,6 +468,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     public static class QueryMerkleRootHashesEvent {
+        public byte[] superblockId;
         public byte[] sessionId;
         public String submitter;
     }
@@ -489,6 +491,17 @@ public class EthWrapper implements SuperblockConstantProvider {
                 log.info("Responded to block header query for session {}, Doge block {}",
                         Hex.toHexString(sessionId), dogeBlock.getHash())
         );
+    }
+
+    public void respondMerkleRootHashes(byte[] sessionId, List<Sha256Hash> dogeBlockHashes) {
+        // TODO: double check if endianness is OK
+        List<byte[]> rawHashes = new ArrayList<>();
+        for (Sha256Hash dogeBlockHash : dogeBlockHashes)
+            rawHashes.add(dogeBlockHash.getBytes());
+        CompletableFuture<TransactionReceipt> futureReceipt =
+                claimManager.respondMerkleRootHashes(sessionId, rawHashes).sendAsync();
+        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
+                log.info("Responded to Merkle root hashes query for session {}", Hex.toHexString(sessionId)));
     }
 
 
