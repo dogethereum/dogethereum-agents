@@ -54,7 +54,7 @@ A set of agents:
 
 
 
-### Run the agent
+### Run the agents
 - Delete agent data dir (data.directory config variable) before each restart just to make sure you are on the safe side.
 - On IntelliJ IDEA go to Run/Run... 
 - Select "Main local" run configuration
