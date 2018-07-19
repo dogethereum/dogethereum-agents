@@ -29,10 +29,6 @@ public class SuperblockDefenderClient extends SuperblockClientBase {
 
     private static long ETH_REQUIRED_CONFIRMATIONS = 5;
 
-    private long latestEthBlockProcessed;
-    private File dataDirectory;
-    private File latestEthBlockProcessedFile;
-
     private String myAddress;
 
     public SuperblockDefenderClient() {
@@ -42,23 +38,13 @@ public class SuperblockDefenderClient extends SuperblockClientBase {
 
     @PostConstruct
     public void setup() throws Exception {
-        if (config.isDogeBlockSubmitterEnabled()) {
-            this.latestEthBlockProcessed = config.getAgentConstants().getEthInitialCheckpoint();
-            this.dataDirectory = new File(config.dataDirectory());
-            this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() +
-                    "/SuperblockDefenderLatestEthBlockProcessedFile.dat");
-            restoreLatestEthBlockProcessed();
-
-            myAddress = ethWrapper.getFromAddressGeneralPurposeAndSendBlocks();
-
-            setupTimer();
-        }
+        myAddress = ethWrapper.getFromAddressGeneralPurposeAndSendBlocks();
+        super.setup();
     }
 
     @Override
     public void task() {
         try {
-            ethWrapper.updateContractFacadesGasPrice();
             long fromBlock = latestEthBlockProcessed + 1;
             long toBlock = ethWrapper.getEthBlockCount() -
                     config.getAgentConstants().getEth2DogeMinimumAcceptableConfirmations();
@@ -72,7 +58,6 @@ public class SuperblockDefenderClient extends SuperblockClientBase {
             respondToMerkleRootHashesQueries(fromBlock, toBlock);
 
             latestEthBlockProcessed = toBlock;
-            flushLatestEthBlockProcessed();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
@@ -264,34 +249,16 @@ public class SuperblockDefenderClient extends SuperblockClientBase {
 
     /* ---- DATABASE METHODS ---- */
 
-    // TODO: see if these should be moved to another file to avoid repeated code
-    private void restoreLatestEthBlockProcessed() throws IOException {
-        if (latestEthBlockProcessedFile.exists()) {
-            synchronized (this) {
-                try (
-                    FileInputStream latestEthBlockProcessedFileIs = new FileInputStream(latestEthBlockProcessedFile);
-                    ObjectInputStream latestEthBlockProcessedObjectIs =
-                            new ObjectInputStream(latestEthBlockProcessedFileIs);
-                ) {
-                    latestEthBlockProcessed = latestEthBlockProcessedObjectIs.readLong();
-                }
-            }
-        }
+
+    /* ---- OVERRRIDE ABSTRACT METHODS ---- */
+
+    @Override
+    protected Boolean isEnabled() {
+        return config.isDogeBlockSubmitterEnabled();
     }
 
-    private void flushLatestEthBlockProcessed() throws IOException {
-        if (!dataDirectory.exists()) {
-            if (!dataDirectory.mkdirs()) {
-                throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());
-            }
-        }
-        try (
-            FileOutputStream latestEthBlockProcessedFileOs = new FileOutputStream(latestEthBlockProcessedFile);
-            ObjectOutputStream latestEthBlockProcessedObjectOs = new ObjectOutputStream(latestEthBlockProcessedFileOs);
-        ) {
-            latestEthBlockProcessedObjectOs.writeLong(latestEthBlockProcessed);
-        }
+    @Override
+    protected String getLastEthBlockProcessedFilename() {
+        return "SuperblockDefenderLatestEthBlockProcessedFile.dat";
     }
 }
-
-// TODO: move to another class
