@@ -169,14 +169,15 @@ public class DogeBattleManager extends Contract {
     public List<QueryMerkleRootHashesEventResponse> getQueryMerkleRootHashesEvents(TransactionReceipt transactionReceipt) {
         final Event event = new Event("QueryMerkleRootHashes", 
                 Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
         List<Contract.EventValuesWithLog> valueList = extractEventParametersWithLog(event, transactionReceipt);
         ArrayList<QueryMerkleRootHashesEventResponse> responses = new ArrayList<QueryMerkleRootHashesEventResponse>(valueList.size());
         for (Contract.EventValuesWithLog eventValues : valueList) {
             QueryMerkleRootHashesEventResponse typedResponse = new QueryMerkleRootHashesEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            typedResponse.submitter = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            typedResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
+            typedResponse.submitter = (String) eventValues.getNonIndexedValues().get(2).getValue();
             responses.add(typedResponse);
         }
         return responses;
@@ -185,7 +186,7 @@ public class DogeBattleManager extends Contract {
     public Observable<QueryMerkleRootHashesEventResponse> queryMerkleRootHashesEventObservable(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
         final Event event = new Event("QueryMerkleRootHashes", 
                 Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
         filter.addSingleTopic(EventEncoder.encode(event));
         return web3j.ethLogObservable(filter).map(new Func1<Log, QueryMerkleRootHashesEventResponse>() {
@@ -194,8 +195,9 @@ public class DogeBattleManager extends Contract {
                 Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
                 QueryMerkleRootHashesEventResponse typedResponse = new QueryMerkleRootHashesEventResponse();
                 typedResponse.log = log;
-                typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-                typedResponse.submitter = (String) eventValues.getNonIndexedValues().get(1).getValue();
+                typedResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+                typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
+                typedResponse.submitter = (String) eventValues.getNonIndexedValues().get(2).getValue();
                 return typedResponse;
             }
         });
@@ -452,10 +454,11 @@ public class DogeBattleManager extends Contract {
         return executeRemoteCallTransaction(function);
     }
 
-    public RemoteCall<TransactionReceipt> queryMerkleRootHashes(byte[] sessionId) {
+    public RemoteCall<TransactionReceipt> queryMerkleRootHashes(byte[] superblockId, byte[] sessionId) {
         final Function function = new Function(
                 "queryMerkleRootHashes", 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(sessionId)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(superblockId), 
+                new org.web3j.abi.datatypes.generated.Bytes32(sessionId)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
@@ -549,6 +552,8 @@ public class DogeBattleManager extends Contract {
 
     public static class QueryMerkleRootHashesEventResponse {
         public Log log;
+
+        public byte[] superblockId;
 
         public byte[] sessionId;
 
