@@ -1,10 +1,10 @@
 package org.dogethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
-import org.bitcoinj.core.Sha256Hash;
 import org.dogethereum.agents.constants.SystemProperties;
 import org.dogethereum.agents.core.dogecoin.*;
 import org.dogethereum.agents.core.eth.EthWrapper;
+import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -77,7 +77,7 @@ public class SuperblockDefenderClient {
                     for (EthWrapper.SuperblockEvent challengedSuperblock : challengedSuperblockEvents) {
                         if (isMine(challengedSuperblock)) {
                             log.info("Superblock {} has been challenged. Defending it now.",
-                                    Sha256Hash.wrap(challengedSuperblock.superblockId));
+                                    Hex.toHexString(challengedSuperblock.superblockId));
                         }
                     }
 
@@ -102,7 +102,7 @@ public class SuperblockDefenderClient {
 
         for (EthWrapper.SuperblockEvent newSuperblock : newSuperblockEvents) {
             if (isMine(newSuperblock)) { // todo: thing with 'who' field
-                log.info("Updating info for new superblock {}.", Sha256Hash.wrap(newSuperblock.superblockId));
+                log.info("Updating info for new superblock {}.", Hex.toHexString(newSuperblock.superblockId));
                 superblockChain.setStatus(newSuperblock.superblockId, SuperblockUtils.STATUS_NEW);
             }
         }
@@ -114,7 +114,7 @@ public class SuperblockDefenderClient {
 
         for (EthWrapper.SuperblockEvent approvedSuperblock : approvedSuperblockEvents) {
             if (isMine(approvedSuperblock)) {
-                log.info("Updating info for approved superblock {}.", Sha256Hash.wrap(approvedSuperblock.superblockId));
+                log.info("Updating info for approved superblock {}.", Hex.toHexString(approvedSuperblock.superblockId));
                 superblockChain.setStatus(approvedSuperblock.superblockId, SuperblockUtils.STATUS_NEW);
             }
         }
@@ -127,7 +127,7 @@ public class SuperblockDefenderClient {
         for (EthWrapper.SuperblockEvent semiApprovedSuperblock : semiApprovedSuperblockEvents) {
             if (isMine(semiApprovedSuperblock)) {
                 log.info("Updating info for approved superblock {}.",
-                        Sha256Hash.wrap(semiApprovedSuperblock.superblockId));
+                        Hex.toHexString(semiApprovedSuperblock.superblockId));
                 superblockChain.setStatus(semiApprovedSuperblock.superblockId, SuperblockUtils.STATUS_NEW);
             }
         }
@@ -146,22 +146,30 @@ public class SuperblockDefenderClient {
      */
     private void confirmEarliestApprovableSuperblock() throws Exception {
         byte[] bestSuperblockId = ethWrapper.getBestSuperblockId();
-        Superblock currentSuperblock = superblockChain.getChainHead();
+        Superblock chainHead = superblockChain.getChainHead();
 
-        if (Arrays.equals(currentSuperblock.getSuperblockId(), bestSuperblockId)) {
+        if (Arrays.equals(chainHead.getSuperblockId(), bestSuperblockId)) {
             // Contract and local db best superblocks are the same, do nothing.
             return;
         }
 
-        while (!Arrays.equals(currentSuperblock.getParentId(), bestSuperblockId)) {
-            currentSuperblock = superblockChain.getSuperblock(currentSuperblock.getParentId());
-        }
+        Superblock toConfirm = superblockChain.getFirstDescendant(bestSuperblockId);
 
-        byte[] toConfirmId = currentSuperblock.getSuperblockId();
+        if (toConfirm == null) {
+            // TODO: see if this should raise an exception, because it's a pretty bad state
+            log.info("Best superblock from contracts, {}, not found in local database. Stopping.",
+                    Hex.toHexString(bestSuperblockId));
+        } else {
+            byte[] toConfirmId = toConfirm.getSuperblockId();
 
-        if (newAndTimeoutPassed(currentSuperblock) || inBattleAndSemiApprovable(currentSuperblock)) {
-            log.info("Confirming superblock {}", Sha256Hash.wrap(toConfirmId));
-            ethWrapper.checkClaimFinished(toConfirmId);
+            if (newAndTimeoutPassed(toConfirm) || inBattleAndSemiApprovable(toConfirm)) {
+                log.info("Confirming superblock {}", Hex.toHexString(toConfirmId));
+                ethWrapper.checkClaimFinished(toConfirmId);
+            } else if (semiApprovedAndApprovable(toConfirm)) {
+                byte[] descendantId = superblockChain.getFirstDescendant(toConfirmId).getSuperblockId();
+                log.info("Confirming semi-approved superblock {}", Hex.toHexString(toConfirmId));
+                ethWrapper.confirmClaim(toConfirmId, descendantId);
+            }
         }
     }
 
@@ -172,7 +180,7 @@ public class SuperblockDefenderClient {
         for (EthWrapper.QueryBlockHeaderEvent queryBlockHeader : queryBlockHeaderEvents) {
             if (isMine(queryBlockHeader)) {
                 log.info("Header requested for superblock {}. Responding now.",
-                        Sha256Hash.wrap(queryBlockHeader.sessionId));
+                        Hex.toHexString(queryBlockHeader.sessionId));
 
                 ethWrapper.respondBlockHeader(queryBlockHeader.sessionId, null);
             }
@@ -216,9 +224,10 @@ public class SuperblockDefenderClient {
     }
 
     /**
-     * Check if a given superblock is in battle,
-     * @param superblock
-     * @return
+     * Check if a given superblock is in battle and meets the necessary and sufficient conditions
+     * for being semi-approved when calling checkClaimFinished.
+     * @param superblock Superblock to be confirmed.
+     * @return True if the superblock can be safely semi-approved, false otherwise.
      * @throws Exception
      */
     private boolean inBattleAndSemiApprovable(Superblock superblock) throws Exception {
@@ -234,6 +243,22 @@ public class SuperblockDefenderClient {
         if (ethWrapper.getClaimRemainingChallengers(superblockId) > 0)
             return false;
         return true;
+    }
+
+    /**
+     * Check if a superblock is semi-approved and has a semi-approved descendant.
+     * @param superblock Superblock to be confirmed.
+     * @return True if the superblock can be safely approved, false otherwise.
+     * @throws Exception
+     */
+    private boolean semiApprovedAndApprovable(Superblock superblock) throws Exception {
+        byte[] superblockId = superblock.getSuperblockId();
+        byte[] descendantId = superblockChain.getFirstDescendant(superblockId).getSuperblockId();
+        if (descendantId == null || !ethWrapper.isSuperblockSemiApproved(descendantId)) {
+            return false;
+        } else {
+            return ethWrapper.isSuperblockApproved(superblock.getSuperblockId());
+        }
     }
 
 

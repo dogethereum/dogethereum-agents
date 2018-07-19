@@ -320,14 +320,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         return isSuperblockSemiApproved(superblockId) || isSuperblockNew(superblockId);
     }
 
-    // Right now this is just for testing, look into security measures later
-    public void checkClaimFinished(byte[] superblockId) {
-        CompletableFuture<TransactionReceipt> futureReceipt = claimManager.checkClaimFinished(superblockId).sendAsync();
-        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
-                log.info("checkClaimFinished receipt {}", receipt.toString())
-        );
-    }
-
 
     /* ---- EVENT RETRIEVAL METHODS AND CLASSES ---- */
 
@@ -545,6 +537,29 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* ---------------------------------- */
 
 
+    /* ---- CONFIRMING ---- */
+
+    public void checkClaimFinished(byte[] superblockId) {
+        CompletableFuture<TransactionReceipt> futureReceipt = claimManager.checkClaimFinished(superblockId).sendAsync();
+        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
+                log.info("checkClaimFinished receipt {}", receipt.toString())
+        );
+    }
+
+    /**
+     * Confirm a semi-approved superblock.
+     * @param superblockId
+     * @param descendantId
+     */
+    public void confirmClaim(byte[] superblockId, byte[] descendantId) {
+        CompletableFuture<TransactionReceipt> futureReceipt =
+                claimManager.confirmClaim(superblockId, descendantId).sendAsync();
+        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
+                log.info("confirmClaim receipt {}", receipt.toString())
+        );
+    }
+
+
     /* ---- GETTERS ---- */
 
     public boolean getClaimExists(byte[] superblockId) throws Exception {
@@ -575,8 +590,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         return claimManager.getClaimRemainingChallengers(superblockId).send().intValue();
     }
 
-
-    /* ---- EVENT RETRIEVAL METHODS AND CLASSES ---- */
 
 
     /* ---------------------------------- */

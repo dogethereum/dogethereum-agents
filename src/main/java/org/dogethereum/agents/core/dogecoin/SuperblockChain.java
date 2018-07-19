@@ -244,6 +244,23 @@ public class SuperblockChain {
         return currentSuperblock;
     }
 
+    /**
+     * Find a superblock with a given parentId.
+     * @param superblockId parentId of desired superblock.
+     * @return Best superblock in main chain with superblockId as its parentId if said superblock exists,
+     *         null otherwise.
+     * @throws BlockStoreException
+     */
+    public Superblock getFirstDescendant(byte[] superblockId) throws BlockStoreException {
+        Superblock currentSuperblock = getChainHead();
+
+        while (currentSuperblock != null && !Arrays.equals(currentSuperblock.getParentId(), superblockId)) {
+            currentSuperblock = getSuperblock(currentSuperblock.getParentId());
+        }
+
+        return currentSuperblock;
+    }
+
 
     /* ---- SETTERS ---- */
 
