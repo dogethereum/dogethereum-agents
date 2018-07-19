@@ -79,16 +79,8 @@ public class SuperblockDefenderClient {
                     if (fromBlock > toBlock) return;
 
                     confirmEarliestApprovableSuperblock();
-
-                    List<EthWrapper.SuperblockEvent> challengedSuperblockEvents =
-                            ethWrapper.getChallengedSuperblocks(fromBlock, toBlock);
-
-                    for (EthWrapper.SuperblockEvent challengedSuperblock : challengedSuperblockEvents) {
-                        if (isMine(challengedSuperblock)) {
-                            log.info("Superblock {} has been challenged. Defending it now.",
-                                    Hex.toHexString(challengedSuperblock.superblockId));
-                        }
-                    }
+                    respondToBlockHeaderQueries(fromBlock, toBlock);
+                    respondToMerkleRootHashesQueries(fromBlock, toBlock);
 
                     latestEthBlockProcessed = toBlock;
                     flushLatestEthBlockProcessed();
