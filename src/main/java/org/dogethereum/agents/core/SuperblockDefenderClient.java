@@ -254,11 +254,8 @@ public class SuperblockDefenderClient {
     private boolean semiApprovedAndApprovable(Superblock superblock) throws Exception {
         byte[] superblockId = superblock.getSuperblockId();
         byte[] descendantId = superblockChain.getFirstDescendant(superblockId).getSuperblockId();
-        if (descendantId == null || !ethWrapper.isSuperblockSemiApproved(descendantId)) {
-            return false;
-        } else {
-            return ethWrapper.isSuperblockApproved(superblock.getSuperblockId());
-        }
+        return (descendantId != null && ethWrapper.isSuperblockSemiApproved(descendantId)
+                && ethWrapper.isSuperblockSemiApproved(superblockId));
     }
 
 
