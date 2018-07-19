@@ -63,6 +63,8 @@ public class EthWrapper implements SuperblockConstantProvider {
     private BigInteger gasPriceMinimum;
 
     private String fromAddressGeneralPurposeAndSendBlocks;
+    private String fromAddressRelayTxs;
+    private String fromAddressPriceOracle;
 
     /* ---------------------------------- */
     /* ------ General code section ------ */
@@ -75,8 +77,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         String dogeTokenContractAddress;
         String claimManagerContractAddress;
         String superblocksContractAddress;
-        String fromAddressRelayTxs;
-        String fromAddressPriceOracle;
 
         if (config.isGanache()) {
             dogeTokenContractAddress = getContractAddress("DogeToken");
@@ -148,6 +148,10 @@ public class EthWrapper implements SuperblockConstantProvider {
         dogeToken.setGasPrice(gasPrice);
         claimManager.setGasPrice(gasPrice);
         superblocks.setGasPrice(gasPrice);
+    }
+
+    public String getFromAddressGeneralPurposeAndSendBlocks() {
+        return fromAddressGeneralPurposeAndSendBlocks;
     }
 
     /**
@@ -483,7 +487,7 @@ public class EthWrapper implements SuperblockConstantProvider {
                 sessionId, scryptHashBytes, blockHeaderBytes).sendAsync();
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
                 log.info("Responded to block header query for session {}, Doge block {}",
-                        Sha256Hash.wrap(sessionId), dogeBlock.getHash())
+                        Hex.toHexString(sessionId), dogeBlock.getHash())
         );
     }
 
@@ -548,8 +552,8 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     /**
      * Confirm a semi-approved superblock.
-     * @param superblockId
-     * @param descendantId
+     * @param superblockId Superblock to be confirmed
+     * @param descendantId Its first descendant
      */
     public void confirmClaim(byte[] superblockId, byte[] descendantId) {
         CompletableFuture<TransactionReceipt> futureReceipt =

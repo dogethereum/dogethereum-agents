@@ -7,6 +7,7 @@ import org.dogethereum.agents.core.eth.EthWrapper;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.web3j.protocol.core.methods.response.EthBlock;
 
 import javax.annotation.PostConstruct;
 import java.io.*;
@@ -39,6 +40,8 @@ public class SuperblockDefenderClient {
     private File dataDirectory;
     private File latestEthBlockProcessedFile;
 
+    private String myAddress;
+
     public SuperblockDefenderClient() {}
 
     @PostConstruct
@@ -50,6 +53,8 @@ public class SuperblockDefenderClient {
             this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() +
                     "/SuperblockDefenderLatestEthBlockProcessedFile.dat");
             restoreLatestEthBlockProcessed();
+
+            myAddress = ethWrapper.getFromAddressGeneralPurposeAndSendBlocks();
 
             new Timer("Superblock defender client").scheduleAtFixedRate(new DefendSuperblocksTimerTask(),
                     Calendar.getInstance().getTime(), 15 * 1000);
@@ -184,25 +189,26 @@ public class SuperblockDefenderClient {
 
                 ethWrapper.respondBlockHeader(queryBlockHeader.sessionId, null);
             }
-
-            // Call respondBlockHeader
         }
     }
 
 
     /* ---- HELPER METHODS ---- */
 
-    // TODO: figure out what 'who' field should be compared to
     private boolean isMine(EthWrapper.SuperblockEvent superblockEvent) {
-        return true;
+        return superblockEvent.who.equals(myAddress);
     }
 
     private boolean isMine(EthWrapper.QueryEvent queryEvent) {
-        return true;
+        return queryEvent.claimant.equals(myAddress);
     }
 
     private boolean isMine(EthWrapper.QueryBlockHeaderEvent queryBlockHeader) {
-        return true;
+        return queryBlockHeader.submitter.equals(myAddress);
+    }
+
+    private boolean isMine(EthWrapper.QueryMerkleRootHashesEvent queryMerkleRootHashes) {
+        return queryMerkleRootHashes.submitter.equals(myAddress);
     }
 
     private boolean submittedTimeoutPassed(byte[] superblockId) throws Exception {
