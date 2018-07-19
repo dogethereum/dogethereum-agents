@@ -38,7 +38,7 @@ A set of agents:
 - Import project as Maven
 - Configuration file
   - Create a custom configuration file by making a copy of the sample configuration file dogethereum-agents/src/main/resources/dogethereum-agents.sample.conf and place it anywhere you want, e.g. /home/yourUser/dogethereum-agents.conf
-  -  Edit these entries to point to your computer paths
+  - Edit these entries to point to your computer paths
     - truffle.build.contracts.directory
     - data.directory
     - operator.private.key.file.path
