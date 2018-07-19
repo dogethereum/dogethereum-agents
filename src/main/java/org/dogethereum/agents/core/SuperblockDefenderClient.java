@@ -25,18 +25,7 @@ import java.util.*;
 
 @Service
 @Slf4j(topic = "SuperblockDefenderClient")
-public class SuperblockDefenderClient {
-
-    @Autowired
-    private DogecoinWrapper dogecoinWrapper;
-
-    @Autowired
-    private EthWrapper ethWrapper;
-
-    @Autowired
-    private SuperblockChain superblockChain;
-
-    private SystemProperties config;
+public class SuperblockDefenderClient extends SuperblockClientBase {
 
     private static long ETH_REQUIRED_CONFIRMATIONS = 5;
 
@@ -46,11 +35,13 @@ public class SuperblockDefenderClient {
 
     private String myAddress;
 
-    public SuperblockDefenderClient() {}
+    public SuperblockDefenderClient() {
+        super("Superblock defender client");
+    }
+
 
     @PostConstruct
     public void setup() throws Exception {
-        this.config = SystemProperties.CONFIG;
         if (config.isDogeBlockSubmitterEnabled()) {
             this.latestEthBlockProcessed = config.getAgentConstants().getEthInitialCheckpoint();
             this.dataDirectory = new File(config.dataDirectory());
@@ -60,36 +51,30 @@ public class SuperblockDefenderClient {
 
             myAddress = ethWrapper.getFromAddressGeneralPurposeAndSendBlocks();
 
-            new Timer("Superblock defender client").scheduleAtFixedRate(new DefendSuperblocksTimerTask(),
-                    Calendar.getInstance().getTime(), 15 * 1000);
+            setupTimer();
         }
     }
 
-    private class DefendSuperblocksTimerTask extends TimerTask {
-        @Override
-        public void run() {
-            try {
-                if (!ethWrapper.isEthNodeSyncing()) {
-                    ethWrapper.updateContractFacadesGasPrice();
-                    long fromBlock = latestEthBlockProcessed + 1;
-                    long toBlock = ethWrapper.getEthBlockCount() -
-                            config.getAgentConstants().getEth2DogeMinimumAcceptableConfirmations();
+    @Override
+    public void task() {
+        try {
+            ethWrapper.updateContractFacadesGasPrice();
+            long fromBlock = latestEthBlockProcessed + 1;
+            long toBlock = ethWrapper.getEthBlockCount() -
+                    config.getAgentConstants().getEth2DogeMinimumAcceptableConfirmations();
 
-                    // Ignore execution if nothing to process
-                    if (fromBlock > toBlock) return;
+            // Ignore execution if nothing to process
+            if (fromBlock > toBlock) return;
 
-                    confirmEarliestApprovableSuperblock();
-                    respondToBlockHeaderQueries(fromBlock, toBlock);
-                    respondToMerkleRootHashesQueries(fromBlock, toBlock);
+            confirmEarliestApprovableSuperblock();
 
-                    latestEthBlockProcessed = toBlock;
-                    flushLatestEthBlockProcessed();
-                } else {
-                    log.warn("DefendSuperblocksTimerTask skipped because the eth node is syncing blocks");
-                }
-            } catch (Exception e) {
-                log.error(e.getMessage(), e);
-            }
+            respondToBlockHeaderQueries(fromBlock, toBlock);
+            respondToMerkleRootHashesQueries(fromBlock, toBlock);
+
+            latestEthBlockProcessed = toBlock;
+            flushLatestEthBlockProcessed();
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
         }
     }
 
