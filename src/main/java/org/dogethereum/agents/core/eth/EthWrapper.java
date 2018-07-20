@@ -118,9 +118,9 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     private String getContractAddress(String contractName) throws Exception {
         String basePath = config.truffleBuildContractsDirectory();
-        FileReader dogeRelaySpecFile = new FileReader(basePath + "/" + contractName + ".json");
+        FileReader contractSpecFile = new FileReader(basePath + "/" + contractName + ".json");
         JSONParser parser = new JSONParser();
-        JSONObject parsedSpecFile =  (JSONObject) parser.parse(dogeRelaySpecFile);
+        JSONObject parsedSpecFile =  (JSONObject) parser.parse(contractSpecFile);
         JSONObject networks =  (JSONObject) parsedSpecFile.get("networks");
         JSONObject data =  (JSONObject) networks.values().iterator().next();
         return (String) data.get("address");

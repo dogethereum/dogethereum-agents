@@ -202,10 +202,6 @@ public class SystemProperties {
         return getStringProperty("price.oracle.address", null);
     }
 
-    public String dogeRelayContractAddress() {
-        return getStringProperty("dogeRelay.contract.address", null);
-    }
-
     public String dogeTokenContractAddress() {
         return getStringProperty("dogeToken.contract.address", null);
     }
