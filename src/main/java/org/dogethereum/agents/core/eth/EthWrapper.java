@@ -12,8 +12,6 @@ import org.dogethereum.agents.core.dogecoin.SuperblockUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-import org.libdohj.core.ScryptHash;
-
 import org.spongycastle.util.encoders.Hex;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,9 +60,9 @@ public class EthWrapper implements SuperblockConstantProvider {
     private SystemProperties config;
     private BigInteger gasPriceMinimum;
 
-    private String fromAddressGeneralPurposeAndSendBlocks;
-    private String fromAddressRelayTxs;
-    private String fromAddressPriceOracle;
+    private String generalPurposeAndSendBlocksAddress;
+    private String relayTxsAddress;
+    private String priceOracleAddress;
 
     /* ---------------------------------- */
     /* ------ General code section ------ */
@@ -83,31 +81,31 @@ public class EthWrapper implements SuperblockConstantProvider {
             claimManagerContractAddress = getContractAddress("DogeClaimManager");
             superblocksContractAddress = getContractAddress("DogeSuperblocks");
             List<String> accounts = web3.ethAccounts().send().getAccounts();
-            fromAddressGeneralPurposeAndSendBlocks = accounts.get(0);
-            fromAddressRelayTxs = accounts.get(1);
-            fromAddressPriceOracle = accounts.get(2);
+            generalPurposeAndSendBlocksAddress = accounts.get(0);
+            relayTxsAddress = accounts.get(1);
+            priceOracleAddress = accounts.get(2);
         } else {
             dogeTokenContractAddress = config.dogeTokenContractAddress();
             claimManagerContractAddress = config.dogeClaimManagerContractAddress();
             superblocksContractAddress = config.dogeSuperblocksContractAddress();
-            fromAddressGeneralPurposeAndSendBlocks = config.addressGeneralPurposeAndSendBlocks();
-            fromAddressRelayTxs = config.addressRelayTxs();
-            fromAddressPriceOracle = config.addressPriceOracle();
+            generalPurposeAndSendBlocksAddress = config.generalPurposeAndSendBlocksAddress();
+            relayTxsAddress = config.relayTxsAddress();
+            priceOracleAddress = config.priceOracleAddress();
         }
 
         gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
         BigInteger gasLimit = BigInteger.valueOf(config.gasLimit());
 
         dogeToken = DogeTokenExtended.load(dogeTokenContractAddress, web3,
-                                           new ClientTransactionManager(web3, fromAddressPriceOracle),
+                                           new ClientTransactionManager(web3, priceOracleAddress),
                                            gasPriceMinimum, gasLimit);
         assert dogeToken.isValid();
         claimManager = DogeClaimManagerExtended.load(claimManagerContractAddress, web3,
-                                                     new ClientTransactionManager(web3, fromAddressGeneralPurposeAndSendBlocks),
+                                                     new ClientTransactionManager(web3, generalPurposeAndSendBlocksAddress),
                                                      gasPriceMinimum, gasLimit);
         assert claimManager.isValid();
         superblocks = DogeSuperblocksExtended.load(superblocksContractAddress, web3,
-                                                   new ClientTransactionManager(web3, fromAddressGeneralPurposeAndSendBlocks),
+                                                   new ClientTransactionManager(web3, generalPurposeAndSendBlocksAddress),
                                                    gasPriceMinimum, gasLimit);
         assert superblocks.isValid();
     }
@@ -150,8 +148,8 @@ public class EthWrapper implements SuperblockConstantProvider {
         superblocks.setGasPrice(gasPrice);
     }
 
-    public String getFromAddressGeneralPurposeAndSendBlocks() {
-        return fromAddressGeneralPurposeAndSendBlocks;
+    public String getGeneralPurposeAndSendBlocksAddress() {
+        return generalPurposeAndSendBlocksAddress;
     }
 
     /**
@@ -275,7 +273,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     private BigInteger getBondedDeposit(byte[] claimId) throws Exception {
-        return claimManager.getBondedDeposit(claimId, fromAddressGeneralPurposeAndSendBlocks).send();
+        return claimManager.getBondedDeposit(claimId, generalPurposeAndSendBlocksAddress).send();
     }
 
     /**

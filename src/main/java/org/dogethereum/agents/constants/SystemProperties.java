@@ -190,18 +190,18 @@ public class SystemProperties {
         return projectVersionModifier;
     }
 
-    public String addressGeneralPurposeAndSendBlocks() {
-        return getStringProperty("address.general.purpose.and.send.blocks", null);
+    public String generalPurposeAndSendBlocksAddress() {
+        return getStringProperty("general.purpose.and.send.blocks.address", null);
     }
 
-    public String addressRelayTxs() {
-        return getStringProperty("address.relay.txs", null);
+    public String relayTxsAddress() {
+        return getStringProperty("relay.txs.address", null);
     }
 
-    public String addressPriceOracle() {
-        return getStringProperty("address.price.oracle", null);
+    public String priceOracleAddress() {
+        return getStringProperty("price.oracle.address", null);
     }
-    
+
     public String dogeRelayContractAddress() {
         return getStringProperty("dogeRelay.contract.address", null);
     }
