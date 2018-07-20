@@ -56,6 +56,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     private DogeTokenExtended dogeToken;
     private DogeClaimManagerExtended claimManager;
     private DogeSuperblocksExtended superblocks;
+    private DogeSuperblocksExtended superblocksForRelayTxs;
 
     private SystemProperties config;
     private BigInteger gasPriceMinimum;
@@ -108,6 +109,11 @@ public class EthWrapper implements SuperblockConstantProvider {
                                                    new ClientTransactionManager(web3, generalPurposeAndSendSuperblocksAddress),
                                                    gasPriceMinimum, gasLimit);
         assert superblocks.isValid();
+        superblocksForRelayTxs = DogeSuperblocksExtended.load(superblocksContractAddress, web3,
+                new ClientTransactionManager(web3, relayTxsAddress),
+                gasPriceMinimum, gasLimit);
+        assert superblocksForRelayTxs.isValid();
+
     }
 
     /**
@@ -146,6 +152,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         dogeToken.setGasPrice(gasPrice);
         claimManager.setGasPrice(gasPrice);
         superblocks.setGasPrice(gasPrice);
+        superblocksForRelayTxs.setGasPrice(gasPrice);
     }
 
     public String getGeneralPurposeAndSendSuperblocksAddress() {
@@ -645,7 +652,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         String targetContract = dogeToken.getContractAddress();
 
-        CompletableFuture<TransactionReceipt> futureReceipt = superblocks.relayTx(txSerialized,
+        CompletableFuture<TransactionReceipt> futureReceipt = superblocksForRelayTxs.relayTx(txSerialized,
                 operatorPublicKeyHash, txIndex, txSiblingsBigInteger, dogeBlockHeader, dogeBlockIndex,
                 dogeBlockSiblingsBigInteger, superblock.getSuperblockId(), targetContract).sendAsync();
         log.info("Sent relayTx {}", tx.getHash());
