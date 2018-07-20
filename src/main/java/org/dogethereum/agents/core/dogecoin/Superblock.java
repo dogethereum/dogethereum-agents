@@ -99,7 +99,7 @@ public class Superblock {
         // set helper fields
         this.superblockHeight = superblockHeight;
         this.status = status;
-        this.dogeBlockHashes = dogeBlockHashes;
+        this.dogeBlockHashes = new ArrayList<>(dogeBlockHashes);
     }
 
     /**
