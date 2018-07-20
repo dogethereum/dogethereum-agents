@@ -60,7 +60,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     private SystemProperties config;
     private BigInteger gasPriceMinimum;
 
-    private String generalPurposeAndSendBlocksAddress;
+    private String generalPurposeAndSendSuperblocksAddress;
     private String relayTxsAddress;
     private String priceOracleAddress;
 
@@ -81,14 +81,14 @@ public class EthWrapper implements SuperblockConstantProvider {
             claimManagerContractAddress = getContractAddress("DogeClaimManager");
             superblocksContractAddress = getContractAddress("DogeSuperblocks");
             List<String> accounts = web3.ethAccounts().send().getAccounts();
-            generalPurposeAndSendBlocksAddress = accounts.get(0);
+            generalPurposeAndSendSuperblocksAddress = accounts.get(0);
             relayTxsAddress = accounts.get(1);
             priceOracleAddress = accounts.get(2);
         } else {
             dogeTokenContractAddress = config.dogeTokenContractAddress();
             claimManagerContractAddress = config.dogeClaimManagerContractAddress();
             superblocksContractAddress = config.dogeSuperblocksContractAddress();
-            generalPurposeAndSendBlocksAddress = config.generalPurposeAndSendBlocksAddress();
+            generalPurposeAndSendSuperblocksAddress = config.generalPurposeAndSendSuperblocksAddress();
             relayTxsAddress = config.relayTxsAddress();
             priceOracleAddress = config.priceOracleAddress();
         }
@@ -101,11 +101,11 @@ public class EthWrapper implements SuperblockConstantProvider {
                                            gasPriceMinimum, gasLimit);
         assert dogeToken.isValid();
         claimManager = DogeClaimManagerExtended.load(claimManagerContractAddress, web3,
-                                                     new ClientTransactionManager(web3, generalPurposeAndSendBlocksAddress),
+                                                     new ClientTransactionManager(web3, generalPurposeAndSendSuperblocksAddress),
                                                      gasPriceMinimum, gasLimit);
         assert claimManager.isValid();
         superblocks = DogeSuperblocksExtended.load(superblocksContractAddress, web3,
-                                                   new ClientTransactionManager(web3, generalPurposeAndSendBlocksAddress),
+                                                   new ClientTransactionManager(web3, generalPurposeAndSendSuperblocksAddress),
                                                    gasPriceMinimum, gasLimit);
         assert superblocks.isValid();
     }
@@ -148,8 +148,8 @@ public class EthWrapper implements SuperblockConstantProvider {
         superblocks.setGasPrice(gasPrice);
     }
 
-    public String getGeneralPurposeAndSendBlocksAddress() {
-        return generalPurposeAndSendBlocksAddress;
+    public String getGeneralPurposeAndSendSuperblocksAddress() {
+        return generalPurposeAndSendSuperblocksAddress;
     }
 
     /**
@@ -273,7 +273,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     private BigInteger getBondedDeposit(byte[] claimId) throws Exception {
-        return claimManager.getBondedDeposit(claimId, generalPurposeAndSendBlocksAddress).send();
+        return claimManager.getBondedDeposit(claimId, generalPurposeAndSendSuperblocksAddress).send();
     }
 
     /**

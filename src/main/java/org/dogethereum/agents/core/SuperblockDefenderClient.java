@@ -5,15 +5,11 @@ import org.bitcoinj.core.AltcoinBlock;
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.StoredBlock;
 import org.bitcoinj.store.BlockStoreException;
-import org.dogethereum.agents.constants.SystemProperties;
 import org.dogethereum.agents.core.dogecoin.*;
 import org.dogethereum.agents.core.eth.EthWrapper;
 import org.spongycastle.util.encoders.Hex;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.web3j.protocol.core.methods.response.EthBlock;
 
-import javax.annotation.PostConstruct;
 import java.io.*;
 import java.util.*;
 
@@ -37,7 +33,7 @@ public class SuperblockDefenderClient extends SuperblockClientBase {
 
 
     protected void setupClient() {
-        myAddress = ethWrapper.getFromAddressGeneralPurposeAndSendBlocks();
+        myAddress = ethWrapper.getGeneralPurposeAndSendSuperblocksAddress();
     }
 
     @Override

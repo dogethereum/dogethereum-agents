@@ -190,8 +190,8 @@ public class SystemProperties {
         return projectVersionModifier;
     }
 
-    public String generalPurposeAndSendBlocksAddress() {
-        return getStringProperty("general.purpose.and.send.blocks.address", null);
+    public String generalPurposeAndSendSuperblocksAddress() {
+        return getStringProperty("general.purpose.and.send.superblocks.address", null);
     }
 
     public String relayTxsAddress() {
