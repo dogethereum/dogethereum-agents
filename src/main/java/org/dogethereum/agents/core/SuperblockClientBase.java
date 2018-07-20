@@ -43,11 +43,14 @@ public abstract class SuperblockClientBase {
         this.config = SystemProperties.CONFIG;
     }
 
-    protected void setup() throws Exception {
+    @PostConstruct
+    public void setup() throws Exception {
         if (isEnabled()) {
             setupLatestEthBlockProcessed();
 
             restoreLatestEthBlockProcessed();
+
+            setupClient();
 
             setupTimer();
         }
@@ -65,7 +68,14 @@ public abstract class SuperblockClientBase {
                 if (!ethWrapper.isEthNodeSyncing()) {
                     ethWrapper.updateContractFacadesGasPrice();
 
-                    task();
+                    long fromBlock = latestEthBlockProcessed + 1;
+                    long toBlock = ethWrapper.getEthBlockCount() -
+                            config.getAgentConstants().getEth2DogeMinimumAcceptableConfirmations();
+
+                    // Ignore execution if nothing to process
+                    if (fromBlock > toBlock) return;
+
+                    task(fromBlock, toBlock);
 
                     flushLatestEthBlockProcessed();
                 } else {
@@ -77,11 +87,15 @@ public abstract class SuperblockClientBase {
         }
     }
 
-    public abstract void task();
+    /* ---- ABSTRACT METHODS ---- */
+
+    protected abstract void task(long fromBlock, long toBlock);
 
     protected abstract Boolean isEnabled();
 
     protected abstract String getLastEthBlockProcessedFilename();
+
+    protected abstract void setupClient();
 
     /* ---- DATABASE METHODS ---- */
 

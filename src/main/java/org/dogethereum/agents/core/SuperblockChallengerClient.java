@@ -27,21 +27,9 @@ public class SuperblockChallengerClient extends SuperblockClientBase {
         super("Superblock challenger client");
     }
 
-    @PostConstruct
-    public void setup() throws Exception {
-        super.setup();
-    }
-
     @Override
-    public void task() {
+    public void task(long fromBlock, long toBlock) {
         try {
-            long fromBlock = latestEthBlockProcessed + 1;
-            long toBlock = ethWrapper.getEthBlockCount() -
-                    config.getAgentConstants().getEth2DogeMinimumAcceptableConfirmations();
-
-            // Ignore execution if nothing to process
-            if (fromBlock > toBlock) return;
-
             latestEthBlockProcessed = toBlock;
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -53,6 +41,9 @@ public class SuperblockChallengerClient extends SuperblockClientBase {
     /* ---- CONFIRMING/DEFENDING ---- */
 
     /* ---- OVERRRIDE ABSTRACT METHODS ---- */
+
+    @Override
+    protected void setupClient() {}
 
     @Override
     protected Boolean isEnabled() {

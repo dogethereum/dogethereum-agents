@@ -36,22 +36,13 @@ public class SuperblockDefenderClient extends SuperblockClientBase {
     }
 
 
-    @PostConstruct
-    public void setup() throws Exception {
+    protected void setupClient() {
         myAddress = ethWrapper.getFromAddressGeneralPurposeAndSendBlocks();
-        super.setup();
     }
 
     @Override
-    public void task() {
+    public void task(long fromBlock, long toBlock) {
         try {
-            long fromBlock = latestEthBlockProcessed + 1;
-            long toBlock = ethWrapper.getEthBlockCount() -
-                    config.getAgentConstants().getEth2DogeMinimumAcceptableConfirmations();
-
-            // Ignore execution if nothing to process
-            if (fromBlock > toBlock) return;
-
             confirmEarliestApprovableSuperblock();
 
             respondToBlockHeaderQueries(fromBlock, toBlock);
