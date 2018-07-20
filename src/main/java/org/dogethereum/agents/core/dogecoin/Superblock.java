@@ -94,12 +94,12 @@ public class Superblock {
         this.previousToLastDogeBlockTime = previousToLastDogeBlockTime;
         this.lastDogeBlockHash = dogeBlockHashes.get(dogeBlockHashes.size() - 1);
         this.lastDogeBlockBits = lastDogeBlockBits;
-        this.parentId = parentId.clone();
+        this.parentId = parentId;
 
         // set helper fields
         this.superblockHeight = superblockHeight;
         this.status = status;
-        this.dogeBlockHashes = new ArrayList<>(dogeBlockHashes);
+        this.dogeBlockHashes = dogeBlockHashes;
     }
 
     /**
