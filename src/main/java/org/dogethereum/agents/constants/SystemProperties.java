@@ -198,6 +198,10 @@ public class SystemProperties {
         return getStringProperty("address.relay.txs", null);
     }
 
+    public String addressPriceOracle() {
+        return getStringProperty("address.price.oracle", null);
+    }
+    
     public String dogeRelayContractAddress() {
         return getStringProperty("dogeRelay.contract.address", null);
     }
@@ -212,10 +216,6 @@ public class SystemProperties {
 
     public String dogeSuperblocksContractAddress() {
         return getStringProperty("dogeSuperblocks.contract.address", null);
-    }
-
-    public String addressPriceOracle() {
-        return getStringProperty("address.price.oracle", null);
     }
 
     public String truffleBuildContractsDirectory() {
