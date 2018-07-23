@@ -20,7 +20,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     @Override
     protected void setupClient() {
-        myAddress = ethWrapper.getGeneralPurposeAndSendSuperblocksAddress();
+        myAddress = ethWrapper.getDogeBlockChallengerAddress();
     }
 
     @Override

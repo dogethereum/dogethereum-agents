@@ -64,6 +64,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     private String generalPurposeAndSendSuperblocksAddress;
     private String relayTxsAddress;
     private String priceOracleAddress;
+    private String dogeBlockChallengerAddress;
 
     /* ---------------------------------- */
     /* ------ General code section ------ */
@@ -85,6 +86,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             generalPurposeAndSendSuperblocksAddress = accounts.get(0);
             relayTxsAddress = accounts.get(1);
             priceOracleAddress = accounts.get(2);
+            dogeBlockChallengerAddress = accounts.get(3);
         } else {
             dogeTokenContractAddress = config.dogeTokenContractAddress();
             claimManagerContractAddress = config.dogeClaimManagerContractAddress();
@@ -92,6 +94,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             generalPurposeAndSendSuperblocksAddress = config.generalPurposeAndSendSuperblocksAddress();
             relayTxsAddress = config.relayTxsAddress();
             priceOracleAddress = config.priceOracleAddress();
+            dogeBlockChallengerAddress = config.generalPurposeAndSendSuperblocksAddress();
         }
 
         gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
@@ -157,6 +160,10 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     public String getGeneralPurposeAndSendSuperblocksAddress() {
         return generalPurposeAndSendSuperblocksAddress;
+    }
+
+    public String getDogeBlockChallengerAddress() {
+        return dogeBlockChallengerAddress;
     }
 
     /**

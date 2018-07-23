@@ -194,6 +194,10 @@ public class SystemProperties {
         return getStringProperty("general.purpose.and.send.superblocks.address", null);
     }
 
+    public String dogeBlockChallengerAddress() {
+        return getStringProperty("doge.block.challenger.address", null);
+    }
+
     public String relayTxsAddress() {
         return getStringProperty("relay.txs.address", null);
     }
