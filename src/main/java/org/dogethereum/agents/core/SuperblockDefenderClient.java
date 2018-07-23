@@ -21,26 +21,22 @@ import java.util.*;
 
 @Service
 @Slf4j(topic = "SuperblockDefenderClient")
-public class SuperblockDefenderClient extends SuperblockClientBase {
+public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     private static long ETH_REQUIRED_CONFIRMATIONS = 5;
-
-    private String myAddress;
 
     public SuperblockDefenderClient() {
         super("Superblock defender client");
     }
 
-
+    @Override
     protected void setupClient() {
         myAddress = ethWrapper.getGeneralPurposeAndSendSuperblocksAddress();
     }
 
     @Override
-    public void task(long fromBlock, long toBlock) {
+    public void reactToEvents(long fromBlock, long toBlock) {
         try {
-            confirmEarliestApprovableSuperblock();
-
             respondToBlockHeaderQueries(fromBlock, toBlock);
             respondToMerkleRootHashesQueries(fromBlock, toBlock);
 
@@ -50,6 +46,14 @@ public class SuperblockDefenderClient extends SuperblockClientBase {
         }
     }
 
+    @Override
+    protected void reactToElapsedTime() {
+        try {
+            confirmEarliestApprovableSuperblock();
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+        }
+    }
 
     /* ---- STATUS SETTERS ---- */
     // TODO: these might not be necessary if all status checks are handled through EthWrapper and extra databases

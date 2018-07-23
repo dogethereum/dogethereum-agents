@@ -1,14 +1,14 @@
 package org.dogethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
-import org.bitcoinj.core.Sha256Hash;
+import org.bitcoinj.store.BlockStoreException;
 import org.dogethereum.agents.constants.SystemProperties;
 import org.dogethereum.agents.core.dogecoin.*;
 import org.dogethereum.agents.core.eth.EthWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.io.*;
 import java.util.*;
 
@@ -19,7 +19,7 @@ import java.util.*;
  */
 
 @Slf4j(topic = "SuperblockDefenderClient")
-public abstract class SuperblockClientBase {
+public abstract class SuperblockBaseClient {
 
     @Autowired
     protected DogecoinWrapper dogecoinWrapper;
@@ -34,11 +34,13 @@ public abstract class SuperblockClientBase {
 
     protected String clientName;
 
+    protected String myAddress;
+
     protected long latestEthBlockProcessed;
     protected File dataDirectory;
     protected File latestEthBlockProcessedFile;
 
-    public SuperblockClientBase(String clientName) {
+    public SuperblockBaseClient(String clientName) {
         this.clientName = clientName;
         this.config = SystemProperties.CONFIG;
     }
@@ -56,6 +58,19 @@ public abstract class SuperblockClientBase {
         }
     }
 
+    @PreDestroy
+    public void tearDown() throws BlockStoreException, IOException {
+        if (isEnabled()) {
+            log.info("{} tearDown starting...", clientName);
+
+            synchronized (this) {
+                flushLatestEthBlockProcessed();
+            }
+
+            log.info("{} tearDown finished.", clientName);
+        }
+    }
+
     private void setupTimer() {
        new Timer(clientName).scheduleAtFixedRate(new SuperblocksClientBaseTimerTask(),
                     Calendar.getInstance().getTime(), 15 * 1000);
@@ -68,6 +83,8 @@ public abstract class SuperblockClientBase {
                 if (!ethWrapper.isEthNodeSyncing()) {
                     ethWrapper.updateContractFacadesGasPrice();
 
+                    reactToElapsedTime();
+
                     long fromBlock = latestEthBlockProcessed + 1;
                     long toBlock = ethWrapper.getEthBlockCount() -
                             config.getAgentConstants().getEth2DogeMinimumAcceptableConfirmations();
@@ -75,7 +92,7 @@ public abstract class SuperblockClientBase {
                     // Ignore execution if nothing to process
                     if (fromBlock > toBlock) return;
 
-                    task(fromBlock, toBlock);
+                    reactToEvents(fromBlock, toBlock);
 
                     flushLatestEthBlockProcessed();
                 } else {
@@ -89,13 +106,15 @@ public abstract class SuperblockClientBase {
 
     /* ---- ABSTRACT METHODS ---- */
 
-    protected abstract void task(long fromBlock, long toBlock);
+    protected abstract void reactToEvents(long fromBlock, long toBlock);
 
     protected abstract Boolean isEnabled();
 
     protected abstract String getLastEthBlockProcessedFilename();
 
     protected abstract void setupClient();
+
+    protected abstract void reactToElapsedTime();
 
     /* ---- DATABASE METHODS ---- */
 
