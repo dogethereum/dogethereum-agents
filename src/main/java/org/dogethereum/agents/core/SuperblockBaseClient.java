@@ -72,11 +72,11 @@ public abstract class SuperblockBaseClient {
     }
 
     private void setupTimer() {
-       new Timer(clientName).scheduleAtFixedRate(new SuperblocksClientBaseTimerTask(),
+       new Timer(clientName).scheduleAtFixedRate(new SuperblocksBaseClientTimerTask(),
                     Calendar.getInstance().getTime(), 15 * 1000);
     }
 
-    private class SuperblocksClientBaseTimerTask extends TimerTask {
+    private class SuperblocksBaseClientTimerTask extends TimerTask {
         @Override
         public void run() {
             try {
@@ -94,9 +94,11 @@ public abstract class SuperblockBaseClient {
 
                     reactToEvents(fromBlock, toBlock);
 
-                    flushLatestEthBlockProcessed();
+                    synchronized (SuperblockBaseClient.this) {
+                        flushLatestEthBlockProcessed();
+                    }
                 } else {
-                    log.warn("SuperblocksClientBaseTimerTask skipped because the eth node is syncing blocks");
+                    log.warn("SuperblocksBaseClientTimerTask skipped because the eth node is syncing blocks");
                 }
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
