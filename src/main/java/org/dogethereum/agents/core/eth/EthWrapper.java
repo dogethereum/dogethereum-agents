@@ -55,6 +55,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     private DogeTokenExtended dogeToken;
     private DogeClaimManagerExtended claimManager;
+    private DogeClaimManagerExtended claimManagerForChallenges;
     private DogeSuperblocksExtended superblocks;
     private DogeSuperblocksExtended superblocksForRelayTxs;
 
@@ -108,6 +109,10 @@ public class EthWrapper implements SuperblockConstantProvider {
                                                      new ClientTransactionManager(web3, generalPurposeAndSendSuperblocksAddress),
                                                      gasPriceMinimum, gasLimit);
         assert claimManager.isValid();
+        claimManagerForChallenges = DogeClaimManagerExtended.load(claimManagerContractAddress, web3,
+                new ClientTransactionManager(web3, dogeBlockChallengerAddress),
+                gasPriceMinimum, gasLimit);
+        assert claimManagerForChallenges.isValid();
         superblocks = DogeSuperblocksExtended.load(superblocksContractAddress, web3,
                                                    new ClientTransactionManager(web3, generalPurposeAndSendSuperblocksAddress),
                                                    gasPriceMinimum, gasLimit);
@@ -154,6 +159,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         dogeToken.setGasPrice(gasPrice);
         claimManager.setGasPrice(gasPrice);
+        claimManagerForChallenges.setGasPrice(gasPrice);
         superblocks.setGasPrice(gasPrice);
         superblocksForRelayTxs.setGasPrice(gasPrice);
     }
