@@ -342,6 +342,9 @@ public class EthWrapper implements SuperblockConstantProvider {
         return isSuperblockSemiApproved(superblockId) || isSuperblockNew(superblockId);
     }
 
+    public BigInteger getSuperblockHeight(byte[] superblockId) throws Exception {
+        return superblocks.getSuperblockHeight(superblockId).send();
+    }
 
     /* ---- EVENT RETRIEVAL METHODS AND CLASSES ---- */
 
@@ -746,6 +749,14 @@ public class EthWrapper implements SuperblockConstantProvider {
         public List<UTXO> selectedUtxos;
         public long fee;
         public byte[] operatorPublicKeyHash;
+    }
+
+    /* ---------------------------------- */
+    /* --------- Challenger section ----- */
+    /* ---------------------------------- */
+
+    public CompletableFuture<TransactionReceipt> challengeSuperblock(byte[] superblockId) {
+        return claimManagerForChallenges.challengeSuperblock(superblockId).sendAsync();
     }
 
 }
