@@ -106,6 +106,7 @@ public abstract class SuperblockBaseClient {
         }
     }
 
+
     /* ---- ABSTRACT METHODS ---- */
 
     protected abstract void reactToEvents(long fromBlock, long toBlock);
@@ -118,9 +119,8 @@ public abstract class SuperblockBaseClient {
 
     protected abstract void reactToElapsedTime();
 
-    /* ---- DATABASE METHODS ---- */
 
-    // TODO: see if these should be moved to another file to avoid repeated code
+    /* ---- DATABASE METHODS ---- */
 
     private void setupLatestEthBlockProcessed() throws IOException {
         this.latestEthBlockProcessed = config.getAgentConstants().getEthInitialCheckpoint();
