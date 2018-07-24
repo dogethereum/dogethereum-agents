@@ -50,7 +50,7 @@ public class IntegrationAgentConstants extends AgentConstants {
         genesisSuperblock = new Superblock(
                 blocksMerkleRoot, chainWork, lastDogeBlockTime,
                 previousToLastDogeBlockTime, lastDogeBlockHash, lastDogeBlockBits,
-                genesisSuperblockParentId, superblockHeight, status, newSuperblockEventTime);
+                genesisSuperblockParentId, superblockHeight);
 
         // Unlock mechanism specific start
         eth2DogeMinimumAcceptableConfirmations = 10;

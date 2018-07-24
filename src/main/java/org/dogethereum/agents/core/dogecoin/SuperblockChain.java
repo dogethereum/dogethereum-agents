@@ -138,7 +138,7 @@ public class SuperblockChain {
                     nextSuperblockLastBlock.getChainWork(), nextSuperblockLastBlock.getHeader().getTimeSeconds(),
                     nextSuperblockPreviousToLastBlock.getHeader().getTimeSeconds(),
                     nextSuperblockLastBlock.getHeader().getDifficultyTarget(), nextSuperblockPrevHash,
-                    nextSuperblockHeight, SuperblockUtils.STATUS_UNINITIALIZED);
+                    nextSuperblockHeight);
 
             superblockStorage.put(newSuperblock);
             if (newSuperblock.getChainWork().compareTo(superblockStorage.getChainHeadWork()) > 0)
@@ -259,13 +259,6 @@ public class SuperblockChain {
         }
 
         return currentSuperblock;
-    }
-
-
-    /* ---- SETTERS ---- */
-
-    public void setStatus(byte[] superblockId, BigInteger status) throws IOException {
-        superblockStorage.setStatus(superblockId, status);
     }
 
 

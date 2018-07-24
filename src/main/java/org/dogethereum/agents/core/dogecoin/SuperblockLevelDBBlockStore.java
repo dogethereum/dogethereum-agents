@@ -202,13 +202,4 @@ public class SuperblockLevelDBBlockStore {
         return getChainHead().getChainWork();
     }
 
-
-    /* ---- OTHER METHODS ---- */
-
-    public synchronized void setStatus(byte[] superblockId, BigInteger status) throws IOException {
-        Superblock superblock = get(superblockId);
-        superblock.setStatus(status);
-        put(superblock);
-    }
-
 }

@@ -172,12 +172,4 @@ public class SuperblockUtils {
 
         return stream.toByteArray();
     }
-
-    private boolean checkStatus(Superblock superblock, BigInteger status) {
-        return superblock.getStatus().equals(status);
-    }
-
-    public static boolean approvedOrSemi(Superblock superblock) {
-        return (superblock.getStatus().equals(STATUS_APPROVED) || superblock.getStatus().equals(STATUS_SEMI_APPROVED));
-    }
 }

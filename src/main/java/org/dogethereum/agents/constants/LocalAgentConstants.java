@@ -36,9 +36,9 @@ public class LocalAgentConstants extends AgentConstants {
         List<Sha256Hash> genesisSuperblockBlockList = Lists.newArrayList(dogeParams.getGenesisBlock().getHash());
         byte[] genesisSuperblockParentId = new byte[32]; // initialised with 0s
         genesisSuperblock = new Superblock(
-                dogeParams, genesisSuperblockBlockList, BigInteger.valueOf(0), dogeParams.getGenesisBlock().getTimeSeconds(),
-                0, dogeParams.getGenesisBlock().getDifficultyTarget(),
-                genesisSuperblockParentId, 0, SuperblockUtils.STATUS_APPROVED);
+                dogeParams, genesisSuperblockBlockList,
+                BigInteger.valueOf(0), dogeParams.getGenesisBlock().getTimeSeconds(), 0,
+                dogeParams.getGenesisBlock().getDifficultyTarget(), genesisSuperblockParentId, 0);
 
         // Unlock mechanism specific start
         eth2DogeMinimumAcceptableConfirmations = 5;

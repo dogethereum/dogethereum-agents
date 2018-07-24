@@ -55,46 +55,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         }
     }
 
-    /* ---- STATUS SETTERS ---- */
-    // TODO: these might not be necessary if all status checks are handled through EthWrapper and extra databases
-
-    private void setNewSuperblocks(long fromBlock, long toBlock) throws IOException {
-        List<EthWrapper.SuperblockEvent> newSuperblockEvents =
-                ethWrapper.getNewSuperblocks(fromBlock, toBlock);
-
-        for (EthWrapper.SuperblockEvent newSuperblock : newSuperblockEvents) {
-            if (isMine(newSuperblock)) { // todo: thing with 'who' field
-                log.info("Updating info for new superblock {}.", Hex.toHexString(newSuperblock.superblockId));
-                superblockChain.setStatus(newSuperblock.superblockId, SuperblockUtils.STATUS_NEW);
-            }
-        }
-    }
-
-    private void setApprovedSuperblocks(long fromBlock, long toBlock) throws IOException {
-        List<EthWrapper.SuperblockEvent> approvedSuperblockEvents =
-                ethWrapper.getApprovedSuperblocks(fromBlock, toBlock);
-
-        for (EthWrapper.SuperblockEvent approvedSuperblock : approvedSuperblockEvents) {
-            if (isMine(approvedSuperblock)) {
-                log.info("Updating info for approved superblock {}.", Hex.toHexString(approvedSuperblock.superblockId));
-                superblockChain.setStatus(approvedSuperblock.superblockId, SuperblockUtils.STATUS_NEW);
-            }
-        }
-    }
-
-    private void setSemiApprovedSuperblocks(long fromBlock, long toBlock) throws IOException {
-        List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
-                ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
-
-        for (EthWrapper.SuperblockEvent semiApprovedSuperblock : semiApprovedSuperblockEvents) {
-            if (isMine(semiApprovedSuperblock)) {
-                log.info("Updating info for approved superblock {}.",
-                        Hex.toHexString(semiApprovedSuperblock.superblockId));
-                superblockChain.setStatus(semiApprovedSuperblock.superblockId, SuperblockUtils.STATUS_NEW);
-            }
-        }
-    }
-
 
     /* ---- CONFIRMING/DEFENDING ---- */
 
