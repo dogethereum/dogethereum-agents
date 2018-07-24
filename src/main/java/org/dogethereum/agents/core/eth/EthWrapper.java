@@ -522,6 +522,12 @@ public class EthWrapper implements SuperblockConstantProvider {
                 log.info("Responded to Merkle root hashes query for session {}", Hex.toHexString(sessionId)));
     }
 
+    public void verifySuperblock(byte[] sessionId) throws Exception {
+        CompletableFuture<TransactionReceipt> futureReceipt = claimManager.verifySuperblock(sessionId).sendAsync();
+        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
+                log.info("Verified superblock for session {}", Hex.toHexString(sessionId)));
+    }
+
 
     /* ---- LOG PROCESSING METHODS ---- */
 

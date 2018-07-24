@@ -135,7 +135,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         }
     }
 
-    private void respondToBlockHeaderQueries(long fromBlock, long toBlock) throws IOException, BlockStoreException {
+    private void respondToBlockHeaderQueries(long fromBlock, long toBlock)
+            throws IOException, BlockStoreException, Exception {
         List<EthWrapper.QueryBlockHeaderEvent> queryBlockHeaderEvents =
                 ethWrapper.getBlockHeaderQueries(fromBlock, toBlock);
 
@@ -146,11 +147,12 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
                 StoredBlock dogeBlock = dogecoinWrapper.getBlock(Sha256Hash.wrap(queryBlockHeader.dogeBlockHash));
                 ethWrapper.respondBlockHeader(queryBlockHeader.sessionId, (AltcoinBlock) dogeBlock.getHeader());
+                ethWrapper.verifySuperblock(queryBlockHeader.sessionId);
             }
         }
     }
 
-    private void respondToMerkleRootHashesQueries(long fromBlock, long toBlock) throws IOException {
+    private void respondToMerkleRootHashesQueries(long fromBlock, long toBlock) throws IOException, Exception {
         List<EthWrapper.QueryMerkleRootHashesEvent> queryMerkleRootHashesEvents =
                 ethWrapper.getMerkleRootHashesQueries(fromBlock, toBlock);
 
@@ -161,6 +163,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
                 Superblock superblock = superblockChain.getSuperblock(queryMerkleRootHashes.superblockId);
                 ethWrapper.respondMerkleRootHashes(queryMerkleRootHashes.sessionId, superblock.getDogeBlockHashes());
+                ethWrapper.verifySuperblock(queryMerkleRootHashes.sessionId);
             }
         }
     }
@@ -236,9 +239,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         return (descendantId != null && ethWrapper.isSuperblockSemiApproved(descendantId)
                 && ethWrapper.isSuperblockSemiApproved(superblockId));
     }
-
-
-    /* ---- DATABASE METHODS ---- */
 
 
     /* ---- OVERRRIDE ABSTRACT METHODS ---- */
