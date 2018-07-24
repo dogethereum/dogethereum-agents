@@ -113,7 +113,7 @@ public class SuperblockChain {
      * @param initialPreviousSuperblockHash Keccak-256 hash of the last stored superblock.
      * @throws Exception
      */
-    public void storeSuperblocks(Stack<Sha256Hash> allDogeHashesToHash, byte[] initialPreviousSuperblockHash)
+    public void storeSuperblocks(Stack<Sha256Hash> allDogeHashesToHash, Keccak256Hash initialPreviousSuperblockHash)
             throws Exception {
         if (allDogeHashesToHash.empty())
             return;
@@ -122,7 +122,7 @@ public class SuperblockChain {
         Date nextSuperblockEndTime = getEndTime(nextSuperblockStartTime);
 
         List<Sha256Hash> nextSuperblockDogeHashes = new ArrayList<>();
-        byte[] nextSuperblockPrevHash = initialPreviousSuperblockHash;
+        Keccak256Hash nextSuperblockPrevHash = initialPreviousSuperblockHash;
         long nextSuperblockHeight = getChainHeight() + 1;
 
         // build and store all superblocks whose last block was mined three hours ago or more
@@ -190,7 +190,7 @@ public class SuperblockChain {
      * @return Tip of superblock chain as saved on disk.
      * @throws BlockStoreException
      */
-    public Superblock getChainHead() throws BlockStoreException {
+    public Superblock getChainHead() throws BlockStoreException, IOException {
         return superblockStorage.getChainHead();
     }
 
@@ -199,7 +199,7 @@ public class SuperblockChain {
      * @return Height of tip of superblock chain as saved on disk.
      * @throws BlockStoreException
      */
-    public long getChainHeight() throws BlockStoreException {
+    public long getChainHeight() throws BlockStoreException, IOException {
         return getChainHead().getSuperblockHeight();
     }
 
@@ -219,7 +219,7 @@ public class SuperblockChain {
      * @param superblockHash Keccak-256 hash of a superblock.
      * @return Superblock with given hash if it's found in the database, null otherwise.
      */
-    public Superblock getSuperblock(byte[] superblockHash) {
+    public Superblock getSuperblock(Keccak256Hash superblockHash) throws IOException {
         return superblockStorage.get(superblockHash);
     }
 
@@ -251,10 +251,10 @@ public class SuperblockChain {
      *         null otherwise.
      * @throws BlockStoreException
      */
-    public Superblock getFirstDescendant(byte[] superblockId) throws BlockStoreException {
+    public Superblock getFirstDescendant(Keccak256Hash superblockId) throws BlockStoreException, IOException {
         Superblock currentSuperblock = getChainHead();
 
-        while (currentSuperblock != null && !Arrays.equals(currentSuperblock.getParentId(), superblockId)) {
+        while (currentSuperblock != null && !currentSuperblock.getParentId().equals(superblockId)) {
             currentSuperblock = getSuperblock(currentSuperblock.getParentId());
         }
 

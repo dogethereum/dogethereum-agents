@@ -8,6 +8,7 @@ import org.bitcoinj.store.BlockStoreException;
 import org.dogethereum.agents.constants.AgentConstants;
 import org.dogethereum.agents.constants.SystemProperties;
 import org.dogethereum.agents.core.dogecoin.DogecoinWrapper;
+import org.dogethereum.agents.core.dogecoin.Keccak256Hash;
 import org.dogethereum.agents.core.dogecoin.Superblock;
 import org.dogethereum.agents.core.dogecoin.SuperblockUtils;
 import org.dogethereum.agents.util.OperatorKeyHandler;
@@ -57,7 +58,7 @@ public class GenesisSuperblockGeneratorMain {
         BufferedReader reader = new BufferedReader(
                 new FileReader(baseDir + subDir + "/dogemain-2309215-to-2309216"));
         List<Sha256Hash> dogeBlockHashes = parseBlockHashes(reader);
-        byte[] genesisParentHash = new byte[32]; // initialised with 0s
+        Keccak256Hash genesisParentHash = Keccak256Hash.wrap(new byte[32]); // initialised with 0s
         StoredBlock lastDogeBlock = dogecoinWrapper.getBlock(dogeBlockHashes.get(dogeBlockHashes.size() - 1));
         StoredBlock previousToLastDogeBlock = dogecoinWrapper.getBlock(lastDogeBlock.getHeader().getPrevBlockHash());
 

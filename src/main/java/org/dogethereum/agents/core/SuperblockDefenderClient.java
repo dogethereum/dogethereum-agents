@@ -67,10 +67,10 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      * @throws Exception
      */
     private void confirmEarliestApprovableSuperblock() throws Exception {
-        byte[] bestSuperblockId = ethWrapper.getBestSuperblockId();
+        Keccak256Hash bestSuperblockId = ethWrapper.getBestSuperblockId();
         Superblock chainHead = superblockChain.getChainHead();
 
-        if (Arrays.equals(chainHead.getSuperblockId(), bestSuperblockId)) {
+        if (chainHead.getSuperblockId() == bestSuperblockId) {
             // Contract and local db best superblocks are the same, do nothing.
             return;
         }
@@ -79,17 +79,16 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
         if (toConfirm == null) {
             // TODO: see if this should raise an exception, because it's a pretty bad state
-            log.info("Best superblock from contracts, {}, not found in local database. Stopping.",
-                    Hex.toHexString(bestSuperblockId));
+            log.info("Best superblock from contracts, {}, not found in local database. Stopping.", bestSuperblockId);
         } else {
-            byte[] toConfirmId = toConfirm.getSuperblockId();
+            Keccak256Hash toConfirmId = toConfirm.getSuperblockId();
 
             if (newAndTimeoutPassed(toConfirm) || inBattleAndSemiApprovable(toConfirm)) {
-                log.info("Confirming superblock {}", Hex.toHexString(toConfirmId));
+                log.info("Confirming superblock {}", toConfirmId);
                 ethWrapper.checkClaimFinished(toConfirmId);
             } else if (semiApprovedAndApprovable(toConfirm)) {
-                byte[] descendantId = superblockChain.getFirstDescendant(toConfirmId).getSuperblockId();
-                log.info("Confirming semi-approved superblock {}", Hex.toHexString(toConfirmId));
+                Keccak256Hash descendantId = superblockChain.getFirstDescendant(toConfirmId).getSuperblockId();
+                log.info("Confirming semi-approved superblock {}", toConfirmId);
                 ethWrapper.confirmClaim(toConfirmId, descendantId);
             }
         }
@@ -147,7 +146,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         return queryMerkleRootHashes.submitter.equals(myAddress);
     }
 
-    private boolean submittedTimeoutPassed(byte[] superblockId) throws Exception {
+    private boolean submittedTimeoutPassed(Keccak256Hash superblockId) throws Exception {
         return ethWrapper.getNewEventTimestampDate(superblockId).before(getTimeoutDate());
     }
 
@@ -156,12 +155,12 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         return SuperblockUtils.getNSecondsAgo(superblockTimeout);
     }
 
-    private boolean challengeTimeoutPassed(byte[] superblockId) throws Exception {
+    private boolean challengeTimeoutPassed(Keccak256Hash superblockId) throws Exception {
         return ethWrapper.getClaimChallengeTimeoutDate(superblockId).before(getTimeoutDate());
     }
 
     private boolean newAndTimeoutPassed(Superblock superblock) throws Exception {
-        byte[] superblockId = superblock.getSuperblockId();
+        Keccak256Hash superblockId = superblock.getSuperblockId();
         return (ethWrapper.isSuperblockNew(superblockId) && submittedTimeoutPassed(superblockId));
     }
 
@@ -173,7 +172,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      * @throws Exception
      */
     private boolean inBattleAndSemiApprovable(Superblock superblock) throws Exception {
-        byte[] superblockId = superblock.getSuperblockId();
+        Keccak256Hash superblockId = superblock.getSuperblockId();
         if (!ethWrapper.isSuperblockInBattle(superblockId))
             return false;
         if (ethWrapper.getClaimInvalid(superblockId))
@@ -194,8 +193,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      * @throws Exception
      */
     private boolean semiApprovedAndApprovable(Superblock superblock) throws Exception {
-        byte[] superblockId = superblock.getSuperblockId();
-        byte[] descendantId = superblockChain.getFirstDescendant(superblockId).getSuperblockId();
+        Keccak256Hash superblockId = superblock.getSuperblockId();
+        Keccak256Hash descendantId = superblockChain.getFirstDescendant(superblockId).getSuperblockId();
         return (descendantId != null && ethWrapper.isSuperblockSemiApproved(descendantId)
                 && ethWrapper.isSuperblockSemiApproved(superblockId));
     }

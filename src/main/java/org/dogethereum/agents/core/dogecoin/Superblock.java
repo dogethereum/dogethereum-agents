@@ -29,12 +29,12 @@ public class Superblock {
     private long previousToLastDogeBlockTime; // Timestamp of previous to last mined Dogecoin block in the superblock. 32 bytes to comply with Solidity version.
     private Sha256Hash lastDogeBlockHash; // SHA-256 hash of last mined Dogecoin block in the superblock. 32 bytes.
     private long lastDogeBlockBits;  // Bits (difficulty) of last mined Dogecoin block in the superblock. 32 bytes.
-    private byte[] parentId; // KECCAK-256 hash of previous superblock. 32 bytes.
+    private Keccak256Hash parentId; // SHA3-256 hash of previous superblock. 32 bytes.
 
 
     /* ---- EXTRA FIELDS ---- */
 
-    private byte[] superblockId; // KECCAK-256 hash of superblock data
+    private Keccak256Hash superblockId; // SHA3-256 hash of superblock data
     private long superblockHeight;
     private List<Sha256Hash> dogeBlockHashes;
 
@@ -76,7 +76,7 @@ public class Superblock {
      */
     public Superblock(NetworkParameters params, List<Sha256Hash> dogeBlockHashes, BigInteger chainWork,
                       long lastDogeBlockTime, long previousToLastDogeBlockTime, long lastDogeBlockBits,
-                      byte[] parentId, long superblockHeight) {
+                      Keccak256Hash parentId, long superblockHeight) {
         // hash all the block dogeBlockHashes into a Merkle tree
         byte[] includeBits = new byte[(int) Math.ceil(dogeBlockHashes.size() / 8.0)];
         for (int i = 0; i < dogeBlockHashes.size(); i++)
@@ -109,7 +109,7 @@ public class Superblock {
      */
     public Superblock(Sha256Hash merkleRoot, BigInteger chainWork, long lastDogeBlockTime,
                       long previousToLastDogeBlockTime, Sha256Hash lastDogeBlockHash, long lastDogeBlockBits,
-                      byte[] parentId, long superblockHeight) {
+                      Keccak256Hash parentId, long superblockHeight) {
         this.merkleRoot = merkleRoot;
         this.chainWork = chainWork;
         this.lastDogeBlockTime = lastDogeBlockTime;
@@ -122,6 +122,7 @@ public class Superblock {
         this.superblockHeight = superblockHeight;
         this.dogeBlockHashes = new ArrayList<>();
     }
+
     /**
      * Construct a Superblock object from an array representing a serialized superblock.
      * @param payload Serialized superblock.
@@ -138,8 +139,8 @@ public class Superblock {
         this.lastDogeBlockHash = Sha256Hash.wrapReversed(SuperblockUtils.readBytes(
                 payload, LAST_BLOCK_HASH_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
         this.lastDogeBlockBits = Utils.readUint32(payload, LAST_BLOCK_BITS_PAYLOAD_OFFSET);
-        this.parentId = Utils.reverseBytes(SuperblockUtils.readBytes(
-                payload, PARENT_ID_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
+        this.parentId = Keccak256Hash.wrapReversed(
+                SuperblockUtils.readBytes(payload, PARENT_ID_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
 
         // helper fields
         this.superblockHeight = Utils.readUint32(payload, SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET);
@@ -195,14 +196,14 @@ public class Superblock {
 
     /**
      * Calculates Keccak-256 hash of superblock data.
-     * @return Superblock ID hash in bytes format.
+     * @return Superblock ID in Keccak wrapper format.
      * @throws IOException
      */
-    private byte[] calculateHash() throws IOException {
+    private Keccak256Hash calculateHash() throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         serializeBE(outputStream);
         byte[] data = outputStream.toByteArray();
-        return Hash.sha3(data);
+        return Keccak256Hash.of(data);
     }
 
 
@@ -233,14 +234,13 @@ public class Superblock {
     }
 
 
-    public byte[] getParentId() {
+    public Keccak256Hash getParentId() {
         return parentId;
     }
 
-    public byte[] getSuperblockId() throws IOException {
-        if (superblockId == null) {
+    public Keccak256Hash getSuperblockId() throws IOException {
+        if (superblockId == null)
             superblockId = calculateHash();
-        }
         return superblockId;
     }
 
@@ -270,7 +270,7 @@ public class Superblock {
         stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(previousToLastDogeBlockTime))); // 32
         stream.write(lastDogeBlockHash.getReversedBytes()); // 32
         stream.write(Utils.reverseBytes(SuperblockUtils.toUint32(lastDogeBlockBits))); // 4
-        stream.write(Utils.reverseBytes(parentId)); // 32
+        stream.write(parentId.getReversedBytes()); // 32
     }
 
     public void serializeBE(OutputStream stream) throws IOException {
@@ -280,7 +280,7 @@ public class Superblock {
         stream.write(SuperblockUtils.toBytes32(previousToLastDogeBlockTime));
         stream.write(lastDogeBlockHash.getBytes());
         stream.write(SuperblockUtils.toUint32(lastDogeBlockBits));
-        stream.write(parentId);
+        stream.write(parentId.getBytes());
     }
 
     /**
@@ -358,33 +358,33 @@ public class Superblock {
     }
 
     // TODO: see if this can be removed
-    public boolean equals(Superblock superblock) {
-        if (!this.merkleRoot.equals(superblock.merkleRoot))
-            return false;
-        if (!this.chainWork.equals(superblock.chainWork))
-            return false;
-        if (this.lastDogeBlockTime != superblock.lastDogeBlockTime)
-            return false;
-        if (this.previousToLastDogeBlockTime != superblock.previousToLastDogeBlockTime)
-            return false;
-        if (!this.lastDogeBlockHash.equals(superblock.lastDogeBlockHash))
-            return false;
-        if (this.lastDogeBlockBits != superblock.lastDogeBlockBits)
-            return false;
-        for (int i = 0; i < 32; i++) {
-            if (this.parentId[i] != superblock.parentId[i])
-                return false;
-        }
-
-        if (this.superblockHeight != superblock.superblockHeight)
-            return false;
-        for (int i = 0; i < Math.min(this.dogeBlockHashes.size(), superblock.dogeBlockHashes.size()); i++) {
-            if (!this.dogeBlockHashes.get(i).equals(superblock.dogeBlockHashes.get(i)))
-                return false;
-        }
-
-        return true;
-    }
+//    public boolean equals(Superblock superblock) {
+//        if (!this.merkleRoot.equals(superblock.merkleRoot))
+//            return false;
+//        if (!this.chainWork.equals(superblock.chainWork))
+//            return false;
+//        if (this.lastDogeBlockTime != superblock.lastDogeBlockTime)
+//            return false;
+//        if (this.previousToLastDogeBlockTime != superblock.previousToLastDogeBlockTime)
+//            return false;
+//        if (!this.lastDogeBlockHash.equals(superblock.lastDogeBlockHash))
+//            return false;
+//        if (this.lastDogeBlockBits != superblock.lastDogeBlockBits)
+//            return false;
+//        for (int i = 0; i < 32; i++) {
+//            if (this.parentId[i] != superblock.parentId[i])
+//                return false;
+//        }
+//
+//        if (this.superblockHeight != superblock.superblockHeight)
+//            return false;
+//        for (int i = 0; i < Math.min(this.dogeBlockHashes.size(), superblock.dogeBlockHashes.size()); i++) {
+//            if (!this.dogeBlockHashes.get(i).equals(superblock.dogeBlockHashes.get(i)))
+//                return false;
+//        }
+//
+//        return true;
+//    }
 
     @Override
     public String toString() {
@@ -395,8 +395,8 @@ public class Superblock {
                 ", previousToLastDogeBlockTime=" + previousToLastDogeBlockTime +
                 ", lastDogeBlockHash=" + lastDogeBlockHash +
                 ", lastDogeBlockBits=" + lastDogeBlockBits +
-                ", parentId=" + Hex.toHexString(parentId) +
-                ", superblockId=" + Hex.toHexString(superblockId) +
+                ", parentId=" + parentId +
+                ", superblockId=" + superblockId +
                 ", superblockHeight=" + superblockHeight +
                 '}';
     }

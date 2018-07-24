@@ -152,7 +152,7 @@ public class DogeToEthClient {
         Superblock matchedSuperblock = null;
 
         for (int i = 0; i < superblockLocator.size(); i++) {
-            byte[] superblockBridgeHash = superblockLocator.get(i);
+            Keccak256Hash superblockBridgeHash = Keccak256Hash.wrap(superblockLocator.get(i));
             Superblock bridgeSuperblock = superblockChain.getSuperblock(superblockBridgeHash);
 
             if (bridgeSuperblock == null)
@@ -161,7 +161,7 @@ public class DogeToEthClient {
             Superblock bestRelaySuperblockInLocalChain =
                     superblockChain.getSuperblockByHeight(bridgeSuperblock.getSuperblockHeight());
 
-            if (Arrays.equals(bridgeSuperblock.getSuperblockId(), bestRelaySuperblockInLocalChain.getSuperblockId())) {
+            if (bridgeSuperblock.getSuperblockId().equals(bestRelaySuperblockInLocalChain.getSuperblockId())) {
                 matchedSuperblock = bestRelaySuperblockInLocalChain;
                 break;
             }
@@ -176,16 +176,16 @@ public class DogeToEthClient {
      * Returns a Deque object because it provides an efficient interface for adding elements to the front;
      * since the blocks are traversed from latest to earliest but they must be sent in the opposite order,
      * this data structure is useful for this method.
-     * @param superblockHash Hash of the best superblock from the bridge that was also found in the agent.
+     * @param superblockId Hash of the best superblock from the bridge that was also found in the agent.
      * @return Deque of superblocks newer than the given superblock, from earliest to latest.
      * @throws BlockStoreException
      * @throws IOException
      */
-    private Deque<Superblock> getSuperblocksNewerThan(byte[] superblockHash) throws BlockStoreException, IOException {
+    private Deque<Superblock> getSuperblocksNewerThan(Keccak256Hash superblockId) throws BlockStoreException, IOException {
         Deque<Superblock> superblocks = new ArrayDeque<>();
         Superblock currentSuperblock = superblockChain.getChainHead();
 
-        while (!Arrays.equals(currentSuperblock.getSuperblockId(), superblockHash)) {
+        while (!currentSuperblock.getSuperblockId().equals(superblockId)) {
             superblocks.addFirst(currentSuperblock);
             currentSuperblock = superblockChain.getSuperblock(currentSuperblock.getParentId());
         }
@@ -201,7 +201,8 @@ public class DogeToEthClient {
      *         null if it's the tip.
      * @throws BlockStoreException If the superblock whose hash is `superblockId` is not in the main chain.
      */
-    private Superblock getNextSuperblockInMainChain(byte[] superblockId) throws BlockStoreException {
+    private Superblock getNextSuperblockInMainChain(Keccak256Hash superblockId)
+            throws BlockStoreException, IOException {
         if (superblockChain.getSuperblock(superblockId).getSuperblockHeight() == superblockChain.getChainHeight()) {
             // There's nothing above the tip of the chain.
             return null;
@@ -210,7 +211,7 @@ public class DogeToEthClient {
         // There's a superblock after superblockId. Find it.
         Superblock currentSuperblock = superblockChain.getChainHead();
 
-        while (currentSuperblock != null && !Arrays.equals(currentSuperblock.getParentId(), superblockId))
+        while (currentSuperblock != null && !currentSuperblock.getParentId().equals(superblockId))
             currentSuperblock = superblockChain.getSuperblock(currentSuperblock.getParentId());
 
         checkNotNull(currentSuperblock, "Block is not in the main chain.");
@@ -257,7 +258,7 @@ public class DogeToEthClient {
                         log.debug("Tx {} not relayed because the superblock it's in hasn't been approved yet." +
                                         "Block hash: {}, superblock ID: {}",
                                 operatorWalletTx.getHash(), txStoredBlock.getHeader().getHash(),
-                                Sha256Hash.wrap(txSuperblock.getSuperblockId()));
+                                txSuperblock.getSuperblockId());
                         continue;
                     }
 
@@ -310,7 +311,7 @@ public class DogeToEthClient {
      * @return Highest stored superblock where the block can be found.
      * @throws BlockStoreException
      */
-    private Superblock findBestSuperblockFor(Sha256Hash blockHash) throws BlockStoreException{
+    private Superblock findBestSuperblockFor(Sha256Hash blockHash) throws BlockStoreException, IOException {
         Superblock currentSuperblock = superblockChain.getChainHead();
 
         while (currentSuperblock != null) {

@@ -3,12 +3,14 @@ package org.dogethereum.agents.constants;
 import com.google.common.collect.Lists;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Sha256Hash;
+import org.dogethereum.agents.core.dogecoin.Keccak256Hash;
 import org.dogethereum.agents.core.dogecoin.Superblock;
 import org.dogethereum.agents.core.dogecoin.SuperblockUtils;
 import org.libdohj.params.DogecoinMainNetParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.List;
 
@@ -43,7 +45,7 @@ public class IntegrationAgentConstants extends AgentConstants {
         long previousToLastDogeBlockTime = 1531922557l;
         Sha256Hash lastDogeBlockHash = Sha256Hash.wrap("046722472396fe2883a725f97f0e63036d2064ceb271bccc175578b724833b3f");
         long lastDogeBlockBits = 436643408;
-        byte[] genesisSuperblockParentId = new byte[32]; // initialised with 0s
+        Keccak256Hash genesisSuperblockParentId = Keccak256Hash.wrap(new byte[32]); // initialised with 0s
         long superblockHeight = 0;
         BigInteger status = SuperblockUtils.STATUS_APPROVED;
         long newSuperblockEventTime = 0;

@@ -109,7 +109,7 @@ public class SuperblockLevelDBBlockStore {
         block.serializeForStorage(stream);
         ByteBuffer buffer = ByteBuffer.allocate(stream.size());
         buffer.put(stream.toByteArray());
-        db.put(block.getSuperblockId(), buffer.array());
+        db.put(block.getSuperblockId().getBytes(), buffer.array());
     }
 
     /**
@@ -117,8 +117,8 @@ public class SuperblockLevelDBBlockStore {
      * @param superblockId Keccak-256 hash of superblock
      * @return superblock identified by hash
      */
-    public synchronized Superblock get(byte[] superblockId) {
-        byte[] bits = db.get(superblockId);
+    public synchronized Superblock get(Keccak256Hash superblockId) throws IOException {
+        byte[] bits = db.get(superblockId.getBytes());
         if (bits == null)
             return null;
         return new Superblock(bits);
@@ -171,7 +171,7 @@ public class SuperblockLevelDBBlockStore {
      * @return Highest stored superblock.
      * @throws BlockStoreException
      */
-    public synchronized Superblock getChainHead() throws BlockStoreException {
+    public synchronized Superblock getChainHead() throws BlockStoreException, IOException {
         return get(getChainHeadId());
     }
 
@@ -180,8 +180,8 @@ public class SuperblockLevelDBBlockStore {
      * @return Highest stored superblock's hash.
      * @throws BlockStoreException
      */
-    public synchronized byte[] getChainHeadId() throws BlockStoreException {
-        return db.get(CHAIN_HEAD_KEY);
+    public synchronized Keccak256Hash getChainHeadId() throws BlockStoreException {
+        return Keccak256Hash.wrap(db.get(CHAIN_HEAD_KEY));
     }
 
     /**
@@ -190,7 +190,7 @@ public class SuperblockLevelDBBlockStore {
      * @throws BlockStoreException
      */
     public synchronized void setChainHead(Superblock chainHead) throws BlockStoreException, IOException {
-        db.put(CHAIN_HEAD_KEY, chainHead.getSuperblockId());
+        db.put(CHAIN_HEAD_KEY, chainHead.getSuperblockId().getBytes());
     }
 
     /**
@@ -198,7 +198,7 @@ public class SuperblockLevelDBBlockStore {
      * @return Chain head's accumulated work.
      * @throws BlockStoreException
      */
-    public synchronized BigInteger getChainHeadWork() throws BlockStoreException {
+    public synchronized BigInteger getChainHeadWork() throws BlockStoreException, IOException {
         return getChainHead().getChainWork();
     }
 

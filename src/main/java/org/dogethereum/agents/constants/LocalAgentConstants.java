@@ -3,6 +3,7 @@ package org.dogethereum.agents.constants;
 import com.google.common.collect.Lists;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Sha256Hash;
+import org.dogethereum.agents.core.dogecoin.Keccak256Hash;
 import org.dogethereum.agents.core.dogecoin.Superblock;
 import org.dogethereum.agents.core.dogecoin.SuperblockUtils;
 import org.libdohj.params.DogecoinRegTestParams;
@@ -34,7 +35,7 @@ public class LocalAgentConstants extends AgentConstants {
         minimumLockTxValue = Coin.valueOf(150000000); // 1.5 doge
 
         List<Sha256Hash> genesisSuperblockBlockList = Lists.newArrayList(dogeParams.getGenesisBlock().getHash());
-        byte[] genesisSuperblockParentId = new byte[32]; // initialised with 0s
+        Keccak256Hash genesisSuperblockParentId = Keccak256Hash.wrap(new byte[32]); // initialised with 0s
         genesisSuperblock = new Superblock(
                 dogeParams, genesisSuperblockBlockList,
                 BigInteger.valueOf(0), dogeParams.getGenesisBlock().getTimeSeconds(), 0,
