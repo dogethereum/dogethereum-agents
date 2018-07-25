@@ -133,9 +133,9 @@ public abstract class SuperblockBaseClient {
         if (latestEthBlockProcessedFile.exists()) {
             synchronized (this) {
                 try (
-                        FileInputStream latestEthBlockProcessedFileIs = new FileInputStream(latestEthBlockProcessedFile);
-                        ObjectInputStream latestEthBlockProcessedObjectIs =
-                                new ObjectInputStream(latestEthBlockProcessedFileIs);
+                    FileInputStream latestEthBlockProcessedFileIs = new FileInputStream(latestEthBlockProcessedFile);
+                    ObjectInputStream latestEthBlockProcessedObjectIs =
+                        new ObjectInputStream(latestEthBlockProcessedFileIs);
                 ) {
                     latestEthBlockProcessed = latestEthBlockProcessedObjectIs.readLong();
                 }
