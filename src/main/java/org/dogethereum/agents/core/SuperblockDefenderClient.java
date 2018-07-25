@@ -70,7 +70,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         Keccak256Hash bestSuperblockId = ethWrapper.getBestSuperblockId();
         Superblock chainHead = superblockChain.getChainHead();
 
-        if (chainHead.getSuperblockId() == bestSuperblockId) {
+        if (chainHead.getSuperblockId().equals(bestSuperblockId)) {
             // Contract and local db best superblocks are the same, do nothing.
             return;
         }
