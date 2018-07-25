@@ -37,8 +37,11 @@ public abstract class SuperblockBaseClient {
     protected String myAddress;
 
     protected long latestEthBlockProcessed;
+    protected HashSet<Keccak256Hash> battleSet;
+
     protected File dataDirectory;
     protected File latestEthBlockProcessedFile;
+    protected File battleSetFile;
 
     public SuperblockBaseClient(String clientName) {
         this.clientName = clientName;
@@ -48,7 +51,7 @@ public abstract class SuperblockBaseClient {
     @PostConstruct
     public void setup() throws Exception {
         if (isEnabled()) {
-            setupLatestEthBlockProcessed();
+            setupFiles();
 
             restoreLatestEthBlockProcessed();
 
@@ -63,9 +66,7 @@ public abstract class SuperblockBaseClient {
         if (isEnabled()) {
             log.info("{} tearDown starting...", clientName);
 
-            synchronized (this) {
-                flushLatestEthBlockProcessed();
-            }
+            flushLatestEthBlockProcessed();
 
             log.info("{} tearDown finished.", clientName);
         }
@@ -94,9 +95,8 @@ public abstract class SuperblockBaseClient {
 
                     reactToEvents(fromBlock, toBlock);
 
-                    synchronized (SuperblockBaseClient.this) {
-                        flushLatestEthBlockProcessed();
-                    }
+                    flushLatestEthBlockProcessed();
+
                 } else {
                     log.warn("SuperblocksBaseClientTimerTask skipped because the eth node is syncing blocks");
                 }
@@ -115,6 +115,8 @@ public abstract class SuperblockBaseClient {
 
     protected abstract String getLastEthBlockProcessedFilename();
 
+    protected abstract String getBattleHashSetFilename();
+
     protected abstract void setupClient();
 
     protected abstract void reactToElapsedTime();
@@ -122,11 +124,13 @@ public abstract class SuperblockBaseClient {
 
     /* ---- DATABASE METHODS ---- */
 
-    private void setupLatestEthBlockProcessed() throws IOException {
+    private void setupFiles() throws IOException {
         this.latestEthBlockProcessed = config.getAgentConstants().getEthInitialCheckpoint();
         this.dataDirectory = new File(config.dataDirectory());
         this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() +
                 "/" + getLastEthBlockProcessedFilename());
+        this.battleSetFile = new File(dataDirectory.getAbsolutePath() + "/" + getBattleHashSetFilename());
+
     }
 
     private void restoreLatestEthBlockProcessed() throws IOException {
@@ -144,16 +148,45 @@ public abstract class SuperblockBaseClient {
     }
 
     private void flushLatestEthBlockProcessed() throws IOException {
+        synchronized (this) {
+            if (!dataDirectory.exists()) {
+                if (!dataDirectory.mkdirs()) {
+                    throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());
+                }
+            }
+            try (
+                FileOutputStream latestEthBlockProcessedFileOs = new FileOutputStream(latestEthBlockProcessedFile);
+                ObjectOutputStream latestEthBlockProcessedObjectOs = new ObjectOutputStream(latestEthBlockProcessedFileOs);
+            ) {
+                latestEthBlockProcessedObjectOs.writeLong(latestEthBlockProcessed);
+            }
+        }
+    }
+
+    private void restoreBattleSet() throws IOException, ClassNotFoundException {
+        if (battleSetFile.exists()) {
+            synchronized (this) {
+                try (
+                    FileInputStream battleSetFileIs = new FileInputStream(battleSetFile);
+                    ObjectInputStream battleSetObjectIs = new ObjectInputStream(battleSetFileIs);
+                ) {
+                    battleSet = (HashSet<Keccak256Hash>) battleSetObjectIs.readObject();
+                }
+            }
+        }
+    }
+
+    private void flushBattleSet() throws IOException {
         if (!dataDirectory.exists()) {
             if (!dataDirectory.mkdirs()) {
                 throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());
             }
         }
         try (
-                FileOutputStream latestEthBlockProcessedFileOs = new FileOutputStream(latestEthBlockProcessedFile);
-                ObjectOutputStream latestEthBlockProcessedObjectOs = new ObjectOutputStream(latestEthBlockProcessedFileOs);
+            FileOutputStream battleSetFileOs = new FileOutputStream(battleSetFile);
+            ObjectOutputStream battleSetObjectOs = new ObjectOutputStream(battleSetFileOs);
         ) {
-            latestEthBlockProcessedObjectOs.writeLong(latestEthBlockProcessed);
+            battleSetObjectOs.writeObject(battleSet);
         }
     }
 }
