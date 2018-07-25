@@ -101,10 +101,9 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
         for (EthWrapper.QueryBlockHeaderEvent queryBlockHeader : queryBlockHeaderEvents) {
             if (isMine(queryBlockHeader)) {
-                log.info("Header requested for session {}. Responding now.",
-                        Hex.toHexString(queryBlockHeader.sessionId));
+                log.info("Header requested for session {}. Responding now.", queryBlockHeader.sessionId);
 
-                StoredBlock dogeBlock = dogecoinWrapper.getBlock(Sha256Hash.wrap(queryBlockHeader.dogeBlockHash));
+                StoredBlock dogeBlock = dogecoinWrapper.getBlock(queryBlockHeader.dogeBlockHash);
                 ethWrapper.respondBlockHeader(queryBlockHeader.sessionId, (AltcoinBlock) dogeBlock.getHeader());
                 ethWrapper.verifySuperblock(queryBlockHeader.sessionId);
             }
@@ -118,7 +117,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         for (EthWrapper.QueryMerkleRootHashesEvent queryMerkleRootHashes : queryMerkleRootHashesEvents) {
             if (isMine(queryMerkleRootHashes)) {
                 log.info("Merkle root hashes requested for session {}. Responding now.",
-                        Hex.toHexString(queryMerkleRootHashes.sessionId));
+                        queryMerkleRootHashes.sessionId);
 
                 Superblock superblock = superblockChain.getSuperblock(queryMerkleRootHashes.superblockId);
                 ethWrapper.respondMerkleRootHashes(queryMerkleRootHashes.sessionId, superblock.getDogeBlockHashes());

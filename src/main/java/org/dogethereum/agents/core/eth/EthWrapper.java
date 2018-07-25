@@ -502,9 +502,9 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (DogeClaimManager.QueryBlockHeaderEventResponse response : queryBlockHeaderEvents) {
             QueryBlockHeaderEvent queryBlockHeaderEvent = new QueryBlockHeaderEvent();
-            queryBlockHeaderEvent.sessionId = response.sessionId;
+            queryBlockHeaderEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
             queryBlockHeaderEvent.submitter = response.submitter;
-            queryBlockHeaderEvent.dogeBlockHash = response.blockHash;
+            queryBlockHeaderEvent.dogeBlockHash = Sha256Hash.wrap(response.blockHash);
             result.add(queryBlockHeaderEvent);
         }
 
@@ -522,7 +522,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         for (DogeClaimManager.QueryMerkleRootHashesEventResponse response : queryMerkleRootHashesEvents) {
             QueryMerkleRootHashesEvent queryMerkleRootHashesEvent = new QueryMerkleRootHashesEvent();
             queryMerkleRootHashesEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
-            queryMerkleRootHashesEvent.sessionId = response.sessionId;
+            queryMerkleRootHashesEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
             queryMerkleRootHashesEvent.submitter = response.submitter;
             result.add(queryMerkleRootHashesEvent);
         }
@@ -531,52 +531,53 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     public static class QueryBlockHeaderEvent {
-        public byte[] sessionId;
+        public Keccak256Hash sessionId;
         public String submitter;
-        public byte[] dogeBlockHash;
+        public Sha256Hash dogeBlockHash;
     }
 
     public static class QueryMerkleRootHashesEvent {
         public Keccak256Hash superblockId;
-        public byte[] sessionId;
+        public Keccak256Hash sessionId;
         public String submitter;
     }
 
     public static class QueryEvent {
 
-        public byte[] sessionId;
+        public Keccak256Hash sessionId;
         public String claimant;
     }
 
 
     /* ---- BATTLE METHODS ---- */
 
-    public void respondBlockHeader(byte[] sessionId, AltcoinBlock dogeBlock) {
+    public void respondBlockHeader(Keccak256Hash sessionId, AltcoinBlock dogeBlock) {
         byte[] scryptHashBytes = dogeBlock.getScryptHash().getBytes(); // TODO: check if this should be reversed
         byte[] blockHeaderBytes = dogeBlock.bitcoinSerialize();
         CompletableFuture<TransactionReceipt> futureReceipt = claimManager.respondBlockHeader(
-                sessionId, scryptHashBytes, blockHeaderBytes).sendAsync();
+                sessionId.getBytes(), scryptHashBytes, blockHeaderBytes).sendAsync();
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
                 log.info("Responded to block header query for session {}, Doge block {}",
-                        Hex.toHexString(sessionId), dogeBlock.getHash())
+                        sessionId, dogeBlock.getHash())
         );
     }
 
-    public void respondMerkleRootHashes(byte[] sessionId, List<Sha256Hash> dogeBlockHashes) {
+    public void respondMerkleRootHashes(Keccak256Hash sessionId, List<Sha256Hash> dogeBlockHashes) {
         // TODO: double check if endianness is OK
         List<byte[]> rawHashes = new ArrayList<>();
         for (Sha256Hash dogeBlockHash : dogeBlockHashes)
             rawHashes.add(dogeBlockHash.getBytes());
         CompletableFuture<TransactionReceipt> futureReceipt =
-                claimManager.respondMerkleRootHashes(sessionId, rawHashes).sendAsync();
+                claimManager.respondMerkleRootHashes(sessionId.getBytes(), rawHashes).sendAsync();
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
-                log.info("Responded to Merkle root hashes query for session {}", Hex.toHexString(sessionId)));
+                log.info("Responded to Merkle root hashes query for session {}", sessionId));
     }
 
-    public void verifySuperblock(byte[] sessionId) throws Exception {
-        CompletableFuture<TransactionReceipt> futureReceipt = claimManager.verifySuperblock(sessionId).sendAsync();
+    public void verifySuperblock(Keccak256Hash sessionId) throws Exception {
+        CompletableFuture<TransactionReceipt> futureReceipt =
+                claimManager.verifySuperblock(sessionId.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
-                log.info("Verified superblock for session {}", Hex.toHexString(sessionId)));
+                log.info("Verified superblock for session {}", sessionId));
     }
 
 
