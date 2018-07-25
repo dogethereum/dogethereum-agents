@@ -677,7 +677,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     public Date getClaimChallengeTimeoutDate(Keccak256Hash superblockId) throws Exception {
-        return new Date(getClaimChallengeTimeoutBigInteger(superblockId).longValue());
+        return new Date(getClaimChallengeTimeoutBigInteger(superblockId).longValue() * 1000);
     }
 
     public int getClaimRemainingChallengers(Keccak256Hash superblockId) throws Exception {
