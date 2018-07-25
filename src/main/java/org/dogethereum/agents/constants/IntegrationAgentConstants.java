@@ -33,7 +33,6 @@ public class IntegrationAgentConstants extends AgentConstants {
         dogeParams = DogecoinMainNetParams.get();
         doge2EthMinimumAcceptableConfirmations = 1;
         updateBridgeExecutionPeriod = 1 * 60 * 1000; // 30 seconds
-        maxDogeHeadersPerRound = 5;
         minimumLockTxValue = Coin.valueOf(150000000); // 1.5 doge
 
         // Genesis Superblock for doge mainnet

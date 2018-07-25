@@ -31,7 +31,6 @@ public class EthGanacheDogeMainAgentConstants extends AgentConstants {
         dogeParams = DogecoinMainNetParams.get();
         doge2EthMinimumAcceptableConfirmations = 1;
         updateBridgeExecutionPeriod = 10 * 1000; // 10 seconds
-        maxDogeHeadersPerRound = 5;
         minimumLockTxValue = Coin.valueOf(150000000); // 1.5 doge
 
         // Genesis Superblock for doge mainnet

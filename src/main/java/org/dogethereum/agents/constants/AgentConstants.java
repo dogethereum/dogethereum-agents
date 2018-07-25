@@ -18,7 +18,6 @@ public class AgentConstants {
     // for the agent.
     protected int doge2EthMinimumAcceptableConfirmations;
     protected int updateBridgeExecutionPeriod;
-    protected int maxDogeHeadersPerRound;
     protected Coin minimumLockTxValue;
     protected Superblock genesisSuperblock;
 
@@ -27,7 +26,6 @@ public class AgentConstants {
     }
     public int getDoge2EthMinimumAcceptableConfirmations() { return doge2EthMinimumAcceptableConfirmations; }
     public int getUpdateBridgeExecutionPeriod() { return updateBridgeExecutionPeriod; }
-    public int getMaxDogeHeadersPerRound() { return maxDogeHeadersPerRound; }
     public Coin getMinimumLockTxValue() { return minimumLockTxValue; }
 
     // Unlock mechanism specific start
