@@ -300,10 +300,9 @@ public class DogeToEthClient {
     }
 
     /**
-     * Helper method for sending an SPV proof that a block is in the main chain of superblocks.
-     * Finds the highest superblock where the block identified by `hash` can be found.
-     * @param blockHash SHA-256 hash of a block that we want to prove is in the main chain.
-     * @return Highest stored superblock where the block can be found.
+     * Finds the superblock in the superblock main chain that contains the block identified by `blockHash`.
+     * @param blockHash SHA-256 hash of a block that we want to find.
+     * @return Superblock where the block can be found.
      * @throws BlockStoreException
      */
     private Superblock findBestSuperblockFor(Sha256Hash blockHash) throws BlockStoreException, IOException {
