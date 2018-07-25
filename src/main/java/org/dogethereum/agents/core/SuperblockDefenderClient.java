@@ -193,9 +193,14 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      */
     private boolean semiApprovedAndApprovable(Superblock superblock) throws Exception {
         Keccak256Hash superblockId = superblock.getSuperblockId();
-        Keccak256Hash descendantId = superblockChain.getFirstDescendant(superblockId).getSuperblockId();
-        return (descendantId != null && ethWrapper.isSuperblockSemiApproved(descendantId)
-                && ethWrapper.isSuperblockSemiApproved(superblockId));
+        Superblock descendant = superblockChain.getFirstDescendant(superblockId);
+        if (descendant == null) {
+            return false;
+        } else {
+            Keccak256Hash descendantId = descendant.getSuperblockId();
+            return (ethWrapper.isSuperblockSemiApproved(descendantId) &&
+                    ethWrapper.isSuperblockSemiApproved(superblockId));
+        }
     }
 
 
