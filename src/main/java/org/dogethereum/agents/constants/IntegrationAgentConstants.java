@@ -31,7 +31,7 @@ public class IntegrationAgentConstants extends AgentConstants {
 
     IntegrationAgentConstants() {
         dogeParams = DogecoinMainNetParams.get();
-        doge2EthMinimumAcceptableConfirmations = 7;
+        doge2EthMinimumAcceptableConfirmations = 1;
         updateBridgeExecutionPeriod = 1 * 60 * 1000; // 30 seconds
         maxDogeHeadersPerRound = 5;
         minimumLockTxValue = Coin.valueOf(150000000); // 1.5 doge

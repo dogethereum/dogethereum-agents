@@ -29,7 +29,7 @@ public class LocalAgentConstants extends AgentConstants {
 
     LocalAgentConstants() {
         dogeParams = DogecoinRegTestParams.get();
-        doge2EthMinimumAcceptableConfirmations = 7;
+        doge2EthMinimumAcceptableConfirmations = 1;
         updateBridgeExecutionPeriod = 10 * 1000; // 10 seconds
         maxDogeHeadersPerRound = 5;
         minimumLockTxValue = Coin.valueOf(150000000); // 1.5 doge

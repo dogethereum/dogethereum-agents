@@ -10,7 +10,12 @@ import org.libdohj.params.AbstractDogecoinParams;
  */
 public class AgentConstants {
 
+
     protected AbstractDogecoinParams dogeParams;
+
+    // Minimum number of confirmations a tx has to have in order to EVALUATE relaying it to eth
+    // Tx will be relayed only if they are part of an aproved superblock, so this value is just an optimization
+    // for the agent.
     protected int doge2EthMinimumAcceptableConfirmations;
     protected int updateBridgeExecutionPeriod;
     protected int maxDogeHeadersPerRound;
