@@ -87,20 +87,6 @@ public class Keccak256Hash implements Serializable, Comparable<Keccak256Hash> {
         return wrap(hash(contents));
     }
 
-    public static Keccak256Hash createDouble(byte[] contents) {
-        return twiceOf(contents);
-    }
-
-    /**
-     * Creates a new instance containing the hash of the calculated hash of the given bytes.
-     *
-     * @param contents the bytes on which the hash value is calculated
-     * @return a new instance containing the calculated (two-time) hash
-     */
-    public static Keccak256Hash twiceOf(byte[] contents) {
-        return wrap(hashTwice(contents));
-    }
-
     /**
      * Creates a new instance containing the calculated (one-time) hash of the given file's contents.
      *
@@ -116,22 +102,6 @@ public class Keccak256Hash implements Serializable, Comparable<Keccak256Hash> {
             return of(ByteStreams.toByteArray(in));
         } finally {
             in.close();
-        }
-    }
-
-    /**
-     * Returns a new SHA3-256 MessageDigest instance.
-     *
-     * This is a convenience method which wraps the checked
-     * exception that can never occur with a RuntimeException.
-     *
-     * @return a new SHA3-256 MessageDigest instance
-     */
-    public static MessageDigest newDigest() {
-        try {
-            return MessageDigest.getInstance("SHA3-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);  // Can't happen.
         }
     }
 
@@ -157,44 +127,6 @@ public class Keccak256Hash implements Serializable, Comparable<Keccak256Hash> {
         Keccak.DigestKeccak digest = new Keccak.Digest256();
         digest.update(input, offset, length);
         return digest.digest();
-    }
-
-    /**
-     * Calculates the SHA3-256 hash of the given bytes,
-     * and then hashes the resulting hash again.
-     *
-     * @param input the bytes to hash
-     * @return the double-hash (in big-endian order)
-     */
-    public static byte[] hashTwice(byte[] input) {
-        return hashTwice(input, 0, input.length);
-    }
-
-    /**
-     * Calculates the SHA3-256 hash of the given byte range,
-     * and then hashes the resulting hash again.
-     *
-     * @param input the array containing the bytes to hash
-     * @param offset the offset within the array of the bytes to hash
-     * @param length the number of bytes to hash
-     * @return the double-hash (in big-endian order)
-     */
-    public static byte[] hashTwice(byte[] input, int offset, int length) {
-        Keccak.DigestKeccak digest = new Keccak.Digest256();
-        digest.update(input, offset, length);
-        return digest.digest(digest.digest());
-    }
-
-    /**
-     * Calculates the hash of hash on the given byte ranges. This is equivalent to
-     * concatenating the two ranges and then passing the result to {@link #hashTwice(byte[])}.
-     */
-    public static byte[] hashTwice(byte[] input1, int offset1, int length1,
-                                   byte[] input2, int offset2, int length2) {
-        Keccak.DigestKeccak digest = new Keccak.Digest256();
-        digest.update(input1, offset1, length1);
-        digest.update(input2, offset2, length2);
-        return digest.digest(digest.digest());
     }
 
     @Override
