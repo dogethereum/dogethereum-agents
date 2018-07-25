@@ -323,102 +323,173 @@ public class EthWrapper implements SuperblockConstantProvider {
         return superblocks.getSuperblockHeight(superblockId).send();
     }
 
+
     /* ---- EVENT RETRIEVAL METHODS AND CLASSES ---- */
 
-    public List<SuperblockEvent> getNewSuperblocks(long startBlock, long endBlock) throws IOException {
-        List<SuperblockEvent> result = new ArrayList<>();
-        List<DogeSuperblocks.NewSuperblockEventResponse> newSuperblockEvents =
-                superblocks.getNewSuperblockEvents(
+    public List<NewBattleEvent> getNewBattleEvents(long startBlock, long endBlock) throws IOException {
+        List<NewBattleEvent> result = new ArrayList<>();
+        List<DogeClaimManager.NewBattleEventResponse> newBattleEvents =
+                claimManager.getNewBattleEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
-        for (DogeSuperblocks.NewSuperblockEventResponse response : newSuperblockEvents) {
-            SuperblockEvent newSuperblockEvent = new SuperblockEvent();
-            newSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
-            newSuperblockEvent.who = response.who;
-            result.add(newSuperblockEvent);
+        for (DogeClaimManager.NewBattleEventResponse response : newBattleEvents) {
+            NewBattleEvent newBattleEvent = new NewBattleEvent();
+            newBattleEvent.sessionId = response.sessionId;
+            newBattleEvent.submitter = response.submitter;
+            newBattleEvent.challenger = response.challenger;
+            result.add(newBattleEvent);
         }
 
         return result;
     }
 
-    public List<SuperblockEvent> getApprovedSuperblocks(long startBlock, long endBlock)
+    public List<ChallengerConvictedEvent> getChallengerConvictedEvents(long startBlock, long endBlock)
             throws IOException {
-        List<SuperblockEvent> result = new ArrayList<>();
-        List<DogeSuperblocks.ApprovedSuperblockEventResponse> approvedSuperblockEvents =
-                superblocks.getApprovedSuperblockEvents(
+        List<ChallengerConvictedEvent> result = new ArrayList<>();
+        List<DogeClaimManager.ChallengerConvictedEventResponse> challengerConvictedEvents =
+                claimManager.getChallengerConvictedEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
-        for (DogeSuperblocks.ApprovedSuperblockEventResponse response : approvedSuperblockEvents) {
-            SuperblockEvent approvedSuperblockEvent = new SuperblockEvent();
-            approvedSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
-            approvedSuperblockEvent.who = response.who;
-            result.add(approvedSuperblockEvent);
+        for (DogeClaimManager.ChallengerConvictedEventResponse response : challengerConvictedEvents) {
+            ChallengerConvictedEvent challengerConvictedEvent = new ChallengerConvictedEvent();
+            challengerConvictedEvent.sessionId = response.sessionId;
+            challengerConvictedEvent.challenger = response.challenger;
+            result.add(challengerConvictedEvent);
         }
 
         return result;
     }
 
-    public List<SuperblockEvent> getChallengedSuperblocks(long startBlock, long endBlock)
+    public List<SubmitterConvictedEvent> getSubmitterConvictedEvents(long startBlock, long endBlock)
             throws IOException {
-        List<SuperblockEvent> result = new ArrayList<>();
-        List<DogeSuperblocks.ChallengeSuperblockEventResponse> challengeSuperblockEvents =
-                superblocks.getChallengeSuperblockEvents(
+        List<SubmitterConvictedEvent> result = new ArrayList<>();
+        List<DogeClaimManager.SubmitterConvictedEventResponse> submitterConvictedEvents =
+                claimManager.getSubmitterConvictedEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
-        for (DogeSuperblocks.ChallengeSuperblockEventResponse response : challengeSuperblockEvents) {
-            SuperblockEvent challengeSuperblockEvent = new SuperblockEvent();
-            challengeSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
-            challengeSuperblockEvent.who = response.who;
-            result.add(challengeSuperblockEvent);
+        for (DogeClaimManager.SubmitterConvictedEventResponse response : submitterConvictedEvents) {
+            SubmitterConvictedEvent submitterConvictedEvent = new SubmitterConvictedEvent();
+            submitterConvictedEvent.sessionId = response.sessionId;
+            submitterConvictedEvent.submitter = response.submitter;
+            result.add(submitterConvictedEvent);
         }
 
         return result;
     }
 
-    public List<SuperblockEvent> getSemiApprovedSuperblocks(long startBlock, long endBlock)
-            throws IOException {
-        List<SuperblockEvent> result = new ArrayList<>();
-        List<DogeSuperblocks.SemiApprovedSuperblockEventResponse> semiApprovedSuperblockEvents =
-                superblocks.getSemiApprovedSuperblockEvents(
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
-
-        for (DogeSuperblocks.SemiApprovedSuperblockEventResponse response : semiApprovedSuperblockEvents) {
-            SuperblockEvent semiApprovedSuperblockEvent = new SuperblockEvent();
-            semiApprovedSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
-            semiApprovedSuperblockEvent.who = response.who;
-            result.add(semiApprovedSuperblockEvent);
-        }
-
-        return result;
+    public static class NewBattleEvent {
+        public byte[] sessionId;
+        public String submitter;
+        public String challenger;
     }
 
-    public List<SuperblockEvent> getInvalidSuperblocks(long startBlock, long endBlock)
-            throws IOException {
-        List<SuperblockEvent> result = new ArrayList<>();
-        List<DogeSuperblocks.InvalidSuperblockEventResponse> invalidSuperblockEvents =
-                superblocks.getInvalidSuperblockEvents(
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
-
-        for (DogeSuperblocks.InvalidSuperblockEventResponse response : invalidSuperblockEvents) {
-            SuperblockEvent invalidSuperblockEvent = new SuperblockEvent();
-            invalidSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
-            invalidSuperblockEvent.who = response.who;
-            result.add(invalidSuperblockEvent);
-        }
-
-        return result;
+    public static class ChallengerConvictedEvent {
+        public byte[] sessionId;
+        public String challenger;
     }
 
-    public static class SuperblockEvent {
-
-        public Keccak256Hash superblockId;
-        public String who;
+    public static class SubmitterConvictedEvent {
+        public byte[] sessionId;
+        public String submitter;
     }
+
+//    public List<SuperblockEvent> getNewSuperblocks(long startBlock, long endBlock) throws IOException {
+//        List<SuperblockEvent> result = new ArrayList<>();
+//        List<DogeSuperblocks.NewSuperblockEventResponse> newSuperblockEvents =
+//                superblocks.getNewSuperblockEvents(
+//                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
+//                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+//
+//        for (DogeSuperblocks.NewSuperblockEventResponse response : newSuperblockEvents) {
+//            SuperblockEvent newSuperblockEvent = new SuperblockEvent();
+//            newSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+//            newSuperblockEvent.who = response.who;
+//            result.add(newSuperblockEvent);
+//        }
+//
+//        return result;
+//    }
+//
+//    public List<SuperblockEvent> getApprovedSuperblocks(long startBlock, long endBlock)
+//            throws IOException {
+//        List<SuperblockEvent> result = new ArrayList<>();
+//        List<DogeSuperblocks.ApprovedSuperblockEventResponse> approvedSuperblockEvents =
+//                superblocks.getApprovedSuperblockEvents(
+//                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
+//                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+//
+//        for (DogeSuperblocks.ApprovedSuperblockEventResponse response : approvedSuperblockEvents) {
+//            SuperblockEvent approvedSuperblockEvent = new SuperblockEvent();
+//            approvedSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+//            approvedSuperblockEvent.who = response.who;
+//            result.add(approvedSuperblockEvent);
+//        }
+//
+//        return result;
+//    }
+//
+//    public List<SuperblockEvent> getChallengedSuperblocks(long startBlock, long endBlock)
+//            throws IOException {
+//        List<SuperblockEvent> result = new ArrayList<>();
+//        List<DogeSuperblocks.ChallengeSuperblockEventResponse> challengeSuperblockEvents =
+//                superblocks.getChallengeSuperblockEvents(
+//                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
+//                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+//
+//        for (DogeSuperblocks.ChallengeSuperblockEventResponse response : challengeSuperblockEvents) {
+//            SuperblockEvent challengeSuperblockEvent = new SuperblockEvent();
+//            challengeSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+//            challengeSuperblockEvent.who = response.who;
+//            result.add(challengeSuperblockEvent);
+//        }
+//
+//        return result;
+//    }
+//
+//    public List<SuperblockEvent> getSemiApprovedSuperblocks(long startBlock, long endBlock)
+//            throws IOException {
+//        List<SuperblockEvent> result = new ArrayList<>();
+//        List<DogeSuperblocks.SemiApprovedSuperblockEventResponse> semiApprovedSuperblockEvents =
+//                superblocks.getSemiApprovedSuperblockEvents(
+//                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
+//                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+//
+//        for (DogeSuperblocks.SemiApprovedSuperblockEventResponse response : semiApprovedSuperblockEvents) {
+//            SuperblockEvent semiApprovedSuperblockEvent = new SuperblockEvent();
+//            semiApprovedSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+//            semiApprovedSuperblockEvent.who = response.who;
+//            result.add(semiApprovedSuperblockEvent);
+//        }
+//
+//        return result;
+//    }
+//
+//    public List<SuperblockEvent> getInvalidSuperblocks(long startBlock, long endBlock)
+//            throws IOException {
+//        List<SuperblockEvent> result = new ArrayList<>();
+//        List<DogeSuperblocks.InvalidSuperblockEventResponse> invalidSuperblockEvents =
+//                superblocks.getInvalidSuperblockEvents(
+//                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
+//                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+//
+//        for (DogeSuperblocks.InvalidSuperblockEventResponse response : invalidSuperblockEvents) {
+//            SuperblockEvent invalidSuperblockEvent = new SuperblockEvent();
+//            invalidSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+//            invalidSuperblockEvent.who = response.who;
+//            result.add(invalidSuperblockEvent);
+//        }
+//
+//        return result;
+//    }
+//
+//    public static class SuperblockEvent {
+//
+//        public Keccak256Hash superblockId;
+//        public String who;
+//    }
 
 
     public List<QueryBlockHeaderEvent> getBlockHeaderQueries(long startBlock, long endBlock)

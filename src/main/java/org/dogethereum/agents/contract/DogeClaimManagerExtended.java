@@ -86,4 +86,89 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
 
         return result;
     }
+
+    public List<NewBattleEventResponse> getNewBattleEventResponses(
+            DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
+            throws IOException {
+        final Event event = new Event("NewBattle",
+                Arrays.<TypeReference<?>>asList(),
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
+
+        List<NewBattleEventResponse> result = new ArrayList<>();
+        EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
+        filter.addSingleTopic(EventEncoder.encode(event));
+        EthLog ethLog = web3j.ethGetLogs(filter).send();
+        List<EthLog.LogResult> logResults = ethLog.getLogs();
+
+        for (EthLog.LogResult logResult : logResults) {
+            Log log = (Log) logResult.get();
+            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+
+            NewBattleEventResponse newBattleEventResponse =
+                    new NewBattleEventResponse();
+            newBattleEventResponse.log = eventValues.getLog();
+            newBattleEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            newBattleEventResponse.submitter = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            newBattleEventResponse.challenger = (String) eventValues.getNonIndexedValues().get(2).getValue();
+            result.add(newBattleEventResponse);
+        }
+
+        return result;
+    }
+
+    public List<ChallengerConvictedEventResponse> getChallengerConvictedEventResponses(
+            DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
+            throws IOException {
+        final Event event = new Event("NewBattle",
+                Arrays.<TypeReference<?>>asList(),
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
+
+        List<ChallengerConvictedEventResponse> result = new ArrayList<>();
+        EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
+        filter.addSingleTopic(EventEncoder.encode(event));
+        EthLog ethLog = web3j.ethGetLogs(filter).send();
+        List<EthLog.LogResult> logResults = ethLog.getLogs();
+
+        for (EthLog.LogResult logResult : logResults) {
+            Log log = (Log) logResult.get();
+            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+
+            ChallengerConvictedEventResponse newChallengerConvictedEventResponse =
+                    new ChallengerConvictedEventResponse();
+            newChallengerConvictedEventResponse.log = eventValues.getLog();
+            newChallengerConvictedEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            newChallengerConvictedEventResponse.challenger = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            result.add(newChallengerConvictedEventResponse);
+        }
+
+        return result;
+    }
+
+    public List<SubmitterConvictedEventResponse> getSubmitterConvictedEventResponses(
+            DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
+            throws IOException {
+        final Event event = new Event("NewBattle",
+                Arrays.<TypeReference<?>>asList(),
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
+
+        List<SubmitterConvictedEventResponse> result = new ArrayList<>();
+        EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
+        filter.addSingleTopic(EventEncoder.encode(event));
+        EthLog ethLog = web3j.ethGetLogs(filter).send();
+        List<EthLog.LogResult> logResults = ethLog.getLogs();
+
+        for (EthLog.LogResult logResult : logResults) {
+            Log log = (Log) logResult.get();
+            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+
+            SubmitterConvictedEventResponse newSubmitterConvictedEventResponse =
+                    new SubmitterConvictedEventResponse();
+            newSubmitterConvictedEventResponse.log = eventValues.getLog();
+            newSubmitterConvictedEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            newSubmitterConvictedEventResponse.submitter = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            result.add(newSubmitterConvictedEventResponse);
+        }
+
+        return result;
+    }
 }

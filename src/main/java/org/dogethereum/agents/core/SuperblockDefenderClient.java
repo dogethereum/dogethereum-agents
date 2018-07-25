@@ -130,9 +130,9 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     /* ---- HELPER METHODS ---- */
 
-    private boolean isMine(EthWrapper.SuperblockEvent superblockEvent) {
-        return superblockEvent.who.equals(myAddress);
-    }
+//    private boolean isMine(EthWrapper.SuperblockEvent superblockEvent) {
+//        return superblockEvent.who.equals(myAddress);
+//    }
 
     private boolean isMine(EthWrapper.QueryEvent queryEvent) {
         return queryEvent.claimant.equals(myAddress);
