@@ -61,13 +61,10 @@ public class DogeToEthClient {
         if (config.isDogeBlockSubmitterEnabled() || config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
             agentConstants = config.getAgentConstants();
 
-            new Timer("Doge to Eth client").scheduleAtFixedRate(new DogeToEthClientTimerTask(), getFirstExecutionDate(),
-                    agentConstants.getUpdateBridgeExecutionPeriod());
+            new Timer("Doge to Eth client").scheduleAtFixedRate(new DogeToEthClientTimerTask(),
+                    getFirstExecutionDate(), agentConstants.getUpdateBridgeExecutionPeriod());
 
             Context context = new Context(agentConstants.getDogeParams());
-
-            //superblockChain = new SuperblockChain(dogecoinWrapper, context, dataDirectory, agentConstants.getDogeParams());
-            //superblockChain.initialize(agentConstants.getUpdateBridgeExecutionPeriod(), getFirstExecutionDate());
         }
     }
 
@@ -263,8 +260,6 @@ public class DogeToEthClient {
                     }
 
                     int dogeBlockIndex = txSuperblock.getDogeBlockLeafIndex(txStoredBlock.getHeader().getHash());
-//                    byte[] includeBits = new byte[txSuperblock.getDogeBlockHashes().size()]; // dummy
-//                    includeBits[dogeBlockIndex] = 1;
                     byte[] includeBits = new byte[(int) Math.ceil(txSuperblock.getDogeBlockHashes().size() / 8.0)];
                     Utils.setBitLE(includeBits, dogeBlockIndex);
                     PartialMerkleTree superblockPMT = PartialMerkleTree.buildFromLeaves(agentConstants.getDogeParams(),

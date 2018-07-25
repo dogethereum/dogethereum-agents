@@ -357,33 +357,6 @@ public class Superblock {
         return -1; // TODO: raise exception
     }
 
-    // TODO: see if this can be removed
-//    public boolean equals(Superblock superblock) {
-//        if (!this.merkleRoot.equals(superblock.merkleRoot))
-//            return false;
-//        if (!this.chainWork.equals(superblock.chainWork))
-//            return false;
-//        if (this.lastDogeBlockTime != superblock.lastDogeBlockTime)
-//            return false;
-//        if (this.previousToLastDogeBlockTime != superblock.previousToLastDogeBlockTime)
-//            return false;
-//        if (!this.lastDogeBlockHash.equals(superblock.lastDogeBlockHash))
-//            return false;
-//        if (this.lastDogeBlockBits != superblock.lastDogeBlockBits)
-//            return false;
-//        for (int i = 0; i < 32; i++) {
-//            if (this.parentId[i] != superblock.parentId[i])
-//                return false;
-//        }
-//
-//        if (this.superblockHeight != superblock.superblockHeight)
-//            return false;
-//        for (int i = 0; i < Math.min(this.dogeBlockHashes.size(), superblock.dogeBlockHashes.size()); i++) {
-//            if (!this.dogeBlockHashes.get(i).equals(superblock.dogeBlockHashes.get(i)))
-//                return false;
-//        }
-//
-//        return true;
 //    }
 
     @Override

@@ -190,28 +190,6 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* - Relay Doge superblocks section - */
     /* ---------------------------------- */
 
-//    /**
-//     * Propose a series of superblocks to DogeClaimManager in order to keep Dogethereum Contracts updated.
-//     * @param superblocksToSend DogeSuperblocks that are already stored in the local database,
-//     *                          but still haven't been submitted to Dogethereum Contracts.
-//     * @throws Exception If a superblock hash cannot be calculated.
-//     */
-//    public void sendStoreSuperblocks(Deque<Superblock> superblocksToSend) throws Exception {
-//        log.info("About to send to the bridge superblocks from {} to {}",
-//                Hex.toHexString(superblocksToSend.peekFirst().getSuperblockId()),
-//                Hex.toHexString(superblocksToSend.peekLast().getSuperblockId()));
-//
-//        for (Superblock superblock : superblocksToSend) {
-//            CompletableFuture<TransactionReceipt> futureReceipt = proposeSuperblock(superblock);
-//            log.info("Sent superblock {}", superblock.getSuperblockId());
-//            futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
-//                log.info("proposeSuperblock receipt {}", receipt.toString())
-//            );
-//        }
-//        // This is because sendStoreBlocks does it; TODO: look into it later
-//        Thread.sleep(200);
-//    }
-
     /**
      * Propose a superblock to DogeClaimManager in order to keep Dogethereum Contracts updated.
      * @param superblock Oldest superblock that is already stored in the local database,
