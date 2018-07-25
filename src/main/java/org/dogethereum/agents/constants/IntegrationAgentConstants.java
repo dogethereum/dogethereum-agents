@@ -55,7 +55,6 @@ public class IntegrationAgentConstants extends AgentConstants {
 
         // Unlock mechanism specific start
         eth2DogeMinimumAcceptableConfirmations = 10;
-        dogeBroadcastingMinimumAcceptableBlocks = 30;
         ethInitialCheckpoint = 3657000;
         // Unlock mechanism specific emd
     }

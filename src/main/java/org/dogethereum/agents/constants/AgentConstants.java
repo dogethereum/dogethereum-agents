@@ -30,14 +30,10 @@ public class AgentConstants {
 
     // Unlock mechanism specific start
     protected int eth2DogeMinimumAcceptableConfirmations;
-    protected int dogeBroadcastingMinimumAcceptableBlocks;
     protected int ethInitialCheckpoint;
 
     public int getEth2DogeMinimumAcceptableConfirmations() {
         return eth2DogeMinimumAcceptableConfirmations;
-    }
-    public int getDogeBroadcastingMinimumAcceptableBlocks() {
-        return dogeBroadcastingMinimumAcceptableBlocks;
     }
     public int getEthInitialCheckpoint() {
         return ethInitialCheckpoint;
