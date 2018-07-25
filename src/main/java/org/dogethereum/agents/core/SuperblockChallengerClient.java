@@ -50,4 +50,9 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     protected String getLastEthBlockProcessedFilename() {
         return "SuperblockChallengerLatestEthBlockProcessedFile.dat";
     }
+
+    @Override
+    protected String getBattleSetFilename() {
+        return "SuperblockChallengerBattleSet.dat";
+    }
 }

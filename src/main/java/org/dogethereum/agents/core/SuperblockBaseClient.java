@@ -115,7 +115,7 @@ public abstract class SuperblockBaseClient {
 
     protected abstract String getLastEthBlockProcessedFilename();
 
-    protected abstract String getBattleHashSetFilename();
+    protected abstract String getBattleSetFilename();
 
     protected abstract void setupClient();
 
@@ -129,7 +129,7 @@ public abstract class SuperblockBaseClient {
         this.dataDirectory = new File(config.dataDirectory());
         this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() +
                 "/" + getLastEthBlockProcessedFilename());
-        this.battleSetFile = new File(dataDirectory.getAbsolutePath() + "/" + getBattleHashSetFilename());
+        this.battleSetFile = new File(dataDirectory.getAbsolutePath() + "/" + getBattleSetFilename());
 
     }
 

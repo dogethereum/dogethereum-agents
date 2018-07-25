@@ -210,4 +210,9 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     protected String getLastEthBlockProcessedFilename() {
         return "SuperblockDefenderLatestEthBlockProcessedFile.dat";
     }
+
+    @Override
+    protected String getBattleSetFilename() {
+        return "SuperblockDefenderBattleSet.dat";
+    }
 }
