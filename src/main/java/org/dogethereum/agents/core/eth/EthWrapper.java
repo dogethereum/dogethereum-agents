@@ -621,7 +621,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     public Date getNewEventTimestampDate(Keccak256Hash superblockId) throws Exception {
-        return new Date(getNewEventTimestampBigInteger(superblockId).longValue());
+        return new Date(getNewEventTimestampBigInteger(superblockId).longValue() * 1000);
     }
 
 
