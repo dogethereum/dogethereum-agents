@@ -323,79 +323,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         return superblocks.getSuperblockHeight(superblockId).send();
     }
 
-
-    /* ---- EVENT RETRIEVAL METHODS AND CLASSES ---- */
-
-    public List<NewBattleEvent> getNewBattleEvents(long startBlock, long endBlock) throws IOException {
-        List<NewBattleEvent> result = new ArrayList<>();
-        List<DogeClaimManager.NewBattleEventResponse> newBattleEvents =
-                claimManager.getNewBattleEventResponses(
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
-
-        for (DogeClaimManager.NewBattleEventResponse response : newBattleEvents) {
-            NewBattleEvent newBattleEvent = new NewBattleEvent();
-            newBattleEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
-            newBattleEvent.submitter = response.submitter;
-            newBattleEvent.challenger = response.challenger;
-            result.add(newBattleEvent);
-        }
-
-        return result;
-    }
-
-    public List<ChallengerConvictedEvent> getChallengerConvictedEvents(long startBlock, long endBlock)
-            throws IOException {
-        List<ChallengerConvictedEvent> result = new ArrayList<>();
-        List<DogeClaimManager.ChallengerConvictedEventResponse> challengerConvictedEvents =
-                claimManager.getChallengerConvictedEventResponses(
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
-
-        for (DogeClaimManager.ChallengerConvictedEventResponse response : challengerConvictedEvents) {
-            ChallengerConvictedEvent challengerConvictedEvent = new ChallengerConvictedEvent();
-            challengerConvictedEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
-            challengerConvictedEvent.challenger = response.challenger;
-            result.add(challengerConvictedEvent);
-        }
-
-        return result;
-    }
-
-    public List<SubmitterConvictedEvent> getSubmitterConvictedEvents(long startBlock, long endBlock)
-            throws IOException {
-        List<SubmitterConvictedEvent> result = new ArrayList<>();
-        List<DogeClaimManager.SubmitterConvictedEventResponse> submitterConvictedEvents =
-                claimManager.getSubmitterConvictedEventResponses(
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
-
-        for (DogeClaimManager.SubmitterConvictedEventResponse response : submitterConvictedEvents) {
-            SubmitterConvictedEvent submitterConvictedEvent = new SubmitterConvictedEvent();
-            submitterConvictedEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
-            submitterConvictedEvent.submitter = response.submitter;
-            result.add(submitterConvictedEvent);
-        }
-
-        return result;
-    }
-
-    public static class NewBattleEvent {
-        public Keccak256Hash sessionId;
-        public String submitter;
-        public String challenger;
-    }
-
-    public static class ChallengerConvictedEvent {
-        public Keccak256Hash sessionId;
-        public String challenger;
-    }
-
-    public static class SubmitterConvictedEvent {
-        public Keccak256Hash sessionId;
-        public String submitter;
-    }
-
 //    public List<SuperblockEvent> getNewSuperblocks(long startBlock, long endBlock) throws IOException {
 //        List<SuperblockEvent> result = new ArrayList<>();
 //        List<DogeSuperblocks.NewSuperblockEventResponse> newSuperblockEvents =
@@ -492,6 +419,151 @@ public class EthWrapper implements SuperblockConstantProvider {
 //    }
 
 
+    /* ---- LOG PROCESSING METHODS ---- */
+
+    public BigInteger getEthTimestampRaw(Log eventLog) throws InterruptedException, ExecutionException {
+        String ethBlockHash = eventLog.getBlockHash();
+        CompletableFuture<EthBlock> ethBlockCompletableFuture =
+                web3.ethGetBlockByHash(ethBlockHash, true).sendAsync();
+        checkNotNull(ethBlockCompletableFuture, "Error retrieving completable future");
+        EthBlock ethBlock = ethBlockCompletableFuture.get();
+        return ethBlock.getBlock().getTimestamp();
+    }
+
+    public Date getEthTimestampDate(Log eventLog) throws InterruptedException, ExecutionException {
+        BigInteger rawTimestamp = getEthTimestampRaw(eventLog);
+        return new Date(rawTimestamp.longValue() * 1000);
+    }
+
+
+    /* ---- GETTERS ---- */
+
+    public BigInteger getSuperblockDuration() throws Exception {
+        return claimManager.superblockDuration().send();
+    }
+
+    public BigInteger getSuperblockDelay() throws Exception {
+        return claimManager.superblockDelay().send();
+    }
+
+    public BigInteger getSuperblockTimeout() throws Exception {
+        return claimManager.superblockTimeout().send();
+    }
+
+    public Keccak256Hash getBestSuperblockId() throws Exception {
+        return Keccak256Hash.wrap(superblocks.getBestSuperblock().send());
+    }
+
+    public BigInteger getNewEventTimestampBigInteger(Keccak256Hash superblockId) throws Exception {
+        return claimManager.getNewSuperblockEventTimestamp(superblockId.getBytes()).send();
+    }
+
+    public Date getNewEventTimestampDate(Keccak256Hash superblockId) throws Exception {
+        return new Date(getNewEventTimestampBigInteger(superblockId).longValue() * 1000);
+    }
+
+
+    /* ---------------------------------- */
+    /* ---- DogeClaimManager section ---- */
+    /* ---------------------------------- */
+
+
+    /* ---- CONFIRMING ---- */
+
+    public void checkClaimFinished(Keccak256Hash superblockId) {
+        CompletableFuture<TransactionReceipt> futureReceipt =
+                claimManager.checkClaimFinished(superblockId.getBytes()).sendAsync();
+        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
+                log.info("checkClaimFinished receipt {}", receipt.toString())
+        );
+    }
+
+    /**
+     * Confirm a semi-approved superblock.
+     * @param superblockId Superblock to be confirmed
+     * @param descendantId Its first descendant
+     */
+    public void confirmClaim(Keccak256Hash superblockId, Keccak256Hash descendantId) {
+        CompletableFuture<TransactionReceipt> futureReceipt =
+                claimManager.confirmClaim(superblockId.getBytes(), descendantId.getBytes()).sendAsync();
+        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
+                log.info("confirmClaim receipt {}", receipt.toString())
+        );
+    }
+
+
+    /* ---- BATTLE EVENT RETRIEVAL METHODS AND CLASSES ---- */
+
+    public List<NewBattleEvent> getNewBattleEvents(long startBlock, long endBlock) throws IOException {
+        List<NewBattleEvent> result = new ArrayList<>();
+        List<DogeClaimManager.NewBattleEventResponse> newBattleEvents =
+                claimManager.getNewBattleEventResponses(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+
+        for (DogeClaimManager.NewBattleEventResponse response : newBattleEvents) {
+            NewBattleEvent newBattleEvent = new NewBattleEvent();
+            newBattleEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
+            newBattleEvent.submitter = response.submitter;
+            newBattleEvent.challenger = response.challenger;
+            result.add(newBattleEvent);
+        }
+
+        return result;
+    }
+
+    public List<ChallengerConvictedEvent> getChallengerConvictedEvents(long startBlock, long endBlock)
+            throws IOException {
+        List<ChallengerConvictedEvent> result = new ArrayList<>();
+        List<DogeClaimManager.ChallengerConvictedEventResponse> challengerConvictedEvents =
+                claimManager.getChallengerConvictedEventResponses(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+
+        for (DogeClaimManager.ChallengerConvictedEventResponse response : challengerConvictedEvents) {
+            ChallengerConvictedEvent challengerConvictedEvent = new ChallengerConvictedEvent();
+            challengerConvictedEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
+            challengerConvictedEvent.challenger = response.challenger;
+            result.add(challengerConvictedEvent);
+        }
+
+        return result;
+    }
+
+    public List<SubmitterConvictedEvent> getSubmitterConvictedEvents(long startBlock, long endBlock)
+            throws IOException {
+        List<SubmitterConvictedEvent> result = new ArrayList<>();
+        List<DogeClaimManager.SubmitterConvictedEventResponse> submitterConvictedEvents =
+                claimManager.getSubmitterConvictedEventResponses(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+
+        for (DogeClaimManager.SubmitterConvictedEventResponse response : submitterConvictedEvents) {
+            SubmitterConvictedEvent submitterConvictedEvent = new SubmitterConvictedEvent();
+            submitterConvictedEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
+            submitterConvictedEvent.submitter = response.submitter;
+            result.add(submitterConvictedEvent);
+        }
+
+        return result;
+    }
+
+    public static class NewBattleEvent {
+        public Keccak256Hash sessionId;
+        public String submitter;
+        public String challenger;
+    }
+
+    public static class ChallengerConvictedEvent {
+        public Keccak256Hash sessionId;
+        public String challenger;
+    }
+
+    public static class SubmitterConvictedEvent {
+        public Keccak256Hash sessionId;
+        public String submitter;
+    }
+
     public List<QueryBlockHeaderEvent> getBlockHeaderQueries(long startBlock, long endBlock)
             throws IOException {
         List<QueryBlockHeaderEvent> result = new ArrayList<>();
@@ -584,79 +656,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         CompletableFuture<TransactionReceipt> futureReceipt = claimManager.timeout(sessionId.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
                 log.info("Called timeout for session {}", sessionId));
-    }
-
-
-    /* ---- LOG PROCESSING METHODS ---- */
-
-    public BigInteger getEthTimestampRaw(Log eventLog) throws InterruptedException, ExecutionException {
-        String ethBlockHash = eventLog.getBlockHash();
-        CompletableFuture<EthBlock> ethBlockCompletableFuture =
-                web3.ethGetBlockByHash(ethBlockHash, true).sendAsync();
-        checkNotNull(ethBlockCompletableFuture, "Error retrieving completable future");
-        EthBlock ethBlock = ethBlockCompletableFuture.get();
-        return ethBlock.getBlock().getTimestamp();
-    }
-
-    public Date getEthTimestampDate(Log eventLog) throws InterruptedException, ExecutionException {
-        BigInteger rawTimestamp = getEthTimestampRaw(eventLog);
-        return new Date(rawTimestamp.longValue() * 1000);
-    }
-
-
-    /* ---- GETTERS ---- */
-
-    public BigInteger getSuperblockDuration() throws Exception {
-        return claimManager.superblockDuration().send();
-    }
-
-    public BigInteger getSuperblockDelay() throws Exception {
-        return claimManager.superblockDelay().send();
-    }
-
-    public BigInteger getSuperblockTimeout() throws Exception {
-        return claimManager.superblockTimeout().send();
-    }
-
-    public Keccak256Hash getBestSuperblockId() throws Exception {
-        return Keccak256Hash.wrap(superblocks.getBestSuperblock().send());
-    }
-
-    public BigInteger getNewEventTimestampBigInteger(Keccak256Hash superblockId) throws Exception {
-        return claimManager.getNewSuperblockEventTimestamp(superblockId.getBytes()).send();
-    }
-
-    public Date getNewEventTimestampDate(Keccak256Hash superblockId) throws Exception {
-        return new Date(getNewEventTimestampBigInteger(superblockId).longValue() * 1000);
-    }
-
-
-    /* ---------------------------------- */
-    /* ---- DogeClaimManager section ---- */
-    /* ---------------------------------- */
-
-
-    /* ---- CONFIRMING ---- */
-
-    public void checkClaimFinished(Keccak256Hash superblockId) {
-        CompletableFuture<TransactionReceipt> futureReceipt =
-                claimManager.checkClaimFinished(superblockId.getBytes()).sendAsync();
-        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
-                log.info("checkClaimFinished receipt {}", receipt.toString())
-        );
-    }
-
-    /**
-     * Confirm a semi-approved superblock.
-     * @param superblockId Superblock to be confirmed
-     * @param descendantId Its first descendant
-     */
-    public void confirmClaim(Keccak256Hash superblockId, Keccak256Hash descendantId) {
-        CompletableFuture<TransactionReceipt> futureReceipt =
-                claimManager.confirmClaim(superblockId.getBytes(), descendantId.getBytes()).sendAsync();
-        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
-                log.info("confirmClaim receipt {}", receipt.toString())
-        );
     }
 
 
