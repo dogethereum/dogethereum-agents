@@ -236,4 +236,10 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     protected boolean isMine(EthWrapper.NewBattleEvent newBattleEvent) {
         return newBattleEvent.submitter.equals(myAddress);
     }
+
+    @Override
+    protected long getConfirmations() {
+        //FIXME: Move to a new a configuration property?
+        return config.getAgentConstants().getEth2DogeMinimumAcceptableConfirmations();
+    }
 }

@@ -319,27 +319,27 @@ public class EthWrapper implements SuperblockConstantProvider {
         return isSuperblockSemiApproved(superblockId) || isSuperblockNew(superblockId);
     }
 
-    public BigInteger getSuperblockHeight(byte[] superblockId) throws Exception {
-        return superblocks.getSuperblockHeight(superblockId).send();
+    public BigInteger getSuperblockHeight(Keccak256Hash superblockId) throws Exception {
+        return superblocks.getSuperblockHeight(superblockId.getBytes()).send();
     }
 
-//    public List<SuperblockEvent> getNewSuperblocks(long startBlock, long endBlock) throws IOException {
-//        List<SuperblockEvent> result = new ArrayList<>();
-//        List<DogeSuperblocks.NewSuperblockEventResponse> newSuperblockEvents =
-//                superblocks.getNewSuperblockEvents(
-//                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-//                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
-//
-//        for (DogeSuperblocks.NewSuperblockEventResponse response : newSuperblockEvents) {
-//            SuperblockEvent newSuperblockEvent = new SuperblockEvent();
-//            newSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
-//            newSuperblockEvent.who = response.who;
-//            result.add(newSuperblockEvent);
-//        }
-//
-//        return result;
-//    }
-//
+    public List<SuperblockEvent> getNewSuperblocks(long startBlock, long endBlock) throws IOException {
+        List<SuperblockEvent> result = new ArrayList<>();
+        List<DogeSuperblocks.NewSuperblockEventResponse> newSuperblockEvents =
+                superblocks.getNewSuperblockEvents(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+
+        for (DogeSuperblocks.NewSuperblockEventResponse response : newSuperblockEvents) {
+            SuperblockEvent newSuperblockEvent = new SuperblockEvent();
+            newSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+            newSuperblockEvent.who = response.who;
+            result.add(newSuperblockEvent);
+        }
+
+        return result;
+    }
+
 //    public List<SuperblockEvent> getApprovedSuperblocks(long startBlock, long endBlock)
 //            throws IOException {
 //        List<SuperblockEvent> result = new ArrayList<>();
@@ -411,12 +411,12 @@ public class EthWrapper implements SuperblockConstantProvider {
 //
 //        return result;
 //    }
-//
-//    public static class SuperblockEvent {
-//
-//        public Keccak256Hash superblockId;
-//        public String who;
-//    }
+
+    public static class SuperblockEvent {
+
+        public Keccak256Hash superblockId;
+        public String who;
+    }
 
 
     /* ---- LOG PROCESSING METHODS ---- */
@@ -827,8 +827,25 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* --------- Challenger section ----- */
     /* ---------------------------------- */
 
-    public CompletableFuture<TransactionReceipt> challengeSuperblock(byte[] superblockId) {
-        return claimManagerForChallenges.challengeSuperblock(superblockId).sendAsync();
+    public CompletableFuture<TransactionReceipt> challengeSuperblock(Keccak256Hash superblockId) throws InterruptedException {
+        CompletableFuture<TransactionReceipt> depositsReceipt = makeChallengerDeposit(BigInteger.valueOf(1000));
+
+        return claimManagerForChallenges.challengeSuperblock(superblockId.getBytes()).sendAsync();
     }
 
+    private CompletableFuture<TransactionReceipt> makeChallengerDeposit(BigInteger weiValue) throws InterruptedException {
+        CompletableFuture<TransactionReceipt> futureReceipt = claimManagerForChallenges.makeDeposit(weiValue).sendAsync();
+        log.info("Challenger deposited {} wei.", weiValue);
+
+        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
+                log.info("makeChallengerDeposit receipt {}", receipt.toString())
+        );
+        Thread.sleep(200); // in case the transaction takes some time to complete
+
+        return futureReceipt;
+    }
+
+    public CompletableFuture<TransactionReceipt> queryMerkleRootHashes(Keccak256Hash superblockId, Keccak256Hash sessionId) throws InterruptedException {
+        return claimManagerForChallenges.queryMerkleRootHashes(superblockId.getBytes(), sessionId.getBytes()).sendAsync();
+    }
 }

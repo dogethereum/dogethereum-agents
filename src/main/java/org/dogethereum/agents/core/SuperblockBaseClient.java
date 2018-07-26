@@ -89,8 +89,7 @@ public abstract class SuperblockBaseClient {
                     reactToElapsedTime();
 
                     long fromBlock = latestEthBlockProcessed + 1;
-                    long toBlock = ethWrapper.getEthBlockCount() -
-                            config.getAgentConstants().getEth2DogeMinimumAcceptableConfirmations();
+                    long toBlock = ethWrapper.getEthBlockCount() - getConfirmations();
 
                     // Ignore execution if nothing to process
                     if (fromBlock > toBlock) return;
@@ -126,6 +125,8 @@ public abstract class SuperblockBaseClient {
 
     protected abstract boolean isMine(EthWrapper.NewBattleEvent newBattleEvent);
 
+    protected abstract long getConfirmations();
+
 
     /* ---- DATABASE METHODS ---- */
 
@@ -134,6 +135,7 @@ public abstract class SuperblockBaseClient {
         this.dataDirectory = new File(config.dataDirectory());
         this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() +
                 "/" + getLastEthBlockProcessedFilename());
+        this.battleSet =  new HashSet<>();
         this.battleSetFile = new File(dataDirectory.getAbsolutePath() + "/" + getBattleSetFilename());
 
     }
