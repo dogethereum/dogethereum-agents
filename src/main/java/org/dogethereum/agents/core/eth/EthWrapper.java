@@ -690,6 +690,10 @@ public class EthWrapper implements SuperblockConstantProvider {
         return claimManager.getClaimRemainingChallengers(superblockId.getBytes()).send().intValue();
     }
 
+    public boolean getInBattleAndSemiApprovable(Keccak256Hash superblockId) throws Exception {
+        return claimManager.getInBattleAndSemiApprovable(superblockId.getBytes()).send();
+    }
+
     public boolean getChallengerHitTimeout(Keccak256Hash sessionId) throws Exception {
         return claimManager.getChallengerHitTimeout(sessionId.getBytes()).send();
     }

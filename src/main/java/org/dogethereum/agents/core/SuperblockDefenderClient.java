@@ -193,17 +193,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      */
     private boolean inBattleAndSemiApprovable(Superblock superblock) throws Exception {
         Keccak256Hash superblockId = superblock.getSuperblockId();
-        if (!ethWrapper.isSuperblockInBattle(superblockId))
-            return false;
-        if (ethWrapper.getClaimInvalid(superblockId))
-            return false;
-        if (ethWrapper.getClaimVerificationOngoing(superblockId))
-            return false;
-        if (!challengeTimeoutPassed(superblockId))
-            return false;
-        if (ethWrapper.getClaimRemainingChallengers(superblockId) > 0)
-            return false;
-        return true;
+        return ethWrapper.getInBattleAndSemiApprovable(superblockId);
     }
 
     /**
