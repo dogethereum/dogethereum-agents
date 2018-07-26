@@ -503,6 +503,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (DogeClaimManager.NewBattleEventResponse response : newBattleEvents) {
             NewBattleEvent newBattleEvent = new NewBattleEvent();
+            newBattleEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
             newBattleEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
             newBattleEvent.submitter = response.submitter;
             newBattleEvent.challenger = response.challenger;
@@ -522,6 +523,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (DogeClaimManager.ChallengerConvictedEventResponse response : challengerConvictedEvents) {
             ChallengerConvictedEvent challengerConvictedEvent = new ChallengerConvictedEvent();
+            challengerConvictedEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
             challengerConvictedEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
             challengerConvictedEvent.challenger = response.challenger;
             result.add(challengerConvictedEvent);
@@ -540,6 +542,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (DogeClaimManager.SubmitterConvictedEventResponse response : submitterConvictedEvents) {
             SubmitterConvictedEvent submitterConvictedEvent = new SubmitterConvictedEvent();
+            submitterConvictedEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
             submitterConvictedEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
             submitterConvictedEvent.submitter = response.submitter;
             result.add(submitterConvictedEvent);
@@ -549,17 +552,20 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     public static class NewBattleEvent {
+        public Keccak256Hash superblockId;
         public Keccak256Hash sessionId;
         public String submitter;
         public String challenger;
     }
 
     public static class ChallengerConvictedEvent {
+        public Keccak256Hash superblockId;
         public Keccak256Hash sessionId;
         public String challenger;
     }
 
     public static class SubmitterConvictedEvent {
+        public Keccak256Hash superblockId;
         public Keccak256Hash sessionId;
         public String submitter;
     }

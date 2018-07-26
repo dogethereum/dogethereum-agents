@@ -107,9 +107,10 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
             NewBattleEventResponse newBattleEventResponse =
                     new NewBattleEventResponse();
             newBattleEventResponse.log = eventValues.getLog();
-            newBattleEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            newBattleEventResponse.submitter = (String) eventValues.getNonIndexedValues().get(1).getValue();
-            newBattleEventResponse.challenger = (String) eventValues.getNonIndexedValues().get(2).getValue();
+            newBattleEventResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            newBattleEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
+            newBattleEventResponse.submitter = (String) eventValues.getNonIndexedValues().get(2).getValue();
+            newBattleEventResponse.challenger = (String) eventValues.getNonIndexedValues().get(3).getValue();
             result.add(newBattleEventResponse);
         }
 
@@ -136,8 +137,9 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
             ChallengerConvictedEventResponse newChallengerConvictedEventResponse =
                     new ChallengerConvictedEventResponse();
             newChallengerConvictedEventResponse.log = eventValues.getLog();
-            newChallengerConvictedEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            newChallengerConvictedEventResponse.challenger = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            newChallengerConvictedEventResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            newChallengerConvictedEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
+            newChallengerConvictedEventResponse.challenger = (String) eventValues.getNonIndexedValues().get(2).getValue();
             result.add(newChallengerConvictedEventResponse);
         }
 
@@ -164,8 +166,9 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
             SubmitterConvictedEventResponse newSubmitterConvictedEventResponse =
                     new SubmitterConvictedEventResponse();
             newSubmitterConvictedEventResponse.log = eventValues.getLog();
-            newSubmitterConvictedEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            newSubmitterConvictedEventResponse.submitter = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            newSubmitterConvictedEventResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            newSubmitterConvictedEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
+            newSubmitterConvictedEventResponse.submitter = (String) eventValues.getNonIndexedValues().get(2).getValue();
             result.add(newSubmitterConvictedEventResponse);
         }
 
