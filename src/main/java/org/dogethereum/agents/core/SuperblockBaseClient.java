@@ -95,7 +95,7 @@ public abstract class SuperblockBaseClient {
                     // Ignore execution if nothing to process
                     if (fromBlock > toBlock) return;
 
-                    reactToEvents(fromBlock, toBlock);
+                    latestEthBlockProcessed = reactToEvents(fromBlock, toBlock);
 
                     flushLatestEthBlockProcessed();
                     flushBattleSet();
@@ -112,7 +112,7 @@ public abstract class SuperblockBaseClient {
 
     /* ---- ABSTRACT METHODS ---- */
 
-    protected abstract void reactToEvents(long fromBlock, long toBlock);
+    protected abstract long reactToEvents(long fromBlock, long toBlock);
 
     protected abstract boolean isEnabled();
 

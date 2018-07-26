@@ -35,15 +35,15 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     @Override
-    public void reactToEvents(long fromBlock, long toBlock) {
+    public long reactToEvents(long fromBlock, long toBlock) {
         try {
             respondToBlockHeaderQueries(fromBlock, toBlock);
             respondToMerkleRootHashesQueries(fromBlock, toBlock);
-
-            latestEthBlockProcessed = toBlock;
         } catch (Exception e) {
             log.error(e.getMessage(), e);
+            return latestEthBlockProcessed;
         }
+        return toBlock;
     }
 
     @Override
