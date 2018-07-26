@@ -58,6 +58,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     /* ---- CONFIRMING/DEFENDING ---- */
 
+    /* - Reacting to elapsed time - */
+
     /**
      * Find earliest superblock that's unchallenged and stored locally,
      * but not confirmed in Dogethereum Contracts, and confirm it if its timeout has passed
@@ -91,6 +93,16 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 log.info("Confirming semi-approved superblock {}", toConfirmId);
                 ethWrapper.confirmClaim(toConfirmId, descendantId);
             }
+        }
+    }
+
+    /* - Reacting to events - */
+
+    private void getNewBattles(long fromBlock, long toBlock) throws IOException {
+        List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
+        for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
+            if (isMine(newBattleEvent))
+                battleSet.add(newBattleEvent.sessionId);
         }
     }
 
@@ -219,5 +231,10 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     @Override
     protected String getBattleSetFilename() {
         return "SuperblockDefenderBattleSet.dat";
+    }
+
+    @Override
+    protected boolean isMine(EthWrapper.NewBattleEvent newBattleEvent) {
+        return newBattleEvent.submitter.equals(myAddress);
     }
 }

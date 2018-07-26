@@ -1,6 +1,7 @@
 package org.dogethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
+import org.dogethereum.agents.core.eth.EthWrapper;
 import org.springframework.stereotype.Service;
 
 /**
@@ -35,6 +36,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     @Override
     protected void reactToElapsedTime() {}
 
+
     /* ---- STATUS SETTERS ---- */
 
     /* ---- CONFIRMING/DEFENDING ---- */
@@ -54,5 +56,10 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     @Override
     protected String getBattleSetFilename() {
         return "SuperblockChallengerBattleSet.dat";
+    }
+
+    @Override
+    protected boolean isMine(EthWrapper.NewBattleEvent newBattleEvent) {
+        return newBattleEvent.challenger.equals(myAddress);
     }
 }

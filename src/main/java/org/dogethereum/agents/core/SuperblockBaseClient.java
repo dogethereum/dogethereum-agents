@@ -54,6 +54,7 @@ public abstract class SuperblockBaseClient {
             setupFiles();
 
             restoreLatestEthBlockProcessed();
+            restoreBattleSet();
 
             setupClient();
 
@@ -67,6 +68,7 @@ public abstract class SuperblockBaseClient {
             log.info("{} tearDown starting...", clientName);
 
             flushLatestEthBlockProcessed();
+            flushBattleSet();
 
             log.info("{} tearDown finished.", clientName);
         }
@@ -96,6 +98,7 @@ public abstract class SuperblockBaseClient {
                     reactToEvents(fromBlock, toBlock);
 
                     flushLatestEthBlockProcessed();
+                    flushBattleSet();
 
                 } else {
                     log.warn("SuperblocksBaseClientTimerTask skipped because the eth node is syncing blocks");
@@ -120,6 +123,8 @@ public abstract class SuperblockBaseClient {
     protected abstract void setupClient();
 
     protected abstract void reactToElapsedTime();
+
+    protected abstract boolean isMine(EthWrapper.NewBattleEvent newBattleEvent);
 
 
     /* ---- DATABASE METHODS ---- */
