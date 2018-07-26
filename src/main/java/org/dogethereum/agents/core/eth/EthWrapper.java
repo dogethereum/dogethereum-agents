@@ -450,6 +450,10 @@ public class EthWrapper implements SuperblockConstantProvider {
         return claimManager.superblockTimeout().send();
     }
 
+    public int getMinDeposit() throws Exception {
+        return claimManager.minDeposit().send().intValue();
+    }
+
     public Keccak256Hash getBestSuperblockId() throws Exception {
         return Keccak256Hash.wrap(superblocks.getBestSuperblock().send());
     }
