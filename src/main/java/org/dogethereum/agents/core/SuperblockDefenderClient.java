@@ -100,6 +100,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     private void callBattleTimeouts() throws Exception {
         for (Keccak256Hash sessionId : battleSet) {
             if (ethWrapper.getChallengerHitTimeout(sessionId)) {
+                log.info("Challenger hit timeout on session {}. Calling timeout.", sessionId);
                 ethWrapper.timeout(sessionId);
             }
         }
