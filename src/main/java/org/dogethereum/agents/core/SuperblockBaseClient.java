@@ -111,7 +111,7 @@ public abstract class SuperblockBaseClient {
 
     protected abstract void reactToEvents(long fromBlock, long toBlock);
 
-    protected abstract Boolean isEnabled();
+    protected abstract boolean isEnabled();
 
     protected abstract String getLastEthBlockProcessedFilename();
 

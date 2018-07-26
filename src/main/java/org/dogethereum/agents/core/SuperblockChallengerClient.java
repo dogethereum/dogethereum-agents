@@ -42,7 +42,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     /* ---- OVERRRIDE ABSTRACT METHODS ---- */
 
     @Override
-    protected Boolean isEnabled() {
+    protected boolean isEnabled() {
         return config.isDogeBlockChallengerEnabled();
     }
 
