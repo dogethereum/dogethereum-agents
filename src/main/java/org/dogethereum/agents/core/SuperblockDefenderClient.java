@@ -204,7 +204,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
 
-    /* ---- OVERRRIDE ABSTRACT METHODS ---- */
+    /* ---- OVERRIDE ABSTRACT METHODS ---- */
 
     @Override
     protected boolean isEnabled() {

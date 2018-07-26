@@ -39,7 +39,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     /* ---- CONFIRMING/DEFENDING ---- */
 
-    /* ---- OVERRRIDE ABSTRACT METHODS ---- */
+    /* ---- OVERRIDE ABSTRACT METHODS ---- */
 
     @Override
     protected boolean isEnabled() {
