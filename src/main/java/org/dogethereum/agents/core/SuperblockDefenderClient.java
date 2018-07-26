@@ -57,10 +57,10 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
 
+
     /* ---- CONFIRMING/DEFENDING ---- */
 
     /* - Reacting to elapsed time - */
-
     /**
      * Find earliest superblock that's unchallenged and stored locally,
      * but not confirmed in Dogethereum Contracts, and confirm it if its timeout has passed
@@ -97,25 +97,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         }
     }
 
-    private void callBattleTimeouts() throws Exception {
-        for (Keccak256Hash sessionId : battleSet) {
-            if (ethWrapper.getChallengerHitTimeout(sessionId)) {
-                log.info("Challenger hit timeout on session {}. Calling timeout.", sessionId);
-                ethWrapper.timeout(sessionId);
-            }
-        }
-    }
 
     /* - Reacting to events - */
-
-    private void getNewBattles(long fromBlock, long toBlock) throws IOException {
-        List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
-        for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
-            if (isMine(newBattleEvent))
-                battleSet.add(newBattleEvent.sessionId);
-        }
-    }
-
     private void respondToBlockHeaderQueries(long fromBlock, long toBlock)
             throws IOException, BlockStoreException, Exception {
         List<EthWrapper.QueryBlockHeaderEvent> queryBlockHeaderEvents =
@@ -149,24 +132,23 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
 
+
     /* ---- HELPER METHODS ---- */
-
-//    private boolean isMine(EthWrapper.SuperblockEvent superblockEvent) {
-//        return superblockEvent.who.equals(myAddress);
-//    }
-
     private boolean isMine(EthWrapper.QueryEvent queryEvent) {
         return queryEvent.claimant.equals(myAddress);
     }
 
+    //    private boolean isMine(EthWrapper.SuperblockEvent superblockEvent) {
     private boolean isMine(EthWrapper.QueryBlockHeaderEvent queryBlockHeader) {
         return queryBlockHeader.submitter.equals(myAddress);
     }
 
+    //    }
     private boolean isMine(EthWrapper.QueryMerkleRootHashesEvent queryMerkleRootHashes) {
         return queryMerkleRootHashes.submitter.equals(myAddress);
     }
 
+    //        return superblockEvent.who.equals(myAddress);
     private boolean submittedTimeoutPassed(Keccak256Hash superblockId) throws Exception {
         return ethWrapper.getNewEventTimestampDate(superblockId).before(getTimeoutDate());
     }
@@ -216,6 +198,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
 
+
     /* ---- OVERRIDE ABSTRACT METHODS ---- */
 
     @Override
@@ -242,5 +225,15 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     protected long getConfirmations() {
         //FIXME: Move to a new a configuration property?
         return config.getAgentConstants().getEth2DogeMinimumAcceptableConfirmations();
+    }
+
+    @Override
+    protected void callBattleTimeouts() throws Exception {
+        for (Keccak256Hash sessionId : battleSet) {
+            if (ethWrapper.getChallengerHitTimeout(sessionId)) {
+                log.info("Challenger hit timeout on session {}. Calling timeout.", sessionId);
+                ethWrapper.timeout(sessionId);
+            }
+        }
     }
 }

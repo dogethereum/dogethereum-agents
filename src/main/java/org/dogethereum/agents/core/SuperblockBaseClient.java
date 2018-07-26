@@ -94,6 +94,7 @@ public abstract class SuperblockBaseClient {
                     // Ignore execution if nothing to process
                     if (fromBlock > toBlock) return;
 
+                    getNewBattles(fromBlock, toBlock); // update battle set
                     latestEthBlockProcessed = reactToEvents(fromBlock, toBlock);
 
                     flushLatestEthBlockProcessed();
@@ -126,6 +127,8 @@ public abstract class SuperblockBaseClient {
     protected abstract boolean isMine(EthWrapper.NewBattleEvent newBattleEvent);
 
     protected abstract long getConfirmations();
+
+    protected abstract void callBattleTimeouts() throws Exception;
 
 
     /* ---- DATABASE METHODS ---- */
@@ -194,6 +197,16 @@ public abstract class SuperblockBaseClient {
             ObjectOutputStream battleSetObjectOs = new ObjectOutputStream(battleSetFileOs);
         ) {
             battleSetObjectOs.writeObject(battleSet);
+        }
+    }
+
+    /* ---- BATTLE METHODS ---- */
+
+    private void getNewBattles(long fromBlock, long toBlock) throws IOException {
+        List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
+        for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
+            if (isMine(newBattleEvent))
+                battleSet.add(newBattleEvent.sessionId);
         }
     }
 }

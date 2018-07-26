@@ -831,13 +831,15 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* --------- Challenger section ----- */
     /* ---------------------------------- */
 
-    public CompletableFuture<TransactionReceipt> challengeSuperblock(Keccak256Hash superblockId) throws InterruptedException {
+    public CompletableFuture<TransactionReceipt> challengeSuperblock(Keccak256Hash superblockId)
+            throws InterruptedException {
         CompletableFuture<TransactionReceipt> depositsReceipt = makeChallengerDeposit(BigInteger.valueOf(1000));
 
         return claimManagerForChallenges.challengeSuperblock(superblockId.getBytes()).sendAsync();
     }
 
-    private CompletableFuture<TransactionReceipt> makeChallengerDeposit(BigInteger weiValue) throws InterruptedException {
+    private CompletableFuture<TransactionReceipt> makeChallengerDeposit(BigInteger weiValue)
+            throws InterruptedException {
         CompletableFuture<TransactionReceipt> futureReceipt = claimManagerForChallenges.makeDeposit(weiValue).sendAsync();
         log.info("Challenger deposited {} wei.", weiValue);
 
@@ -849,7 +851,10 @@ public class EthWrapper implements SuperblockConstantProvider {
         return futureReceipt;
     }
 
-    public CompletableFuture<TransactionReceipt> queryMerkleRootHashes(Keccak256Hash superblockId, Keccak256Hash sessionId) throws InterruptedException {
+    // TODO: see if these should be refactored to match other function signatures,
+    // i.e. no CompletableFuture on public functions
+    public CompletableFuture<TransactionReceipt> queryMerkleRootHashes(Keccak256Hash superblockId, Keccak256Hash sessionId)
+            throws InterruptedException {
         return claimManagerForChallenges.queryMerkleRootHashes(superblockId.getBytes(), sessionId.getBytes()).sendAsync();
     }
 }

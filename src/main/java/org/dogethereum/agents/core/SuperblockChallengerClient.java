@@ -48,10 +48,14 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     @Override
-    protected void reactToElapsedTime() {}
+    protected void reactToElapsedTime() {
+        try {
+            callBattleTimeouts();
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+        }
+    }
 
-
-    /* ---- STATUS SETTERS ---- */
 
     /* ---- CHALLENGING ---- */
 
@@ -107,6 +111,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
+
     /* ---- OVERRIDE ABSTRACT METHODS ---- */
 
     @Override
@@ -133,5 +138,15 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     protected long getConfirmations() {
         //FIXME: Move to a new a configuration property?
         return config.getAgentConstants().getEth2DogeMinimumAcceptableConfirmations();
+    }
+
+    @Override
+    protected void callBattleTimeouts() throws Exception {
+        for (Keccak256Hash sessionId : battleSet) {
+            if (ethWrapper.getSubmitterHitTimeout(sessionId)) {
+                log.info("Submitter hit timeout on session {}. Calling timeout.", sessionId);
+                ethWrapper.timeout(sessionId);
+            }
+        }
     }
 }
