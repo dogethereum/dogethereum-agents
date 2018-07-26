@@ -624,12 +624,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         public String submitter;
     }
 
-    public static class QueryEvent {
-
-        public Keccak256Hash sessionId;
-        public String claimant;
-    }
-
 
     /* ---- BATTLE METHODS ---- */
 
