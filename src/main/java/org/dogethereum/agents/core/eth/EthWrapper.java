@@ -580,6 +580,12 @@ public class EthWrapper implements SuperblockConstantProvider {
                 log.info("Verified superblock for session {}", sessionId));
     }
 
+    public void timeout(Keccak256Hash sessionId) throws Exception {
+        CompletableFuture<TransactionReceipt> futureReceipt = claimManager.timeout(sessionId.getBytes()).sendAsync();
+        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
+                log.info("Called timeout for session {}", sessionId));
+    }
+
 
     /* ---- LOG PROCESSING METHODS ---- */
 
@@ -684,6 +690,13 @@ public class EthWrapper implements SuperblockConstantProvider {
         return claimManager.getClaimRemainingChallengers(superblockId.getBytes()).send().intValue();
     }
 
+    public boolean getChallengerHitTimeout(Keccak256Hash sessionId) throws Exception {
+        return claimManager.getChallengerHitTimeout(sessionId.getBytes()).send();
+    }
+
+    public boolean getSubmitterHitTimeout(Keccak256Hash sessionId) throws Exception {
+        return claimManager.getSubmitterHitTimeout(sessionId.getBytes()).send();
+    }
 
 
     /* ---------------------------------- */

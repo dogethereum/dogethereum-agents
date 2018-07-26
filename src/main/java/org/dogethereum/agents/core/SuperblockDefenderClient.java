@@ -50,6 +50,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     protected void reactToElapsedTime() {
         try {
             confirmEarliestApprovableSuperblock();
+            callBattleTimeouts();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
@@ -92,6 +93,14 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 Keccak256Hash descendantId = superblockChain.getFirstDescendant(toConfirmId).getSuperblockId();
                 log.info("Confirming semi-approved superblock {}", toConfirmId);
                 ethWrapper.confirmClaim(toConfirmId, descendantId);
+            }
+        }
+    }
+
+    private void callBattleTimeouts() throws Exception {
+        for (Keccak256Hash sessionId : battleSet) {
+            if (ethWrapper.getChallengerHitTimeout(sessionId)) {
+                ethWrapper.timeout(sessionId);
             }
         }
     }
