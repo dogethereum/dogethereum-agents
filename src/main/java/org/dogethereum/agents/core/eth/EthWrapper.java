@@ -287,7 +287,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     /* ---- SUPERBLOCK STATUS CHECKS ---- */
 
-    public BigInteger getSuperblockStatus(Keccak256Hash superblockId) throws Exception {
+    private BigInteger getSuperblockStatus(Keccak256Hash superblockId) throws Exception {
         return superblocks.getSuperblockStatus(superblockId.getBytes()).send();
     }
 
