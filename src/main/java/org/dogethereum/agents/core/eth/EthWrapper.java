@@ -684,6 +684,31 @@ public class EthWrapper implements SuperblockConstantProvider {
         public byte[] blockHeader; // TODO: change to AltcoinBlock
     }
 
+    public List<SuperblockBattleDecidedEvent> getSuperblockBattleDecidedEvents(long startBlock, long endBlock)
+            throws IOException {
+        List<SuperblockBattleDecidedEvent> result = new ArrayList<>();
+        List<DogeClaimManager.SuperblockBattleDecidedEventResponse> superblockBattleDecidedEvents =
+                claimManager.getSuperblockBattleDecidedEventResponses(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+
+        for (DogeClaimManager.SuperblockBattleDecidedEventResponse response : superblockBattleDecidedEvents) {
+            SuperblockBattleDecidedEvent superblockBattleDecidedEvent = new SuperblockBattleDecidedEvent();
+            superblockBattleDecidedEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
+            superblockBattleDecidedEvent.winner = response.winner;
+            superblockBattleDecidedEvent.loser = response.loser;
+            result.add(superblockBattleDecidedEvent);
+        }
+
+        return result;
+    }
+
+    public static class SuperblockBattleDecidedEvent {
+        public Keccak256Hash sessionId;
+        public String winner;
+        public String loser;
+    }
+
 
     /* ---- BATTLE METHODS ---- */
 

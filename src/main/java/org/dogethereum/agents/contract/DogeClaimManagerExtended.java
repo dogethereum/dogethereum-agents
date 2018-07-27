@@ -236,4 +236,33 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
 
         return result;
     }
+
+    public List<SuperblockBattleDecidedEventResponse> getSuperblockBattleDecidedEventResponses(
+            DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
+            throws IOException {
+        final Event event = new Event("SuperblockBattleDecided",
+                Arrays.<TypeReference<?>>asList(),
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
+
+        List<SuperblockBattleDecidedEventResponse> result = new ArrayList<>();
+        EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
+        filter.addSingleTopic(EventEncoder.encode(event));
+        EthLog ethLog = web3j.ethGetLogs(filter).send();
+        List<EthLog.LogResult> logResults = ethLog.getLogs();
+
+        for (EthLog.LogResult logResult : logResults) {
+            Log log = (Log) logResult.get();
+            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+
+            SuperblockBattleDecidedEventResponse newSuperblockBattleDecidedEventResponse =
+                    new SuperblockBattleDecidedEventResponse();
+            newSuperblockBattleDecidedEventResponse.log = eventValues.getLog();
+            newSuperblockBattleDecidedEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            newSuperblockBattleDecidedEventResponse.winner = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            newSuperblockBattleDecidedEventResponse.loser = (String) eventValues.getNonIndexedValues().get(2).getValue();
+            result.add(newSuperblockBattleDecidedEventResponse);
+        }
+
+        return result;
+    }
 }

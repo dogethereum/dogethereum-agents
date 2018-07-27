@@ -212,18 +212,10 @@ public abstract class SuperblockBaseClient {
     }
 
     protected void deleteFinishedBattles(long fromBlock, long toBlock) throws IOException {
-        List<EthWrapper.SubmitterConvictedEvent> submitterConvictedEvents =
-                ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock);
-        List<EthWrapper.ChallengerConvictedEvent> challengerConvictedEvents =
-                ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock);
-
-        for (EthWrapper.SubmitterConvictedEvent submitterConvictedEvent : submitterConvictedEvents) {
-            Keccak256Hash sessionId = submitterConvictedEvent.sessionId;
-            if (battleSet.contains(sessionId)) battleSet.remove(sessionId);
-        }
-
-        for (EthWrapper.ChallengerConvictedEvent challengerConvictedEvent : challengerConvictedEvents) {
-            Keccak256Hash sessionId = challengerConvictedEvent.sessionId;
+        List<EthWrapper.SuperblockBattleDecidedEvent> superblockBattleDecidedEvents =
+                ethWrapper.getSuperblockBattleDecidedEvents(fromBlock, toBlock);
+        for (EthWrapper.SuperblockBattleDecidedEvent superblockBattleDecidedEvent : superblockBattleDecidedEvents) {
+            Keccak256Hash sessionId = superblockBattleDecidedEvent.sessionId;
             if (battleSet.contains(sessionId)) battleSet.remove(sessionId);
         }
     }
