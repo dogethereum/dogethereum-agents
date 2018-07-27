@@ -104,7 +104,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     /**
-     * Query block hashes for all new battle events that the challenger is taking part in.
+     * Query Merkle root hashes for all new battle events that the challenger is taking part in.
      * @param fromBlock
      * @param toBlock
      * @throws Exception
@@ -128,7 +128,12 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
-
+    /**
+     * Query first block header for battles that the challenger is taking part in.
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
     private void respondToMerkleRootHashesEventResponses(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.RespondMerkleRootHashesEvent> defenderResponses =
                 ethWrapper.getRespondMerkleRootHashesEvents(fromBlock, toBlock);
@@ -140,6 +145,13 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
+    /**
+     * For all block header event responses corresponding to battles that the challenger is taking part in,
+     * query the next block header if there are more to go; otherwise, end the battle.
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
     private void respondToBlockHeaderEventResponses(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.RespondBlockHeaderEvent> defenderResponses =
                 ethWrapper.getRespondBlockHeaderEvents(fromBlock, toBlock);
@@ -151,6 +163,12 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
+    /**
+     * Query header of the first Doge block hash in a certain superblock that the challenger is battling.
+     * If it was empty, just verify it.
+     * @param defenderResponse Merkle root hashes response from the defender.
+     * @throws Exception
+     */
     private void startBlockHeaderQueries(EthWrapper.RespondMerkleRootHashesEvent defenderResponse) throws Exception {
         Keccak256Hash superblockId = defenderResponse.superblockId;
         List<Sha256Hash> dogeBlockHashes = defenderResponse.blockHashes;
@@ -163,6 +181,12 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
+    /**
+     * Query the header for the next hash in the superblock's list of Doge hashes if there is one,
+     * end the battle by verifying the superblock if Doge block hash was the last one.
+     * @param defenderResponse Doge block hash response from defender.
+     * @throws Exception
+     */
     private void reactToBlockHeaderResponse(EthWrapper.RespondBlockHeaderEvent defenderResponse) throws Exception {
         Sha256Hash dogeBlockHash = Sha256Hash.twiceOf(defenderResponse.blockHeader);
         Keccak256Hash superblockId = defenderResponse.superblockId;
