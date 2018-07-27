@@ -201,8 +201,14 @@ public abstract class SuperblockBaseClient {
     }
 
 
-    /* ---- BATTLE METHODS ---- */
+    /* ---- BATTLE SET METHODS ---- */
 
+    /**
+     * Listen to NewBattle events to keep track of new battles that this client is taking part in.
+     * @param fromBlock
+     * @param toBlock
+     * @throws IOException
+     */
     private void getNewBattles(long fromBlock, long toBlock) throws IOException {
         List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
         for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
@@ -211,6 +217,12 @@ public abstract class SuperblockBaseClient {
         }
     }
 
+    /**
+     * Listen to SuperblockBattleDecided events to remove battles that have already ended.
+     * @param fromBlock
+     * @param toBlock
+     * @throws IOException
+     */
     protected void deleteFinishedBattles(long fromBlock, long toBlock) throws IOException {
         List<EthWrapper.SuperblockBattleDecidedEvent> superblockBattleDecidedEvents =
                 ethWrapper.getSuperblockBattleDecidedEvents(fromBlock, toBlock);
