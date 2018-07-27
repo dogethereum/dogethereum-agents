@@ -213,15 +213,16 @@ public class DogeBattleManager extends Contract {
     public List<RespondMerkleRootHashesEventResponse> getRespondMerkleRootHashesEvents(TransactionReceipt transactionReceipt) {
         final Event event = new Event("RespondMerkleRootHashes", 
                 Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<DynamicArray<Bytes32>>() {}));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<DynamicArray<Bytes32>>() {}));
         List<Contract.EventValuesWithLog> valueList = extractEventParametersWithLog(event, transactionReceipt);
         ArrayList<RespondMerkleRootHashesEventResponse> responses = new ArrayList<RespondMerkleRootHashesEventResponse>(valueList.size());
         for (Contract.EventValuesWithLog eventValues : valueList) {
             RespondMerkleRootHashesEventResponse typedResponse = new RespondMerkleRootHashesEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            typedResponse.challenger = (String) eventValues.getNonIndexedValues().get(1).getValue();
-            typedResponse.blockHashes = (List<byte[]>) eventValues.getNonIndexedValues().get(2).getValue();
+            typedResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
+            typedResponse.challenger = (String) eventValues.getNonIndexedValues().get(2).getValue();
+            typedResponse.blockHashes = (List<byte[]>) eventValues.getNonIndexedValues().get(3).getValue();
             responses.add(typedResponse);
         }
         return responses;
@@ -230,7 +231,7 @@ public class DogeBattleManager extends Contract {
     public Observable<RespondMerkleRootHashesEventResponse> respondMerkleRootHashesEventObservable(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
         final Event event = new Event("RespondMerkleRootHashes", 
                 Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<DynamicArray<Bytes32>>() {}));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<DynamicArray<Bytes32>>() {}));
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
         filter.addSingleTopic(EventEncoder.encode(event));
         return web3j.ethLogObservable(filter).map(new Func1<Log, RespondMerkleRootHashesEventResponse>() {
@@ -239,9 +240,10 @@ public class DogeBattleManager extends Contract {
                 Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
                 RespondMerkleRootHashesEventResponse typedResponse = new RespondMerkleRootHashesEventResponse();
                 typedResponse.log = log;
-                typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-                typedResponse.challenger = (String) eventValues.getNonIndexedValues().get(1).getValue();
-                typedResponse.blockHashes = (List<byte[]>) eventValues.getNonIndexedValues().get(2).getValue();
+                typedResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+                typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
+                typedResponse.challenger = (String) eventValues.getNonIndexedValues().get(2).getValue();
+                typedResponse.blockHashes = (List<byte[]>) eventValues.getNonIndexedValues().get(3).getValue();
                 return typedResponse;
             }
         });
@@ -250,15 +252,16 @@ public class DogeBattleManager extends Contract {
     public List<QueryBlockHeaderEventResponse> getQueryBlockHeaderEvents(TransactionReceipt transactionReceipt) {
         final Event event = new Event("QueryBlockHeader", 
                 Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Bytes32>() {}));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Bytes32>() {}));
         List<Contract.EventValuesWithLog> valueList = extractEventParametersWithLog(event, transactionReceipt);
         ArrayList<QueryBlockHeaderEventResponse> responses = new ArrayList<QueryBlockHeaderEventResponse>(valueList.size());
         for (Contract.EventValuesWithLog eventValues : valueList) {
             QueryBlockHeaderEventResponse typedResponse = new QueryBlockHeaderEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            typedResponse.submitter = (String) eventValues.getNonIndexedValues().get(1).getValue();
-            typedResponse.blockHash = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
+            typedResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
+            typedResponse.submitter = (String) eventValues.getNonIndexedValues().get(2).getValue();
+            typedResponse.blockHash = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
             responses.add(typedResponse);
         }
         return responses;
@@ -267,7 +270,7 @@ public class DogeBattleManager extends Contract {
     public Observable<QueryBlockHeaderEventResponse> queryBlockHeaderEventObservable(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
         final Event event = new Event("QueryBlockHeader", 
                 Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Bytes32>() {}));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Bytes32>() {}));
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
         filter.addSingleTopic(EventEncoder.encode(event));
         return web3j.ethLogObservable(filter).map(new Func1<Log, QueryBlockHeaderEventResponse>() {
@@ -276,9 +279,10 @@ public class DogeBattleManager extends Contract {
                 Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
                 QueryBlockHeaderEventResponse typedResponse = new QueryBlockHeaderEventResponse();
                 typedResponse.log = log;
-                typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-                typedResponse.submitter = (String) eventValues.getNonIndexedValues().get(1).getValue();
-                typedResponse.blockHash = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
+                typedResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+                typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
+                typedResponse.submitter = (String) eventValues.getNonIndexedValues().get(2).getValue();
+                typedResponse.blockHash = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
                 return typedResponse;
             }
         });
@@ -287,16 +291,17 @@ public class DogeBattleManager extends Contract {
     public List<RespondBlockHeaderEventResponse> getRespondBlockHeaderEvents(TransactionReceipt transactionReceipt) {
         final Event event = new Event("RespondBlockHeader", 
                 Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Bytes32>() {}, new TypeReference<DynamicBytes>() {}));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Bytes32>() {}, new TypeReference<DynamicBytes>() {}));
         List<Contract.EventValuesWithLog> valueList = extractEventParametersWithLog(event, transactionReceipt);
         ArrayList<RespondBlockHeaderEventResponse> responses = new ArrayList<RespondBlockHeaderEventResponse>(valueList.size());
         for (Contract.EventValuesWithLog eventValues : valueList) {
             RespondBlockHeaderEventResponse typedResponse = new RespondBlockHeaderEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            typedResponse.challenger = (String) eventValues.getNonIndexedValues().get(1).getValue();
-            typedResponse.blockScryptHash = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
-            typedResponse.blockHeader = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
+            typedResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
+            typedResponse.challenger = (String) eventValues.getNonIndexedValues().get(2).getValue();
+            typedResponse.blockScryptHash = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
+            typedResponse.blockHeader = (byte[]) eventValues.getNonIndexedValues().get(4).getValue();
             responses.add(typedResponse);
         }
         return responses;
@@ -305,7 +310,7 @@ public class DogeBattleManager extends Contract {
     public Observable<RespondBlockHeaderEventResponse> respondBlockHeaderEventObservable(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
         final Event event = new Event("RespondBlockHeader", 
                 Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Bytes32>() {}, new TypeReference<DynamicBytes>() {}));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Bytes32>() {}, new TypeReference<DynamicBytes>() {}));
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
         filter.addSingleTopic(EventEncoder.encode(event));
         return web3j.ethLogObservable(filter).map(new Func1<Log, RespondBlockHeaderEventResponse>() {
@@ -314,10 +319,11 @@ public class DogeBattleManager extends Contract {
                 Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
                 RespondBlockHeaderEventResponse typedResponse = new RespondBlockHeaderEventResponse();
                 typedResponse.log = log;
-                typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-                typedResponse.challenger = (String) eventValues.getNonIndexedValues().get(1).getValue();
-                typedResponse.blockScryptHash = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
-                typedResponse.blockHeader = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
+                typedResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+                typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
+                typedResponse.challenger = (String) eventValues.getNonIndexedValues().get(2).getValue();
+                typedResponse.blockScryptHash = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
+                typedResponse.blockHeader = (byte[]) eventValues.getNonIndexedValues().get(4).getValue();
                 return typedResponse;
             }
         });
@@ -470,29 +476,32 @@ public class DogeBattleManager extends Contract {
         return executeRemoteCallTransaction(function);
     }
 
-    public RemoteCall<TransactionReceipt> respondMerkleRootHashes(byte[] sessionId, List<byte[]> blockHashes) {
+    public RemoteCall<TransactionReceipt> respondMerkleRootHashes(byte[] superblockId, byte[] sessionId, List<byte[]> blockHashes) {
         final Function function = new Function(
                 "respondMerkleRootHashes", 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(sessionId), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(superblockId), 
+                new org.web3j.abi.datatypes.generated.Bytes32(sessionId), 
                 new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.generated.Bytes32>(
                         org.web3j.abi.Utils.typeMap(blockHashes, org.web3j.abi.datatypes.generated.Bytes32.class))), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
-    public RemoteCall<TransactionReceipt> queryBlockHeader(byte[] sessionId, byte[] blockHash) {
+    public RemoteCall<TransactionReceipt> queryBlockHeader(byte[] superblockId, byte[] sessionId, byte[] blockHash) {
         final Function function = new Function(
                 "queryBlockHeader", 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(sessionId), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(superblockId), 
+                new org.web3j.abi.datatypes.generated.Bytes32(sessionId), 
                 new org.web3j.abi.datatypes.generated.Bytes32(blockHash)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
-    public RemoteCall<TransactionReceipt> respondBlockHeader(byte[] sessionId, byte[] blockScryptHash, byte[] blockHeader) {
+    public RemoteCall<TransactionReceipt> respondBlockHeader(byte[] superblockId, byte[] sessionId, byte[] blockScryptHash, byte[] blockHeader) {
         final Function function = new Function(
                 "respondBlockHeader", 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(sessionId), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(superblockId), 
+                new org.web3j.abi.datatypes.generated.Bytes32(sessionId), 
                 new org.web3j.abi.datatypes.generated.Bytes32(blockScryptHash), 
                 new org.web3j.abi.datatypes.DynamicBytes(blockHeader)), 
                 Collections.<TypeReference<?>>emptyList());
@@ -590,6 +599,8 @@ public class DogeBattleManager extends Contract {
     public static class RespondMerkleRootHashesEventResponse {
         public Log log;
 
+        public byte[] superblockId;
+
         public byte[] sessionId;
 
         public String challenger;
@@ -600,6 +611,8 @@ public class DogeBattleManager extends Contract {
     public static class QueryBlockHeaderEventResponse {
         public Log log;
 
+        public byte[] superblockId;
+
         public byte[] sessionId;
 
         public String submitter;
@@ -609,6 +622,8 @@ public class DogeBattleManager extends Contract {
 
     public static class RespondBlockHeaderEventResponse {
         public Log log;
+
+        public byte[] superblockId;
 
         public byte[] sessionId;
 

@@ -79,8 +79,9 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
             QueryMerkleRootHashesEventResponse queryMerkleRootHashesEventResponse =
                     new QueryMerkleRootHashesEventResponse();
             queryMerkleRootHashesEventResponse.log = eventValues.getLog();
-            queryMerkleRootHashesEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            queryMerkleRootHashesEventResponse.submitter = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            queryMerkleRootHashesEventResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            queryMerkleRootHashesEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
+            queryMerkleRootHashesEventResponse.submitter = (String) eventValues.getNonIndexedValues().get(2).getValue();
             result.add(queryMerkleRootHashesEventResponse);
         }
 
@@ -170,6 +171,36 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
             newSubmitterConvictedEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
             newSubmitterConvictedEventResponse.submitter = (String) eventValues.getNonIndexedValues().get(2).getValue();
             result.add(newSubmitterConvictedEventResponse);
+        }
+
+        return result;
+    }
+
+    public List<RespondMerkleRootHashesEventResponse> getRespondMerkleRootHashesEventResponses(
+            DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
+            throws IOException {
+        final Event event = new Event("NewBattle",
+                Arrays.<TypeReference<?>>asList(),
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
+
+        List<RespondMerkleRootHashesEventResponse> result = new ArrayList<>();
+        EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
+        filter.addSingleTopic(EventEncoder.encode(event));
+        EthLog ethLog = web3j.ethGetLogs(filter).send();
+        List<EthLog.LogResult> logResults = ethLog.getLogs();
+
+        for (EthLog.LogResult logResult : logResults) {
+            Log log = (Log) logResult.get();
+            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+
+            RespondMerkleRootHashesEventResponse newRespondMerkleRootHashesEventResponse =
+                    new RespondMerkleRootHashesEventResponse();
+            newRespondMerkleRootHashesEventResponse.log = eventValues.getLog();
+            newRespondMerkleRootHashesEventResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            newRespondMerkleRootHashesEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
+            newRespondMerkleRootHashesEventResponse.challenger = (String) eventValues.getNonIndexedValues().get(2).getValue();
+            newRespondMerkleRootHashesEventResponse.blockHashes = (List<byte[]>) eventValues.getNonIndexedValues().get(3).getValue();
+            result.add(newRespondMerkleRootHashesEventResponse);
         }
 
         return result;

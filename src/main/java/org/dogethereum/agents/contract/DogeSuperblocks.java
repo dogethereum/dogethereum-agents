@@ -48,7 +48,7 @@ public class DogeSuperblocks extends Contract {
 
     static {
         _addresses = new HashMap<>();
-        _addresses.put("32001", "0xe85e78cea167e0a93eecc42bbd54927f5ace2a22");
+        _addresses.put("32001", "0x439f343bc24ea1149ed009fc2fe941fcdea881ad");
     }
 
     protected DogeSuperblocks(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
