@@ -12,7 +12,7 @@ import org.dogethereum.agents.core.eth.EthWrapper;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
+import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -31,6 +31,9 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 @Slf4j(topic = "SuperblockChallengerClient")
 public class SuperblockChallengerClient extends SuperblockBaseClient {
 
+    private File semiApprovedSetFile;
+    private HashSet<Keccak256Hash> semiApprovedSet;
+
     public SuperblockChallengerClient() {
         super("Superblock challenger client");
     }
@@ -38,6 +41,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     @Override
     protected void setupClient() {
         myAddress = ethWrapper.getDogeBlockChallengerAddress();
+        setupSemiApprovedSet();
     }
 
     @Override
@@ -271,6 +275,40 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 log.info("Submitter hit timeout on session {}. Calling timeout.", sessionId);
                 ethWrapper.timeout(sessionId);
             }
+        }
+    }
+
+    /* ---- STORAGE ---- */
+
+    private void setupSemiApprovedSet() {
+        this.semiApprovedSet = new HashSet<>();
+        this.semiApprovedSetFile = new File(dataDirectory.getAbsolutePath() + "/SemiApprovedSet.dat");
+    }
+
+    private void restoreSemiApprovedSet() throws IOException, ClassNotFoundException {
+        if (semiApprovedSetFile.exists()) {
+            synchronized (this) {
+                try (
+                    FileInputStream semiApprovedSetFileIs = new FileInputStream(semiApprovedSetFile);
+                    ObjectInputStream semiApprovedSetObjectIs = new ObjectInputStream(semiApprovedSetFileIs);
+                ) {
+                    semiApprovedSet = (HashSet<Keccak256Hash>) semiApprovedSetObjectIs.readObject();
+                }
+            }
+        }
+    }
+
+    private void flushSemiApprovedSet() throws IOException {
+        if (!dataDirectory.exists()) {
+            if (!dataDirectory.mkdirs()) {
+                throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());
+            }
+        }
+        try (
+            FileOutputStream semiApprovedSetFileOs = new FileOutputStream(semiApprovedSetFile);
+            ObjectOutputStream semiApprovedSetObjectOs = new ObjectOutputStream(semiApprovedSetFileOs);
+        ) {
+            semiApprovedSetObjectOs.writeObject(semiApprovedSet);
         }
     }
 }
