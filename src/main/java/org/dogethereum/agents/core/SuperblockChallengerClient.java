@@ -50,6 +50,14 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             respondToNewBattle(fromBlock, toBlock);
             validateNewSuperblocks(fromBlock, toBlock);
             deleteFinishedBattles(fromBlock, toBlock);
+
+            getSemiApproved(fromBlock, toBlock);
+            removeApproved(fromBlock, toBlock);
+            removeInvalid(fromBlock, toBlock);
+
+            synchronized (this) {
+                flushSemiApprovedSet();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return latestEthBlockProcessed;
@@ -68,6 +76,10 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
 
     /* ---- CHALLENGING ---- */
+
+    /* - Reacting to elapsed time */
+
+    /* - Reacting to events */
 
     /**
      * Start challenges for all new superblocks that aren't in the challenger's local chain.
@@ -210,6 +222,31 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
+    private void getSemiApproved(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
+                ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
+        for (EthWrapper.SuperblockEvent superblockEvent : semiApprovedSuperblockEvents) {
+            if (challengedByMe(superblockEvent))
+                semiApprovedSet.add(superblockEvent.superblockId);
+        }
+    }
+
+    private void removeApproved(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.SuperblockEvent> approvedSuperblockEvents = ethWrapper.getApprovedSuperblocks(fromBlock, toBlock);
+        for (EthWrapper.SuperblockEvent superblockEvent : approvedSuperblockEvents) {
+            if (semiApprovedSet.contains(superblockEvent.superblockId))
+                semiApprovedSet.remove(superblockEvent.superblockId);
+        }
+    }
+
+    private void removeInvalid(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.SuperblockEvent> invalidSuperblockEvents = ethWrapper.getInvalidSuperblocks(fromBlock, toBlock);
+        for (EthWrapper.SuperblockEvent superblockEvent : invalidSuperblockEvents) {
+            if (semiApprovedSet.contains(superblockEvent.superblockId))
+                semiApprovedSet.remove(superblockEvent.superblockId);
+        }
+    }
+
 
     /* ---- HELPER METHODS ---- */
 
@@ -219,6 +256,10 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     private boolean isMine(EthWrapper.RespondBlockHeaderEvent respondBlockHeaderEvent) {
         return respondBlockHeaderEvent.challenger.equals(myAddress);
+    }
+
+    private boolean challengedByMe(EthWrapper.SuperblockEvent superblockEvent) throws Exception {
+        return ethWrapper.getClaimChallengers(superblockEvent.superblockId).contains(myAddress);
     }
 
     /**

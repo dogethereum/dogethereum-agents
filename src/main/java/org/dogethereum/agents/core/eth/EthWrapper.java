@@ -342,23 +342,23 @@ public class EthWrapper implements SuperblockConstantProvider {
         return result;
     }
 
-//    public List<SuperblockEvent> getApprovedSuperblocks(long startBlock, long endBlock)
-//            throws IOException {
-//        List<SuperblockEvent> result = new ArrayList<>();
-//        List<DogeSuperblocks.ApprovedSuperblockEventResponse> approvedSuperblockEvents =
-//                superblocks.getApprovedSuperblockEvents(
-//                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-//                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
-//
-//        for (DogeSuperblocks.ApprovedSuperblockEventResponse response : approvedSuperblockEvents) {
-//            SuperblockEvent approvedSuperblockEvent = new SuperblockEvent();
-//            approvedSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
-//            approvedSuperblockEvent.who = response.who;
-//            result.add(approvedSuperblockEvent);
-//        }
-//
-//        return result;
-//    }
+    public List<SuperblockEvent> getApprovedSuperblocks(long startBlock, long endBlock)
+            throws IOException {
+        List<SuperblockEvent> result = new ArrayList<>();
+        List<DogeSuperblocks.ApprovedSuperblockEventResponse> approvedSuperblockEvents =
+                superblocks.getApprovedSuperblockEvents(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+
+        for (DogeSuperblocks.ApprovedSuperblockEventResponse response : approvedSuperblockEvents) {
+            SuperblockEvent approvedSuperblockEvent = new SuperblockEvent();
+            approvedSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+            approvedSuperblockEvent.who = response.who;
+            result.add(approvedSuperblockEvent);
+        }
+
+        return result;
+    }
 //
 //    public List<SuperblockEvent> getChallengedSuperblocks(long startBlock, long endBlock)
 //            throws IOException {
@@ -378,41 +378,41 @@ public class EthWrapper implements SuperblockConstantProvider {
 //        return result;
 //    }
 //
-//    public List<SuperblockEvent> getSemiApprovedSuperblocks(long startBlock, long endBlock)
-//            throws IOException {
-//        List<SuperblockEvent> result = new ArrayList<>();
-//        List<DogeSuperblocks.SemiApprovedSuperblockEventResponse> semiApprovedSuperblockEvents =
-//                superblocks.getSemiApprovedSuperblockEvents(
-//                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-//                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
-//
-//        for (DogeSuperblocks.SemiApprovedSuperblockEventResponse response : semiApprovedSuperblockEvents) {
-//            SuperblockEvent semiApprovedSuperblockEvent = new SuperblockEvent();
-//            semiApprovedSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
-//            semiApprovedSuperblockEvent.who = response.who;
-//            result.add(semiApprovedSuperblockEvent);
-//        }
-//
-//        return result;
-//    }
-//
-//    public List<SuperblockEvent> getInvalidSuperblocks(long startBlock, long endBlock)
-//            throws IOException {
-//        List<SuperblockEvent> result = new ArrayList<>();
-//        List<DogeSuperblocks.InvalidSuperblockEventResponse> invalidSuperblockEvents =
-//                superblocks.getInvalidSuperblockEvents(
-//                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-//                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
-//
-//        for (DogeSuperblocks.InvalidSuperblockEventResponse response : invalidSuperblockEvents) {
-//            SuperblockEvent invalidSuperblockEvent = new SuperblockEvent();
-//            invalidSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
-//            invalidSuperblockEvent.who = response.who;
-//            result.add(invalidSuperblockEvent);
-//        }
-//
-//        return result;
-//    }
+    public List<SuperblockEvent> getSemiApprovedSuperblocks(long startBlock, long endBlock)
+            throws IOException {
+        List<SuperblockEvent> result = new ArrayList<>();
+        List<DogeSuperblocks.SemiApprovedSuperblockEventResponse> semiApprovedSuperblockEvents =
+                superblocks.getSemiApprovedSuperblockEvents(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+
+        for (DogeSuperblocks.SemiApprovedSuperblockEventResponse response : semiApprovedSuperblockEvents) {
+            SuperblockEvent semiApprovedSuperblockEvent = new SuperblockEvent();
+            semiApprovedSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+            semiApprovedSuperblockEvent.who = response.who;
+            result.add(semiApprovedSuperblockEvent);
+        }
+
+        return result;
+    }
+
+    public List<SuperblockEvent> getInvalidSuperblocks(long startBlock, long endBlock)
+            throws IOException {
+        List<SuperblockEvent> result = new ArrayList<>();
+        List<DogeSuperblocks.InvalidSuperblockEventResponse> invalidSuperblockEvents =
+                superblocks.getInvalidSuperblockEvents(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+
+        for (DogeSuperblocks.InvalidSuperblockEventResponse response : invalidSuperblockEvents) {
+            SuperblockEvent invalidSuperblockEvent = new SuperblockEvent();
+            invalidSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+            invalidSuperblockEvent.who = response.who;
+            result.add(invalidSuperblockEvent);
+        }
+
+        return result;
+    }
 
     public static class SuperblockEvent {
 
@@ -790,6 +790,10 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     public boolean getInBattleAndSemiApprovable(Keccak256Hash superblockId) throws Exception {
         return claimManager.getInBattleAndSemiApprovable(superblockId.getBytes()).send();
+    }
+
+    public List<String> getClaimChallengers(Keccak256Hash superblockId) throws Exception {
+        return claimManager.getClaimChallengers(superblockId.getBytes()).send();
     }
 
     public boolean getChallengerHitTimeout(Keccak256Hash sessionId) throws Exception {
