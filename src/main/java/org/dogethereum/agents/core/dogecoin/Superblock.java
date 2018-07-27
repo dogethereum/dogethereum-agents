@@ -352,7 +352,7 @@ public class Superblock {
     public int getDogeBlockLeafIndex(Sha256Hash hash) {
         return dogeBlockHashes.indexOf(hash);
     }
-    
+
     @Override
     public String toString() {
         return "Superblock{" +

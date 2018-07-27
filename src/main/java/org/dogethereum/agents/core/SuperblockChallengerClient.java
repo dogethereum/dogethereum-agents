@@ -190,19 +190,19 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      */
     private void reactToBlockHeaderResponse(EthWrapper.RespondBlockHeaderEvent defenderResponse) throws Exception {
         Sha256Hash dogeBlockHash = Sha256Hash.twiceOf(defenderResponse.blockHeader);
-        Keccak256Hash superblockId = defenderResponse.superblockId;
-        Superblock superblock = superblockChain.getSuperblock(superblockId);
+        Keccak256Hash sessionId = defenderResponse.sessionId;
+        List<Sha256Hash> sessionDogeBlockHashes = ethWrapper.getDogeBlockHashes(sessionId);
+        Sha256Hash nextDogeBlockHash = getNextHashToQuery(dogeBlockHash, sessionDogeBlockHashes);
 
-        int idx = superblock.getDogeBlockLeafIndex(dogeBlockHash) + 1; // next block to respond to
-        if (idx < superblock.getDogeBlockHashes().size()) {
+        if (nextDogeBlockHash != null) {
             // not last hash
-            Sha256Hash nextDogeBlockHash = superblock.getDogeBlockHashes().get(idx);
             log.info("Querying block header {}", nextDogeBlockHash);
-            ethWrapper.queryBlockHeader(superblockId, defenderResponse.sessionId, nextDogeBlockHash);
+            ethWrapper.queryBlockHeader(defenderResponse.superblockId, sessionId, nextDogeBlockHash);
         } else {
             // last hash; end battle
-            log.info("All block hashes for superblock {} have been received. Verifying it now.", superblockId);
-            ethWrapper.verifySuperblock(defenderResponse.sessionId);
+            log.info("All block hashes for superblock {} have been received. Verifying it now.",
+                    defenderResponse.superblockId);
+            ethWrapper.verifySuperblock(sessionId);
         }
     }
 
@@ -215,6 +215,24 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     private boolean isMine(EthWrapper.RespondBlockHeaderEvent respondBlockHeaderEvent) {
         return respondBlockHeaderEvent.challenger.equals(myAddress);
+    }
+
+    /**
+     * Get the next Doge block hash to be requested in a battle session.
+     * If the hash provided is either the last one in the list or not in the list at all,
+     * this method returns null, because either of those conditions implies that the battle should end.
+     * @param dogeBlockHash Hash of the last block in the session provided by the defender.
+     * @param allDogeBlockHashes List of Doge block hashes corresponding to the same battle session.
+     * @return Hash of next Doge block hash to be requested if there is one,
+     * null otherwise.
+     */
+    private Sha256Hash getNextHashToQuery(Sha256Hash dogeBlockHash, List<Sha256Hash> allDogeBlockHashes) {
+        int idx = allDogeBlockHashes.indexOf(dogeBlockHash) + 1;
+        if (idx < allDogeBlockHashes.size() && idx > 0) {
+            return allDogeBlockHashes.get(idx);
+        } else {
+            return null;
+        }
     }
 
 
