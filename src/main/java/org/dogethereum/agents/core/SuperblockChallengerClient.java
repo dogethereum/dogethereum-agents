@@ -147,7 +147,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     private boolean badDogeBlockHash(Sha256Hash dogeBlockHash, Keccak256Hash superblockId)
             throws IOException, BlockStoreException {
         Superblock superblock = superblockChain.getSuperblock(superblockId);
-        if (superblock.getDogeBlockLeafIndex(dogeBlockHash) == -1) {
+        if (!superblock.getDogeBlockHashes().contains(dogeBlockHash)) {
             // Doge block hash is not in this superblock, therefore it's bad
             return true;
         } else {
