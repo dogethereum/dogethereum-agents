@@ -4,6 +4,8 @@ import org.bitcoinj.core.Coin;
 import org.dogethereum.agents.core.dogecoin.Superblock;
 import org.libdohj.params.AbstractDogecoinParams;
 
+import java.math.BigInteger;
+
 /**
  * Agent and Bridge constants.
  * Subclasses are customizations for each network (doge regtest and eth ropsten, doge mainnet and eth ropsten, doge mainnet and eth prod)
@@ -41,6 +43,10 @@ public class AgentConstants {
 
     public Superblock getGenesisSuperblock() {
         return genesisSuperblock;
+    }
+
+    public static BigInteger getSuperblockInitialDeposit() {
+        return BigInteger.valueOf(1000);
     }
     // Unlock mechanism specific end
 

@@ -4,6 +4,7 @@ package org.dogethereum.agents.core.eth;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 
+import org.dogethereum.agents.constants.AgentConstants;
 import org.dogethereum.agents.constants.SystemProperties;
 import org.dogethereum.agents.contract.*;
 
@@ -216,7 +217,8 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         // TODO: see how much wei we should actually send and whether it's a paremeter for this method
         // Idea: make it a configuration variable
-        CompletableFuture<TransactionReceipt> depositsReceipt = makeClaimDeposit(BigInteger.valueOf(1000));
+        CompletableFuture<TransactionReceipt> depositsReceipt =
+                makeClaimDeposit(AgentConstants.getSuperblockInitialDeposit());
 
         // The parent is either approved or semi approved. We can send the superblock.
         CompletableFuture<TransactionReceipt> futureReceipt = proposeSuperblock(superblock);
@@ -798,6 +800,14 @@ public class EthWrapper implements SuperblockConstantProvider {
         return claimManager.getSubmitterHitTimeout(sessionId.getBytes()).send();
     }
 
+    public List<Sha256Hash> getDogeBlockHashes(Keccak256Hash sessionId) throws Exception {
+        List<Sha256Hash> result = new ArrayList<>();
+        List<byte[]> rawHashes = claimManager.getDogeBlockHashes(sessionId.getBytes()).send();
+        for (byte[] rawHash : rawHashes)
+            result.add(Sha256Hash.wrap(rawHash)); // TODO: check endianness
+        return result;
+    }
+
 
     /* ---------------------------------- */
     /* ----- Relay Doge tx section ------ */
@@ -807,7 +817,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         return dogeToken.wasDogeTxProcessed(txHash.toBigInteger()).send();
     }
 
-    // TODO: test with operator enabled
     public void sendRelayTx(org.bitcoinj.core.Transaction tx, byte[] operatorPublicKeyHash, AltcoinBlock block,
                             Superblock superblock, PartialMerkleTree txPMT, PartialMerkleTree superblockPMT)
             throws Exception {
