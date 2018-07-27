@@ -121,7 +121,7 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
     public List<ChallengerConvictedEventResponse> getChallengerConvictedEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("NewBattle",
+        final Event event = new Event("ChallengerConvicted",
                 Arrays.<TypeReference<?>>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
 
@@ -150,7 +150,7 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
     public List<SubmitterConvictedEventResponse> getSubmitterConvictedEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("NewBattle",
+        final Event event = new Event("SubmitterConvicted",
                 Arrays.<TypeReference<?>>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
 
@@ -179,7 +179,7 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
     public List<RespondMerkleRootHashesEventResponse> getRespondMerkleRootHashesEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("NewBattle",
+        final Event event = new Event("RespondMerkleRootHashes",
                 Arrays.<TypeReference<?>>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
 
@@ -209,7 +209,7 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
     public List<RespondBlockHeaderEventResponse> getRespondBlockHeaderEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("NewBattle",
+        final Event event = new Event("RespondBlockHeader",
                 Arrays.<TypeReference<?>>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
 
