@@ -538,6 +538,21 @@ public class DogeBattleManager extends Contract {
         return executeRemoteCallSingleValueReturn(function, Boolean.class);
     }
 
+    public RemoteCall<List> getDogeBlockHashes(byte[] sessionId) {
+        final Function function = new Function("getDogeBlockHashes", 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(sessionId)), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<DynamicArray<Bytes32>>() {}));
+        return new RemoteCall<List>(
+                new Callable<List>() {
+                    @Override
+                    @SuppressWarnings("unchecked")
+                    public List call() throws Exception {
+                        List<Type> result = (List<Type>) executeCallSingleValueReturn(function, List.class);
+                        return convertToNative(result);
+                    }
+                });
+    }
+
     public static DogeBattleManager load(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
         return new DogeBattleManager(contractAddress, web3j, credentials, gasPrice, gasLimit);
     }
