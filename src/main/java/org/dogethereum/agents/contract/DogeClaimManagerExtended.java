@@ -205,4 +205,35 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
 
         return result;
     }
+
+    public List<RespondBlockHeaderEventResponse> getRespondBlockHeaderEventResponses(
+            DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
+            throws IOException {
+        final Event event = new Event("NewBattle",
+                Arrays.<TypeReference<?>>asList(),
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
+
+        List<RespondBlockHeaderEventResponse> result = new ArrayList<>();
+        EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
+        filter.addSingleTopic(EventEncoder.encode(event));
+        EthLog ethLog = web3j.ethGetLogs(filter).send();
+        List<EthLog.LogResult> logResults = ethLog.getLogs();
+
+        for (EthLog.LogResult logResult : logResults) {
+            Log log = (Log) logResult.get();
+            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+
+            RespondBlockHeaderEventResponse newRespondBlockHeaderEventResponse =
+                    new RespondBlockHeaderEventResponse();
+            newRespondBlockHeaderEventResponse.log = eventValues.getLog();
+            newRespondBlockHeaderEventResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            newRespondBlockHeaderEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
+            newRespondBlockHeaderEventResponse.challenger = (String) eventValues.getNonIndexedValues().get(2).getValue();
+            newRespondBlockHeaderEventResponse.blockScryptHash = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
+            newRespondBlockHeaderEventResponse.blockHeader = (byte[]) eventValues.getNonIndexedValues().get(4).getValue();
+            result.add(newRespondBlockHeaderEventResponse);
+        }
+
+        return result;
+    }
 }

@@ -64,6 +64,12 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     /* ---- CHALLENGING ---- */
 
+    /**
+     * Start challenges for all new superblocks that aren't in the challenger's local chain.
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
     private void validateNewSuperblocks(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SuperblockEvent> newSuperblockEvents = ethWrapper.getNewSuperblocks(fromBlock, toBlock);
 
@@ -97,6 +103,12 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
+    /**
+     * Query block hashes for all new battle events that the challenger is taking part in.
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
     private void respondToNewBattle(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
 
@@ -116,6 +128,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
+
     private void respondToMerkleRootHashesEventResponses(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.RespondMerkleRootHashesEvent> defenderResponses =
                 ethWrapper.getRespondMerkleRootHashesEvents(fromBlock, toBlock);
@@ -127,23 +140,56 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
+    private void respondToBlockHeaderEventResponses(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.RespondBlockHeaderEvent> defenderResponses =
+                ethWrapper.getRespondBlockHeaderEvents(fromBlock, toBlock);
+
+        for (EthWrapper.RespondBlockHeaderEvent defenderResponse : defenderResponses) {
+            if (isMine(defenderResponse)) {
+                reactToBlockHeaderResponse(defenderResponse);
+            }
+        }
+    }
+
     private void startBlockHeaderQueries(EthWrapper.RespondMerkleRootHashesEvent defenderResponse) throws Exception {
         Keccak256Hash superblockId = defenderResponse.superblockId;
         List<Sha256Hash> dogeBlockHashes = defenderResponse.blockHashes;
-        log.info("Starting block header requests for superblock {}", superblockId);
+        log.info("Starting block header queries for superblock {}", superblockId);
 
-        // TODO: what if the list is empty?
-        ethWrapper.queryBlockHeader(superblockId, defenderResponse.sessionId, dogeBlockHashes.get(0));
+        if (!dogeBlockHashes.isEmpty()) {
+            ethWrapper.queryBlockHeader(superblockId, defenderResponse.sessionId, dogeBlockHashes.get(0));
+        } else {
+            ethWrapper.verifySuperblock(defenderResponse.sessionId);
+        }
     }
 
-//    private void respondToBlockHeaderEventResponses(long fromBlock, long toBlock) {
-//    }
+    private void reactToBlockHeaderResponse(EthWrapper.RespondBlockHeaderEvent defenderResponse) throws Exception {
+        Sha256Hash dogeBlockHash = Sha256Hash.twiceOf(defenderResponse.blockHeader);
+        Keccak256Hash superblockId = defenderResponse.superblockId;
+        Superblock superblock = superblockChain.getSuperblock(superblockId);
+
+        int idx = superblock.getDogeBlockLeafIndex(dogeBlockHash) + 1; // next block to respond to
+        if (idx < superblock.getDogeBlockHashes().size()) {
+            // not last hash
+            Sha256Hash nextDogeBlockHash = superblock.getDogeBlockHashes().get(idx);
+            log.info("Querying block header {}", nextDogeBlockHash);
+            ethWrapper.queryBlockHeader(superblockId, defenderResponse.sessionId, nextDogeBlockHash);
+        } else {
+            // last hash; end battle
+            log.info("All block hashes for superblock {} have been received. Verifying it now.", superblockId);
+            ethWrapper.verifySuperblock(defenderResponse.sessionId);
+        }
+    }
 
 
     /* ---- HELPER METHODS ---- */
 
     private boolean isMine(EthWrapper.RespondMerkleRootHashesEvent respondMerkleRootHashesEvent) {
         return respondMerkleRootHashesEvent.challenger.equals(myAddress);
+    }
+
+    private boolean isMine(EthWrapper.RespondBlockHeaderEvent respondBlockHeaderEvent) {
+        return respondBlockHeaderEvent.challenger.equals(myAddress);
     }
 
 

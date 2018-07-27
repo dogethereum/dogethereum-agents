@@ -99,6 +99,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
 
     /* - Reacting to events - */
+
     private void respondToBlockHeaderQueries(long fromBlock, long toBlock)
             throws IOException, BlockStoreException, Exception {
         List<EthWrapper.QueryBlockHeaderEvent> queryBlockHeaderEvents =

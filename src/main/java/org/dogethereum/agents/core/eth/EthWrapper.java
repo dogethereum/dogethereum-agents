@@ -648,11 +648,40 @@ public class EthWrapper implements SuperblockConstantProvider {
         return result;
     }
 
+    public List<RespondBlockHeaderEvent> getRespondBlockHeaderEvents(long startBlock, long endBlock)
+            throws IOException {
+        List<RespondBlockHeaderEvent> result = new ArrayList<>();
+        List<DogeClaimManager.RespondBlockHeaderEventResponse> respondBlockHeaderEvents =
+                claimManager.getRespondBlockHeaderEventResponses(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+
+        for (DogeClaimManager.RespondBlockHeaderEventResponse response : respondBlockHeaderEvents) {
+            RespondBlockHeaderEvent respondBlockHeaderEvent = new RespondBlockHeaderEvent();
+            respondBlockHeaderEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+            respondBlockHeaderEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
+            respondBlockHeaderEvent.challenger = response.challenger;
+            respondBlockHeaderEvent.blockScryptHash = response.blockScryptHash;
+            respondBlockHeaderEvent.blockHeader = response.blockHeader;
+            result.add(respondBlockHeaderEvent);
+        }
+
+        return result;
+    }
+
     public static class RespondMerkleRootHashesEvent {
         public Keccak256Hash superblockId;
         public Keccak256Hash sessionId;
         public String challenger;
         public List<Sha256Hash> blockHashes;
+    }
+
+    public static class RespondBlockHeaderEvent {
+        public Keccak256Hash superblockId;
+        public Keccak256Hash sessionId;
+        public String challenger;
+        public byte[] blockScryptHash;
+        public byte[] blockHeader; // TODO: change to AltcoinBlock
     }
 
 
