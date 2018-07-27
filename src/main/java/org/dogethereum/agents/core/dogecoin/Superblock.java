@@ -350,15 +350,9 @@ public class Superblock {
     }
 
     public int getDogeBlockLeafIndex(Sha256Hash hash) {
-        for (int i = 0; i < dogeBlockHashes.size(); i++) {
-            if (dogeBlockHashes.get(i).equals(hash))
-                return i;
-        }
-        return -1;
+        return dogeBlockHashes.indexOf(hash);
     }
-
-//    }
-
+    
     @Override
     public String toString() {
         return "Superblock{" +
