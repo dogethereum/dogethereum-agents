@@ -109,7 +109,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 log.info("Header requested for session {}. Responding now.", queryBlockHeader.sessionId);
 
                 StoredBlock dogeBlock = dogecoinWrapper.getBlock(queryBlockHeader.dogeBlockHash);
-                ethWrapper.respondBlockHeader(queryBlockHeader.sessionId, (AltcoinBlock) dogeBlock.getHeader());
+                ethWrapper.respondBlockHeader(queryBlockHeader.superblockId, queryBlockHeader.sessionId,
+                        (AltcoinBlock) dogeBlock.getHeader());
                 ethWrapper.verifySuperblock(queryBlockHeader.sessionId);
             }
         }
@@ -125,7 +126,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                         queryMerkleRootHashes.sessionId);
 
                 Superblock superblock = superblockChain.getSuperblock(queryMerkleRootHashes.superblockId);
-                ethWrapper.respondMerkleRootHashes(queryMerkleRootHashes.sessionId, superblock.getDogeBlockHashes());
+                ethWrapper.respondMerkleRootHashes(queryMerkleRootHashes.superblockId, queryMerkleRootHashes.sessionId,
+                        superblock.getDogeBlockHashes());
                 ethWrapper.verifySuperblock(queryMerkleRootHashes.sessionId);
             }
         }
@@ -135,17 +137,14 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     /* ---- HELPER METHODS ---- */
 
-    //    private boolean isMine(EthWrapper.SuperblockEvent superblockEvent) {
     private boolean isMine(EthWrapper.QueryBlockHeaderEvent queryBlockHeader) {
         return queryBlockHeader.submitter.equals(myAddress);
     }
 
-    //    }
     private boolean isMine(EthWrapper.QueryMerkleRootHashesEvent queryMerkleRootHashes) {
         return queryMerkleRootHashes.submitter.equals(myAddress);
     }
 
-    //        return superblockEvent.who.equals(myAddress);
     private boolean submittedTimeoutPassed(Keccak256Hash superblockId) throws Exception {
         return ethWrapper.getNewEventTimestampDate(superblockId).before(getTimeoutDate());
     }

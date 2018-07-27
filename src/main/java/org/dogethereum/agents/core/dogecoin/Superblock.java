@@ -354,7 +354,7 @@ public class Superblock {
             if (dogeBlockHashes.get(i).equals(hash))
                 return i;
         }
-        return -1; // TODO: raise exception
+        return -1;
     }
 
 //    }
