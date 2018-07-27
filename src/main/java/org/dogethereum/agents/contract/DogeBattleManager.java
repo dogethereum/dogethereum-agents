@@ -378,6 +378,13 @@ public class DogeBattleManager extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
+    public RemoteCall<BigInteger> minDeposit() {
+        final Function function = new Function("minDeposit", 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
     public RemoteCall<BigInteger> superblockDelay() {
         final Function function = new Function("superblockDelay", 
                 Arrays.<Type>asList(), 
