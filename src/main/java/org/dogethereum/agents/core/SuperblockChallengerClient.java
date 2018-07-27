@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.AltcoinBlock;
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.store.BlockStoreException;
+import org.dogethereum.agents.core.dogecoin.SuperblockUtils;
 import org.dogethereum.agents.core.eth.EthWrapper;
 import org.dogethereum.agents.core.dogecoin.Keccak256Hash;
 import org.dogethereum.agents.core.dogecoin.Superblock;
@@ -121,44 +122,25 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
         for (EthWrapper.RespondMerkleRootHashesEvent defenderResponse : defenderResponses) {
             if (isMine(defenderResponse)) {
-                // Search for suspicious headers
-                sendBlockHeaderQueries(defenderResponse);
+                startBlockHeaderQueries(defenderResponse);
             }
         }
     }
 
-    private void sendBlockHeaderQueries(EthWrapper.RespondMerkleRootHashesEvent defenderResponse) throws Exception {
+    private void startBlockHeaderQueries(EthWrapper.RespondMerkleRootHashesEvent defenderResponse) throws Exception {
         Keccak256Hash superblockId = defenderResponse.superblockId;
         List<Sha256Hash> dogeBlockHashes = defenderResponse.blockHashes;
-        log.info("Requesting block headers for superblock {}", superblockId);
+        log.info("Starting block header requests for superblock {}", superblockId);
 
-        for (Sha256Hash dogeBlockHash : dogeBlockHashes) {
-            if (badDogeBlockHash(dogeBlockHash, superblockId)) {
-                log.info("Doge block hash {} should not be in superblock {}. Requesting it.",
-                        dogeBlockHash, superblockId);
-                ethWrapper.queryBlockHeader(superblockId, defenderResponse.sessionId, dogeBlockHash);
-            }
-        }
+        // TODO: what if the list is empty?
+        ethWrapper.queryBlockHeader(superblockId, defenderResponse.sessionId, dogeBlockHashes.get(0));
     }
+
+//    private void respondToBlockHeaderEventResponses(long fromBlock, long toBlock) {
+//    }
 
 
     /* ---- HELPER METHODS ---- */
-
-    private boolean badDogeBlockHash(Sha256Hash dogeBlockHash, Keccak256Hash superblockId)
-            throws IOException, BlockStoreException {
-        Superblock superblock = superblockChain.getSuperblock(superblockId);
-        if (!superblock.getDogeBlockHashes().contains(dogeBlockHash)) {
-            // Doge block hash is not in this superblock, therefore it's bad
-            return true;
-        } else {
-            // TODO: add another date check
-            Sha256Hash lastDogeBlockHash =
-                    superblock.getDogeBlockHashes().get(superblock.getDogeBlockHashes().size() - 1);
-            Date superblockEndTime = dogecoinWrapper.getBlock(lastDogeBlockHash).getHeader().getTime();
-            Date dogeBlockTime = dogecoinWrapper.getBlock(dogeBlockHash).getHeader().getTime();
-            return dogeBlockTime.after(superblockEndTime);
-        }
-    }
 
     private boolean isMine(EthWrapper.RespondMerkleRootHashesEvent respondMerkleRootHashesEvent) {
         return respondMerkleRootHashesEvent.challenger.equals(myAddress);
