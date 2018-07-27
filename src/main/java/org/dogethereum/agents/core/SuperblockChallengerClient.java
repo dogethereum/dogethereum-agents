@@ -45,6 +45,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         try {
             respondToNewBattle(fromBlock, toBlock);
             validateNewSuperblocks(fromBlock, toBlock);
+            deleteFinishedBattles(fromBlock, toBlock);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return latestEthBlockProcessed;

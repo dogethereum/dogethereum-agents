@@ -39,6 +39,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         try {
             respondToBlockHeaderQueries(fromBlock, toBlock);
             respondToMerkleRootHashesQueries(fromBlock, toBlock);
+            deleteFinishedBattles(fromBlock, toBlock);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return latestEthBlockProcessed;
@@ -133,7 +134,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             }
         }
     }
-
 
 
     /* ---- HELPER METHODS ---- */
