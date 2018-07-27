@@ -69,6 +69,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     protected void reactToElapsedTime() {
         try {
             callBattleTimeouts();
+            invalidateNonMainChainSuperblocks();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
@@ -78,6 +79,16 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     /* ---- CHALLENGING ---- */
 
     /* - Reacting to elapsed time */
+
+    private void invalidateNonMainChainSuperblocks() throws Exception {
+        for (Keccak256Hash superblockId : semiApprovedSet) {
+            long semiApprovedHeight = ethWrapper.getSuperblockHeight(superblockId).longValue();
+            Keccak256Hash mainChainId = superblockChain.getSuperblockByHeight(semiApprovedHeight).getSuperblockId();
+            if (!mainChainId.equals(superblockId) && superblockChain.getChainHeight() >= semiApprovedHeight + 3) {
+                ethWrapper.invalidate(superblockId, myAddress);
+            }
+        }
+    }
 
     /* - Reacting to events */
 

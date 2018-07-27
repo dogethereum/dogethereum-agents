@@ -275,6 +275,13 @@ public class EthWrapper implements SuperblockConstantProvider {
         return claimManager.getBondedDeposit(claimId, generalPurposeAndSendSuperblocksAddress).send();
     }
 
+    public void invalidate(Keccak256Hash superblockId, String validator) throws Exception {
+        CompletableFuture<TransactionReceipt> futureReceipt =
+                superblocks.invalidate(superblockId.getBytes(), validator).sendAsync();
+        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
+                log.info("Invalidated superblock {}", superblockId));
+    }
+
     /**
      * Return the size of the header as a 4-byte byte[]
      */
