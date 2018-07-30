@@ -51,7 +51,7 @@ public class DogeClaimManager extends Contract {
 
     static {
         _addresses = new HashMap<>();
-        _addresses.put("32001", "0x084aec40a9052cc67e7b16e2d73896d0c3ec9826");
+        _addresses.put("32001", "0xc9998d7be18101c417ccccdbae70de20a0217400");
     }
 
     protected DogeClaimManager(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
