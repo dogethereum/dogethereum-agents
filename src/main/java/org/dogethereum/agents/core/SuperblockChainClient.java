@@ -40,9 +40,11 @@ public class SuperblockChainClient {
     public void setup() throws Exception {
         SystemProperties config = SystemProperties.CONFIG;
         AgentConstants agentConstants = config.getAgentConstants();
-        // TODO: add new constants for superblock chain update
-        new Timer("SuperblockChainClient").scheduleAtFixedRate(new UpdateSuperblocksTimerTask(),
-                DogeToEthClient.getFirstExecutionDate(), agentConstants.getUpdateBridgeExecutionPeriod());
+        if (config.isDogeBlockSubmitterEnabled() || config.isDogeTxRelayerEnabled() ||
+                config.isOperatorEnabled() || config.isDogeBlockChallengerEnabled()) {
+            new Timer("SuperblockChainClient").scheduleAtFixedRate(new UpdateSuperblocksTimerTask(),
+                    DogeToEthClient.getFirstExecutionDate(), agentConstants.getUpdateBridgeExecutionPeriod());
+        }
     }
 
     /**
