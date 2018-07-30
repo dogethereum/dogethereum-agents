@@ -1,4 +1,5 @@
 src/main/resources/dogethereum-agents.local.conf
+src/main/resources/dogethereum-agents-thread2.conf
 src/main/resources/dogethereum-agents-defender.conf
 src/main/resources/dogethereum-agents-challenger.conf
 src/main/resources/dogethereum-agents.ropsten.conf
