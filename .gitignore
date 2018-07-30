@@ -1,4 +1,5 @@
 src/main/resources/dogethereum-agents.local.conf
+src/main/resources/dogethereum-agents-thread2.conf
 src/main/resources/dogethereum-agents.ropsten.conf
 src/main/resources/dogethereum-agents.conf
 src/main/resources/dogethereum-agents-bkp.conf
