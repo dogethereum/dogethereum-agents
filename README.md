@@ -8,6 +8,7 @@ A set of agents:
 - Operator agent (EthToDogeClient.java): Signs and broadcasts doge unlock txs
 - Oracle agent (PriceOracleClient.java): Informs the doge/eth price to DogeToken
 
+If you are new to the Dogecoin <-> Ethereum bridge, please check the [docs](https://github.com/dogethereum/docs) repository first.
 
 ## Development
 
