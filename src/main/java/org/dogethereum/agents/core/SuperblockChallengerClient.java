@@ -85,6 +85,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             long semiApprovedHeight = ethWrapper.getSuperblockHeight(superblockId).longValue();
             Keccak256Hash mainChainId = superblockChain.getSuperblockByHeight(semiApprovedHeight).getSuperblockId();
             if (!mainChainId.equals(superblockId) && superblockChain.getChainHeight() >= semiApprovedHeight + 3) {
+                log.info("Semi-approved superblock {} not found in main chain. Invalidating.", superblockId);
                 ethWrapper.invalidate(superblockId, myAddress);
             }
         }
@@ -148,6 +149,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
 
         for (EthWrapper.NewBattleEvent newBattleEvent : toQuery) {
+            log.info("Querying Merkle root hashes for superblock {}", newBattleEvent.superblockId);
             CompletableFuture<TransactionReceipt> futureReceipt = ethWrapper.queryMerkleRootHashes(
                     newBattleEvent.superblockId,
                     newBattleEvent.sessionId);
@@ -203,8 +205,10 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         log.info("Starting block header queries for superblock {}", superblockId);
 
         if (!dogeBlockHashes.isEmpty()) {
+            log.info("Querying first block header for superblock {}", superblockId);
             ethWrapper.queryBlockHeader(superblockId, defenderResponse.sessionId, dogeBlockHashes.get(0));
         } else {
+            log.info("Merkle root hashes response for superblock {} is empty. Verifying it now.", superblockId);
             ethWrapper.verifySuperblock(defenderResponse.sessionId);
         }
     }
