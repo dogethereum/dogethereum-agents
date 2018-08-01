@@ -58,7 +58,7 @@ public class IntegrationAgentConstants extends AgentConstants {
         ethInitialCheckpoint = 3657000;
         // Unlock mechanism specific emd
 
-        defenderTimerTaskPeriod = 5;
-        challengerTimerTaskPeriod = 5;
+        defenderTimerTaskPeriod = 15;
+        challengerTimerTaskPeriod = 15;
     }
 }
