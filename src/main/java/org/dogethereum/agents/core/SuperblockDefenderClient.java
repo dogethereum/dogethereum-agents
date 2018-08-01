@@ -233,4 +233,9 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             }
         }
     }
+
+    @Override
+    protected long getTimerTaskPeriod() {
+        return config.getAgentConstants().getDefenderTimerTaskPeriod();
+    }
 }

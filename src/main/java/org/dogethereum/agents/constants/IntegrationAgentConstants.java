@@ -57,5 +57,8 @@ public class IntegrationAgentConstants extends AgentConstants {
         eth2DogeMinimumAcceptableConfirmations = 10;
         ethInitialCheckpoint = 3657000;
         // Unlock mechanism specific emd
+
+        defenderTimerTaskPeriod = 5;
+        challengerTimerTaskPeriod = 5;
     }
 }

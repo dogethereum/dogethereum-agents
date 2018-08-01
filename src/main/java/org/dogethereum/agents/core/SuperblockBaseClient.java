@@ -76,7 +76,7 @@ public abstract class SuperblockBaseClient {
 
     private void setupTimer() {
        new Timer(clientName).scheduleAtFixedRate(new SuperblocksBaseClientTimerTask(),
-                    Calendar.getInstance().getTime(), 15 * 1000);
+                    Calendar.getInstance().getTime(), getTimerTaskPeriod() * 1000);
     }
 
     private class SuperblocksBaseClientTimerTask extends TimerTask {
@@ -129,6 +129,8 @@ public abstract class SuperblockBaseClient {
     protected abstract long getConfirmations();
 
     protected abstract void callBattleTimeouts() throws Exception;
+
+    protected abstract long getTimerTaskPeriod(); // in seconds
 
 
     /* ---- DATABASE METHODS ---- */

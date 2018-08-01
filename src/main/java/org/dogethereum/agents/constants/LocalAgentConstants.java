@@ -44,5 +44,8 @@ public class LocalAgentConstants extends AgentConstants {
         eth2DogeMinimumAcceptableConfirmations = 5;
         ethInitialCheckpoint = 0;
         // Unlock mechanism specific emd
+
+        defenderTimerTaskPeriod = 15;
+        challengerTimerTaskPeriod = 15;
     }
 }

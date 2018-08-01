@@ -334,6 +334,11 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
+    @Override
+    protected long getTimerTaskPeriod() {
+        return config.getAgentConstants().getChallengerTimerTaskPeriod();
+    }
+
     /* ---- STORAGE ---- */
 
     private void setupSemiApprovedSet() {

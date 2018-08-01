@@ -22,6 +22,8 @@ public class AgentConstants {
     protected int updateBridgeExecutionPeriod;
     protected Coin minimumLockTxValue;
     protected Superblock genesisSuperblock;
+    protected long defenderTimerTaskPeriod;
+    protected long challengerTimerTaskPeriod;
 
     public AbstractDogecoinParams getDogeParams() {
         return dogeParams;
@@ -50,4 +52,11 @@ public class AgentConstants {
     }
     // Unlock mechanism specific end
 
+    public long getDefenderTimerTaskPeriod() {
+        return defenderTimerTaskPeriod;
+    }
+
+    public long getChallengerTimerTaskPeriod() {
+        return challengerTimerTaskPeriod;
+    }
 }
