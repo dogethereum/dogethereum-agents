@@ -1,24 +1,19 @@
 package org.dogethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
-import org.bitcoinj.core.AltcoinBlock;
 import org.bitcoinj.core.Sha256Hash;
-import org.bitcoinj.store.BlockStoreException;
-import org.dogethereum.agents.core.dogecoin.SuperblockUtils;
-import org.dogethereum.agents.core.eth.EthWrapper;
 import org.dogethereum.agents.core.dogecoin.Keccak256Hash;
 import org.dogethereum.agents.core.dogecoin.Superblock;
 import org.dogethereum.agents.core.eth.EthWrapper;
-import org.spongycastle.util.encoders.Hex;
 import org.springframework.stereotype.Service;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
 
 import java.io.*;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
-
-import org.web3j.crypto.Hash;
-import org.web3j.protocol.core.methods.response.TransactionReceipt;
 
 /**
  * Monitors the Ethereum blockchain for superblock-related events
@@ -28,14 +23,14 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
  */
 
 @Service
-@Slf4j(topic = "SuperblockChallengerClient")
-public class SuperblockChallengerClient extends SuperblockBaseClient {
+@Slf4j(topic = "SuperblockReGedientoChallengerClient")
+public class SuperblockReGedientoChallengerClient extends SuperblockBaseClient {
 
     private File semiApprovedSetFile;
     private HashSet<Keccak256Hash> semiApprovedSet;
 
-    public SuperblockChallengerClient() {
-        super("Superblock challenger client");
+    public SuperblockReGedientoChallengerClient() {
+        super("Superblock re gediento challenger client");
     }
 
     @Override
@@ -48,7 +43,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     public long reactToEvents(long fromBlock, long toBlock) {
         try {
             respondToNewBattle(fromBlock, toBlock);
-            validateNewSuperblocks(fromBlock, toBlock);
+            challengeEverything(fromBlock, toBlock);
             deleteFinishedBattles(fromBlock, toBlock);
 
             getSemiApproved(fromBlock, toBlock);
@@ -132,6 +127,18 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
+    private void challengeEverything(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.SuperblockEvent> newSuperblockEvents = ethWrapper.getNewSuperblocks(fromBlock, toBlock);
+        log.info("Challenging everything");
+        for (EthWrapper.SuperblockEvent superblockEvent : newSuperblockEvents) {
+            log.info("Challenging superblock {}", superblockEvent.superblockId);
+            CompletableFuture<TransactionReceipt> futureReceipt =
+                    ethWrapper.challengeSuperblock(superblockEvent.superblockId);
+            futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
+                    log.info("challengeSuperblock receipt {}", receipt.toString()));
+        }
+    }
+
     /**
      * Query Merkle root hashes for all new battle events that the challenger is taking part in.
      * @param fromBlock
@@ -140,6 +147,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      */
     private void respondToNewBattle(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
+        if (newBattleEvents.isEmpty())
+            log.info("No new battles");
 
         List<EthWrapper.NewBattleEvent> toQuery = new ArrayList<>();
         for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
@@ -300,17 +309,17 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     @Override
     protected boolean isEnabled() {
-        return config.isDogeBlockChallengerEnabled();
+        return config.isReGedientoChallengerEnabled();
     }
 
     @Override
     protected String getLastEthBlockProcessedFilename() {
-        return "SuperblockChallengerLatestEthBlockProcessedFile.dat";
+        return "SuperblockReGedientoChallengerLatestEthBlockProcessedFile.dat";
     }
 
     @Override
     protected String getBattleSetFilename() {
-        return "SuperblockChallengerBattleSet.dat";
+        return "SuperblockReGedientoChallengerBattleSet.dat";
     }
 
     @Override
@@ -338,7 +347,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     private void setupSemiApprovedSet() {
         this.semiApprovedSet = new HashSet<>();
-        this.semiApprovedSetFile = new File(dataDirectory.getAbsolutePath() + "/SemiApprovedSet.dat");
+        this.semiApprovedSetFile = new File(dataDirectory.getAbsolutePath() + "/ReGedientoSemiApprovedSet.dat");
     }
 
     private void restoreSemiApprovedSet() throws IOException, ClassNotFoundException {
