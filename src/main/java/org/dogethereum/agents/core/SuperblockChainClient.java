@@ -38,8 +38,9 @@ public class SuperblockChainClient {
     public void setup() throws Exception {
         SystemProperties config = SystemProperties.CONFIG;
         AgentConstants agentConstants = config.getAgentConstants();
-        if (config.isDogeSuperblockSubmitterEnabled() || config.isDogeTxRelayerEnabled() ||
-                config.isOperatorEnabled() || config.isDogeBlockChallengerEnabled()) {
+        if (config.isDogeBlockSubmitterEnabled() || config.isDogeTxRelayerEnabled() ||
+                config.isOperatorEnabled() || config.isDogeBlockChallengerEnabled() ||
+                config.isReGedientoChallengerEnabled()) {
             new Timer("SuperblockChainClient").scheduleAtFixedRate(new UpdateSuperblocksTimerTask(),
                       getFirstExecutionDate(), agentConstants.getDogeToEthTimerTaskPeriod());
         }

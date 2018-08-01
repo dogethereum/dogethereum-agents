@@ -110,7 +110,10 @@ public abstract class SuperblockBaseClient {
                     long toBlock = ethWrapper.getEthBlockCount() - getConfirmations() + 1;
 
                     // Ignore execution if nothing to process
-                    if (fromBlock > toBlock) return;
+                    if (fromBlock > toBlock) {
+                        log.info("Nothing to process");
+                        return;
+                    }
 
                     getNewBattles(fromBlock, toBlock); // update battle set
                     latestEthBlockProcessed = reactToEvents(fromBlock, toBlock);
