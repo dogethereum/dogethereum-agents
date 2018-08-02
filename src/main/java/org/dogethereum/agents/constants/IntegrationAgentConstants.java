@@ -59,9 +59,9 @@ public class IntegrationAgentConstants extends AgentConstants {
         // Unlock mechanism specific emd
 
         defenderTimerTaskPeriod = 15;
-        challengerTimerTaskPeriod = 15;
+        challengerTimerTaskPeriod = 10;
 
-        defenderConfirmations = 1;
+        defenderConfirmations = 2;
         challengerConfirmations = 1;
     }
 }
