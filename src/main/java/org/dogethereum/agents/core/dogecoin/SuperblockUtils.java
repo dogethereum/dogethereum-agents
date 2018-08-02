@@ -120,6 +120,7 @@ public class SuperblockUtils {
     public static Date getNSecondsAgo(int n) {
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.SECOND, -n);
+        calendar.set(Calendar.MILLISECOND, 0);
         return calendar.getTime();
     }
 
@@ -135,6 +136,7 @@ public class SuperblockUtils {
         calendar.add(Calendar.HOUR, 1);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
         return calendar.getTime();
     }
 
@@ -144,6 +146,7 @@ public class SuperblockUtils {
         calendar.add(Calendar.HOUR, n);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
         return calendar.getTime();
     }
 
@@ -152,6 +155,7 @@ public class SuperblockUtils {
         calendar.setTime(date);
         calendar.add(Calendar.MINUTE, n);
         calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
         return calendar.getTime();
     }
 
