@@ -320,8 +320,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     @Override
     protected long getConfirmations() {
-        //FIXME: Move to a new a configuration property?
-        return config.getAgentConstants().getEth2DogeMinimumAcceptableConfirmations();
+        return config.getAgentConstants().getChallengerConfirmations();
     }
 
     @Override

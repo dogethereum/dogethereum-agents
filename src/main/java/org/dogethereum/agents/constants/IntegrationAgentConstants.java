@@ -60,5 +60,8 @@ public class IntegrationAgentConstants extends AgentConstants {
 
         defenderTimerTaskPeriod = 15;
         challengerTimerTaskPeriod = 15;
+
+        defenderConfirmations = 1;
+        challengerConfirmations = 1;
     }
 }

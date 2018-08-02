@@ -24,6 +24,8 @@ public class AgentConstants {
     protected Superblock genesisSuperblock;
     protected long defenderTimerTaskPeriod;
     protected long challengerTimerTaskPeriod;
+    protected long defenderConfirmations;
+    protected long challengerConfirmations;
 
     public AbstractDogecoinParams getDogeParams() {
         return dogeParams;
@@ -58,5 +60,13 @@ public class AgentConstants {
 
     public long getChallengerTimerTaskPeriod() {
         return challengerTimerTaskPeriod;
+    }
+
+    public long getDefenderConfirmations() {
+        return defenderConfirmations - 1;
+    }
+
+    public long getChallengerConfirmations() {
+        return challengerConfirmations - 1;
     }
 }

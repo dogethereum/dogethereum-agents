@@ -47,5 +47,8 @@ public class LocalAgentConstants extends AgentConstants {
 
         defenderTimerTaskPeriod = 15;
         challengerTimerTaskPeriod = 15;
+
+        defenderConfirmations = 2;
+        challengerConfirmations = 2;
     }
 }
