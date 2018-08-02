@@ -63,10 +63,10 @@ public class AgentConstants {
     }
 
     public long getDefenderConfirmations() {
-        return defenderConfirmations - 1;
+        return defenderConfirmations;
     }
 
     public long getChallengerConfirmations() {
-        return challengerConfirmations - 1;
+        return challengerConfirmations;
     }
 }

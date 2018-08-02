@@ -89,7 +89,7 @@ public abstract class SuperblockBaseClient {
                     reactToElapsedTime();
 
                     long fromBlock = latestEthBlockProcessed + 1;
-                    long toBlock = ethWrapper.getEthBlockCount() - getConfirmations();
+                    long toBlock = ethWrapper.getEthBlockCount() - getConfirmations() + 1;
 
                     // Ignore execution if nothing to process
                     if (fromBlock > toBlock) return;
