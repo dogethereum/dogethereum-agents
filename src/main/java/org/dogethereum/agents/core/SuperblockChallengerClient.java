@@ -197,7 +197,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             ethWrapper.queryBlockHeader(superblockId, defenderResponse.sessionId, dogeBlockHashes.get(0));
         } else {
             log.info("Merkle root hashes response for superblock {} is empty. Verifying it now.", superblockId);
-            ethWrapper.verifySuperblock(defenderResponse.sessionId);
+            ethWrapper.verifySuperblock(defenderResponse.sessionId, ethWrapper.getClaimManagerForChallenges());
         }
     }
 
@@ -221,7 +221,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             // last hash; end battle
             log.info("All block hashes for superblock {} have been received. Verifying it now.",
                     defenderResponse.superblockId);
-            ethWrapper.verifySuperblock(sessionId);
+            ethWrapper.verifySuperblock(sessionId, ethWrapper.getClaimManagerForChallenges());
         }
     }
 
@@ -316,7 +316,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         for (Keccak256Hash sessionId : battleSet) {
             if (ethWrapper.getSubmitterHitTimeout(sessionId)) {
                 log.info("Submitter hit timeout on session {}. Calling timeout.", sessionId);
-                ethWrapper.timeout(sessionId);
+                ethWrapper.timeout(sessionId, ethWrapper.getClaimManagerForChallenges());
             }
         }
     }
@@ -337,7 +337,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     @Override
     protected void deleteSubmitterConvictedBattles(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SubmitterConvictedEvent> submitterConvictedEvents =
-                ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock);
+                ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock, ethWrapper.getClaimManagerForChallenges());
 
         for (EthWrapper.SubmitterConvictedEvent submitterConvictedEvent : submitterConvictedEvents) {
             if (battleSet.contains(submitterConvictedEvent.sessionId)) {
@@ -359,7 +359,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     @Override
     protected void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.ChallengerConvictedEvent> challengerConvictedEvents =
-                ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock);
+                ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock, ethWrapper.getClaimManagerForChallenges());
 
         for (EthWrapper.ChallengerConvictedEvent challengerConvictedEvent : challengerConvictedEvents) {
             if (challengerConvictedEvent.challenger.equals(myAddress)) {
