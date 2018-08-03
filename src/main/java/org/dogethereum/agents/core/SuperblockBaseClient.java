@@ -132,6 +132,10 @@ public abstract class SuperblockBaseClient {
 
     protected abstract long getTimerTaskPeriod(); // in seconds
 
+    protected abstract void deleteSubmitterConvictedBattles(long fromBlock, long toBlock) throws Exception;
+
+    protected abstract void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception;
+
 
     /* ---- DATABASE METHODS ---- */
 
@@ -220,17 +224,13 @@ public abstract class SuperblockBaseClient {
     }
 
     /**
-     * Listen to SuperblockBattleDecided events to remove battles that have already ended.
+     * Listen to SubmitterConvicted and ChallengerConvicted events to remove battles that have already ended.
      * @param fromBlock
      * @param toBlock
      * @throws IOException
      */
-    protected void deleteFinishedBattles(long fromBlock, long toBlock) throws IOException {
-        List<EthWrapper.SuperblockBattleDecidedEvent> superblockBattleDecidedEvents =
-                ethWrapper.getSuperblockBattleDecidedEvents(fromBlock, toBlock);
-        for (EthWrapper.SuperblockBattleDecidedEvent superblockBattleDecidedEvent : superblockBattleDecidedEvents) {
-            Keccak256Hash sessionId = superblockBattleDecidedEvent.sessionId;
-            if (battleSet.contains(sessionId)) battleSet.remove(sessionId);
-        }
+    protected void deleteFinishedBattles(long fromBlock, long toBlock) throws Exception {
+        deleteSubmitterConvictedBattles(fromBlock, toBlock);
+        deleteChallengerConvictedBattles(fromBlock, toBlock);
     }
 }

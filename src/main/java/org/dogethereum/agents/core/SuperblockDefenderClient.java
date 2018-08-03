@@ -237,4 +237,49 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     protected long getTimerTaskPeriod() {
         return config.getAgentConstants().getDefenderTimerTaskPeriod();
     }
+
+    /**
+     * Filter battles where this defender submitted the superblock and got convicted
+     * and delete them from active battle set.
+     * @param fromBlock
+     * @param toBlock
+     * @return
+     * @throws Exception
+     */
+    @Override
+    protected void deleteSubmitterConvictedBattles(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.SubmitterConvictedEvent> submitterConvictedEvents =
+                ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock);
+
+        for (EthWrapper.SubmitterConvictedEvent submitterConvictedEvent : submitterConvictedEvents) {
+            if (submitterConvictedEvent.submitter.equals(myAddress)) {
+                log.info("Submitter convicted on session {}, superblock {}. Battle lost!",
+                        submitterConvictedEvent.sessionId, submitterConvictedEvent.superblockId);
+                battleSet.remove(submitterConvictedEvent.sessionId);
+                // TODO: see if this should have some fault tolerance for battles that were erroneously not added to set
+            }
+        }
+    }
+
+    /**
+     * Filter battles where this defender submitted the superblock and the challenger got convicted
+     * and delete them from active battle set.
+     * @param fromBlock
+     * @param toBlock
+     * @return
+     * @throws Exception
+     */
+    @Override
+    protected void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.ChallengerConvictedEvent> challengerConvictedEvents =
+                ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock);
+
+        for (EthWrapper.ChallengerConvictedEvent challengerConvictedEvent : challengerConvictedEvents) {
+            if (battleSet.contains(challengerConvictedEvent.sessionId)) {
+                log.info("Challenger convicted on session {}, superblock {}. Battle won!",
+                        challengerConvictedEvent.sessionId, challengerConvictedEvent.superblockId);
+                battleSet.remove(challengerConvictedEvent.sessionId);
+            }
+        }
+    }
 }
