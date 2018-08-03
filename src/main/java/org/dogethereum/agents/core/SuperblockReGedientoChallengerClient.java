@@ -42,8 +42,8 @@ public class SuperblockReGedientoChallengerClient extends SuperblockBaseClient {
     @Override
     public long reactToEvents(long fromBlock, long toBlock) {
         try {
-            respondToNewBattle(fromBlock, toBlock);
             challengeEverything(fromBlock, toBlock);
+            respondToNewBattle(fromBlock, toBlock);
             deleteFinishedBattles(fromBlock, toBlock);
 
             getSemiApproved(fromBlock, toBlock);
@@ -121,9 +121,7 @@ public class SuperblockReGedientoChallengerClient extends SuperblockBaseClient {
         }
 
         for (Keccak256Hash superblockId : toChallenge) {
-            CompletableFuture<TransactionReceipt> futureReceipt = ethWrapper.challengeSuperblock(superblockId);
-            futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                    log.info("challengeSuperblock receipt {}", receipt.toString()));
+            ethWrapper.challengeSuperblock(superblockId);
         }
     }
 
@@ -132,10 +130,7 @@ public class SuperblockReGedientoChallengerClient extends SuperblockBaseClient {
         log.info("Challenging everything");
         for (EthWrapper.SuperblockEvent superblockEvent : newSuperblockEvents) {
             log.info("Challenging superblock {}", superblockEvent.superblockId);
-            CompletableFuture<TransactionReceipt> futureReceipt =
-                    ethWrapper.challengeSuperblock(superblockEvent.superblockId);
-            futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                    log.info("challengeSuperblock receipt {}", receipt.toString()));
+            ethWrapper.challengeSuperblock(superblockEvent.superblockId);
         }
     }
 
@@ -158,12 +153,7 @@ public class SuperblockReGedientoChallengerClient extends SuperblockBaseClient {
         }
 
         for (EthWrapper.NewBattleEvent newBattleEvent : toQuery) {
-            log.info("Querying Merkle root hashes for superblock {}", newBattleEvent.superblockId);
-            CompletableFuture<TransactionReceipt> futureReceipt = ethWrapper.queryMerkleRootHashes(
-                    newBattleEvent.superblockId,
-                    newBattleEvent.sessionId);
-            futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                    log.info("queryMerkleRootHashes receipt {}", receipt.toString()));
+            ethWrapper.challengeSuperblock(newBattleEvent.superblockId);
         }
     }
 
@@ -346,6 +336,51 @@ public class SuperblockReGedientoChallengerClient extends SuperblockBaseClient {
     @Override
     protected long getTimerTaskPeriod() {
         return config.getAgentConstants().getChallengerTimerTaskPeriod();
+    }
+
+    /**
+     * Filter battles where this challenger battled the superblock and the submitter got convicted
+     * and delete them from active battle set.
+     * @param fromBlock
+     * @param toBlock
+     * @return
+     * @throws Exception
+     */
+    @Override
+    protected void deleteSubmitterConvictedBattles(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.SubmitterConvictedEvent> submitterConvictedEvents =
+                ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock);
+
+        for (EthWrapper.SubmitterConvictedEvent submitterConvictedEvent : submitterConvictedEvents) {
+            if (battleSet.contains(submitterConvictedEvent.sessionId)) {
+                log.info("Submitter convicted on session {}, superblock {}. Battle won!",
+                        submitterConvictedEvent.sessionId, submitterConvictedEvent.superblockId);
+                battleSet.remove(submitterConvictedEvent.sessionId);
+            }
+        }
+    }
+
+    /**
+     * Filter battles where this challenger battled the superblock and got convicted
+     * and delete them from active battle set.
+     * @param fromBlock
+     * @param toBlock
+     * @return
+     * @throws Exception
+     */
+    @Override
+    protected void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.ChallengerConvictedEvent> challengerConvictedEvents =
+                ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock);
+
+        for (EthWrapper.ChallengerConvictedEvent challengerConvictedEvent : challengerConvictedEvents) {
+            if (challengerConvictedEvent.challenger.equals(myAddress)) {
+                log.info("Challenger convicted on session {}, superblock {}. Battle lost!",
+                        challengerConvictedEvent.sessionId, challengerConvictedEvent.superblockId);
+                battleSet.remove(challengerConvictedEvent.sessionId);
+                // TODO: see if this should have some fault tolerance for battles that were erroneously not added to set
+            }
+        }
     }
 
     /* ---- STORAGE ---- */
