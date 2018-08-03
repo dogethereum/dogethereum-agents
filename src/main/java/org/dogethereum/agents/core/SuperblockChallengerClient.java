@@ -96,7 +96,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @param toBlock
      * @throws Exception
      */
-    private void validateNewSuperblocks(long fromBlock, long toBlock) throws Exception {
+    void validateNewSuperblocks(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SuperblockEvent> newSuperblockEvents = ethWrapper.getNewSuperblocks(fromBlock, toBlock);
 
         List<Keccak256Hash> toChallenge = new ArrayList<>();
@@ -291,7 +291,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
-    private void getSemiApproved(long fromBlock, long toBlock) throws Exception {
+    void getSemiApproved(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
                 ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
         for (EthWrapper.SuperblockEvent superblockEvent : semiApprovedSuperblockEvents) {
@@ -300,7 +300,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
-    private void removeApproved(long fromBlock, long toBlock) throws Exception {
+    void removeApproved(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SuperblockEvent> approvedSuperblockEvents = ethWrapper.getApprovedSuperblocks(fromBlock, toBlock);
         for (EthWrapper.SuperblockEvent superblockEvent : approvedSuperblockEvents) {
             if (semiApprovedSet.contains(superblockEvent.superblockId))
@@ -308,7 +308,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
-    private void removeInvalid(long fromBlock, long toBlock) throws Exception {
+    void removeInvalid(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SuperblockEvent> invalidSuperblockEvents = ethWrapper.getInvalidSuperblocks(fromBlock, toBlock);
         for (EthWrapper.SuperblockEvent superblockEvent : invalidSuperblockEvents) {
             if (semiApprovedSet.contains(superblockEvent.superblockId))
@@ -489,7 +489,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
-    private void flushSemiApprovedSet() throws IOException {
+    void flushSemiApprovedSet() throws IOException {
         if (!dataDirectory.exists()) {
             if (!dataDirectory.mkdirs()) {
                 throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());
