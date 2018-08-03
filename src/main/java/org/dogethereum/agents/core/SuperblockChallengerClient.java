@@ -47,8 +47,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     @Override
     public long reactToEvents(long fromBlock, long toBlock) {
         try {
-            respondToNewBattle(fromBlock, toBlock);
             validateNewSuperblocks(fromBlock, toBlock);
+            respondToNewBattles(fromBlock, toBlock);
             deleteFinishedBattles(fromBlock, toBlock);
 
             getSemiApproved(fromBlock, toBlock);
@@ -126,9 +126,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
 
         for (Keccak256Hash superblockId : toChallenge) {
-            CompletableFuture<TransactionReceipt> futureReceipt = ethWrapper.challengeSuperblock(superblockId);
-            futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                    log.info("challengeSuperblock receipt {}", receipt.toString()));
+            ethWrapper.challengeSuperblock(superblockId);
         }
     }
 
@@ -138,23 +136,13 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @param toBlock
      * @throws Exception
      */
-    private void respondToNewBattle(long fromBlock, long toBlock) throws Exception {
+    private void respondToNewBattles(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
 
-        List<EthWrapper.NewBattleEvent> toQuery = new ArrayList<>();
         for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
             if (isMine(newBattleEvent)) {
-                toQuery.add(newBattleEvent);
+                ethWrapper.queryMerkleRootHashes(newBattleEvent.superblockId, newBattleEvent.sessionId);
             }
-        }
-
-        for (EthWrapper.NewBattleEvent newBattleEvent : toQuery) {
-            log.info("Querying Merkle root hashes for superblock {}", newBattleEvent.superblockId);
-            CompletableFuture<TransactionReceipt> futureReceipt = ethWrapper.queryMerkleRootHashes(
-                    newBattleEvent.superblockId,
-                    newBattleEvent.sessionId);
-            futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                    log.info("queryMerkleRootHashes receipt {}", receipt.toString()));
         }
     }
 
