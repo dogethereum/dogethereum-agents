@@ -8,7 +8,7 @@ import java.math.BigInteger;
 
 /**
  * Agent and Bridge constants.
- * Subclasses are customizations for each network (doge regtest and eth ganache, doge mainnet and eth ropsten, doge mainnet and eth prod)
+ * Subclasses are customizations for each network (doge regtest and eth ganache, doge mainnet and eth rinkeby, doge mainnet and eth prod)
  */
 public class AgentConstants {
 

@@ -16,7 +16,7 @@ import java.util.List;
 
 /**
  * AgentConstants for integration tests.
- * Uses Doge Mainnet and Eth Ropsten.
+ * Uses Doge Mainnet and Eth Rinkeby.
  * Doge Mainnet is used for testing because Doge testnet is hard to use and mainnet doges are not that expensive.
  */
 public class IntegrationAgentConstants extends AgentConstants {
