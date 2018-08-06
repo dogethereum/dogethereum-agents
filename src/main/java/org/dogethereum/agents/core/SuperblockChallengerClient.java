@@ -138,6 +138,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
 
         for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
+            log.debug("New battle {} for superblock {}", newBattleEvent.sessionId, newBattleEvent.superblockId);
             if (isMine(newBattleEvent)) {
                 ethWrapper.queryMerkleRootHashes(newBattleEvent.superblockId, newBattleEvent.sessionId);
             }
