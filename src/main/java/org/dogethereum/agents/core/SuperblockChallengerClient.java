@@ -133,7 +133,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @param toBlock
      * @throws Exception
      */
-    private void respondToNewBattles(long fromBlock, long toBlock) throws Exception {
+    void respondToNewBattles(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
 
         for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {

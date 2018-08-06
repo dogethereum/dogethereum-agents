@@ -13,8 +13,8 @@ public class SuperblockReGedientoChallengerClient extends SuperblockChallengerCl
     @Override
     public long reactToEvents(long fromBlock, long toBlock) {
         try {
-            validateNewSuperblocks(fromBlock, toBlock);
             challengeEverything(fromBlock, toBlock);
+            respondToNewBattles(fromBlock, toBlock);
             deleteFinishedBattles(fromBlock, toBlock);
 
             getSemiApproved(fromBlock, toBlock);
@@ -38,5 +38,10 @@ public class SuperblockReGedientoChallengerClient extends SuperblockChallengerCl
             log.info("Challenging superblock {}", superblockEvent.superblockId);
             ethWrapper.challengeSuperblock(superblockEvent.superblockId);
         }
+    }
+
+    @Override
+    protected boolean isEnabled() {
+        return config.isReGedientoChallengerEnabled();
     }
 }
