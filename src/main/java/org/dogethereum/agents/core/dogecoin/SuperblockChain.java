@@ -98,8 +98,10 @@ public class SuperblockChain {
                     nextSuperblockLastBlock.getHeader().getDifficultyTarget(),
                     nextSuperblockPrevHash, nextSuperblockHeight);
             superblockStorage.put(newSuperblock);
-            if (newSuperblock.getChainWork().compareTo(superblockStorage.getChainHeadWork()) > 0)
+            if (newSuperblock.getChainWork().compareTo(superblockStorage.getChainHeadWork()) > 0) {
                 superblockStorage.setChainHead(newSuperblock);
+                log.info("New superblock chain head {0}", newSuperblock);
+            }
 
             // set prev hash and end time for next superblock
             if (!allDogeHashesToHash.empty()) {
