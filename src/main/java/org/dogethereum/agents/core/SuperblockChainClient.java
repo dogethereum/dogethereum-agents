@@ -14,9 +14,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
-import java.util.Stack;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 /**
  * Runs a SuperblockChain.
@@ -43,8 +41,14 @@ public class SuperblockChainClient {
         if (config.isDogeBlockSubmitterEnabled() || config.isDogeTxRelayerEnabled() ||
                 config.isOperatorEnabled() || config.isDogeBlockChallengerEnabled()) {
             new Timer("SuperblockChainClient").scheduleAtFixedRate(new UpdateSuperblocksTimerTask(),
-                    DogeToEthClient.getFirstExecutionDate(), agentConstants.getUpdateBridgeExecutionPeriod());
+                      getFirstExecutionDate(), agentConstants.getDogeToEthTimerTaskPeriod());
         }
+    }
+
+    private Date getFirstExecutionDate() {
+        Calendar firstExecution = Calendar.getInstance();
+        firstExecution.add(Calendar.SECOND, 1);
+        return firstExecution.getTime();
     }
 
     /**

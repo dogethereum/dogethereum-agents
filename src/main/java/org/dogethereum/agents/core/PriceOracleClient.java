@@ -17,6 +17,7 @@ import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Response;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -42,9 +43,16 @@ public class PriceOracleClient {
     public void setup() throws Exception {
         config = SystemProperties.CONFIG;
         if (config.isPriceOracleEnabled()) {
-            new Timer("Oracle update doge-eth price").scheduleAtFixedRate(new UpdateDogeEthPriceTimerTask(), Calendar.getInstance().getTime(), 30 * 1000);
+            new Timer("Oracle update doge-eth price").scheduleAtFixedRate(new UpdateDogeEthPriceTimerTask(), getFirstExecutionDate(), config.getAgentConstants().getPriceOracleTimerTaskPeriod());
         }
     }
+
+    private Date getFirstExecutionDate() {
+        Calendar firstExecution = Calendar.getInstance();
+        firstExecution.add(Calendar.SECOND, 5);
+        return firstExecution.getTime();
+    }
+
 
     public long getCoinmarketcapPrice() {
         String baseUrl = "https://api.coinmarketcap.com/v1/ticker/dogecoin/?convert=ETH";

@@ -6,7 +6,6 @@ package org.dogethereum.agents.core;
 
 
 import org.dogethereum.agents.core.dogecoin.*;
-import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.bitcoinj.store.BlockStoreException;
@@ -62,16 +61,16 @@ public class DogeToEthClient {
             agentConstants = config.getAgentConstants();
 
             new Timer("Doge to Eth client").scheduleAtFixedRate(new DogeToEthClientTimerTask(),
-                    getFirstExecutionDate(), agentConstants.getUpdateBridgeExecutionPeriod());
+                    getFirstExecutionDate(), agentConstants.getDogeToEthTimerTaskPeriod());
 
             Context context = new Context(agentConstants.getDogeParams());
         }
     }
 
 
-    public static Date getFirstExecutionDate() {
+    private Date getFirstExecutionDate() {
         Calendar firstExecution = Calendar.getInstance();
-        firstExecution.add(Calendar.SECOND, 30);
+        firstExecution.add(Calendar.SECOND, 20);
         return firstExecution.getTime();
     }
 
@@ -218,7 +217,7 @@ public class DogeToEthClient {
     // Temporary
     public void updateBridgeTransactionsSuperblocks() throws Exception {
         Set<Transaction> operatorWalletTxSet = dogecoinWrapper.getTransactions(
-                agentConstants.getDoge2EthMinimumAcceptableConfirmations(),
+                agentConstants.getDogeToEthConfirmations(),
                 config.isDogeTxRelayerEnabled(),
                 config.isOperatorEnabled());
 

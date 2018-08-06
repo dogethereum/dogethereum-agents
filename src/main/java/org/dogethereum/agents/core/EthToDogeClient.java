@@ -54,8 +54,14 @@ public class EthToDogeClient {
             this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() + "/EthToDogeClientLatestEthBlockProcessedFile.dat");
             restoreLatestEthBlockProcessed();
 
-            new Timer("Eth to Doge client").scheduleAtFixedRate(new UpdateEthToDogeTimerTask(), Calendar.getInstance().getTime(), 15 * 1000);
+            new Timer("Eth to Doge client").scheduleAtFixedRate(new UpdateEthToDogeTimerTask(), getFirstExecutionDate(), config.getAgentConstants().getEthToDogeTimerTaskPeriod());
         }
+    }
+
+    private Date getFirstExecutionDate() {
+        Calendar firstExecution = Calendar.getInstance();
+        firstExecution.add(Calendar.SECOND, 25);
+        return firstExecution.getTime();
     }
 
     private class UpdateEthToDogeTimerTask extends TimerTask {
@@ -64,7 +70,7 @@ public class EthToDogeClient {
             try {
                 if (!ethWrapper.isEthNodeSyncing()) {
                     long fromBlock = latestEthBlockProcessed + 1;
-                    long toBlock = ethWrapper.getEthBlockCount() - config.getAgentConstants().getEth2DogeMinimumAcceptableConfirmations();
+                    long toBlock = ethWrapper.getEthBlockCount() - config.getAgentConstants().getUnlockConfirmations() + 1;
                     // Ignore execution if nothing to process
                     if (fromBlock > toBlock) return;
                     List<EthWrapper.UnlockRequestEvent> newUnlockRequestEvents = ethWrapper.getNewUnlockRequests(fromBlock, toBlock);

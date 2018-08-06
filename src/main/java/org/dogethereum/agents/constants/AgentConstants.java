@@ -15,11 +15,11 @@ public class AgentConstants {
 
     protected AbstractDogecoinParams dogeParams;
 
+    protected long dogeToEthTimerTaskPeriod;
     // Minimum number of confirmations a tx has to have in order to EVALUATE relaying it to eth
     // Tx will be relayed only if they are part of an aproved superblock, so this value is just an optimization
     // for the agent.
-    protected int doge2EthMinimumAcceptableConfirmations;
-    protected int updateBridgeExecutionPeriod;
+    protected int dogeToEthConfirmations;
     protected Coin minimumLockTxValue;
     protected Superblock genesisSuperblock;
     protected long defenderTimerTaskPeriod;
@@ -27,46 +27,49 @@ public class AgentConstants {
     protected long defenderConfirmations;
     protected long challengerConfirmations;
 
+    protected long ethToDogeTimerTaskPeriod;
+    protected int unlockConfirmations;
+    protected int ethInitialCheckpoint;
+
+    protected long priceOracleTimerTaskPeriod;
+
+
     public AbstractDogecoinParams getDogeParams() {
         return dogeParams;
     }
-    public int getDoge2EthMinimumAcceptableConfirmations() { return doge2EthMinimumAcceptableConfirmations; }
-    public int getUpdateBridgeExecutionPeriod() { return updateBridgeExecutionPeriod; }
+
+    public long getDogeToEthTimerTaskPeriod() { return dogeToEthTimerTaskPeriod; }
+    public int getDogeToEthConfirmations() { return dogeToEthConfirmations; }
     public Coin getMinimumLockTxValue() { return minimumLockTxValue; }
+    public Superblock getGenesisSuperblock() {
+        return genesisSuperblock;
+    }
+    public static BigInteger getSuperblockInitialDeposit() {
+        return BigInteger.valueOf(1000);
+    }
 
-    // Unlock mechanism specific start
-    protected int eth2DogeMinimumAcceptableConfirmations;
-    protected int ethInitialCheckpoint;
+    public long getDefenderTimerTaskPeriod() {
+        return defenderTimerTaskPeriod;
+    }
+    public long getChallengerTimerTaskPeriod() {
+        return challengerTimerTaskPeriod;
+    }
+    public long getDefenderConfirmations() {
+        return defenderConfirmations;
+    }
+    public long getChallengerConfirmations() {
+        return challengerConfirmations;
+    }
 
-    public int getEth2DogeMinimumAcceptableConfirmations() {
-        return eth2DogeMinimumAcceptableConfirmations;
+    public long getEthToDogeTimerTaskPeriod() { return ethToDogeTimerTaskPeriod; }
+    public int getUnlockConfirmations() {
+        return unlockConfirmations;
     }
     public int getEthInitialCheckpoint() {
         return ethInitialCheckpoint;
     }
 
-    public Superblock getGenesisSuperblock() {
-        return genesisSuperblock;
-    }
-
-    public static BigInteger getSuperblockInitialDeposit() {
-        return BigInteger.valueOf(1000);
-    }
-    // Unlock mechanism specific end
-
-    public long getDefenderTimerTaskPeriod() {
-        return defenderTimerTaskPeriod;
-    }
-
-    public long getChallengerTimerTaskPeriod() {
-        return challengerTimerTaskPeriod;
-    }
-
-    public long getDefenderConfirmations() {
-        return defenderConfirmations;
-    }
-
-    public long getChallengerConfirmations() {
-        return challengerConfirmations;
+    public long getPriceOracleTimerTaskPeriod() {
+        return priceOracleTimerTaskPeriod;
     }
 }

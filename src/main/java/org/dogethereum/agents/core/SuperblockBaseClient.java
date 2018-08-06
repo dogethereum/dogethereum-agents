@@ -76,7 +76,13 @@ public abstract class SuperblockBaseClient {
 
     private void setupTimer() {
        new Timer(clientName).scheduleAtFixedRate(new SuperblocksBaseClientTimerTask(),
-                    Calendar.getInstance().getTime(), getTimerTaskPeriod() * 1000);
+               getFirstExecutionDate(), getTimerTaskPeriod());
+    }
+
+    private Date getFirstExecutionDate() {
+        Calendar firstExecution = Calendar.getInstance();
+        //firstExecution.add(Calendar.SECOND, 0);
+        return firstExecution.getTime();
     }
 
     private class SuperblocksBaseClientTimerTask extends TimerTask {

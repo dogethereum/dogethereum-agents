@@ -5,7 +5,6 @@ import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Sha256Hash;
 import org.dogethereum.agents.core.dogecoin.Keccak256Hash;
 import org.dogethereum.agents.core.dogecoin.Superblock;
-import org.dogethereum.agents.core.dogecoin.SuperblockUtils;
 import org.libdohj.params.DogecoinRegTestParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,8 +28,9 @@ public class LocalAgentConstants extends AgentConstants {
 
     LocalAgentConstants() {
         dogeParams = DogecoinRegTestParams.get();
-        doge2EthMinimumAcceptableConfirmations = 1;
-        updateBridgeExecutionPeriod = 10 * 1000; // 10 seconds
+
+        dogeToEthTimerTaskPeriod = 10 * 1000;
+        dogeToEthConfirmations = 1;
         minimumLockTxValue = Coin.valueOf(150000000); // 1.5 doge
 
         List<Sha256Hash> genesisSuperblockBlockList = Lists.newArrayList(dogeParams.getGenesisBlock().getHash());
@@ -40,15 +40,15 @@ public class LocalAgentConstants extends AgentConstants {
                 BigInteger.valueOf(0), dogeParams.getGenesisBlock().getTimeSeconds(), 0,
                 dogeParams.getGenesisBlock().getDifficultyTarget(), genesisSuperblockParentId, 0);
 
-        // Unlock mechanism specific start
-        eth2DogeMinimumAcceptableConfirmations = 5;
-        ethInitialCheckpoint = 0;
-        // Unlock mechanism specific emd
-
-        defenderTimerTaskPeriod = 15;
-        challengerTimerTaskPeriod = 15;
-
-        defenderConfirmations = 2;
+        defenderTimerTaskPeriod = 15 * 1000;
+        challengerTimerTaskPeriod = 15 * 1000;
+        defenderConfirmations = 1;
         challengerConfirmations = 1;
+
+        ethToDogeTimerTaskPeriod = 15 * 1000;
+        unlockConfirmations = 2;
+        ethInitialCheckpoint = 0;
+
+        priceOracleTimerTaskPeriod = 60 * 1000;
     }
 }
