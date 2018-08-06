@@ -15,6 +15,7 @@ public class SuperblockReGedientoChallengerClient extends SuperblockChallengerCl
         try {
             challengeEverything(fromBlock, toBlock);
             respondToNewBattles(fromBlock, toBlock);
+            logVerificationGames(fromBlock, toBlock);
             deleteFinishedBattles(fromBlock, toBlock);
 
             getSemiApproved(fromBlock, toBlock);
@@ -37,11 +38,36 @@ public class SuperblockReGedientoChallengerClient extends SuperblockChallengerCl
         for (EthWrapper.SuperblockEvent superblockEvent : newSuperblockEvents) {
             log.info("Challenging superblock {}", superblockEvent.superblockId);
             ethWrapper.challengeSuperblock(superblockEvent.superblockId);
+            Thread.sleep(200);
+            log.debug("/// Superblock claim exists: {}", ethWrapper.getClaimExists(superblockEvent.superblockId));
+            log.debug("/// Superblock claim verification ongoing: {}",
+                    ethWrapper.getClaimVerificationOngoing(superblockEvent.superblockId));
+            log.debug("/// Superblock claim challengers: {}",
+                    ethWrapper.getClaimChallengers(superblockEvent.superblockId));
+            log.debug(myAddress);
         }
     }
 
     @Override
     protected boolean isEnabled() {
         return config.isReGedientoChallengerEnabled();
+    }
+
+    private void logErrors(long fromBlock, long toBlock) throws Exception {
+        log.debug("/////// Getting errors");
+        List<EthWrapper.ErrorClaimEvent> errorClaimEvents = ethWrapper.getErrorClaimEvents(fromBlock, toBlock);
+        for (EthWrapper.ErrorClaimEvent errorClaimEvent : errorClaimEvents) {
+            log.debug("Error {} on superblock {}", errorClaimEvent.err, errorClaimEvent.superblockId);
+        }
+    }
+
+    private void logVerificationGames(long fromBlock, long toBlock) throws Exception {
+        log.debug("////// Getting verification games");
+        List<EthWrapper.VerificationGameStartedEvent> verificationGameStartedEvents =
+                ethWrapper.getVerificationGameStartedEvents(fromBlock, toBlock);
+        for (EthWrapper.VerificationGameStartedEvent verificationGameStartedEvent : verificationGameStartedEvents) {
+            log.debug("Verification game {} started for superblock {}",
+                    verificationGameStartedEvent.sessionId, verificationGameStartedEvent.superblockId);
+        }
     }
 }

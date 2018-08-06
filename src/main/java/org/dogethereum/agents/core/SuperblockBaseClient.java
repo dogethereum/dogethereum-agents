@@ -96,6 +96,7 @@ public abstract class SuperblockBaseClient {
         @Override
         public void run() {
             try {
+//                log.debug("/////////Running");
                 if (!ethWrapper.isEthNodeSyncing()) {
                     if (arePendingTransactions()) {
                         log.debug("Skipping there are pending transaction for the sender address.");
@@ -108,6 +109,7 @@ public abstract class SuperblockBaseClient {
 
                     long fromBlock = latestEthBlockProcessed + 1;
                     long toBlock = ethWrapper.getEthBlockCount() - getConfirmations() + 1;
+                    log.debug("fromBlock: {}, toBlock: {}", fromBlock, toBlock);
 
                     // Ignore execution if nothing to process
                     if (fromBlock > toBlock) {
