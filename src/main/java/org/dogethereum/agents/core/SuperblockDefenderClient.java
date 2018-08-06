@@ -113,7 +113,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 StoredBlock dogeBlock = dogecoinWrapper.getBlock(queryBlockHeader.dogeBlockHash);
                 ethWrapper.respondBlockHeader(queryBlockHeader.superblockId, queryBlockHeader.sessionId,
                         (AltcoinBlock) dogeBlock.getHeader());
-                ethWrapper.verifySuperblock(queryBlockHeader.sessionId, ethWrapper.getClaimManager());
             }
         }
     }
@@ -130,7 +129,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 Superblock superblock = superblockChain.getSuperblock(queryMerkleRootHashes.superblockId);
                 ethWrapper.respondMerkleRootHashes(queryMerkleRootHashes.superblockId, queryMerkleRootHashes.sessionId,
                         superblock.getDogeBlockHashes());
-                ethWrapper.verifySuperblock(queryMerkleRootHashes.sessionId, ethWrapper.getClaimManager());
             }
         }
     }
