@@ -3,7 +3,9 @@ package org.dogethereum.agents.contract;
 import org.web3j.abi.EventEncoder;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Address;
+import org.web3j.abi.datatypes.DynamicArray;
 import org.web3j.abi.datatypes.Event;
+import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
@@ -93,7 +95,8 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
             throws IOException {
         final Event event = new Event("NewBattle",
                 Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32> () {},
+                        new TypeReference<Address>() {}, new TypeReference<Address>() {}));
 
         List<NewBattleEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
@@ -181,7 +184,11 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
             throws IOException {
         final Event event = new Event("RespondMerkleRootHashes",
                 Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {
+                }, new TypeReference<Bytes32>() {
+                }, new TypeReference<Address>() {
+                }, new TypeReference<DynamicArray<Bytes32>>() {
+                }));
 
         List<RespondMerkleRootHashesEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
@@ -211,7 +218,8 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
             throws IOException {
         final Event event = new Event("RespondBlockHeader",
                 Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {},
+                        new TypeReference<Address>() {}));
 
         List<RespondBlockHeaderEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
