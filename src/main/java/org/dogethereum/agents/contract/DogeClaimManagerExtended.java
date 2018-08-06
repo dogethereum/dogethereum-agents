@@ -2,10 +2,7 @@ package org.dogethereum.agents.contract;
 
 import org.web3j.abi.EventEncoder;
 import org.web3j.abi.TypeReference;
-import org.web3j.abi.datatypes.Address;
-import org.web3j.abi.datatypes.DynamicArray;
-import org.web3j.abi.datatypes.Event;
-import org.web3j.abi.datatypes.Type;
+import org.web3j.abi.datatypes.*;
 import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
@@ -38,7 +35,8 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
             throws IOException {
         final Event event = new Event("QueryBlockHeader",
                 Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {},
+                        new TypeReference<Bytes32>() {}));
 
         List<QueryBlockHeaderEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
@@ -66,7 +64,8 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
             throws IOException {
         final Event event = new Event("QueryMerkleRootHashes",
                 Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
+                        new TypeReference<Address>() {}));
 
         List<QueryMerkleRootHashesEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
@@ -126,7 +125,8 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
             throws IOException {
         final Event event = new Event("ChallengerConvicted",
                 Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
+                        new TypeReference<Address>() {}));
 
         List<ChallengerConvictedEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
@@ -155,7 +155,8 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
             throws IOException {
         final Event event = new Event("SubmitterConvicted",
                 Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
+                        new TypeReference<Address>() {}));
 
         List<SubmitterConvictedEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
@@ -184,11 +185,8 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
             throws IOException {
         final Event event = new Event("RespondMerkleRootHashes",
                 Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {
-                }, new TypeReference<Bytes32>() {
-                }, new TypeReference<Address>() {
-                }, new TypeReference<DynamicArray<Bytes32>>() {
-                }));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
+                        new TypeReference<Address>() {}, new TypeReference<DynamicArray<Bytes32>>() {}));
 
         List<RespondMerkleRootHashesEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
@@ -218,8 +216,9 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
             throws IOException {
         final Event event = new Event("RespondBlockHeader",
                 Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {},
-                        new TypeReference<Address>() {}));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
+                        new TypeReference<Address>() {}, new TypeReference<Bytes32>() {},
+                        new TypeReference<DynamicBytes>() {}));
 
         List<RespondBlockHeaderEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
@@ -250,7 +249,8 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
             throws IOException {
         final Event event = new Event("SuperblockBattleDecided",
                 Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {},
+                        new TypeReference<Address>() {}));
 
         List<SuperblockBattleDecidedEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
