@@ -142,6 +142,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @throws Exception
      */
     void respondToNewBattles(long fromBlock, long toBlock) throws Exception {
+        log.debug("//////// Responding to new battles");
         List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
 
         for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
