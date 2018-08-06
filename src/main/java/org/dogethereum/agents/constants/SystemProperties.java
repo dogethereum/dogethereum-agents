@@ -152,8 +152,8 @@ public class SystemProperties {
         return agentConstants;
     }
 
-    public boolean isDogeBlockSubmitterEnabled() {
-        return getBooleanProperty("doge.block.submitter.enabled", false);
+    public boolean isDogeSuperblockSubmitterEnabled() {
+        return getBooleanProperty("doge.superblock.submitter.enabled", false);
     }
 
     public boolean isDogeTxRelayerEnabled() {

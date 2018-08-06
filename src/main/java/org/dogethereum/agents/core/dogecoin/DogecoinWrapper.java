@@ -44,7 +44,7 @@ public class DogecoinWrapper {
     public DogecoinWrapper(OperatorPublicKeyHandler operatorPublicKeyHandler) throws Exception {
         this.operatorPublicKeyHandler = operatorPublicKeyHandler;
         this.config = SystemProperties.CONFIG;
-        if (config.isDogeBlockSubmitterEnabled() || config.isDogeTxRelayerEnabled() ||
+        if (config.isDogeSuperblockSubmitterEnabled() || config.isDogeTxRelayerEnabled() ||
                 config.isOperatorEnabled() || config.isDogeBlockChallengerEnabled()) {
             this.agentConstants = config.getAgentConstants();
             this.dogeContext = new Context(agentConstants.getDogeParams());
@@ -220,7 +220,7 @@ public class DogecoinWrapper {
 
     @PreDestroy
     public void tearDown() throws BlockStoreException, IOException {
-        if (config.isDogeBlockSubmitterEnabled() || config.isDogeTxRelayerEnabled() ||
+        if (config.isDogeSuperblockSubmitterEnabled() || config.isDogeTxRelayerEnabled() ||
                 config.isOperatorEnabled() || config.isDogeBlockChallengerEnabled()) {
             log.info("DogeToEthClient tearDown starting...");
             stop();

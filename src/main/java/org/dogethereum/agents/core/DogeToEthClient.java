@@ -57,7 +57,7 @@ public class DogeToEthClient {
     @PostConstruct
     public void setup() throws Exception {
         config = SystemProperties.CONFIG;
-        if (config.isDogeBlockSubmitterEnabled() || config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
+        if (config.isDogeSuperblockSubmitterEnabled() || config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
             agentConstants = config.getAgentConstants();
 
             new Timer("Doge to Eth client").scheduleAtFixedRate(new DogeToEthClientTimerTask(),
@@ -82,7 +82,7 @@ public class DogeToEthClient {
                 if (!ethWrapper.isEthNodeSyncing()) {
                     log.debug("DogeToEthClientTimerTask");
                     ethWrapper.updateContractFacadesGasPrice();
-                    if (config.isDogeBlockSubmitterEnabled()) {
+                    if (config.isDogeSuperblockSubmitterEnabled()) {
                         updateBridgeSuperblockChain();
                     }
                     if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {

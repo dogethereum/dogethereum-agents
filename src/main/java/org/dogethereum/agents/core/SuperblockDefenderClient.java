@@ -2,12 +2,10 @@ package org.dogethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.AltcoinBlock;
-import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.StoredBlock;
 import org.bitcoinj.store.BlockStoreException;
 import org.dogethereum.agents.core.dogecoin.*;
 import org.dogethereum.agents.core.eth.EthWrapper;
-import org.spongycastle.util.encoders.Hex;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -275,7 +273,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     @Override
     protected boolean isEnabled() {
-        return config.isDogeBlockSubmitterEnabled();
+        return config.isDogeSuperblockSubmitterEnabled();
     }
 
     @Override
