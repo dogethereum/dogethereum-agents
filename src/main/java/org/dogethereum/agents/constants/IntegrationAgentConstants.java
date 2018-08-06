@@ -34,14 +34,14 @@ public class IntegrationAgentConstants extends AgentConstants {
         minimumLockTxValue = Coin.valueOf(150000000); // 1.5 doge
 
         // Genesis Superblock for doge mainnet
-        // from block 674962fc4d1ebf8620c0f772d838a957c0dbdd757898903baad7c83c606f3634
-        // to block 046722472396fe2883a725f97f0e63036d2064ceb271bccc175578b724833b3f
-        Sha256Hash blocksMerkleRoot = Sha256Hash.wrap("1eb62592c39990b4d33b55eac0989ec9ad69099aced17b8adc56ed561b28b473");
-        BigInteger chainWork = new BigInteger("3434911961284113526919");
-        long lastDogeBlockTime = 1531922574l;
-        long previousToLastDogeBlockTime = 1531922557l;
-        Sha256Hash lastDogeBlockHash = Sha256Hash.wrap("046722472396fe2883a725f97f0e63036d2064ceb271bccc175578b724833b3f");
-        long lastDogeBlockBits = 436643408;
+        // from block 12ae7ab0226b11881b6899bbf2e5b902b774601b84d4eaac203b53005aaae33a
+        // to block b0dbc74bc6e258e882a527206d67579cc231be743b23500a28015c96d66ed05a
+        Sha256Hash blocksMerkleRoot = Sha256Hash.wrap("b56e1308bc44483551a5d3ba426d83c2b7634b6c985a3128e48544e8d0fe4ec2");
+        BigInteger chainWork = new BigInteger("3752336556886305017875");
+        long lastDogeBlockTime = 1533320063l;
+        long previousToLastDogeBlockTime = 1533320029l;
+        Sha256Hash lastDogeBlockHash = Sha256Hash.wrap("b0dbc74bc6e258e882a527206d67579cc231be743b23500a28015c96d66ed05a");
+        long lastDogeBlockBits = 436473103;
         Keccak256Hash genesisSuperblockParentId = Keccak256Hash.wrap(new byte[32]); // initialised with 0s
         long superblockHeight = 0;
         BigInteger status = SuperblockUtils.STATUS_APPROVED;
