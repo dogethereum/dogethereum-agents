@@ -291,7 +291,7 @@ public class DogeBattleManager extends Contract {
     public List<RespondBlockHeaderEventResponse> getRespondBlockHeaderEvents(TransactionReceipt transactionReceipt) {
         final Event event = new Event("RespondBlockHeader", 
                 Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Bytes32>() {}, new TypeReference<DynamicBytes>() {}));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Bytes32>() {}, new TypeReference<DynamicBytes>() {}, new TypeReference<DynamicBytes>() {}));
         List<Contract.EventValuesWithLog> valueList = extractEventParametersWithLog(event, transactionReceipt);
         ArrayList<RespondBlockHeaderEventResponse> responses = new ArrayList<RespondBlockHeaderEventResponse>(valueList.size());
         for (Contract.EventValuesWithLog eventValues : valueList) {
@@ -302,6 +302,7 @@ public class DogeBattleManager extends Contract {
             typedResponse.challenger = (String) eventValues.getNonIndexedValues().get(2).getValue();
             typedResponse.blockScryptHash = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
             typedResponse.blockHeader = (byte[]) eventValues.getNonIndexedValues().get(4).getValue();
+            typedResponse.powBlockHeader = (byte[]) eventValues.getNonIndexedValues().get(5).getValue();
             responses.add(typedResponse);
         }
         return responses;
@@ -310,7 +311,7 @@ public class DogeBattleManager extends Contract {
     public Observable<RespondBlockHeaderEventResponse> respondBlockHeaderEventObservable(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
         final Event event = new Event("RespondBlockHeader", 
                 Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Bytes32>() {}, new TypeReference<DynamicBytes>() {}));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Bytes32>() {}, new TypeReference<DynamicBytes>() {}, new TypeReference<DynamicBytes>() {}));
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
         filter.addSingleTopic(EventEncoder.encode(event));
         return web3j.ethLogObservable(filter).map(new Func1<Log, RespondBlockHeaderEventResponse>() {
@@ -324,6 +325,93 @@ public class DogeBattleManager extends Contract {
                 typedResponse.challenger = (String) eventValues.getNonIndexedValues().get(2).getValue();
                 typedResponse.blockScryptHash = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
                 typedResponse.blockHeader = (byte[]) eventValues.getNonIndexedValues().get(4).getValue();
+                typedResponse.powBlockHeader = (byte[]) eventValues.getNonIndexedValues().get(5).getValue();
+                return typedResponse;
+            }
+        });
+    }
+
+    public List<RequestScryptHashValidationEventResponse> getRequestScryptHashValidationEvents(TransactionReceipt transactionReceipt) {
+        final Event event = new Event("RequestScryptHashValidation", 
+                Arrays.<TypeReference<?>>asList(),
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<DynamicBytes>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
+        List<Contract.EventValuesWithLog> valueList = extractEventParametersWithLog(event, transactionReceipt);
+        ArrayList<RequestScryptHashValidationEventResponse> responses = new ArrayList<RequestScryptHashValidationEventResponse>(valueList.size());
+        for (Contract.EventValuesWithLog eventValues : valueList) {
+            RequestScryptHashValidationEventResponse typedResponse = new RequestScryptHashValidationEventResponse();
+            typedResponse.log = eventValues.getLog();
+            typedResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
+            typedResponse.blockScryptHash = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
+            typedResponse.blockHeader = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
+            typedResponse.proposalId = (byte[]) eventValues.getNonIndexedValues().get(4).getValue();
+            typedResponse.submitter = (String) eventValues.getNonIndexedValues().get(5).getValue();
+            responses.add(typedResponse);
+        }
+        return responses;
+    }
+
+    public Observable<RequestScryptHashValidationEventResponse> requestScryptHashValidationEventObservable(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
+        final Event event = new Event("RequestScryptHashValidation", 
+                Arrays.<TypeReference<?>>asList(),
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<DynamicBytes>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
+        EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
+        filter.addSingleTopic(EventEncoder.encode(event));
+        return web3j.ethLogObservable(filter).map(new Func1<Log, RequestScryptHashValidationEventResponse>() {
+            @Override
+            public RequestScryptHashValidationEventResponse call(Log log) {
+                Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+                RequestScryptHashValidationEventResponse typedResponse = new RequestScryptHashValidationEventResponse();
+                typedResponse.log = log;
+                typedResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+                typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
+                typedResponse.blockScryptHash = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
+                typedResponse.blockHeader = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
+                typedResponse.proposalId = (byte[]) eventValues.getNonIndexedValues().get(4).getValue();
+                typedResponse.submitter = (String) eventValues.getNonIndexedValues().get(5).getValue();
+                return typedResponse;
+            }
+        });
+    }
+
+    public List<ResolveScryptHashValidationEventResponse> getResolveScryptHashValidationEvents(TransactionReceipt transactionReceipt) {
+        final Event event = new Event("ResolveScryptHashValidation", 
+                Arrays.<TypeReference<?>>asList(),
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Bool>() {}));
+        List<Contract.EventValuesWithLog> valueList = extractEventParametersWithLog(event, transactionReceipt);
+        ArrayList<ResolveScryptHashValidationEventResponse> responses = new ArrayList<ResolveScryptHashValidationEventResponse>(valueList.size());
+        for (Contract.EventValuesWithLog eventValues : valueList) {
+            ResolveScryptHashValidationEventResponse typedResponse = new ResolveScryptHashValidationEventResponse();
+            typedResponse.log = eventValues.getLog();
+            typedResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
+            typedResponse.blockScryptHash = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
+            typedResponse.proposalId = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
+            typedResponse.challenger = (String) eventValues.getNonIndexedValues().get(4).getValue();
+            typedResponse.valid = (Boolean) eventValues.getNonIndexedValues().get(5).getValue();
+            responses.add(typedResponse);
+        }
+        return responses;
+    }
+
+    public Observable<ResolveScryptHashValidationEventResponse> resolveScryptHashValidationEventObservable(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
+        final Event event = new Event("ResolveScryptHashValidation", 
+                Arrays.<TypeReference<?>>asList(),
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Bool>() {}));
+        EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
+        filter.addSingleTopic(EventEncoder.encode(event));
+        return web3j.ethLogObservable(filter).map(new Func1<Log, ResolveScryptHashValidationEventResponse>() {
+            @Override
+            public ResolveScryptHashValidationEventResponse call(Log log) {
+                Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+                ResolveScryptHashValidationEventResponse typedResponse = new ResolveScryptHashValidationEventResponse();
+                typedResponse.log = log;
+                typedResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+                typedResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
+                typedResponse.blockScryptHash = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
+                typedResponse.proposalId = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
+                typedResponse.challenger = (String) eventValues.getNonIndexedValues().get(4).getValue();
+                typedResponse.valid = (Boolean) eventValues.getNonIndexedValues().get(5).getValue();
                 return typedResponse;
             }
         });
@@ -369,6 +457,13 @@ public class DogeBattleManager extends Contract {
                 Arrays.<Type>asList(), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
+    public RemoteCall<String> scryptChecker() {
+        final Function function = new Function("scryptChecker", 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}));
+        return executeRemoteCallSingleValueReturn(function, String.class);
     }
 
     public RemoteCall<BigInteger> sessionsCount() {
@@ -464,6 +559,14 @@ public class DogeBattleManager extends Contract {
         return deployRemoteCall(DogeBattleManager.class, web3j, transactionManager, gasPrice, gasLimit, BINARY, encodedConstructor);
     }
 
+    public RemoteCall<TransactionReceipt> setScryptChecker(String _scryptChecker) {
+        final Function function = new Function(
+                "setScryptChecker", 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(_scryptChecker)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
     public RemoteCall<TransactionReceipt> beginBattleSession(byte[] superblockId, String submitter, String challenger) {
         final Function function = new Function(
                 "beginBattleSession", 
@@ -515,6 +618,16 @@ public class DogeBattleManager extends Contract {
         return executeRemoteCallTransaction(function);
     }
 
+    public RemoteCall<TransactionReceipt> requestScryptHashValidation(byte[] superblockId, byte[] sessionId, byte[] blockHash) {
+        final Function function = new Function(
+                "requestScryptHashValidation", 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(superblockId), 
+                new org.web3j.abi.datatypes.generated.Bytes32(sessionId), 
+                new org.web3j.abi.datatypes.generated.Bytes32(blockHash)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
     public RemoteCall<TransactionReceipt> verifySuperblock(byte[] sessionId) {
         final Function function = new Function(
                 "verifySuperblock", 
@@ -527,6 +640,33 @@ public class DogeBattleManager extends Contract {
         final Function function = new Function(
                 "timeout", 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(sessionId)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public RemoteCall<TransactionReceipt> scryptSubmitted(byte[] scryptChallengeId, byte[] _scryptHash, byte[] _data, String _submitter) {
+        final Function function = new Function(
+                "scryptSubmitted", 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(scryptChallengeId), 
+                new org.web3j.abi.datatypes.generated.Bytes32(_scryptHash), 
+                new org.web3j.abi.datatypes.DynamicBytes(_data), 
+                new org.web3j.abi.datatypes.Address(_submitter)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public RemoteCall<TransactionReceipt> scryptVerified(byte[] scryptChallengeId) {
+        final Function function = new Function(
+                "scryptVerified", 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(scryptChallengeId)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public RemoteCall<TransactionReceipt> scryptFailed(byte[] scryptChallengeId) {
+        final Function function = new Function(
+                "scryptFailed", 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(scryptChallengeId)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
@@ -654,6 +794,40 @@ public class DogeBattleManager extends Contract {
         public byte[] blockScryptHash;
 
         public byte[] blockHeader;
+
+        public byte[] powBlockHeader;
+    }
+
+    public static class RequestScryptHashValidationEventResponse {
+        public Log log;
+
+        public byte[] superblockId;
+
+        public byte[] sessionId;
+
+        public byte[] blockScryptHash;
+
+        public byte[] blockHeader;
+
+        public byte[] proposalId;
+
+        public String submitter;
+    }
+
+    public static class ResolveScryptHashValidationEventResponse {
+        public Log log;
+
+        public byte[] superblockId;
+
+        public byte[] sessionId;
+
+        public byte[] blockScryptHash;
+
+        public byte[] proposalId;
+
+        public String challenger;
+
+        public Boolean valid;
     }
 
     public static class ErrorBattleEventResponse {
