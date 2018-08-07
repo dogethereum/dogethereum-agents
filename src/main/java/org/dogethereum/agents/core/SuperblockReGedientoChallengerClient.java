@@ -15,7 +15,8 @@ public class SuperblockReGedientoChallengerClient extends SuperblockChallengerCl
         try {
             challengeEverything(fromBlock, toBlock);
             respondToNewBattles(fromBlock, toBlock);
-//            logVerificationGames(fromBlock, toBlock);
+            respondToMerkleRootHashesEventResponses(fromBlock, toBlock);
+            respondToBlockHeaderEventResponses(fromBlock, toBlock);
             deleteFinishedBattles(fromBlock, toBlock);
 
             getSemiApproved(fromBlock, toBlock);
@@ -39,12 +40,6 @@ public class SuperblockReGedientoChallengerClient extends SuperblockChallengerCl
             log.info("Challenging superblock {}", superblockEvent.superblockId);
             ethWrapper.challengeSuperblock(superblockEvent.superblockId);
             Thread.sleep(200);
-            log.debug("/// Superblock claim exists: {}", ethWrapper.getClaimExists(superblockEvent.superblockId));
-            log.debug("/// Superblock claim verification ongoing: {}",
-                    ethWrapper.getClaimVerificationOngoing(superblockEvent.superblockId));
-            log.debug("/// Superblock claim challengers: {}",
-                    ethWrapper.getClaimChallengers(superblockEvent.superblockId));
-            log.debug(myAddress);
         }
     }
 

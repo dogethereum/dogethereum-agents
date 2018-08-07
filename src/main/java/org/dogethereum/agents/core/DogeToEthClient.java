@@ -110,6 +110,7 @@ public class DogeToEthClient {
         }
 
         // Get the best superblock from the relay that is also in the main chain.
+        log.debug("///// Update bridge superblock chain /////");
         List<byte[]> superblockLocator = ethWrapper.getSuperblockLocator();
         Superblock matchedSuperblock = getEarliestMatchingSuperblock(superblockLocator);
 

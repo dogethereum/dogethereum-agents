@@ -151,7 +151,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @param toBlock
      * @throws Exception
      */
-    private void respondToMerkleRootHashesEventResponses(long fromBlock, long toBlock) throws Exception {
+    void respondToMerkleRootHashesEventResponses(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.RespondMerkleRootHashesEvent> defenderResponses =
                 ethWrapper.getRespondMerkleRootHashesEvents(fromBlock, toBlock);
 
@@ -169,7 +169,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @param toBlock
      * @throws Exception
      */
-    private void respondToBlockHeaderEventResponses(long fromBlock, long toBlock) throws Exception {
+    void respondToBlockHeaderEventResponses(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.RespondBlockHeaderEvent> defenderResponses =
                 ethWrapper.getRespondBlockHeaderEvents(fromBlock, toBlock);
 
