@@ -4,6 +4,7 @@ import org.web3j.abi.EventEncoder;
 import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.*;
 import org.web3j.abi.datatypes.generated.Bytes32;
+import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.request.EthFilter;
@@ -275,6 +276,34 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
             newSuperblockBattleDecidedEventResponse.winner = (String) eventValues.getNonIndexedValues().get(1).getValue();
             newSuperblockBattleDecidedEventResponse.loser = (String) eventValues.getNonIndexedValues().get(2).getValue();
             result.add(newSuperblockBattleDecidedEventResponse);
+        }
+
+        return result;
+    }
+
+    public List<ErrorBattleEventResponse> getErrorBattleEventResponses(DefaultBlockParameter startBlock,
+                                                                       DefaultBlockParameter endBlock)
+            throws IOException {
+        final Event event = new Event("ErrorBattle",
+                Arrays.<TypeReference<?>>asList(),
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Uint256>() {}));
+
+        List<ErrorBattleEventResponse> result = new ArrayList<>();
+        EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
+        filter.addSingleTopic(EventEncoder.encode(event));
+        EthLog ethLog = web3j.ethGetLogs(filter).send();
+        List<EthLog.LogResult> logResults = ethLog.getLogs();
+
+        for (EthLog.LogResult logResult : logResults) {
+            Log log = (Log) logResult.get();
+            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+
+            ErrorBattleEventResponse newErrorBattleEventResponse =
+                    new ErrorBattleEventResponse();
+            newErrorBattleEventResponse.log = eventValues.getLog();
+            newErrorBattleEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            newErrorBattleEventResponse.err = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
+            result.add(newErrorBattleEventResponse);
         }
 
         return result;
