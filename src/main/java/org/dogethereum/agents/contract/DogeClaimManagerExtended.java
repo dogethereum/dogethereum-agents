@@ -204,7 +204,11 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
             newRespondMerkleRootHashesEventResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
             newRespondMerkleRootHashesEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
             newRespondMerkleRootHashesEventResponse.challenger = (String) eventValues.getNonIndexedValues().get(2).getValue();
-            newRespondMerkleRootHashesEventResponse.blockHashes = (List<byte[]>) eventValues.getNonIndexedValues().get(3).getValue();
+            newRespondMerkleRootHashesEventResponse.blockHashes = new ArrayList<>();
+            List<Bytes32> rawBytes32Hashes = (List<Bytes32>) eventValues.getNonIndexedValues().get(3).getValue();
+            for (Bytes32 rawBytes32Hash : rawBytes32Hashes) {
+                newRespondMerkleRootHashesEventResponse.blockHashes.add(rawBytes32Hash.getValue());
+            }
             result.add(newRespondMerkleRootHashesEventResponse);
         }
 
