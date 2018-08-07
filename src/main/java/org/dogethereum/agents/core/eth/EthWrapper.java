@@ -954,6 +954,7 @@ public class EthWrapper implements SuperblockConstantProvider {
                 log.info("Responded to block header query for Doge block {}, session {}, superblock {}",
                         dogeBlock.getHash(), sessionId, superblockId)
         );
+        Thread.sleep(200);
     }
 
     public void respondMerkleRootHashes(Keccak256Hash superblockId, Keccak256Hash sessionId,
