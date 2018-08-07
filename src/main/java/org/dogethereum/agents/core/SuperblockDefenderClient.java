@@ -272,6 +272,11 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     /* ---- OVERRIDE ABSTRACT METHODS ---- */
 
     @Override
+    protected boolean arePendingTransactions() throws IOException {
+        return ethWrapper.arePendingTransactionsForSendSuperblocksAddress();
+    }
+
+    @Override
     protected boolean isEnabled() {
         return config.isDogeSuperblockSubmitterEnabled();
     }

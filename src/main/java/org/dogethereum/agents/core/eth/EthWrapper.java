@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
 
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
+import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
@@ -35,7 +36,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Deque;
 import java.util.List;
 import java.util.Date;
 import java.util.concurrent.CompletableFuture;
@@ -67,7 +67,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     private String generalPurposeAndSendSuperblocksAddress;
     private String relayTxsAddress;
     private String priceOracleAddress;
-    private String dogeBlockChallengerAddress;
+    private String dogeSuperblockChallengerAddress;
 
     /* ---------------------------------- */
     /* ------ General code section ------ */
@@ -91,7 +91,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             generalPurposeAndSendSuperblocksAddress = accounts.get(0);
             relayTxsAddress = accounts.get(1);
             priceOracleAddress = accounts.get(2);
-            dogeBlockChallengerAddress = accounts.get(3);
+            dogeSuperblockChallengerAddress = accounts.get(3);
         } else {
             dogeTokenContractAddress = config.dogeTokenContractAddress();
             claimManagerContractAddress = config.dogeClaimManagerContractAddress();
@@ -100,7 +100,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             generalPurposeAndSendSuperblocksAddress = config.generalPurposeAndSendSuperblocksAddress();
             relayTxsAddress = config.relayTxsAddress();
             priceOracleAddress = config.priceOracleAddress();
-            dogeBlockChallengerAddress = config.generalPurposeAndSendSuperblocksAddress();
+            dogeSuperblockChallengerAddress = config.dogeSuperblockChallengerAddress();
         }
 
         gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
@@ -115,7 +115,7 @@ public class EthWrapper implements SuperblockConstantProvider {
                 gasPriceMinimum, gasLimit);
         assert claimManager.isValid();
         claimManagerForChallenges = DogeClaimManagerExtended.load(claimManagerContractAddress, web3,
-                new ClientTransactionManager(web3, dogeBlockChallengerAddress),
+                new ClientTransactionManager(web3, dogeSuperblockChallengerAddress),
                 gasPriceMinimum, gasLimit);
         assert claimManagerForChallenges.isValid();
         superblocks = DogeSuperblocksExtended.load(superblocksContractAddress, web3,
@@ -156,6 +156,26 @@ public class EthWrapper implements SuperblockConstantProvider {
         return web3.ethSyncing().send().isSyncing();
     }
 
+
+    public boolean arePendingTransactionsForSendSuperblocksAddress() throws IOException {
+        return arePendingTransactionsFor(generalPurposeAndSendSuperblocksAddress);
+    }
+
+    public boolean arePendingTransactionsForRelayTxsAddress() throws IOException {
+        return arePendingTransactionsFor(relayTxsAddress);
+    }
+
+    public boolean arePendingTransactionsForChallengerAddress() throws IOException {
+        return arePendingTransactionsFor(dogeSuperblockChallengerAddress);
+    }
+
+    private boolean arePendingTransactionsFor(String address) throws IOException {
+        BigInteger latest = web3.ethGetTransactionCount(address, DefaultBlockParameterName.LATEST).send().getTransactionCount();
+        BigInteger pending = web3.ethGetTransactionCount(address, DefaultBlockParameterName.PENDING).send().getTransactionCount();
+        return pending.compareTo(latest) > 0;
+    }
+
+
     public void updateContractFacadesGasPrice() throws IOException {
         BigInteger gasPriceSuggestedByEthNode = web3.ethGasPrice().send().getGasPrice();
         BigInteger gasPrice;
@@ -176,8 +196,8 @@ public class EthWrapper implements SuperblockConstantProvider {
         return generalPurposeAndSendSuperblocksAddress;
     }
 
-    public String getDogeBlockChallengerAddress() {
-        return dogeBlockChallengerAddress;
+    public String getDogeSuperblockChallengerAddress() {
+        return dogeSuperblockChallengerAddress;
     }
 
     /**

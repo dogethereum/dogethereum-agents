@@ -104,6 +104,10 @@ public class DogeToEthClient {
      * @throws Exception
      */
     public long updateBridgeSuperblockChain() throws Exception {
+        if (ethWrapper.arePendingTransactionsForSendSuperblocksAddress()) {
+            log.debug("Skipping sending superblocks, there are pending transaction for the sender address.");
+        }
+
         // Get the best superblock from the relay that is also in the main chain.
         List<byte[]> superblockLocator = ethWrapper.getSuperblockLocator();
         Superblock matchedSuperblock = getEarliestMatchingSuperblock(superblockLocator);
@@ -216,6 +220,10 @@ public class DogeToEthClient {
 
     // Temporary
     public void updateBridgeTransactionsSuperblocks() throws Exception {
+        if (ethWrapper.arePendingTransactionsForRelayTxsAddress()) {
+            log.debug("Skipping relay tx, there are pending transaction for the sender address.");
+        }
+
         Set<Transaction> operatorWalletTxSet = dogecoinWrapper.getTransactions(
                 agentConstants.getDogeToEthConfirmations(),
                 config.isDogeTxRelayerEnabled(),

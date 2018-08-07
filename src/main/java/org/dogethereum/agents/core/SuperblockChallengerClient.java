@@ -32,7 +32,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     @Override
     protected void setupClient() {
-        myAddress = ethWrapper.getDogeBlockChallengerAddress();
+        myAddress = ethWrapper.getDogeSuperblockChallengerAddress();
         setupSemiApprovedSet();
     }
 
@@ -352,6 +352,12 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
 
     /* ---- OVERRIDE ABSTRACT METHODS ---- */
+
+    @Override
+    protected boolean arePendingTransactions() throws IOException {
+        return ethWrapper.arePendingTransactionsForChallengerAddress();
+    }
+
 
     @Override
     protected boolean isEnabled() {
