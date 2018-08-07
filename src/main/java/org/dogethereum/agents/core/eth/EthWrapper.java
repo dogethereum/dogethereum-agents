@@ -690,6 +690,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             respondBlockHeaderEvent.challenger = response.challenger;
             respondBlockHeaderEvent.blockScryptHash = response.blockScryptHash;
             respondBlockHeaderEvent.blockHeader = response.blockHeader;
+            respondBlockHeaderEvent.powBlockHeader = response.powBlockHeader;
             result.add(respondBlockHeaderEvent);
         }
 
@@ -707,8 +708,9 @@ public class EthWrapper implements SuperblockConstantProvider {
         public Keccak256Hash superblockId;
         public Keccak256Hash sessionId;
         public String challenger;
-        public byte[] blockScryptHash;
-        public byte[] blockHeader; // TODO: change to AltcoinBlock
+        public byte[] blockScryptHash; // TODO: see if these three fields should be made immutable
+        public byte[] blockHeader;
+        public byte[] powBlockHeader;
     }
 
     // TODO: see if this should be deleted

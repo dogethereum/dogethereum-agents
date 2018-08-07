@@ -223,7 +223,7 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
                 Arrays.<TypeReference<?>>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
                         new TypeReference<Address>() {}, new TypeReference<Bytes32>() {},
-                        new TypeReference<DynamicBytes>() {}));
+                        new TypeReference<DynamicBytes>() {}, new TypeReference<DynamicBytes>() {}));
 
         List<RespondBlockHeaderEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
@@ -243,6 +243,7 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
             newRespondBlockHeaderEventResponse.challenger = (String) eventValues.getNonIndexedValues().get(2).getValue();
             newRespondBlockHeaderEventResponse.blockScryptHash = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
             newRespondBlockHeaderEventResponse.blockHeader = (byte[]) eventValues.getNonIndexedValues().get(4).getValue();
+            newRespondBlockHeaderEventResponse.powBlockHeader = (byte[]) eventValues.getNonIndexedValues().get(5).getValue();
             result.add(newRespondBlockHeaderEventResponse);
         }
 
