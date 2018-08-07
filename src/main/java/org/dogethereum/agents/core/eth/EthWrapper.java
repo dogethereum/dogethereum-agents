@@ -739,6 +739,28 @@ public class EthWrapper implements SuperblockConstantProvider {
         public String loser;
     }
 
+    public List<ErrorBattleEvent> getErrorBattleEvents(long startBlock, long endBlock) throws IOException {
+        List<ErrorBattleEvent> result = new ArrayList<>();
+        List<DogeClaimManager.ErrorBattleEventResponse> errorBattleEvents =
+                claimManager.getErrorBattleEventResponses(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+
+        for (DogeClaimManager.ErrorBattleEventResponse response : errorBattleEvents) {
+            ErrorBattleEvent errorBattleEvent = new ErrorBattleEvent();
+            errorBattleEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
+            errorBattleEvent.err = response.err;
+            result.add(errorBattleEvent);
+        }
+
+        return result;
+    }
+
+    public static class ErrorBattleEvent {
+        public Keccak256Hash sessionId;
+        public BigInteger err;
+    }
+
 
     /* ---------------------------------- */
     /* --------- Battle section --------- */

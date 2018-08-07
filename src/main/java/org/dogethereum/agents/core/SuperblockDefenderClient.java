@@ -39,6 +39,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         try {
             respondToBlockHeaderQueries(fromBlock, toBlock);
             respondToMerkleRootHashesQueries(fromBlock, toBlock);
+            logErrorBattleEvents(fromBlock, toBlock);
             deleteFinishedBattles(fromBlock, toBlock);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -129,6 +130,16 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 Superblock superblock = superblockChain.getSuperblock(queryMerkleRootHashes.superblockId);
                 ethWrapper.respondMerkleRootHashes(queryMerkleRootHashes.superblockId, queryMerkleRootHashes.sessionId,
                         superblock.getDogeBlockHashes());
+            }
+        }
+    }
+
+    private void logErrorBattleEvents(long fromBlock, long toBlock) throws IOException {
+        List<EthWrapper.ErrorBattleEvent> errorBattleEvents = ethWrapper.getErrorBattleEvents(fromBlock, toBlock);
+
+        for (EthWrapper.ErrorBattleEvent errorBattleEvent : errorBattleEvents) {
+            if (battleSet.contains(errorBattleEvent.sessionId)) {
+                log.info("ErrorBattle. Session ID: {}, error: {}", errorBattleEvent.sessionId, errorBattleEvent.err);
             }
         }
     }
