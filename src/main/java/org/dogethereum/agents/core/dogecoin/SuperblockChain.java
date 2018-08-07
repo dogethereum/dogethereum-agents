@@ -100,7 +100,7 @@ public class SuperblockChain {
             superblockStorage.put(newSuperblock);
             if (newSuperblock.getChainWork().compareTo(superblockStorage.getChainHeadWork()) > 0) {
                 superblockStorage.setChainHead(newSuperblock);
-                log.info("New superblock chain head {0}", newSuperblock);
+                log.info("New superblock chain head {}", newSuperblock);
             }
 
             // set prev hash and end time for next superblock
