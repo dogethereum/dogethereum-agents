@@ -90,11 +90,12 @@ public abstract class SuperblockBaseClient {
         public void run() {
             try {
                 if (!ethWrapper.isEthNodeSyncing()) {
-                    ethWrapper.updateContractFacadesGasPrice();
-
                     if (arePendingTransactions()) {
                         log.debug("Skipping there are pending transaction for the sender address.");
+                        return;
                     }
+
+                    ethWrapper.updateContractFacadesGasPrice();
 
                     reactToElapsedTime();
 
