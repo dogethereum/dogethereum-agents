@@ -35,8 +35,8 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
             throws IOException {
         final Event event = new Event("QueryBlockHeader",
                 Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {},
-                        new TypeReference<Bytes32>() {}));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
+                        new TypeReference<Address>() {}, new TypeReference<Bytes32>() {}));
 
         List<QueryBlockHeaderEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
@@ -50,9 +50,10 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
 
             QueryBlockHeaderEventResponse queryBlockHeaderEventResponse = new QueryBlockHeaderEventResponse();
             queryBlockHeaderEventResponse.log = eventValues.getLog();
-            queryBlockHeaderEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            queryBlockHeaderEventResponse.submitter = (String) eventValues.getNonIndexedValues().get(1).getValue();
-            queryBlockHeaderEventResponse.blockHash = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
+            queryBlockHeaderEventResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            queryBlockHeaderEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
+            queryBlockHeaderEventResponse.submitter = (String) eventValues.getNonIndexedValues().get(2).getValue();
+            queryBlockHeaderEventResponse.blockHash = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
             result.add(queryBlockHeaderEventResponse);
         }
 
