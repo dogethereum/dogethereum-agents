@@ -160,6 +160,21 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         }
     }
 
+    private void respondToRequestScryptHashValidation(long fromBlock, long toBlock) throws IOException, Exception {
+        List<EthWrapper.RequestScryptHashValidationEvent> requestScryptHashValidationEvents =
+                ethWrapper.getRequestScryptHashValidation(fromBlock, toBlock);
+
+        for (EthWrapper.RequestScryptHashValidationEvent requestScryptHashValidationEvent : requestScryptHashValidationEvents) {
+            if (isMine(requestScryptHashValidationEvent)) {
+                Sha256Hash dogeBlockHash = Sha256Hash.wrapReversed(Sha256Hash.hashTwice(requestScryptHashValidationEvent.blockHeader));
+                log.info("Request scrypt hash verification for session {}, superblock {}, " +
+                                "block {}, scrypt hash {}. Responding now.",
+                        requestScryptHashValidationEvent.sessionId, requestScryptHashValidationEvent.superblockId,
+                        dogeBlockHash, Sha256Hash.wrap(requestScryptHashValidationEvent.blockScryptHash));
+            }
+        }
+    }
+
     private void logErrorBattleEvents(long fromBlock, long toBlock) throws IOException {
         List<EthWrapper.ErrorBattleEvent> errorBattleEvents = ethWrapper.getErrorBattleEvents(fromBlock, toBlock);
 
@@ -179,6 +194,10 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     private boolean isMine(EthWrapper.QueryMerkleRootHashesEvent queryMerkleRootHashes) {
         return queryMerkleRootHashes.submitter.equals(myAddress);
+    }
+
+    private boolean isMine(EthWrapper.RequestScryptHashValidationEvent requestScryptHashValidation) {
+        return requestScryptHashValidation.submitter.equals(myAddress);
     }
 
     private boolean submittedTimeoutPassed(Keccak256Hash superblockId) throws Exception {

@@ -609,6 +609,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (DogeClaimManager.QueryBlockHeaderEventResponse response : queryBlockHeaderEvents) {
             QueryBlockHeaderEvent queryBlockHeaderEvent = new QueryBlockHeaderEvent();
+            queryBlockHeaderEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
             queryBlockHeaderEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
             queryBlockHeaderEvent.submitter = response.submitter;
             queryBlockHeaderEvent.dogeBlockHash = Sha256Hash.wrap(response.blockHash);
@@ -759,6 +760,36 @@ public class EthWrapper implements SuperblockConstantProvider {
         public BigInteger err;
     }
 
+    public List<RequestScryptHashValidationEvent> getRequestScryptHashValidation(long startBlock, long endBlock)
+            throws IOException {
+        List<RequestScryptHashValidationEvent> result = new ArrayList<>();
+        List<DogeClaimManager.RequestScryptHashValidationEventResponse> requestScryptHashValidationEvents =
+                claimManager.getRequestScryptHashValidationEventResponses(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+
+        for (DogeClaimManager.RequestScryptHashValidationEventResponse response : requestScryptHashValidationEvents) {
+            RequestScryptHashValidationEvent requestScryptHashValidationEvent = new RequestScryptHashValidationEvent();
+            requestScryptHashValidationEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+            requestScryptHashValidationEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
+            requestScryptHashValidationEvent.blockScryptHash = response.blockScryptHash;
+            requestScryptHashValidationEvent.blockHeader = response.blockHeader;
+            requestScryptHashValidationEvent.proposalId = Keccak256Hash.wrap(response.proposalId);
+            requestScryptHashValidationEvent.submitter = response.submitter;
+            result.add(requestScryptHashValidationEvent);
+        }
+
+        return result;
+    }
+
+    public static class RequestScryptHashValidationEvent {
+        public Keccak256Hash superblockId;
+        public Keccak256Hash sessionId;
+        public byte[] blockScryptHash;
+        public byte[] blockHeader;
+        public Keccak256Hash proposalId;
+        public String submitter;
+    }
 
     /* ---------------------------------- */
     /* --------- Battle section --------- */
@@ -839,6 +870,14 @@ public class EthWrapper implements SuperblockConstantProvider {
                 superblockId.getBytes(), sessionId.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("queryMerkleRootHashes receipt {}", receipt.toString()));
+    }
+
+    public void requestScryptHashValidation(Keccak256Hash superblockId, Keccak256Hash sessionId, Sha256Hash blockSha256Hash) {
+        log.info("Requesting scrypt validation for block {} session {} superblock {}", blockSha256Hash, sessionId, superblockId);
+        CompletableFuture<TransactionReceipt> futureReceipt = claimManagerForChallenges.requestScryptHashValidation(
+                superblockId.getBytes(), sessionId.getBytes(), blockSha256Hash.getBytes()).sendAsync();
+        futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
+                log.info("requestScryptHashValidation receipt {}", receipt.toString()));
     }
 
 

@@ -308,4 +308,38 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
 
         return result;
     }
+
+    public List<RequestScryptHashValidationEventResponse> getRequestScryptHashValidationEventResponses(
+            DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
+            throws IOException {
+        final Event event = new Event("RequestScryptHashValidation",
+                Arrays.<TypeReference<?>>asList(),
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
+                        new TypeReference<Bytes32>() {}, new TypeReference<DynamicBytes>() {},
+                        new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
+
+        List<RequestScryptHashValidationEventResponse> result = new ArrayList<>();
+        EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
+        filter.addSingleTopic(EventEncoder.encode(event));
+        EthLog ethLog = web3j.ethGetLogs(filter).send();
+        List<EthLog.LogResult> logResults = ethLog.getLogs();
+
+        for (EthLog.LogResult logResult : logResults) {
+            Log log = (Log) logResult.get();
+            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+
+            RequestScryptHashValidationEventResponse newRequestScryptHashValidationEventResponse =
+                    new RequestScryptHashValidationEventResponse();
+            newRequestScryptHashValidationEventResponse.log = eventValues.getLog();
+            newRequestScryptHashValidationEventResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            newRequestScryptHashValidationEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
+            newRequestScryptHashValidationEventResponse.blockScryptHash = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
+            newRequestScryptHashValidationEventResponse.blockHeader = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
+            newRequestScryptHashValidationEventResponse.proposalId = (byte[]) eventValues.getNonIndexedValues().get(4).getValue();
+            newRequestScryptHashValidationEventResponse.submitter = (String) eventValues.getNonIndexedValues().get(5).getValue();
+            result.add(newRequestScryptHashValidationEventResponse);
+        }
+
+        return result;
+    }
 }
