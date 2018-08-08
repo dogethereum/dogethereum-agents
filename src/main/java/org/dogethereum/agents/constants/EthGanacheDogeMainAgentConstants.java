@@ -32,12 +32,12 @@ public class EthGanacheDogeMainAgentConstants extends AgentConstants {
         minimumLockTxValue = Coin.valueOf(150000000); // 1.5 doge
 
         // Genesis Superblock for doge mainnet
-        Sha256Hash blocksMerkleRoot = Sha256Hash.wrap("d6ba2a22aae9bbe860f7df8be83cc05dfd584121aaa1868a1926a8acec3fecb3");
-        BigInteger chainWork = new BigInteger("3832331074689355151779");
-        long lastDogeBlockTime = 1533678578l;
-        long previousToLastDogeBlockTime = 1533678523l;
-        Sha256Hash lastDogeBlockHash = Sha256Hash.wrap("c2c204e82ff21092797bf451acaaf9a2074bd650e2f0dca366cca7dd0cd94d9e");
-        long lastDogeBlockBits = 436541183;
+        Sha256Hash blocksMerkleRoot = Sha256Hash.wrap("ff41b209ad9c306a7cf09b37982aac3604e20a97f662efb78df2f564983bae05");
+        BigInteger chainWork = new BigInteger("3852019992739818005721");
+        long lastDogeBlockTime = 1533769178l;
+        long previousToLastDogeBlockTime = 1533769164l;
+        Sha256Hash lastDogeBlockHash = Sha256Hash.wrap("f8e6fdf4a2d3705ffd95184a261e4bdf9746a1b50dbae93abb4dde2b4befd73c");
+        long lastDogeBlockBits = 436623056;
         Keccak256Hash genesisSuperblockParentId = Keccak256Hash.wrap(new byte[32]); // initialised with 0s
         long superblockHeight = 0;
         BigInteger status = SuperblockUtils.STATUS_APPROVED;
