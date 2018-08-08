@@ -130,4 +130,22 @@ public class SuperblockUtils {
 
         return stream.toByteArray();
     }
+
+    /**
+     * Copied from bitcoinj's Block.writeHeader().
+     * @param block Dogecoin block.
+     * @return Serialized block header.
+     */
+    public static byte[] serializeBlockHeaderBE(Block block) throws IOException {
+        ByteArrayOutputStream stream = new UnsafeByteArrayOutputStream(80);
+
+        uint32ToByteStreamBE(block.getVersion(), stream);
+        stream.write(block.getPrevBlockHash().getBytes());
+        stream.write(block.getMerkleRoot().getBytes());
+        uint32ToByteStreamBE(block.getTimeSeconds(), stream);
+        uint32ToByteStreamBE(block.getDifficultyTarget(), stream);
+        uint32ToByteStreamBE(block.getNonce(), stream);
+
+        return stream.toByteArray();
+    }
 }
