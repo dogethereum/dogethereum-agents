@@ -90,7 +90,7 @@ public class SuperblockChain {
             StoredBlock nextSuperblockLastBlock = dogecoinWrapper.getBlock(
                     nextSuperblockDogeHashes.get(nextSuperblockDogeHashes.size() - 1));
             StoredBlock nextSuperblockPreviousToLastBlock =
-                    dogecoinWrapper.getBlock(nextSuperblockLastBlock.getHeader().getHash());
+                    dogecoinWrapper.getBlock(nextSuperblockLastBlock.getHeader().getPrevBlockHash());
 
             Superblock newSuperblock = new Superblock(this.params, nextSuperblockDogeHashes,
                     nextSuperblockLastBlock.getChainWork(), nextSuperblockLastBlock.getHeader().getTimeSeconds(),
