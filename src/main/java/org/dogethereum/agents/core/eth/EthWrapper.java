@@ -884,8 +884,8 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* ---------------------------------- */
 
     public void respondBlockHeader(Keccak256Hash superblockId, Keccak256Hash sessionId, AltcoinBlock dogeBlock)
-            throws InterruptedException{
-        byte[] scryptHashBytes = dogeBlock.getScryptHash().getReversedBytes(); // TODO: check if this should be reversed
+            throws InterruptedException, IOException {
+        byte[] scryptHashBytes = dogeBlock.getScryptHash().getReversedBytes();
         byte[] blockHeaderBytes = dogeBlock.bitcoinSerialize();
         log.info("Sending header {}", Hex.toHexString(blockHeaderBytes));
         CompletableFuture<TransactionReceipt> futureReceipt = claimManager.respondBlockHeader(
