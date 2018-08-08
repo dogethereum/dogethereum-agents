@@ -769,11 +769,12 @@ public class EthWrapper implements SuperblockConstantProvider {
     public void respondBlockHeader(Keccak256Hash superblockId, Keccak256Hash sessionId, AltcoinBlock dogeBlock) {
         byte[] scryptHashBytes = dogeBlock.getScryptHash().getReversedBytes();
         byte[] blockHeaderBytes = dogeBlock.bitcoinSerialize();
+        log.info("Sending header {}", Hex.toHexString(blockHeaderBytes));
         CompletableFuture<TransactionReceipt> futureReceipt = claimManager.respondBlockHeader(
                 superblockId.getBytes(), sessionId.getBytes(), scryptHashBytes, blockHeaderBytes).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("Responded to block header query for session {}, Doge block {}",
-                        sessionId, dogeBlock.getHash())
+                log.info("Responded to block header query for Doge block {}, session {}",
+                        dogeBlock.getHash(), sessionId)
         );
     }
 
