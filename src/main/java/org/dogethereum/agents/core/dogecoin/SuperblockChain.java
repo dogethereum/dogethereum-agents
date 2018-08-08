@@ -33,8 +33,8 @@ public class SuperblockChain {
     private NetworkParameters params;
     private SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
 
-    private int SUPERBLOCK_DURATION; // time window for a superblock (in seconds)
-    private int SUPERBLOCK_DELAY; // time to wait before building a superblock
+    int SUPERBLOCK_DURATION; // time window for a superblock (in seconds)
+    int SUPERBLOCK_DELAY; // time to wait before building a superblock
 
 
     /* ---- CONSTRUCTION METHODS ---- */
@@ -76,7 +76,7 @@ public class SuperblockChain {
         if (allDogeHashesToHash.empty())
             return;
 
-        Date nextSuperblockStartTime = dogecoinWrapper.getBlock(allDogeHashesToHash.peek()).getHeader().getTime();
+        Date nextSuperblockStartTime = getStartTime(dogecoinWrapper.getBlock(allDogeHashesToHash.peek()).getHeader().getTime());
         Date nextSuperblockEndTime = getEndTime(nextSuperblockStartTime);
 
         List<Sha256Hash> nextSuperblockDogeHashes = new ArrayList<>();
@@ -106,7 +106,7 @@ public class SuperblockChain {
             // set prev hash and end time for next superblock
             if (!allDogeHashesToHash.empty()) {
                 nextSuperblockPrevHash = newSuperblock.getSuperblockId();
-                nextSuperblockStartTime = dogecoinWrapper.getBlock(allDogeHashesToHash.peek()).getHeader().getTime();
+                nextSuperblockStartTime = getStartTime(dogecoinWrapper.getBlock(allDogeHashesToHash.peek()).getHeader().getTime());
                 nextSuperblockEndTime = getEndTime(nextSuperblockStartTime);
                 nextSuperblockHeight++;
             }
@@ -223,12 +223,27 @@ public class SuperblockChain {
 
     /* ---- HELPER METHODS AND CLASSES ---- */
 
-    private Date getEndTime(Date startTime) {
-        if (SUPERBLOCK_DURATION < 3600) {
-            return SuperblockUtils.roundToNNextWholeMinutes(startTime, SUPERBLOCK_DURATION / 60);
-        } else {
-            return SuperblockUtils.roundToNNextWholeHours(startTime, SUPERBLOCK_DURATION / 3600);
+    Date getStartTime(Date firstBlockTimestamp) {
+        Calendar startTime = Calendar.getInstance();
+        startTime.setTime(firstBlockTimestamp);
+        startTime.set(Calendar.HOUR, 0);
+        startTime.set(Calendar.MINUTE, 0);
+        startTime.set(Calendar.SECOND, 0);
+        startTime.set(Calendar.MILLISECOND, 0);
+        Calendar nextStartTime = (Calendar) startTime.clone();
+        nextStartTime.add(Calendar.SECOND, SUPERBLOCK_DURATION);
+        while (!nextStartTime.getTime().after(firstBlockTimestamp)) {
+            startTime.add(Calendar.SECOND, SUPERBLOCK_DURATION);
+            nextStartTime.add(Calendar.SECOND, SUPERBLOCK_DURATION);
         }
+        return startTime.getTime();
+    }
+
+    Date getEndTime(Date startTime) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(startTime);
+        calendar.add(Calendar.SECOND, SUPERBLOCK_DURATION);
+        return calendar.getTime();
     }
 
     private Date getStopTime() {

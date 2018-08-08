@@ -99,18 +99,6 @@ public class SuperblockUtils {
                 ((bytes[realOffset + 3] & 0xffl) << 24);
     }
 
-
-    /**
-     * Get a timestamp from exactly three hours before system time.
-     * Useful for knowing when to stop building superblocks.
-     * @return Timestamp from three hours ago.
-     */
-    public static Date getThreeHoursAgo() {
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.HOUR, -3);
-        return calendar.getTime();
-    }
-
     /**
      * Get a timestamp from exactly n seconds before system time.
      * Useful for knowing when to stop building superblocks.
@@ -124,40 +112,6 @@ public class SuperblockUtils {
         return calendar.getTime();
     }
 
-    /**
-     * Get the earliest timestamp after the given date that has 0 as its 'minutes' and 'seconds' fields.
-     * Useful for getting superblock end times.
-     * @param date A timestamp, usually that of the first Dogecoin block in a superblock.
-     * @return Earliest whole hour timestamp after `date`.
-     */
-    public static Date roundToNextWholeHour(Date date) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(date);
-        calendar.add(Calendar.HOUR, 1);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        return calendar.getTime();
-    }
-
-    public static Date roundToNNextWholeHours(Date date, int n) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(date);
-        calendar.add(Calendar.HOUR, n);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        return calendar.getTime();
-    }
-
-    public static Date roundToNNextWholeMinutes(Date date, int n) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(date);
-        calendar.add(Calendar.MINUTE, n);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        return calendar.getTime();
-    }
 
     /**
      * Copied from bitcoinj's Block.writeHeader().
