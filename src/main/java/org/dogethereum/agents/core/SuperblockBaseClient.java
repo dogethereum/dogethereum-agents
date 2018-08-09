@@ -239,4 +239,11 @@ public abstract class SuperblockBaseClient {
         deleteSubmitterConvictedBattles(fromBlock, toBlock);
         deleteChallengerConvictedBattles(fromBlock, toBlock);
     }
+
+
+    /* ----- HELPER METHODS ----- */
+
+    boolean isMine(EthWrapper.SuperblockEvent superblockEvent) {
+        return superblockEvent.who.equals(myAddress);
+    }
 }

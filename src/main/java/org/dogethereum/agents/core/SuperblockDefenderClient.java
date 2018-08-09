@@ -102,6 +102,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     /* - Reacting to events - */
 
+    // TODO: document
     private void respondToBlockHeaderQueries(long fromBlock, long toBlock)
             throws IOException, BlockStoreException, Exception {
         List<EthWrapper.QueryBlockHeaderEvent> queryBlockHeaderEvents =
@@ -118,9 +119,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 StoredBlock dogeBlock = dogecoinWrapper.getBlock(queryBlockHeader.dogeBlockHash);
                 ethWrapper.respondBlockHeader(queryBlockHeader.superblockId, queryBlockHeader.sessionId,
                         (AltcoinBlock) dogeBlock.getHeader());
-
-                log.debug("Superblock difficulty: {}",
-                        superblockChain.getSuperblock(queryBlockHeader.superblockId).getLastDogeBlockBits());
             }
         }
     }
@@ -137,6 +135,27 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 Superblock superblock = superblockChain.getSuperblock(queryMerkleRootHashes.superblockId);
                 ethWrapper.respondMerkleRootHashes(queryMerkleRootHashes.superblockId, queryMerkleRootHashes.sessionId,
                         superblock.getDogeBlockHashes());
+            }
+        }
+    }
+
+    /**
+     * Listen to SemiApprovedSuperblock events and propose their direct descendants to the contracts
+     * if the semi-approved superblock was proposed by this defender.
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
+    private void sendDescendantsOfSemiApproved(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
+                ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
+
+        for (EthWrapper.SuperblockEvent semiApprovedSuperblockEvent : semiApprovedSuperblockEvents) {
+            Superblock descendant = superblockChain.getFirstDescendant(semiApprovedSuperblockEvent.superblockId);
+            if (descendant != null) {
+                log.info("Found superblock {}, descendant of semi-approved {}. Sending it now.",
+                        descendant.getSuperblockId(), semiApprovedSuperblockEvent.superblockId);
+                ethWrapper.sendStoreSuperblock(descendant);
             }
         }
     }
