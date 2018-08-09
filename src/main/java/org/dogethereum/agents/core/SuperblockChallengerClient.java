@@ -339,12 +339,20 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         List<EthWrapper.SubmitterConvictedEvent> submitterConvictedEvents =
                 ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock, ethWrapper.getClaimManagerForChallenges());
 
+        if (!submitterConvictedEvents.isEmpty()) {
+            log.debug("Battles before deletion: {}", battleSet);
+        }
+
         for (EthWrapper.SubmitterConvictedEvent submitterConvictedEvent : submitterConvictedEvents) {
             if (battleSet.contains(submitterConvictedEvent.sessionId)) {
                 log.info("Submitter convicted on session {}, superblock {}. Battle won!",
                         submitterConvictedEvent.sessionId, submitterConvictedEvent.superblockId);
                 battleSet.remove(submitterConvictedEvent.sessionId);
             }
+        }
+
+        if (!submitterConvictedEvents.isEmpty()) {
+            log.debug("Battles after deletion: {}", battleSet);
         }
     }
 
@@ -361,6 +369,10 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         List<EthWrapper.ChallengerConvictedEvent> challengerConvictedEvents =
                 ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock, ethWrapper.getClaimManagerForChallenges());
 
+        if (!challengerConvictedEvents.isEmpty()) {
+            log.debug("Battles before deletion: {}", battleSet);
+        }
+
         for (EthWrapper.ChallengerConvictedEvent challengerConvictedEvent : challengerConvictedEvents) {
             if (challengerConvictedEvent.challenger.equals(myAddress)) {
                 log.info("Challenger convicted on session {}, superblock {}. Battle lost!",
@@ -368,6 +380,10 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 battleSet.remove(challengerConvictedEvent.sessionId);
                 // TODO: see if this should have some fault tolerance for battles that were erroneously not added to set
             }
+        }
+
+        if (!challengerConvictedEvents.isEmpty()) {
+            log.debug("Battles after deletion: {}", battleSet);
         }
     }
 

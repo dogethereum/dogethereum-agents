@@ -118,6 +118,9 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 StoredBlock dogeBlock = dogecoinWrapper.getBlock(queryBlockHeader.dogeBlockHash);
                 ethWrapper.respondBlockHeader(queryBlockHeader.superblockId, queryBlockHeader.sessionId,
                         (AltcoinBlock) dogeBlock.getHeader());
+
+                log.debug("Superblock difficulty: {}",
+                        superblockChain.getSuperblock(queryBlockHeader.superblockId).getLastDogeBlockBits());
             }
         }
     }
@@ -264,6 +267,10 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         List<EthWrapper.SubmitterConvictedEvent> submitterConvictedEvents =
                 ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock, ethWrapper.getClaimManager());
 
+        if (!submitterConvictedEvents.isEmpty()) {
+            log.debug("Battles before deletion: {}", battleSet);
+        }
+
         for (EthWrapper.SubmitterConvictedEvent submitterConvictedEvent : submitterConvictedEvents) {
             if (submitterConvictedEvent.submitter.equals(myAddress)) {
                 log.info("Submitter convicted on session {}, superblock {}. Battle lost!",
@@ -271,6 +278,10 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 battleSet.remove(submitterConvictedEvent.sessionId);
                 // TODO: see if this should have some fault tolerance for battles that were erroneously not added to set
             }
+        }
+
+        if (!submitterConvictedEvents.isEmpty()) {
+            log.debug("Battles after deletion: {}", battleSet);
         }
     }
 
@@ -287,12 +298,20 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         List<EthWrapper.ChallengerConvictedEvent> challengerConvictedEvents =
                 ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock, ethWrapper.getClaimManager());
 
+        if (!challengerConvictedEvents.isEmpty()) {
+            log.debug("Battles before deletion: {}", battleSet);
+        }
+
         for (EthWrapper.ChallengerConvictedEvent challengerConvictedEvent : challengerConvictedEvents) {
             if (battleSet.contains(challengerConvictedEvent.sessionId)) {
                 log.info("Challenger convicted on session {}, superblock {}. Battle won!",
                         challengerConvictedEvent.sessionId, challengerConvictedEvent.superblockId);
                 battleSet.remove(challengerConvictedEvent.sessionId);
             }
+        }
+
+        if (!challengerConvictedEvents.isEmpty()) {
+            log.debug("Battles after deletion: {}", battleSet);
         }
     }
 }
