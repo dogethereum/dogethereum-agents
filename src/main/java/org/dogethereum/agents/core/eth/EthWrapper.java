@@ -227,8 +227,6 @@ public class EthWrapper implements SuperblockConstantProvider {
 
 //        BigInteger bondedDeposit = getBondedDeposit(superblock.getSuperblockId());
 
-        // TODO: see how much wei we should actually send and whether it's a paremeter for this method
-        // Idea: make it a configuration variable
         CompletableFuture<TransactionReceipt> depositsReceipt =
                 makeClaimDeposit(AgentConstants.getSuperblockInitialDeposit());
 
@@ -238,7 +236,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("proposeSuperblock receipt {}", receipt.toString())
         );
-        Thread.sleep(200); // TODO: see if this is necessary
+        Thread.sleep(200);
     }
 
     /**
@@ -780,7 +778,6 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     public void respondMerkleRootHashes(Keccak256Hash superblockId, Keccak256Hash sessionId,
                                         List<Sha256Hash> dogeBlockHashes) {
-        // TODO: double check if endianness is OK
         List<byte[]> rawHashes = new ArrayList<>();
         for (Sha256Hash dogeBlockHash : dogeBlockHashes)
             rawHashes.add(dogeBlockHash.getBytes());
