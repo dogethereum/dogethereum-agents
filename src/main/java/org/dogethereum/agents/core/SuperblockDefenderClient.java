@@ -134,6 +134,9 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 StoredBlock dogeBlock = dogecoinWrapper.getBlock(queryBlockHeader.dogeBlockHash);
                 ethWrapper.respondBlockHeader(queryBlockHeader.superblockId, queryBlockHeader.sessionId,
                         (AltcoinBlock) dogeBlock.getHeader());
+
+                log.debug("Superblock difficulty: {}",
+                        superblockChain.getSuperblock(queryBlockHeader.superblockId).getLastDogeBlockBits());
             }
         }
     }
