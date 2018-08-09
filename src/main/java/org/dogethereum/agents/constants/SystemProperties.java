@@ -218,6 +218,10 @@ public class SystemProperties {
         return getStringProperty("dogeSuperblocks.contract.address", null);
     }
 
+    public String dogeScryptVerifierContractAddress() {
+        return getStringProperty("scryptVerifier.contract.address", null);
+    }
+
     public String truffleBuildContractsDirectory() {
         return getStringProperty("truffle.build.contracts.directory", null);
     }

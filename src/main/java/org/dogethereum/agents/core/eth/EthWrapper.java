@@ -59,6 +59,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     private DogeClaimManagerExtended claimManagerForChallenges;
     private DogeSuperblocksExtended superblocks;
     private DogeSuperblocksExtended superblocksForRelayTxs;
+    private ClaimManager scryptVerifier;
 
     private SystemProperties config;
     private BigInteger gasPriceMinimum;
@@ -79,11 +80,13 @@ public class EthWrapper implements SuperblockConstantProvider {
         String dogeTokenContractAddress;
         String claimManagerContractAddress;
         String superblocksContractAddress;
+        String scryptVerifierAddress;
 
         if (config.isGanache()) {
             dogeTokenContractAddress = getContractAddress("DogeToken");
             claimManagerContractAddress = getContractAddress("DogeClaimManager");
             superblocksContractAddress = getContractAddress("DogeSuperblocks");
+            scryptVerifierAddress = getContractAddress("ScryptCheckerDummy");
             List<String> accounts = web3.ethAccounts().send().getAccounts();
             generalPurposeAndSendSuperblocksAddress = accounts.get(0);
             relayTxsAddress = accounts.get(1);
@@ -93,6 +96,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             dogeTokenContractAddress = config.dogeTokenContractAddress();
             claimManagerContractAddress = config.dogeClaimManagerContractAddress();
             superblocksContractAddress = config.dogeSuperblocksContractAddress();
+            scryptVerifierAddress = config.dogeScryptVerifierContractAddress();
             generalPurposeAndSendSuperblocksAddress = config.generalPurposeAndSendSuperblocksAddress();
             relayTxsAddress = config.relayTxsAddress();
             priceOracleAddress = config.priceOracleAddress();
@@ -122,7 +126,9 @@ public class EthWrapper implements SuperblockConstantProvider {
                 new ClientTransactionManager(web3, relayTxsAddress),
                 gasPriceMinimum, gasLimit);
         assert superblocksForRelayTxs.isValid();
-
+        scryptVerifier = ClaimManager.load(scryptVerifierAddress, web3,
+                new ClientTransactionManager(web3, generalPurposeAndSendSuperblocksAddress),
+                gasPriceMinimum, gasLimit);
     }
 
     /**
@@ -1050,4 +1056,15 @@ public class EthWrapper implements SuperblockConstantProvider {
         public byte[] operatorPublicKeyHash;
     }
 
+    /* ---------------------------------- */
+    /* --------- Scrypt verifier -------- */
+    /* ---------------------------------- */
+
+    public void checkScrypt(Keccak256Hash sessionId, Keccak256Hash superblockId, Keccak256Hash proposalId, byte[] data, byte[] blockScryptHash) {
+        log.info("Send scrypt hash for verification session {}, superblock {}", sessionId, superblockId);
+        CompletableFuture<TransactionReceipt> futureReceipt = scryptVerifier.checkScrypt(
+                data, blockScryptHash, proposalId.getBytes(), claimManager.getContractAddress(), BigInteger.ZERO).sendAsync();
+        futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
+                log.info("checkScrypt receipt {}", receipt.toString()));
+    }
 }
