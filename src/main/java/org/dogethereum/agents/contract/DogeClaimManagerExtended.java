@@ -54,7 +54,7 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
             queryBlockHeaderEventResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
             queryBlockHeaderEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
             queryBlockHeaderEventResponse.submitter = (String) eventValues.getNonIndexedValues().get(2).getValue();
-            queryBlockHeaderEventResponse.blockHash = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
+            queryBlockHeaderEventResponse.blockSha256Hash = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
             result.add(queryBlockHeaderEventResponse);
         }
 

@@ -612,7 +612,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             queryBlockHeaderEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
             queryBlockHeaderEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
             queryBlockHeaderEvent.submitter = response.submitter;
-            queryBlockHeaderEvent.dogeBlockHash = Sha256Hash.wrap(response.blockHash);
+            queryBlockHeaderEvent.dogeBlockHash = Sha256Hash.wrap(response.blockSha256Hash);
             result.add(queryBlockHeaderEvent);
         }
 
