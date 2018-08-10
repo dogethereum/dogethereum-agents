@@ -80,6 +80,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      * @throws Exception
      */
     private void confirmEarliestApprovableSuperblock() throws Exception {
+        log.debug("///// Confirm earliest approvable superblock");
         Keccak256Hash bestSuperblockId = ethWrapper.getBestSuperblockId();
         Superblock chainHead = superblockChain.getChainHead();
 
@@ -95,6 +96,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             log.info("Best superblock from contracts, {}, not found in local database. Stopping.", bestSuperblockId);
         } else {
             Keccak256Hash toConfirmId = toConfirm.getSuperblockId();
+            log.debug("Superblock to confirm: {}", toConfirmId);
+            log.debug("Semi-approved: {}", ethWrapper.isSuperblockSemiApproved(toConfirmId));
 
             if (newAndTimeoutPassed(toConfirm) || inBattleAndSemiApprovable(toConfirm)) {
                 log.info("Confirming superblock {}", toConfirmId);
@@ -216,6 +219,17 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         }
     }
 
+    private void getPendingClaims(long fromBlock, long toBlock) throws IOException, InterruptedException {
+        Thread.sleep(200);
+        List<EthWrapper.SuperblockClaimPendingEvent> superblockClaimPendingEvents =
+                ethWrapper.getSuperblockClaimPendingEvents(fromBlock, toBlock);
+        for (EthWrapper.SuperblockClaimPendingEvent superblockClaimPendingEvent : superblockClaimPendingEvents) {
+//            if (superblockClaimPendingEvent.claimant.equals(myAddress)) {
+                log.debug("Superblock claim {} pending");
+//            }
+        }
+    }
+
 
     /* ---- HELPER METHODS ---- */
 
@@ -275,6 +289,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             return false;
         } else {
             Keccak256Hash descendantId = descendant.getSuperblockId();
+            log.debug("Descendant {} found for superblock {}", descendantId, superblock.getSuperblockId());
+            log.debug("Status of descendant: {}", ethWrapper.getSuperblockStatus(descendantId));
             return (ethWrapper.isSuperblockSemiApproved(descendantId) &&
                     ethWrapper.isSuperblockSemiApproved(superblockId));
         }
