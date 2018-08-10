@@ -49,6 +49,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         try {
             validateNewSuperblocks(fromBlock, toBlock);
             respondToNewBattles(fromBlock, toBlock);
+            respondToMerkleRootHashesEventResponses(fromBlock, toBlock);
+            respondToBlockHeaderEventResponses(fromBlock, toBlock);
             deleteFinishedBattles(fromBlock, toBlock);
 
             getSemiApproved(fromBlock, toBlock);
