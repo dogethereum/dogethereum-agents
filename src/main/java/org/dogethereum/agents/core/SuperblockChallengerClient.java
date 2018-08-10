@@ -375,6 +375,11 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     @Override
+    protected String getSuperblockBattleMapFilename() {
+        return "SuperblockChallengerSuperblockBattleMap.dat";
+    }
+
+    @Override
     protected boolean isMine(EthWrapper.NewBattleEvent newBattleEvent) {
         return newBattleEvent.challenger.equals(myAddress);
     }

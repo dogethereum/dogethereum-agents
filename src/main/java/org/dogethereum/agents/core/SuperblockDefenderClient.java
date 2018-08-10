@@ -39,7 +39,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             respondToBlockHeaderQueries(fromBlock, toBlock);
             respondToMerkleRootHashesQueries(fromBlock, toBlock);
             sendDescendantsOfSemiApproved(fromBlock, toBlock);
-//            deleteFinishedBattles(fromBlock, toBlock);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return latestEthBlockProcessed;
@@ -92,6 +91,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             if (newAndTimeoutPassed(toConfirm) || inBattleAndSemiApprovable(toConfirm)) {
                 log.info("Confirming superblock {}", toConfirmId);
                 ethWrapper.checkClaimFinished(toConfirmId);
+                deleteSuperblockBattles(toConfirmId);
             } else if (semiApprovedAndApprovable(toConfirm)) {
                 Keccak256Hash descendantId = superblockChain.getFirstDescendant(toConfirmId).getSuperblockId();
                 log.info("Confirming semi-approved superblock {}", toConfirmId);
@@ -289,6 +289,11 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     @Override
     protected String getBattleMapFilename() {
         return "SuperblockDefenderBattleMap.dat";
+    }
+
+    @Override
+    protected String getSuperblockBattleMapFilename() {
+        return "SuperblockDefenderSuperblockBattleMap.dat";
     }
 
     @Override

@@ -38,10 +38,12 @@ public abstract class SuperblockBaseClient {
 
     protected long latestEthBlockProcessed;
     protected HashMap<Keccak256Hash, Keccak256Hash> battleMap;
+    protected HashMap<Keccak256Hash, HashSet<Keccak256Hash>> superblockBattleMap;
 
     protected File dataDirectory;
     protected File latestEthBlockProcessedFile;
     protected File battleMapFile;
+    protected File superblockBattleMapFile;
 
     public SuperblockBaseClient(String clientName) {
         this.clientName = clientName;
@@ -131,6 +133,8 @@ public abstract class SuperblockBaseClient {
 
     protected abstract String getBattleMapFilename();
 
+    protected abstract String getSuperblockBattleMapFilename();
+
     protected abstract void setupClient();
 
     protected abstract void reactToElapsedTime();
@@ -157,6 +161,8 @@ public abstract class SuperblockBaseClient {
                 "/" + getLastEthBlockProcessedFilename());
         this.battleMap =  new HashMap<>();
         this.battleMapFile = new File(dataDirectory.getAbsolutePath() + "/" + getBattleMapFilename());
+        this.superblockBattleMap = new HashMap<>();
+        this.superblockBattleMapFile = new File(dataDirectory.getAbsolutePath() + "/" + getSuperblockBattleMapFilename());
 
     }
 
@@ -218,6 +224,35 @@ public abstract class SuperblockBaseClient {
     }
 
 
+    private void restoreSuperblockBattleMap() throws IOException, ClassNotFoundException {
+        if (superblockBattleMapFile.exists()) {
+            synchronized (this) {
+                try (
+                        FileInputStream superblockBattleMapFileIs = new FileInputStream(superblockBattleMapFile);
+                        ObjectInputStream superblockBattleMapObjectIs = new ObjectInputStream(superblockBattleMapFileIs);
+                ) {
+                    superblockBattleMap = (HashMap<Keccak256Hash, HashSet<Keccak256Hash>>)
+                            superblockBattleMapObjectIs.readObject();
+                }
+            }
+        }
+    }
+
+    private void flushSuperblockBattleMap() throws IOException {
+        if (!dataDirectory.exists()) {
+            if (!dataDirectory.mkdirs()) {
+                throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());
+            }
+        }
+        try (
+                FileOutputStream superblockBattleMapFileOs = new FileOutputStream(superblockBattleMapFile);
+                ObjectOutputStream superblockBattleMapObjectOs = new ObjectOutputStream(superblockBattleMapFileOs);
+        ) {
+            superblockBattleMapObjectOs.writeObject(superblockBattleMap);
+        }
+    }
+
+
     /* ---- BATTLE SET METHODS ---- */
 
     /**
@@ -229,8 +264,19 @@ public abstract class SuperblockBaseClient {
     private void getNewBattles(long fromBlock, long toBlock) throws IOException {
         List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
         for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
-            if (isMine(newBattleEvent))
-                battleMap.put(newBattleEvent.sessionId, newBattleEvent.superblockId);
+            if (isMine(newBattleEvent)) {
+                Keccak256Hash sessionId = newBattleEvent.sessionId;
+                Keccak256Hash superblockId = newBattleEvent.superblockId;
+                battleMap.put(sessionId, superblockId);
+
+                if (superblockBattleMap.containsKey(superblockId)) {
+                    superblockBattleMap.get(superblockId).add(sessionId);
+                } else {
+                    HashSet<Keccak256Hash> newSuperblockBattles = new HashSet<>();
+                    newSuperblockBattles.add(sessionId);
+                    superblockBattleMap.put(superblockId, newSuperblockBattles);
+                }
+            }
         }
     }
 
@@ -250,5 +296,15 @@ public abstract class SuperblockBaseClient {
 
     boolean isMine(EthWrapper.SuperblockEvent superblockEvent) {
         return superblockEvent.who.equals(myAddress);
+    }
+
+    void deleteSuperblockBattles(Keccak256Hash superblockId) {
+        HashSet<Keccak256Hash> superblockBattles = superblockBattleMap.get(superblockId);
+
+        for (Keccak256Hash sessionId : superblockBattles) {
+            battleMap.remove(sessionId);
+        }
+
+        superblockBattleMap.remove(superblockId);
     }
 }
