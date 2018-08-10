@@ -39,6 +39,9 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             respondToRequestScryptHashValidation(fromBlock, toBlock);
             respondToBlockHeaderQueries(fromBlock, toBlock);
             respondToMerkleRootHashesQueries(fromBlock, toBlock);
+            respondToBlockHeaderQueries(fromBlock, toBlock);
+            deleteFinishedBattles(fromBlock, toBlock);
+            logSemiApproved(fromBlock, toBlock);
             sendDescendantsOfSemiApproved(fromBlock, toBlock);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -72,6 +75,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      * @throws Exception
      */
     private void confirmEarliestApprovableSuperblock() throws Exception {
+        log.debug("///// Confirm earliest approvable superblock");
         Keccak256Hash bestSuperblockId = ethWrapper.getBestSuperblockId();
         Superblock chainHead = superblockChain.getChainHead();
 
@@ -87,6 +91,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             log.info("Best superblock from contracts, {}, not found in local database. Stopping.", bestSuperblockId);
         } else {
             Keccak256Hash toConfirmId = toConfirm.getSuperblockId();
+            log.debug("Superblock to confirm: {}", toConfirmId);
+            log.debug("Semi-approved: {}", ethWrapper.isSuperblockSemiApproved(toConfirmId));
 
             if (newAndTimeoutPassed(toConfirm) || inBattleAndSemiApprovable(toConfirm)) {
                 log.info("Confirming superblock {}", toConfirmId);
@@ -117,7 +123,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     /* - Reacting to events - */
 
-    // TODO: document
     private void respondToBlockHeaderQueries(long fromBlock, long toBlock)
             throws IOException, BlockStoreException, Exception {
         List<EthWrapper.QueryBlockHeaderEvent> queryBlockHeaderEvents =
@@ -169,11 +174,13 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
 
         for (EthWrapper.SuperblockEvent semiApprovedSuperblockEvent : semiApprovedSuperblockEvents) {
-            Superblock descendant = superblockChain.getFirstDescendant(semiApprovedSuperblockEvent.superblockId);
-            if (descendant != null) {
-                log.info("Found superblock {}, descendant of semi-approved {}. Sending it now.",
-                        descendant.getSuperblockId(), semiApprovedSuperblockEvent.superblockId);
-                ethWrapper.sendStoreSuperblock(descendant);
+            if (isMine(semiApprovedSuperblockEvent)) {
+                Superblock descendant = superblockChain.getFirstDescendant(semiApprovedSuperblockEvent.superblockId);
+                if (descendant != null) {
+                    log.info("Found superblock {}, descendant of semi-approved {}. Sending it now.",
+                            descendant.getSuperblockId(), semiApprovedSuperblockEvent.superblockId);
+                    ethWrapper.sendStoreSuperblock(descendant);
+                }
             }
         }
     }
@@ -205,6 +212,17 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             if (battleMap.containsKey(errorBattleEvent.sessionId)) {
                 log.info("ErrorBattle. Session ID: {}, error: {}", errorBattleEvent.sessionId, errorBattleEvent.err);
             }
+        }
+    }
+
+    private void getPendingClaims(long fromBlock, long toBlock) throws IOException, InterruptedException {
+        Thread.sleep(200);
+        List<EthWrapper.SuperblockClaimPendingEvent> superblockClaimPendingEvents =
+                ethWrapper.getSuperblockClaimPendingEvents(fromBlock, toBlock);
+        for (EthWrapper.SuperblockClaimPendingEvent superblockClaimPendingEvent : superblockClaimPendingEvents) {
+//            if (superblockClaimPendingEvent.claimant.equals(myAddress)) {
+                log.debug("Superblock claim {} pending");
+//            }
         }
     }
 
@@ -263,11 +281,25 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         Keccak256Hash superblockId = superblock.getSuperblockId();
         Superblock descendant = superblockChain.getFirstDescendant(superblockId);
         if (descendant == null) {
+            log.debug("No descendant found for superblock {}", superblock.getSuperblockId());
             return false;
         } else {
             Keccak256Hash descendantId = descendant.getSuperblockId();
+            log.debug("Descendant {} found for superblock {}", descendantId, superblock.getSuperblockId());
+            log.debug("Status of descendant: {}", ethWrapper.getSuperblockStatus(descendantId));
             return (ethWrapper.isSuperblockSemiApproved(descendantId) &&
                     ethWrapper.isSuperblockSemiApproved(superblockId));
+        }
+    }
+
+    private void logSemiApproved(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.SuperblockEvent> semiApprovedSuperblocks =
+                ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
+
+        for (EthWrapper.SuperblockEvent superblockEvent : semiApprovedSuperblocks) {
+            if (isMine(superblockEvent)) {
+                log.debug("Semi-approved: {}", superblockEvent.superblockId);
+            }
         }
     }
 
