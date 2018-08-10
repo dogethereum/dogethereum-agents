@@ -797,6 +797,39 @@ public class EthWrapper implements SuperblockConstantProvider {
         public String submitter;
     }
 
+    public List<ResolvedScryptHashValidationEvent> getResolvedScryptHashValidation(long startBlock, long endBlock)
+            throws IOException {
+        List<ResolvedScryptHashValidationEvent> result = new ArrayList<>();
+        List<DogeClaimManager.ResolvedScryptHashValidationEventResponse> resolvedScryptHashValidationEvents =
+                claimManagerForChallenges.getResolvedScryptHashValidationEventResponses(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+
+        for (DogeClaimManager.ResolvedScryptHashValidationEventResponse response : resolvedScryptHashValidationEvents) {
+            ResolvedScryptHashValidationEvent resolvedScryptHashValidationEvent = new ResolvedScryptHashValidationEvent();
+            resolvedScryptHashValidationEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+            resolvedScryptHashValidationEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
+            resolvedScryptHashValidationEvent.blockScryptHash = response.blockScryptHash;
+            resolvedScryptHashValidationEvent.blockSha256Hash = Sha256Hash.wrap(response.blockSha256Hash);
+            resolvedScryptHashValidationEvent.proposalId = Keccak256Hash.wrap(response.proposalId);
+            resolvedScryptHashValidationEvent.challenger = response.challenger;
+            resolvedScryptHashValidationEvent.valid = response.valid;
+            result.add(resolvedScryptHashValidationEvent);
+        }
+
+        return result;
+    }
+
+    public static class ResolvedScryptHashValidationEvent {
+        public Keccak256Hash superblockId;
+        public Keccak256Hash sessionId;
+        public byte[] blockScryptHash;
+        public Sha256Hash blockSha256Hash;
+        public Keccak256Hash proposalId;
+        public String challenger;
+        public boolean valid;
+    }
+
     /* ---------------------------------- */
     /* --------- Battle section --------- */
     /* ---------------------------------- */

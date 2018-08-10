@@ -1,24 +1,16 @@
 package org.dogethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
-import org.bitcoinj.core.AltcoinBlock;
 import org.bitcoinj.core.Sha256Hash;
-import org.bitcoinj.store.BlockStoreException;
-import org.dogethereum.agents.core.dogecoin.SuperblockUtils;
 import org.dogethereum.agents.core.eth.EthWrapper;
 import org.dogethereum.agents.core.dogecoin.Keccak256Hash;
 import org.dogethereum.agents.core.dogecoin.Superblock;
-import org.dogethereum.agents.core.eth.EthWrapper;
-import org.spongycastle.util.encoders.Hex;
+import org.libdohj.core.Utils;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-
-import org.web3j.crypto.Hash;
-import org.web3j.protocol.core.methods.response.TransactionReceipt;
 
 /**
  * Monitors the Ethereum blockchain for superblock-related events
@@ -51,6 +43,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             respondToNewBattles(fromBlock, toBlock);
             respondToMerkleRootHashesEventResponses(fromBlock, toBlock);
             respondToBlockHeaderEventResponses(fromBlock, toBlock);
+            respondToResolveScryptHashValidation(fromBlock, toBlock);
             deleteFinishedBattles(fromBlock, toBlock);
 
             getSemiApproved(fromBlock, toBlock);
@@ -211,19 +204,87 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      */
     private void reactToBlockHeaderResponse(EthWrapper.RespondBlockHeaderEvent defenderResponse) throws Exception {
         Sha256Hash dogeBlockHash = Sha256Hash.wrapReversed(Sha256Hash.hashTwice(defenderResponse.blockHeader));
-        Keccak256Hash sessionId = defenderResponse.sessionId;
+        Sha256Hash proposedBlockScryptHash = Sha256Hash.wrap(defenderResponse.blockScryptHash);
+        Sha256Hash scryptBlockHash = Sha256Hash.wrap(Utils.scryptDigest(defenderResponse.powBlockHeader));
+
+        if (!verifyScryptHashAndSendValidationRequest(defenderResponse.sessionId, defenderResponse.superblockId, dogeBlockHash, proposedBlockScryptHash, scryptBlockHash)) {
+            queryNextBlockHeaderOrVerifySuperblock(defenderResponse.sessionId, defenderResponse.superblockId, dogeBlockHash);
+        }
+    }
+
+    /**
+     * Query the next block header or end battle verifying the superblock.
+     * @param sessionId Battle's session ID
+     * @param superblockId Superblock ID
+     * @param dogeBlockHash Doge block hash
+     * @param proposedBlockScryptHash Proposes scrypt hash
+     * @param scryptBlockHash Calculated scrypt hash
+     */
+    private boolean verifyScryptHashAndSendValidationRequest(Keccak256Hash sessionId, Keccak256Hash superblockId, Sha256Hash dogeBlockHash, Sha256Hash proposedBlockScryptHash, Sha256Hash scryptBlockHash) {
+        if (!proposedBlockScryptHash.equals(scryptBlockHash)) {
+            log.info("Sending request to validate scrypt hash session {}, superblock {}, scrypt hash {}, block {}",
+                    sessionId, superblockId, proposedBlockScryptHash, dogeBlockHash);
+            ethWrapper.requestScryptHashValidation(superblockId, sessionId, dogeBlockHash);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Query the next block header or end battle verifying the superblock.
+     * @param sessionId Battle's session ID
+     * @param superblockId Superblock ID
+     * @param dogeBlockHash Last Doge block hash requested
+     * @throws Exception
+     */
+    private void queryNextBlockHeaderOrVerifySuperblock(Keccak256Hash sessionId, Keccak256Hash superblockId, Sha256Hash dogeBlockHash) throws Exception {
         List<Sha256Hash> sessionDogeBlockHashes = ethWrapper.getDogeBlockHashes(sessionId);
         Sha256Hash nextDogeBlockHash = getNextHashToQuery(dogeBlockHash, sessionDogeBlockHashes);
 
         if (nextDogeBlockHash != null) {
             // not last hash
             log.info("Querying block header {}", nextDogeBlockHash);
-            ethWrapper.queryBlockHeader(defenderResponse.superblockId, sessionId, nextDogeBlockHash);
+            ethWrapper.queryBlockHeader(superblockId, sessionId, nextDogeBlockHash);
         } else {
             // last hash; end battle
-            log.info("All block hashes for superblock {} have been received. Verifying it now.",
-                    defenderResponse.superblockId);
+            log.info("All block hashes for superblock {} have been received. Verifying it now.", superblockId);
             ethWrapper.verifySuperblock(sessionId, ethWrapper.getClaimManagerForChallenges());
+        }
+    }
+
+    /**
+     * For scrypt hash validation events corresponding to battles that the challenger is taking part in,
+     * query the next block header or finish the battle.
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
+    private void respondToResolveScryptHashValidation(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.ResolvedScryptHashValidationEvent> defenderResponses =
+                ethWrapper.getResolvedScryptHashValidation(fromBlock, toBlock);
+
+        for (EthWrapper.ResolvedScryptHashValidationEvent defenderResponse : defenderResponses) {
+            if (isMine(defenderResponse)) {
+                reactToResolveScryptHashValidation(defenderResponse);
+            }
+        }
+    }
+
+    /**
+     * When scrypt hash validation is complete query the next block header or end the battle.
+     * @param defenderResponse Doge block hash response from defender.
+     * @throws Exception
+     */
+    private void reactToResolveScryptHashValidation(EthWrapper.ResolvedScryptHashValidationEvent defenderResponse) throws Exception {
+        if (defenderResponse.valid) {
+            log.info("Scrypt hash validation finished session {}, superblock {}, block {}, scrypt {}",
+                    defenderResponse.sessionId, defenderResponse.superblockId, defenderResponse.blockSha256Hash,
+                    defenderResponse.blockScryptHash);
+
+            queryNextBlockHeaderOrVerifySuperblock(defenderResponse.sessionId, defenderResponse.superblockId, defenderResponse.blockSha256Hash);
+        } else {
+            // Scrypt hash
+            log.info("Scrypt hash verification failed! session {}, superblock {}", defenderResponse.sessionId, defenderResponse.superblockId);
         }
     }
 
@@ -261,6 +322,10 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     private boolean isMine(EthWrapper.RespondBlockHeaderEvent respondBlockHeaderEvent) {
         return respondBlockHeaderEvent.challenger.equals(myAddress);
+    }
+
+    private boolean isMine(EthWrapper.ResolvedScryptHashValidationEvent resolvedScryptHashValidationEvent) {
+        return resolvedScryptHashValidationEvent.challenger.equals(myAddress);
     }
 
     private boolean challengedByMe(EthWrapper.SuperblockEvent superblockEvent) throws Exception {

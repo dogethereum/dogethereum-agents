@@ -37,6 +37,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     @Override
     public long reactToEvents(long fromBlock, long toBlock) {
         try {
+            respondToRequestScryptHashValidation(fromBlock, toBlock);
             respondToBlockHeaderQueries(fromBlock, toBlock);
             respondToMerkleRootHashesQueries(fromBlock, toBlock);
             sendDescendantsOfSemiApproved(fromBlock, toBlock);
@@ -186,6 +187,11 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                                 "block {}, scrypt hash {}. Responding now.",
                         requestScryptHashValidationEvent.sessionId, requestScryptHashValidationEvent.superblockId,
                         dogeBlockHash, Sha256Hash.wrap(requestScryptHashValidationEvent.blockScryptHash));
+                ethWrapper.checkScrypt(requestScryptHashValidationEvent.sessionId,
+                        requestScryptHashValidationEvent.superblockId,
+                        requestScryptHashValidationEvent.proposalId,
+                        requestScryptHashValidationEvent.blockHeader,
+                        requestScryptHashValidationEvent.blockScryptHash);
             }
         }
     }
