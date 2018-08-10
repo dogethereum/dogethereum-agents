@@ -299,12 +299,14 @@ public abstract class SuperblockBaseClient {
     }
 
     void deleteSuperblockBattles(Keccak256Hash superblockId) {
-        HashSet<Keccak256Hash> superblockBattles = superblockBattleMap.get(superblockId);
+        if (superblockBattleMap.containsKey(superblockId)) {
+            HashSet<Keccak256Hash> superblockBattles = superblockBattleMap.get(superblockId);
 
-        for (Keccak256Hash sessionId : superblockBattles) {
-            battleMap.remove(sessionId);
+            for (Keccak256Hash sessionId : superblockBattles) {
+                battleMap.remove(sessionId);
+            }
+
+            superblockBattleMap.remove(superblockId);
         }
-
-        superblockBattleMap.remove(superblockId);
     }
 }
