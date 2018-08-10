@@ -132,9 +132,7 @@ public class DogeSuperblocksExtended extends DogeSuperblocks {
             throws IOException {
         final Event event = new Event("SemiApprovedSuperblock",
                 Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {
-                }, new TypeReference<Address>() {
-                }));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
 
         List<SemiApprovedSuperblockEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
