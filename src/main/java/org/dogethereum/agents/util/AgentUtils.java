@@ -59,12 +59,18 @@ public class AgentUtils {
         return (valueSentToMeSignum > 0 && !valueSentToMe.isLessThan(agentConstants.getMinimumLockTxValue()));
     }
 
-    public static boolean isReleaseTx(Transaction tx, AgentConstants agentConstants, OperatorPublicKeyHandler keyHandler) {
+    public static boolean isReleaseTx(Transaction tx, Wallet wallet, OperatorPublicKeyHandler keyHandler) {
         int i = 0;
         for (TransactionInput transactionInput : tx.getInputs()) {
             try {
                 transactionInput.getScriptSig().correctlySpends(tx, i, keyHandler.getOutputScript(), Script.ALL_VERIFY_FLAGS);
                 // There is an input spending from the operator address, this is a release tx
+                Coin valueSentToMe = tx.getValueSentToMe(wallet);
+                int valueSentToMeSignum = valueSentToMe.signum();
+                if (valueSentToMeSignum <= 0) {
+                    // there is no change to be submitted to the contract
+                    continue;
+                }
                 return true;
             } catch (ScriptException se) {
                 // do-nothing, input does not spends from the operator address
