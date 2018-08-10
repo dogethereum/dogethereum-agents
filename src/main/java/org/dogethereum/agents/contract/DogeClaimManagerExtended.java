@@ -379,4 +379,32 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
 
         return result;
     }
+
+    public List<SuperblockClaimPendingEventResponse> getSuperblockClaimPendingEventResponses(
+            DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) throws IOException {
+        final Event event = new Event("SuperblockClaimPending",
+                Arrays.<TypeReference<?>>asList(),
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {},
+                        new TypeReference<Bytes32>() {}));
+
+        List<SuperblockClaimPendingEventResponse> result = new ArrayList<>();
+        EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
+        filter.addSingleTopic(EventEncoder.encode(event));
+        EthLog ethLog = web3j.ethGetLogs(filter).send();
+        List<EthLog.LogResult> logResults = ethLog.getLogs();
+
+        for (EthLog.LogResult logResult : logResults) {
+            Log log = (Log) logResult.get();
+            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+
+            SuperblockClaimPendingEventResponse newSuperblockClaimPendingEventResponse =
+                    new SuperblockClaimPendingEventResponse();
+            newSuperblockClaimPendingEventResponse.log = eventValues.getLog();
+            newSuperblockClaimPendingEventResponse.claimId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            newSuperblockClaimPendingEventResponse.claimant = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            result.add(newSuperblockClaimPendingEventResponse);
+        }
+
+        return result;
+    }
 }
