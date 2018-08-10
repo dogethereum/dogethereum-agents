@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.AltcoinBlock;
 import org.bitcoinj.core.StoredBlock;
 import org.bitcoinj.store.BlockStoreException;
+import org.bitcoinj.core.Sha256Hash;
 import org.dogethereum.agents.core.dogecoin.*;
 import org.dogethereum.agents.core.eth.EthWrapper;
 import org.springframework.stereotype.Service;
