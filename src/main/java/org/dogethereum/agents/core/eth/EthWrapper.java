@@ -754,7 +754,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         public byte[] powBlockHeader;
     }
 
-    // TODO: see if this should be deleted
     public List<SuperblockBattleDecidedEvent> getSuperblockBattleDecidedEvents(long startBlock, long endBlock)
             throws IOException {
         List<SuperblockBattleDecidedEvent> result = new ArrayList<>();
