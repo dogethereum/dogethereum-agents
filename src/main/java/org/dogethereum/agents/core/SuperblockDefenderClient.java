@@ -39,8 +39,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         try {
             respondToBlockHeaderQueries(fromBlock, toBlock);
             respondToMerkleRootHashesQueries(fromBlock, toBlock);
-            deleteFinishedBattles(fromBlock, toBlock);
             sendDescendantsOfSemiApproved(fromBlock, toBlock);
+//            deleteFinishedBattles(fromBlock, toBlock);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return latestEthBlockProcessed;
@@ -53,6 +53,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         try {
             confirmEarliestApprovableSuperblock();
             callBattleTimeouts();
+            confirmDescendantsOfSemiApproved();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
@@ -63,6 +64,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     /* ---- CONFIRMING/DEFENDING ---- */
 
     /* - Reacting to elapsed time - */
+
     /**
      * Find earliest superblock that's unchallenged and stored locally,
      * but not confirmed in Dogethereum Contracts, and confirm it if its timeout has passed
@@ -95,6 +97,19 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 Keccak256Hash descendantId = superblockChain.getFirstDescendant(toConfirmId).getSuperblockId();
                 log.info("Confirming semi-approved superblock {}", toConfirmId);
                 ethWrapper.confirmClaim(toConfirmId, descendantId);
+            }
+        }
+    }
+
+    /**
+     * Confirm superblocks for which the defender has won all the battles, but whose parent might not be approved.
+     * @throws Exception
+     */
+    private void confirmDescendantsOfSemiApproved() throws Exception {
+        for (Keccak256Hash sessionId : battleMap.keySet()) {
+            Keccak256Hash superblockId = battleMap.get(sessionId);
+            if (inBattleAndSemiApprovable(superblockChain.getSuperblock(superblockId))) {
+                ethWrapper.checkClaimFinished(superblockId);
             }
         }
     }
