@@ -215,17 +215,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         }
     }
 
-    private void getPendingClaims(long fromBlock, long toBlock) throws IOException, InterruptedException {
-        Thread.sleep(200);
-        List<EthWrapper.SuperblockClaimPendingEvent> superblockClaimPendingEvents =
-                ethWrapper.getSuperblockClaimPendingEvents(fromBlock, toBlock);
-        for (EthWrapper.SuperblockClaimPendingEvent superblockClaimPendingEvent : superblockClaimPendingEvents) {
-//            if (superblockClaimPendingEvent.claimant.equals(myAddress)) {
-                log.debug("Superblock claim {} pending");
-//            }
-        }
-    }
-
 
     /* ---- HELPER METHODS ---- */
 
