@@ -13,6 +13,7 @@ import org.dogethereum.agents.core.dogecoin.SuperblockUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+import org.libdohj.core.ScryptHash;
 import org.spongycastle.util.encoders.Hex;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -798,7 +799,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             RequestScryptHashValidationEvent requestScryptHashValidationEvent = new RequestScryptHashValidationEvent();
             requestScryptHashValidationEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
             requestScryptHashValidationEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
-            requestScryptHashValidationEvent.blockScryptHash = response.blockScryptHash;
+            requestScryptHashValidationEvent.blockScryptHash = (ScryptHash) ScryptHash.wrap(response.blockScryptHash);
             requestScryptHashValidationEvent.blockHeader = response.blockHeader;
             requestScryptHashValidationEvent.proposalId = Keccak256Hash.wrap(response.proposalId);
             requestScryptHashValidationEvent.submitter = response.submitter;
@@ -811,7 +812,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     public static class RequestScryptHashValidationEvent {
         public Keccak256Hash superblockId;
         public Keccak256Hash sessionId;
-        public byte[] blockScryptHash;
+        public ScryptHash blockScryptHash;
         public byte[] blockHeader;
         public Keccak256Hash proposalId;
         public String submitter;
@@ -829,7 +830,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             ResolvedScryptHashValidationEvent resolvedScryptHashValidationEvent = new ResolvedScryptHashValidationEvent();
             resolvedScryptHashValidationEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
             resolvedScryptHashValidationEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
-            resolvedScryptHashValidationEvent.blockScryptHash = response.blockScryptHash;
+            resolvedScryptHashValidationEvent.blockScryptHash = (ScryptHash) ScryptHash.wrap(response.blockScryptHash);
             resolvedScryptHashValidationEvent.blockSha256Hash = Sha256Hash.wrap(response.blockSha256Hash);
             resolvedScryptHashValidationEvent.proposalId = Keccak256Hash.wrap(response.proposalId);
             resolvedScryptHashValidationEvent.challenger = response.challenger;
@@ -843,7 +844,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     public static class ResolvedScryptHashValidationEvent {
         public Keccak256Hash superblockId;
         public Keccak256Hash sessionId;
-        public byte[] blockScryptHash;
+        public ScryptHash blockScryptHash;
         public Sha256Hash blockSha256Hash;
         public Keccak256Hash proposalId;
         public String challenger;
@@ -1109,14 +1110,17 @@ public class EthWrapper implements SuperblockConstantProvider {
         public byte[] operatorPublicKeyHash;
     }
 
+
     /* ---------------------------------- */
     /* --------- Scrypt verifier -------- */
     /* ---------------------------------- */
 
-    public void checkScrypt(Keccak256Hash sessionId, Keccak256Hash superblockId, Keccak256Hash proposalId, byte[] data, byte[] blockScryptHash) {
+    public void checkScrypt(Keccak256Hash sessionId, Keccak256Hash superblockId, Keccak256Hash proposalId,
+                            byte[] data, ScryptHash blockScryptHash) {
         log.info("Send scrypt hash for verification session {}, superblock {}", sessionId, superblockId);
         CompletableFuture<TransactionReceipt> futureReceipt = scryptVerifier.checkScrypt(
-                data, blockScryptHash, proposalId.getBytes(), claimManager.getContractAddress(), BigInteger.ZERO).sendAsync();
+                data, blockScryptHash.getBytes(), proposalId.getBytes(), claimManager.getContractAddress(),
+                BigInteger.ZERO).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("checkScrypt receipt {}", receipt.toString()));
     }

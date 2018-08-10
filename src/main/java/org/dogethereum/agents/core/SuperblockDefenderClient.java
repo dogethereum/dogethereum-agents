@@ -59,7 +59,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
 
-
     /* ---- CONFIRMING/DEFENDING ---- */
 
     /* - Reacting to elapsed time - */
@@ -185,7 +184,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 log.info("Request scrypt hash verification for session {}, superblock {}, " +
                                 "block {}, scrypt hash {}. Responding now.",
                         requestScryptHashValidationEvent.sessionId, requestScryptHashValidationEvent.superblockId,
-                        dogeBlockHash, Sha256Hash.wrap(requestScryptHashValidationEvent.blockScryptHash));
+                        dogeBlockHash, requestScryptHashValidationEvent.blockScryptHash);
                 ethWrapper.checkScrypt(requestScryptHashValidationEvent.sessionId,
                         requestScryptHashValidationEvent.superblockId,
                         requestScryptHashValidationEvent.proposalId,
