@@ -37,11 +37,11 @@ public abstract class SuperblockBaseClient {
     protected String myAddress;
 
     protected long latestEthBlockProcessed;
-    protected HashSet<Keccak256Hash> battleSet;
+    protected HashMap<Keccak256Hash, Keccak256Hash> battleMap;
 
     protected File dataDirectory;
     protected File latestEthBlockProcessedFile;
-    protected File battleSetFile;
+    protected File battleMapFile;
 
     public SuperblockBaseClient(String clientName) {
         this.clientName = clientName;
@@ -54,7 +54,7 @@ public abstract class SuperblockBaseClient {
             setupFiles();
 
             restoreLatestEthBlockProcessed();
-            restoreBattleSet();
+            restoreBattleMap();
 
             setupClient();
 
@@ -68,7 +68,7 @@ public abstract class SuperblockBaseClient {
             log.info("{} tearDown starting...", clientName);
 
             flushLatestEthBlockProcessed();
-            flushBattleSet();
+            flushBattleMap();
 
             log.info("{} tearDown finished.", clientName);
         }
@@ -104,7 +104,7 @@ public abstract class SuperblockBaseClient {
                     latestEthBlockProcessed = reactToEvents(fromBlock, toBlock);
 
                     flushLatestEthBlockProcessed();
-                    flushBattleSet();
+                    flushBattleMap();
 
                 } else {
                     log.warn("SuperblocksBaseClientTimerTask skipped because the eth node is syncing blocks");
@@ -124,7 +124,7 @@ public abstract class SuperblockBaseClient {
 
     protected abstract String getLastEthBlockProcessedFilename();
 
-    protected abstract String getBattleSetFilename();
+    protected abstract String getBattleMapFilename();
 
     protected abstract void setupClient();
 
@@ -150,8 +150,8 @@ public abstract class SuperblockBaseClient {
         this.dataDirectory = new File(config.dataDirectory());
         this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() +
                 "/" + getLastEthBlockProcessedFilename());
-        this.battleSet =  new HashSet<>();
-        this.battleSetFile = new File(dataDirectory.getAbsolutePath() + "/" + getBattleSetFilename());
+        this.battleMap =  new HashMap<>();
+        this.battleMapFile = new File(dataDirectory.getAbsolutePath() + "/" + getBattleMapFilename());
 
     }
 
@@ -185,30 +185,30 @@ public abstract class SuperblockBaseClient {
         }
     }
 
-    private void restoreBattleSet() throws IOException, ClassNotFoundException {
-        if (battleSetFile.exists()) {
+    private void restoreBattleMap() throws IOException, ClassNotFoundException {
+        if (battleMapFile.exists()) {
             synchronized (this) {
                 try (
-                    FileInputStream battleSetFileIs = new FileInputStream(battleSetFile);
-                    ObjectInputStream battleSetObjectIs = new ObjectInputStream(battleSetFileIs);
+                    FileInputStream battleMapFileIs = new FileInputStream(battleMapFile);
+                    ObjectInputStream battleMapObjectIs = new ObjectInputStream(battleMapFileIs);
                 ) {
-                    battleSet = (HashSet<Keccak256Hash>) battleSetObjectIs.readObject();
+                    battleMap = (HashMap<Keccak256Hash, Keccak256Hash>) battleMapObjectIs.readObject();
                 }
             }
         }
     }
 
-    private void flushBattleSet() throws IOException {
+    private void flushBattleMap() throws IOException {
         if (!dataDirectory.exists()) {
             if (!dataDirectory.mkdirs()) {
                 throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());
             }
         }
         try (
-            FileOutputStream battleSetFileOs = new FileOutputStream(battleSetFile);
-            ObjectOutputStream battleSetObjectOs = new ObjectOutputStream(battleSetFileOs);
+            FileOutputStream battleMapFileOs = new FileOutputStream(battleMapFile);
+            ObjectOutputStream battleMapObjectOs = new ObjectOutputStream(battleMapFileOs);
         ) {
-            battleSetObjectOs.writeObject(battleSet);
+            battleMapObjectOs.writeObject(battleMap);
         }
     }
 
@@ -225,7 +225,7 @@ public abstract class SuperblockBaseClient {
         List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
         for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
             if (isMine(newBattleEvent))
-                battleSet.add(newBattleEvent.sessionId);
+                battleMap.put(newBattleEvent.sessionId, newBattleEvent.superblockId);
         }
     }
 

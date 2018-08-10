@@ -299,8 +299,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     @Override
-    protected String getBattleSetFilename() {
-        return "SuperblockChallengerBattleSet.dat";
+    protected String getBattleMapFilename() {
+        return "SuperblockChallengerBattleMap.dat";
     }
 
     @Override
@@ -315,7 +315,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     @Override
     protected void callBattleTimeouts() throws Exception {
-        for (Keccak256Hash sessionId : battleSet) {
+        for (Keccak256Hash sessionId : battleMap.keySet()) {
             if (ethWrapper.getSubmitterHitTimeout(sessionId)) {
                 log.info("Submitter hit timeout on session {}. Calling timeout.", sessionId);
                 ethWrapper.timeout(sessionId, ethWrapper.getClaimManagerForChallenges());
@@ -342,19 +342,19 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock, ethWrapper.getClaimManagerForChallenges());
 
         if (!submitterConvictedEvents.isEmpty()) {
-            log.debug("Battles before deletion: {}", battleSet);
+            log.debug("Battles before deletion: {}", battleMap.keySet());
         }
 
         for (EthWrapper.SubmitterConvictedEvent submitterConvictedEvent : submitterConvictedEvents) {
-            if (battleSet.contains(submitterConvictedEvent.sessionId)) {
+            if (battleMap.containsKey(submitterConvictedEvent.sessionId)) {
                 log.info("Submitter convicted on session {}, superblock {}. Battle won!",
                         submitterConvictedEvent.sessionId, submitterConvictedEvent.superblockId);
-                battleSet.remove(submitterConvictedEvent.sessionId);
+                battleMap.remove(submitterConvictedEvent.sessionId);
             }
         }
 
         if (!submitterConvictedEvents.isEmpty()) {
-            log.debug("Battles after deletion: {}", battleSet);
+            log.debug("Battles after deletion: {}", battleMap.keySet());
         }
     }
 
@@ -372,20 +372,20 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock, ethWrapper.getClaimManagerForChallenges());
 
         if (!challengerConvictedEvents.isEmpty()) {
-            log.debug("Battles before deletion: {}", battleSet);
+            log.debug("Battles before deletion: {}", battleMap.keySet());
         }
 
         for (EthWrapper.ChallengerConvictedEvent challengerConvictedEvent : challengerConvictedEvents) {
             if (challengerConvictedEvent.challenger.equals(myAddress)) {
                 log.info("Challenger convicted on session {}, superblock {}. Battle lost!",
                         challengerConvictedEvent.sessionId, challengerConvictedEvent.superblockId);
-                battleSet.remove(challengerConvictedEvent.sessionId);
+                battleMap.remove(challengerConvictedEvent.sessionId);
                 // TODO: see if this should have some fault tolerance for battles that were erroneously not added to set
             }
         }
 
         if (!challengerConvictedEvents.isEmpty()) {
-            log.debug("Battles after deletion: {}", battleSet);
+            log.debug("Battles after deletion: {}", battleMap.keySet());
         }
     }
 
