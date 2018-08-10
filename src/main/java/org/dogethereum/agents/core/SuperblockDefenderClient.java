@@ -39,8 +39,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         try {
             respondToBlockHeaderQueries(fromBlock, toBlock);
             respondToMerkleRootHashesQueries(fromBlock, toBlock);
-            logErrorBattleEvents(fromBlock, toBlock);
             deleteFinishedBattles(fromBlock, toBlock);
+            sendDescendantsOfSemiApproved(fromBlock, toBlock);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return latestEthBlockProcessed;
@@ -114,7 +114,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                         queryBlockHeader.dogeBlockHash, queryBlockHeader.sessionId);
                 List<Sha256Hash> allDogeBlockHashes =
                         superblockChain.getSuperblock(queryBlockHeader.superblockId).getDogeBlockHashes();
-                log.debug("Superblock hashes: {}", allDogeBlockHashes);
+//                log.debug("Superblock hashes: {}", allDogeBlockHashes);
 
                 StoredBlock dogeBlock = dogecoinWrapper.getBlock(queryBlockHeader.dogeBlockHash);
                 ethWrapper.respondBlockHeader(queryBlockHeader.superblockId, queryBlockHeader.sessionId,
@@ -182,6 +182,18 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             if (battleSet.contains(errorBattleEvent.sessionId)) {
                 log.info("ErrorBattle. Session ID: {}, error: {}", errorBattleEvent.sessionId, errorBattleEvent.err);
             }
+        }
+    }
+
+    private void getPendingClaims(long fromBlock, long toBlock) throws IOException, InterruptedException {
+        Thread.sleep(200);
+        log.debug("/////// PENDING CLAIMS");
+        List<EthWrapper.SuperblockClaimPendingEvent> superblockClaimPendingEvents =
+                ethWrapper.getSuperblockClaimPendingEvents(fromBlock, toBlock);
+        for (EthWrapper.SuperblockClaimPendingEvent superblockClaimPendingEvent : superblockClaimPendingEvents) {
+//            if (superblockClaimPendingEvent.claimant.equals(myAddress)) {
+                log.debug("Superblock claim {} pending");
+//            }
         }
     }
 
