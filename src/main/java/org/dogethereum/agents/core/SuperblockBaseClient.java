@@ -36,8 +36,11 @@ public abstract class SuperblockBaseClient {
 
     protected String myAddress;
 
+    // These 2 structures have the same data. Data is duplicated for performance using it.
     protected long latestEthBlockProcessed;
+    // key: session id, value: superblock id
     protected HashMap<Keccak256Hash, Keccak256Hash> battleMap;
+    // key: superblock id, value: list of session id
     protected HashMap<Keccak256Hash, HashSet<Keccak256Hash>> superblockBattleMap;
 
     protected File dataDirectory;
