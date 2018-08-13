@@ -799,7 +799,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             RequestScryptHashValidationEvent requestScryptHashValidationEvent = new RequestScryptHashValidationEvent();
             requestScryptHashValidationEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
             requestScryptHashValidationEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
-            requestScryptHashValidationEvent.blockScryptHash = (ScryptHash) ScryptHash.wrap(response.blockScryptHash);
+            requestScryptHashValidationEvent.blockScryptHash = new ScryptHash(response.blockScryptHash);
             requestScryptHashValidationEvent.blockHeader = response.blockHeader;
             requestScryptHashValidationEvent.proposalId = Keccak256Hash.wrap(response.proposalId);
             requestScryptHashValidationEvent.submitter = response.submitter;
@@ -830,7 +830,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             ResolvedScryptHashValidationEvent resolvedScryptHashValidationEvent = new ResolvedScryptHashValidationEvent();
             resolvedScryptHashValidationEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
             resolvedScryptHashValidationEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
-            resolvedScryptHashValidationEvent.blockScryptHash = (ScryptHash) ScryptHash.wrap(response.blockScryptHash);
+            resolvedScryptHashValidationEvent.blockScryptHash = new ScryptHash(response.blockScryptHash);
             resolvedScryptHashValidationEvent.blockSha256Hash = Sha256Hash.wrap(response.blockSha256Hash);
             resolvedScryptHashValidationEvent.proposalId = Keccak256Hash.wrap(response.proposalId);
             resolvedScryptHashValidationEvent.challenger = response.challenger;
