@@ -80,7 +80,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      * @throws Exception
      */
     private void confirmEarliestApprovableSuperblock() throws Exception {
-        log.debug("///// Confirm earliest approvable superblock");
         Keccak256Hash bestSuperblockId = ethWrapper.getBestSuperblockId();
         Superblock chainHead = superblockChain.getChainHead();
 
@@ -96,8 +95,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             log.info("Best superblock from contracts, {}, not found in local database. Stopping.", bestSuperblockId);
         } else {
             Keccak256Hash toConfirmId = toConfirm.getSuperblockId();
-            log.debug("Superblock to confirm: {}", toConfirmId);
-            log.debug("Semi-approved: {}", ethWrapper.isSuperblockSemiApproved(toConfirmId));
 
             if (!isMine(toConfirmId)) return;
 
@@ -302,8 +299,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             return false;
         } else {
             Keccak256Hash descendantId = descendant.getSuperblockId();
-            log.debug("Descendant {} found for superblock {}", descendantId, superblock.getSuperblockId());
-            log.debug("Status of descendant: {}", ethWrapper.getSuperblockStatus(descendantId));
             return (ethWrapper.isSuperblockSemiApproved(descendantId) &&
                     ethWrapper.isSuperblockSemiApproved(superblockId));
         }
