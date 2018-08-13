@@ -169,7 +169,7 @@ public class SystemProperties {
     }
 
     public boolean isDogeBlockChallengerEnabled() {
-        return getBooleanProperty("doge.block.challenger.enabled", false);
+        return getBooleanProperty("doge.superblock.challenger.enabled", false);
     }
 
     public boolean isGanache() {
