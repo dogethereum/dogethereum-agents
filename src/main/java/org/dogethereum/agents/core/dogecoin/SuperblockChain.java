@@ -27,11 +27,11 @@ import java.util.*;
 @Slf4j(topic = "SuperblockChain")
 public class SuperblockChain {
     @Autowired
-    private DogecoinWrapper dogecoinWrapper; // Interface with the Doge blockchain
+    protected DogecoinWrapper dogecoinWrapper; // Interface with the Doge blockchain
     @Autowired
-    private SuperblockConstantProvider provider; // Interface with the Ethereum blockchain
-    private NetworkParameters params;
-    private SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
+    protected SuperblockConstantProvider provider; // Interface with the Ethereum blockchain
+    protected NetworkParameters params;
+    protected SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
 
     int SUPERBLOCK_DURATION; // time window for a superblock (in seconds)
     int SUPERBLOCK_DELAY; // time to wait before building a superblock
@@ -248,6 +248,10 @@ public class SuperblockChain {
 
     private Date getStopTime() {
         return SuperblockUtils.getNSecondsAgo(SUPERBLOCK_DELAY);
+    }
+
+    public Superblock getParent(Superblock superblock) throws IOException {
+        return getSuperblock(superblock.getParentId());
     }
 
 }

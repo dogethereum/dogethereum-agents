@@ -51,6 +51,9 @@ public class DogeToEthClient {
     @Autowired
     private SuperblockChain superblockChain;
 
+//    @Autowired
+//    private SuperblockTooEarlyChain superblockTooEarlyChain;
+
     public DogeToEthClient() {}
 
 
@@ -97,6 +100,64 @@ public class DogeToEthClient {
             }
         }
     }
+
+//    public void updateBridgeSuperblockTooEarly() throws Exception {
+//        if (ethWrapper.arePendingTransactionsForSendSuperblocksAddress()) {
+//            log.debug("Skipping sending superblocks, there are pending transaction for the sender address.");
+//        }
+//
+//        Keccak256Hash bestFromContracts = ethWrapper.getBestSuperblockId();
+//        Superblock bestFromHonestChain = superblockChain.getSuperblock(bestFromContracts);
+//        Superblock bestFromTooEarlyChain = superblockTooEarlyChain.getSuperblock(bestFromContracts);
+//        Date contractDate = null;
+//
+//        if (bestFromHonestChain != null) {
+//            contractDate = new Date(bestFromHonestChain.getLastDogeBlockTime());
+//        } else if (bestFromTooEarlyChain != null) {
+//            contractDate = new Date(bestFromTooEarlyChain.getLastDogeBlockTime());
+//        }
+//
+//        if (contractDate != null) {
+//            Superblock toSend = getNextSuperblockTooEarly(contractDate);
+//
+//            if (toSend == null) {
+//                log.debug("Bridge was just updated, no new superblocks to send. bestFromContracts: {}.",
+//                        bestFromContracts);
+//                return;
+//            }
+//
+//            if (ethWrapper.wasSuperblockAlreadySubmitted(toSend.getSuperblockId())) {
+//                log.debug("The contract already knows about the superblock, it won't be sent again: {}.",
+//                        toSend.getSuperblockId());
+//                return;
+//            }
+//
+//            log.debug("First superblock missing in the bridge: {}.", toSend.getSuperblockId());
+//            ethWrapper.sendStoreSuperblock(toSend);
+//            log.debug("Invoked sendStoreSuperblocks with superblock {}.", toSend.getSuperblockId());
+//        }
+//    }
+//
+//    private Superblock getNextSuperblockTooEarly(Date contractDate) throws BlockStoreException, IOException {
+//        Superblock currentSuperblock = superblockTooEarlyChain.getChainHead();
+//        Superblock parentSuperblock = superblockTooEarlyChain.getParent(currentSuperblock);
+//
+//        if (parentSuperblock == null) {
+//            return currentSuperblock;
+//        } else {
+//            Date parentEndDate = new Date(parentSuperblock.getLastDogeBlockTime());
+//
+//            while (parentSuperblock != null && parentEndDate.after(contractDate)) {
+//                currentSuperblock = parentSuperblock;
+//                parentSuperblock = superblockTooEarlyChain.getParent(currentSuperblock);
+//                if (parentSuperblock != null) {
+//                    parentEndDate = new Date(parentSuperblock.getLastDogeBlockTime());
+//                }
+//            }
+//        }
+//
+//        return currentSuperblock;
+//    }
 
     /**
      * Update bridge with all the superblocks that the agent has but the bridge doesn't.
@@ -326,8 +387,5 @@ public class DogeToEthClient {
         // current superblock is null
         return null;
     }
-
-
-
 }
 
