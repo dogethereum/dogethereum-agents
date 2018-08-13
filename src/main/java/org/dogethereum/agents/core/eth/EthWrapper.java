@@ -30,6 +30,7 @@ import org.web3j.protocol.http.HttpService;
 import org.web3j.tuples.generated.Tuple3;
 import org.web3j.tuples.generated.Tuple7;
 
+import org.web3j.tuples.generated.Tuple8;
 import org.web3j.tx.ClientTransactionManager;
 
 import java.io.FileReader;
@@ -1077,17 +1078,18 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     public Unlock getUnlock(Long unlockRequestId) throws Exception {
-        Tuple7<String, String, BigInteger, BigInteger, List<BigInteger>, BigInteger, byte[]> tuple =
+        Tuple8<String, String, BigInteger, BigInteger, BigInteger, List<BigInteger>, BigInteger, byte[]> tuple =
                 dogeToken.getUnlockPendingInvestorProof(BigInteger.valueOf(unlockRequestId)).send();
         Unlock unlock = new Unlock();
         unlock.from = tuple.getValue1();
         unlock.dogeAddress = tuple.getValue2();
         unlock.value = tuple.getValue3().longValue();
-        unlock.timestamp = tuple.getValue4().longValue();
-        unlock.fee = tuple.getValue6().longValue();
-        unlock.operatorPublicKeyHash = tuple.getValue7();
+        unlock.operatorFee = tuple.getValue4().longValue();
+        unlock.timestamp = tuple.getValue5().longValue();
+        unlock.dogeTxFee = tuple.getValue7().longValue();
+        unlock.operatorPublicKeyHash = tuple.getValue8();
 
-        List<BigInteger> selectedUtxosIndexes = tuple.getValue5();
+        List<BigInteger> selectedUtxosIndexes = tuple.getValue6();
         List<UTXO> selectedUtxosOutpoints = new ArrayList<>();
         for (BigInteger selectedUtxo : selectedUtxosIndexes) {
             Tuple3<BigInteger, BigInteger, BigInteger> utxo = dogeToken.getUtxo(unlock.operatorPublicKeyHash, selectedUtxo).send();
@@ -1104,9 +1106,10 @@ public class EthWrapper implements SuperblockConstantProvider {
         public String from;
         public String dogeAddress;
         public long value;
+        public long operatorFee;
         public long timestamp;
         public List<UTXO> selectedUtxos;
-        public long fee;
+        public long dogeTxFee;
         public byte[] operatorPublicKeyHash;
     }
 
