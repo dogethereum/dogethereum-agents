@@ -44,7 +44,7 @@ public class DogecoinWrapper {
     public DogecoinWrapper(OperatorPublicKeyHandler operatorPublicKeyHandler) throws Exception {
         this.operatorPublicKeyHandler = operatorPublicKeyHandler;
         this.config = SystemProperties.CONFIG;
-        if (config.isDogeBlockSubmitterEnabled() || config.isDogeTxRelayerEnabled() ||
+        if (config.isDogeSuperblockSubmitterEnabled() || config.isDogeTxRelayerEnabled() ||
                 config.isOperatorEnabled() || config.isDogeBlockChallengerEnabled() ||
                 config.isReGedientoChallengerEnabled()) {
             this.agentConstants = config.getAgentConstants();
