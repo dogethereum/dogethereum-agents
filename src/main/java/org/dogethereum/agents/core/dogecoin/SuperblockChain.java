@@ -163,17 +163,6 @@ public class SuperblockChain {
     }
 
     /**
-     * Get highest approved superblock.
-     * @return Highest approved superblock as saved on disk.
-     * @throws BlockStoreException
-     */
-    public Superblock getApprovedHead() throws BlockStoreException {
-        throw new UnsupportedOperationException("to be implemented");
-        // Oscar says: commented the line bellow because code does not compiles. There is no SuperblockLevelDBBlockStore.getApprovedHead()
-        // return superblockStorage.getApprovedHead();
-    }
-
-    /**
      * Look up a superblock by its hash.
      * @param superblockHash Keccak-256 hash of a superblock.
      * @return Superblock with given hash if it's found in the database, null otherwise.
