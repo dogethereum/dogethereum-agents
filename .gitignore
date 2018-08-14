@@ -2,7 +2,7 @@ src/main/resources/dogethereum-agents.local.conf
 src/main/resources/dogethereum-agents-thread2.conf
 src/main/resources/dogethereum-agents-defender.conf
 src/main/resources/dogethereum-agents-challenger.conf
-src/main/resources/dogethereum-agents-tooearly.conf
+src/main/resources/dogethereum-agents-malicious-defender.conf
 src/main/resources/dogethereum-agents.rinkeby.conf
 src/main/resources/dogethereum-agents.conf
 src/main/resources/dogethereum-agents-bkp.conf
@@ -25,4 +25,4 @@ target
 storage/
 defenderstorage/
 challengerstorage/
-tooearlystorage/
+maliciousstorage/
