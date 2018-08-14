@@ -31,7 +31,7 @@ public class LocalAgentConstants extends AgentConstants {
 
         dogeToEthTimerTaskPeriod = 10 * 1000;
         dogeToEthConfirmations = 1;
-        minimumLockTxValue = Coin.valueOf(150000000); // 1.5 doge
+        minimumLockTxValue = Coin.valueOf(300000000); // 3 doge
 
         List<Sha256Hash> genesisSuperblockBlockList = Lists.newArrayList(dogeParams.getGenesisBlock().getHash());
         Keccak256Hash genesisSuperblockParentId = Keccak256Hash.wrap(new byte[32]); // initialised with 0s

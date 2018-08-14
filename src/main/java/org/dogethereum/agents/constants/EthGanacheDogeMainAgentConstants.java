@@ -29,7 +29,7 @@ public class EthGanacheDogeMainAgentConstants extends AgentConstants {
 
         dogeToEthTimerTaskPeriod = 10 * 1000;
         dogeToEthConfirmations = 1;
-        minimumLockTxValue = Coin.valueOf(150000000); // 1.5 doge
+        minimumLockTxValue = Coin.valueOf(300000000); // 3 doge
 
         // Genesis Superblock for doge mainnet
         Sha256Hash blocksMerkleRoot = Sha256Hash.wrap("ff41b209ad9c306a7cf09b37982aac3604e20a97f662efb78df2f564983bae05");
