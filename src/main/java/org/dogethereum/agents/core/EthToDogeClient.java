@@ -101,9 +101,10 @@ public class EthToDogeClient {
         for (UTXO utxo : unlock.selectedUtxos) {
             totalInputValue += utxo.getValue().getValue();
         }
-        long userValue = unlock.value - unlock.operatorFee - unlock.dogeTxFee;
+        long unlockValue = unlock.value - unlock.operatorFee;
+        long userValue = unlockValue - unlock.dogeTxFee;
         tx.addOutput(Coin.valueOf(userValue), Address.fromBase58(params, unlock.dogeAddress));
-        long change = totalInputValue - userValue;
+        long change = totalInputValue - unlockValue;
         if (change > 0) {
             tx.addOutput(Coin.valueOf(change), operatorKeyHandler.getAddress());
         }
