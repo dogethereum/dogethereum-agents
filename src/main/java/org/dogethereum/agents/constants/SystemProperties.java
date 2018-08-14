@@ -156,8 +156,8 @@ public class SystemProperties {
         return getBooleanProperty("doge.superblock.submitter.enabled", false);
     }
 
-    public boolean isDogeTooEarlySubmitterEnabled() {
-        return getBooleanProperty("doge.superblock.tooearly.enabled", false);
+    public boolean isDogeMaliciousSubmitterEnabled() {
+        return getBooleanProperty("doge.superblock.malicious.enabled", false);
     }
 
     public boolean isDogeTxRelayerEnabled() {

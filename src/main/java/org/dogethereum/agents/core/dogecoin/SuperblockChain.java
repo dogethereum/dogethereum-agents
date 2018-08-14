@@ -34,7 +34,7 @@ public class SuperblockChain {
     protected SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
 
     int SUPERBLOCK_DURATION; // time window for a superblock (in seconds)
-    int SUPERBLOCK_DELAY; // time to wait before building a superblock
+    private int SUPERBLOCK_DELAY; // time to wait before building a superblock
 
 
     /* ---- CONSTRUCTION METHODS ---- */

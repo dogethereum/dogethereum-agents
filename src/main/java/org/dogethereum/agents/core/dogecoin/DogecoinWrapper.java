@@ -46,7 +46,7 @@ public class DogecoinWrapper {
         this.config = SystemProperties.CONFIG;
         if (config.isDogeSuperblockSubmitterEnabled() || config.isDogeTxRelayerEnabled() ||
                 config.isOperatorEnabled() || config.isDogeBlockChallengerEnabled() ||
-                config.isReGedientoChallengerEnabled()) {
+                config.isReGedientoChallengerEnabled() || config.isDogeMaliciousSubmitterEnabled()) {
             this.agentConstants = config.getAgentConstants();
             this.dogeContext = new Context(agentConstants.getDogeParams());
             this.dataDirectory = new File(config.dataDirectory() + "/DogecoinWrapper");
