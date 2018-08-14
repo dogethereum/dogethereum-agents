@@ -107,7 +107,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     private void confirmDescendantsOfSemiApproved() throws Exception {
         for (Keccak256Hash sessionId : battleMap.keySet()) {
             Keccak256Hash superblockId = battleMap.get(sessionId);
-            if (inBattleAndSemiApprovable(superblockChain.getSuperblock(superblockId))) {
+            Superblock superblock = superblockChain.getSuperblock(superblockId);
+            if (superblock != null && inBattleAndSemiApprovable(superblockChain.getSuperblock(superblockId))) {
                 ethWrapper.checkClaimFinished(superblockId);
             }
         }
