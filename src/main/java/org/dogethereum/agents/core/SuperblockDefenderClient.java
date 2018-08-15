@@ -47,6 +47,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             respondToRequestScryptHashValidation(fromBlock, toBlock);
             respondToMerkleRootHashesQueries(fromBlock, toBlock);
             respondToBlockHeaderQueries(fromBlock, toBlock);
+            logErrorBattleEvents(fromBlock, toBlock);
             deleteFinishedBattles(fromBlock, toBlock);
             logSemiApproved(fromBlock, toBlock);
             sendDescendantsOfSemiApproved(fromBlock, toBlock);
