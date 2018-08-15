@@ -93,7 +93,6 @@ public class SuperblockLevelDBBlockStore {
         SystemProperties config = SystemProperties.CONFIG;
         AgentConstants agentConstants = config.getAgentConstants();
         Superblock genesisSuperblock = agentConstants.getGenesisSuperblock();
-        // todo: see if this is OK
         put(genesisSuperblock);
         setChainHead(genesisSuperblock);
     }
