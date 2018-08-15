@@ -15,11 +15,14 @@ import org.dogethereum.agents.core.dogecoin.DogecoinWrapper;
 import org.dogethereum.agents.core.dogecoin.Proof;
 import org.dogethereum.agents.core.eth.EthWrapper;
 import org.dogethereum.agents.util.OperatorPublicKeyHandler;
+import org.spongycastle.util.Store;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.io.*;
+import java.math.BigInteger;
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -68,14 +71,12 @@ public class DogeToEthClient {
         }
     }
 
-
     private Date getFirstExecutionDate() {
         Calendar firstExecution = Calendar.getInstance();
         firstExecution.add(Calendar.SECOND, 20);
         return firstExecution.getTime();
     }
-
-
+    
     private class DogeToEthClientTimerTask extends TimerTask {
         @Override
         public void run() {
@@ -91,6 +92,7 @@ public class DogeToEthClient {
                     if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
                         updateBridgeTransactionsSuperblocks();
                     }
+
                 } else {
                     log.warn("DogeToEthClientTimerTask skipped because the eth node is syncing blocks");
                 }
@@ -212,16 +214,10 @@ public class DogeToEthClient {
         checkNotNull(matchedSuperblock, "No best chain superblock found");
         log.debug("Matched superblock {}.", matchedSuperblock.getSuperblockId());
 
-        // We found the superblock in the agent's best chain. Send the earliest superblock that the relay is missing.
-        Superblock nextHonest = getNextSuperblockInMainChain(matchedSuperblock.getSuperblockId());
-        Superblock toSend;
+        Superblock toSend = forgeNewChildSuperblock(matchedSuperblock);
+        superblockChain.putForgedSuperblock(toSend);
 
-        if (nextHonest == null) {
-            toSend = forgeNewSuperblock(superblockChain.getChainHead());
-            return 0;
-        } else {
-            toSend = forgeNewSuperblock(nextHonest);
-        }
+//        List<Sha256Hash> dogeBlockHashes = toSend.getDogeBlockHashes();
 
         if (ethWrapper.wasSuperblockAlreadySubmitted(toSend.getSuperblockId())) {
             log.debug("The contract already knows about the superblock, it won't be sent again: {}.",
@@ -242,22 +238,48 @@ public class DogeToEthClient {
         AltcoinBlock extraBlockHeader = (AltcoinBlock) extraBlock.getHeader();
         AltcoinBlock prevBlockHeader =
                 (AltcoinBlock) dogecoinWrapper.getBlock(extraBlockHeader.getPrevBlockHash()).getHeader();
+        AltcoinBlock lastDogeBlock =
+                (AltcoinBlock) dogecoinWrapper.getBlock(superblock.getLastDogeBlockHash()).getHeader();
+
         List<Sha256Hash> dogeBlockHashes = new ArrayList<>(superblock.getDogeBlockHashes());
         dogeBlockHashes.add(extraBlockHeader.getHash());
+
         return new Superblock(agentConstants.getDogeParams(), dogeBlockHashes, extraBlock.getChainWork(),
-                extraBlockHeader.getTimeSeconds(), prevBlockHeader.getTimeSeconds(),
+                lastDogeBlock.getTimeSeconds(), prevBlockHeader.getTimeSeconds(),
                 extraBlockHeader.getDifficultyTarget(), superblock.getParentId(),
                 superblock.getSuperblockHeight() + 1);
     }
 
-    private AltcoinBlock createFakeDogeBlock(Sha256Hash prevBlockHash) throws BlockStoreException {
+    // TODO: store it somewhere
+    private AltcoinBlock createFakeDogeBlock(Sha256Hash prevBlockHash, long time) throws BlockStoreException {
         AltcoinBlock prevBlock = (AltcoinBlock) dogecoinWrapper.getBlock(prevBlockHash).getHeader();
         long version = prevBlock.getVersion();
         Sha256Hash merkleRoot = Sha256Hash.twiceOf("fake block".getBytes());
-        long time = prevBlock.getTimeSeconds() + 1;
         List<Transaction> transactions = new ArrayList<>();
         return new AltcoinBlock(agentConstants.getDogeParams(), version, prevBlockHash, merkleRoot, time,
                 prevBlock.getDifficultyTarget(), prevBlock.getNonce(), transactions);
+    }
+
+    // Create a superblock pretending that there are no blocks between the last block from the contracts
+    // and a new fake Doge block with the same chain work as the Dogecoin chain tip
+    private Superblock forgeNewChildSuperblock(Superblock superblock) throws BlockStoreException, IOException {
+        StoredBlock topBlock = dogecoinWrapper.getChainHead();
+        long time = topBlock.getHeader().getTimeSeconds();
+        BigInteger chainWork = topBlock.getChainWork();
+        Sha256Hash prevBlockHash = superblock.getLastDogeBlockHash();
+        AltcoinBlock prevBlock = (AltcoinBlock) dogecoinWrapper.getBlock(prevBlockHash).getHeader();
+
+        AltcoinBlock fakeDogeBlock = createFakeDogeBlock(prevBlockHash, time);
+        dogecoinWrapper.storeFakeDogeBlock(fakeDogeBlock, chainWork,
+                dogecoinWrapper.getBlock(prevBlockHash).getHeight() + 1);
+
+        List<Sha256Hash> dogeBlockHashes = new ArrayList<>();
+        dogeBlockHashes.add(fakeDogeBlock.getHash());
+
+        return new Superblock(agentConstants.getDogeParams(), dogeBlockHashes, chainWork,
+                fakeDogeBlock.getTimeSeconds(), prevBlock.getTimeSeconds(),
+                fakeDogeBlock.getDifficultyTarget(), superblock.getSuperblockId(),
+                superblock.getSuperblockHeight() + 1);
     }
 
     /**
