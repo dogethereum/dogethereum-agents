@@ -21,6 +21,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PreDestroy;
 import java.io.*;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -39,6 +40,9 @@ public class DogecoinWrapper {
     private Map<Sha256Hash, List<Proof>> dogeTxToRelayToEthProofsMap = new ConcurrentHashMap<>();
     private File dogeTxToRelayToEthProofsFile;
 
+    private HashMap<Sha256Hash, StoredBlock> fakeDogeBlocks;
+    private File fakeDogeBlocksFile;
+
 
     @Autowired
     public DogecoinWrapper(OperatorPublicKeyHandler operatorPublicKeyHandler) throws Exception {
@@ -55,6 +59,7 @@ public class DogecoinWrapper {
             this.walletEnabled = config.isDogeTxRelayerEnabled() || config.isOperatorEnabled();
             setup();
             start();
+            restoreFakeDogeBlocks();
         }
     }
 
@@ -124,6 +129,8 @@ public class DogecoinWrapper {
         if (checkpoints != null) {
             kit.setCheckpoints(checkpoints);
         }
+
+        setupFakeDogeBlocks();
     }
 
     public void start() {
@@ -228,6 +235,7 @@ public class DogecoinWrapper {
 
             synchronized (this) {
                 flushProofs();
+                flushFakeDogeBlocks();
             }
             log.info("DogeToEthClient tearDown finished.");
         }
@@ -262,7 +270,55 @@ public class DogecoinWrapper {
     }
 
 
+    private void setupFakeDogeBlocks() {
+        File dataDirectory = new File(config.dataDirectory());
+        this.fakeDogeBlocksFile = new File(dataDirectory.getAbsolutePath() + "/fakeDogeBlocks.dat");
+        this.fakeDogeBlocks = new HashMap<>();
+    }
+
+    private void restoreFakeDogeBlocks() throws IOException, ClassNotFoundException {
+        if (fakeDogeBlocksFile.exists()) {
+            synchronized (this) {
+                try (
+                        FileInputStream fakeDogeBlocksFileIs = new FileInputStream(fakeDogeBlocksFile);
+                        ObjectInputStream fakeDogeBlocksObjectIs = new ObjectInputStream(fakeDogeBlocksFileIs);
+                ) {
+                    fakeDogeBlocks = (HashMap<Sha256Hash, StoredBlock>) fakeDogeBlocksObjectIs.readObject();
+                }
+            }
+        }
+    }
+
+    private void flushFakeDogeBlocks() throws IOException {
+        if (!dataDirectory.exists()) {
+            if (!dataDirectory.mkdirs()) {
+                throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());
+            }
+        }
+        try (
+                FileOutputStream fakeDogeBlocksFileOs = new FileOutputStream(fakeDogeBlocksFile);
+                ObjectOutputStream fakeDogeBlocksObjectOs = new ObjectOutputStream(fakeDogeBlocksFileOs);
+        ) {
+            fakeDogeBlocksObjectOs.writeObject(fakeDogeBlocks);
+        }
+    }
+
+
     public void broadcastDogecoinTransaction(Transaction tx) {
         kit.peerGroup().broadcastTransaction(tx);
+    }
+
+    public void storeFakeDogeBlock(AltcoinBlock fakeDogeBlock, BigInteger chainWork, int height) {
+        StoredBlock storedFakeDogeBlock = new StoredBlock(fakeDogeBlock, chainWork, height);
+        fakeDogeBlocks.put(fakeDogeBlock.getHash(), storedFakeDogeBlock);
+    }
+
+
+    public StoredBlock getFakeStoredDogeBlock(Sha256Hash blockHash) {
+        return fakeDogeBlocks.get(blockHash);
+    }
+
+    public AltcoinBlock getFakeDogeBlock(Sha256Hash blockHash) {
+        return (AltcoinBlock) getFakeStoredDogeBlock(blockHash).getHeader();
     }
 }
