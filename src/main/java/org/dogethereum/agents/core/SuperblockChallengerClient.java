@@ -277,7 +277,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      */
     private void reactToResolveScryptHashValidation(EthWrapper.ResolvedScryptHashValidationEvent defenderResponse) throws Exception {
         if (defenderResponse.valid) {
-            log.info("Scrypt hash validation finished session {}, superblock {}, block {}, scrypt {}",
+            log.info("Scrypt hash validation succeeded session {}, superblock {}, block {}, scrypt {}",
                     defenderResponse.sessionId, defenderResponse.superblockId, defenderResponse.blockSha256Hash,
                     defenderResponse.blockScryptHash);
 
@@ -285,6 +285,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         } else {
             // Scrypt hash
             log.info("Scrypt hash verification failed! session {}, superblock {}", defenderResponse.sessionId, defenderResponse.superblockId);
+            ethWrapper.verifySuperblock(defenderResponse.sessionId, ethWrapper.getClaimManagerForChallenges());
         }
     }
 
