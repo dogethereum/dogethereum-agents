@@ -522,7 +522,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* ---------------------------------- */
 
 
-    /* ---- CONFIRMING ---- */
+    /* ---- CONFIRMING/REJECTING ---- */
 
     public void checkClaimFinished(Keccak256Hash superblockId) {
         CompletableFuture<TransactionReceipt> futureReceipt =
@@ -543,6 +543,14 @@ public class EthWrapper implements SuperblockConstantProvider {
                 claimManager.confirmClaim(superblockId.getBytes(), descendantId.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("confirmClaim receipt {}", receipt.toString())
+        );
+    }
+
+    public void rejectClaim(Keccak256Hash superblockId) {
+        CompletableFuture<TransactionReceipt> futureReceipt =
+                claimManager.rejectClaim(superblockId.getBytes()).sendAsync();
+        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
+                log.info("rejectClaim receipt {}", receipt.toString())
         );
     }
 
