@@ -60,6 +60,7 @@ public abstract class SuperblockBaseClient {
 
             restoreLatestEthBlockProcessed();
             restoreBattleMap();
+            restoreSuperblockBattleMap();
 
             setupClient();
 
@@ -74,6 +75,7 @@ public abstract class SuperblockBaseClient {
 
             flushLatestEthBlockProcessed();
             flushBattleMap();
+            flushSuperblockBattleMap();
 
             log.info("{} tearDown finished.", clientName);
         }
@@ -115,6 +117,7 @@ public abstract class SuperblockBaseClient {
 
                     flushLatestEthBlockProcessed();
                     flushBattleMap();
+                    flushSuperblockBattleMap();
 
                 } else {
                     log.warn("SuperblocksBaseClientTimerTask skipped because the eth node is syncing blocks");
