@@ -79,7 +79,9 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         for (Keccak256Hash superblockId : semiApprovedSet) {
             long semiApprovedHeight = ethWrapper.getSuperblockHeight(superblockId).longValue();
             Keccak256Hash mainChainId = superblockChain.getSuperblockByHeight(semiApprovedHeight).getSuperblockId();
-            if (!mainChainId.equals(superblockId) && superblockChain.getChainHeight() >= semiApprovedHeight + 3) {
+            long confirmations = ethWrapper.getSuperblockConfirmations();
+            if (!mainChainId.equals(superblockId) &&
+                    ethWrapper.getChainHeight().longValue() >= semiApprovedHeight + confirmations) {
                 log.info("Semi-approved superblock {} not found in main chain. Invalidating.", superblockId);
                 ethWrapper.rejectClaim(superblockId);
             }

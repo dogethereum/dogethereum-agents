@@ -71,6 +71,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     private String priceOracleAddress;
     private String dogeSuperblockChallengerAddress;
 
+
     /* ---------------------------------- */
     /* ------ General code section ------ */
     /* ---------------------------------- */
@@ -226,6 +227,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         return claimManagerForChallenges;
     }
 
+
     /* ---------------------------------- */
     /* - Relay Doge superblocks section - */
     /* ---------------------------------- */
@@ -370,6 +372,10 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     public BigInteger getSuperblockHeight(Keccak256Hash superblockId) throws Exception {
         return superblocks.getSuperblockHeight(superblockId.getBytes()).send();
+    }
+
+    public BigInteger getChainHeight() throws Exception {
+        return superblocks.getChainHeight().send();
     }
 
     public List<SuperblockEvent> getNewSuperblocks(long startBlock, long endBlock) throws IOException {
@@ -859,6 +865,19 @@ public class EthWrapper implements SuperblockConstantProvider {
         public String challenger;
         public boolean valid;
     }
+
+
+    /* ---- GETTERS ---- */
+
+    public long getSuperblockConfirmations() throws Exception {
+        return claimManager.superblockConfirmations().send().longValue();
+    }
+
+    // TODO: see if this is necessary later
+    public long getSuperblockConfirmationsForChallenges() throws Exception {
+        return claimManagerForChallenges.superblockConfirmations().send().longValue();
+    }
+
 
     /* ---------------------------------- */
     /* --------- Battle section --------- */
