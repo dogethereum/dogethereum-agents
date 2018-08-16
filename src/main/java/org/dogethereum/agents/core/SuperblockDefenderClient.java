@@ -50,6 +50,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             logErrorBattleEvents(fromBlock, toBlock);
             deleteFinishedBattles(fromBlock, toBlock);
             logSemiApproved(fromBlock, toBlock);
+            logErrorClaimEvents(fromBlock, toBlock);
             sendDescendantsOfSemiApproved(fromBlock, toBlock);
 
             logErrorBattleEvents(fromBlock, toBlock);

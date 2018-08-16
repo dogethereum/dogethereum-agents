@@ -51,6 +51,13 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             removeApproved(fromBlock, toBlock);
             removeSemiApproved(fromBlock, toBlock);
             removeInvalid(fromBlock, toBlock);
+
+            logErrorClaimEvents(fromBlock, toBlock);
+            logSuperblockClaimFailedEvents(fromBlock, toBlock);
+
+            synchronized (this) {
+                flushSemiApprovedSet();
+            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return latestEthBlockProcessed;
