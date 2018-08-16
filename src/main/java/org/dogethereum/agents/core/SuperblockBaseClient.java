@@ -320,4 +320,21 @@ public abstract class SuperblockBaseClient {
             superblockBattleMap.remove(superblockId);
         }
     }
+
+    protected void logErrorClaimEvents(long fromBlock, long toBlock) throws IOException {
+        List<EthWrapper.ErrorClaimEvent> errorClaimEvents = ethWrapper.getErrorClaimEvents(fromBlock, toBlock);
+
+        for (EthWrapper.ErrorClaimEvent errorClaimEvent : errorClaimEvents) {
+            log.info("ErrorClaim. Session ID: {}, error: {}", errorClaimEvent.claimId, errorClaimEvent.err);
+        }
+    }
+
+    protected void logSuperblockClaimFailedEvents(long fromBlock, long toBlock) throws IOException {
+        List<EthWrapper.SuperblockClaimFailedEvent> superblockClaimFailedEvents =
+                ethWrapper.getSuperblockClaimFailedEvents(fromBlock, toBlock);
+
+        for (EthWrapper.SuperblockClaimFailedEvent superblockClaimFailedEvent : superblockClaimFailedEvents) {
+            log.info("SuperblockClaimFailed. Claim ID: {}", superblockClaimFailedEvent);
+        }
+    }
 }

@@ -801,6 +801,51 @@ public class EthWrapper implements SuperblockConstantProvider {
         public BigInteger err;
     }
 
+    public List<ErrorClaimEvent> getErrorClaimEvents(long startBlock, long endBlock) throws IOException {
+        List<ErrorClaimEvent> result = new ArrayList<>();
+        List<DogeClaimManager.ErrorClaimEventResponse> errorClaimEvents =
+                claimManager.getErrorClaimEventResponses(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+
+        for (DogeClaimManager.ErrorClaimEventResponse response : errorClaimEvents) {
+            ErrorClaimEvent errorClaimEvent = new ErrorClaimEvent();
+            errorClaimEvent.claimId = Keccak256Hash.wrap(response.claimId);
+            errorClaimEvent.err = response.err;
+            result.add(errorClaimEvent);
+        }
+
+        return result;
+    }
+
+    public static class ErrorClaimEvent {
+        public Keccak256Hash claimId;
+        public BigInteger err;
+    }
+
+    public List<SuperblockClaimFailedEvent> getSuperblockClaimFailedEvents(long startBlock, long endBlock)
+            throws IOException {
+        List<SuperblockClaimFailedEvent> result = new ArrayList<>();
+        List<DogeClaimManager.SuperblockClaimFailedEventResponse> superblockClaimFailedEvents =
+                claimManager.getSuperblockClaimFailedEventResponses(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+
+        for (DogeClaimManager.SuperblockClaimFailedEventResponse response : superblockClaimFailedEvents) {
+            SuperblockClaimFailedEvent superblockClaimFailedEvent = new SuperblockClaimFailedEvent();
+            superblockClaimFailedEvent.claimId = Keccak256Hash.wrap(response.claimId);
+            superblockClaimFailedEvent.claimant = response.claimant;
+            result.add(superblockClaimFailedEvent);
+        }
+
+        return result;
+    }
+
+    public static class SuperblockClaimFailedEvent {
+        Keccak256Hash claimId;
+        String claimant;
+    }
+
     public List<RequestScryptHashValidationEvent> getRequestScryptHashValidation(long startBlock, long endBlock)
             throws IOException {
         List<RequestScryptHashValidationEvent> result = new ArrayList<>();

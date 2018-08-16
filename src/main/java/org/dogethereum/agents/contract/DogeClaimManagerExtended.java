@@ -407,4 +407,59 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
 
         return result;
     }
+
+    public List<ErrorClaimEventResponse> getErrorClaimEventResponses(DefaultBlockParameter startBlock,
+                                                             DefaultBlockParameter endBlock) throws IOException {
+        final Event event = new Event("ErrorClaim",
+                Arrays.<TypeReference<?>>asList(),
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Uint256>() {}));
+
+        List<ErrorClaimEventResponse> result = new ArrayList<>();
+        EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
+        filter.addSingleTopic(EventEncoder.encode(event));
+        EthLog ethLog = web3j.ethGetLogs(filter).send();
+        List<EthLog.LogResult> logResults = ethLog.getLogs();
+
+        for (EthLog.LogResult logResult : logResults) {
+            Log log = (Log) logResult.get();
+            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+
+            ErrorClaimEventResponse newErrorClaimEventResponse =
+                    new ErrorClaimEventResponse();
+            newErrorClaimEventResponse.log = eventValues.getLog();
+            newErrorClaimEventResponse.claimId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            newErrorClaimEventResponse.err = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
+            result.add(newErrorClaimEventResponse);
+        }
+
+        return result;
+    }
+
+    public List<SuperblockClaimFailedEventResponse> getSuperblockClaimFailedEventResponses(
+            DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) throws IOException {
+        final Event event = new Event("SuperblockClaimFailed",
+                Arrays.<TypeReference<?>>asList(),
+                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {},
+                        new TypeReference<Bytes32>() {}));
+
+        List<SuperblockClaimFailedEventResponse> result = new ArrayList<>();
+        EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
+        filter.addSingleTopic(EventEncoder.encode(event));
+        EthLog ethLog = web3j.ethGetLogs(filter).send();
+        List<EthLog.LogResult> logResults = ethLog.getLogs();
+
+        for (EthLog.LogResult logResult : logResults) {
+            Log log = (Log) logResult.get();
+            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+
+            SuperblockClaimFailedEventResponse newSuperblockClaimFailedEventResponse =
+                    new SuperblockClaimFailedEventResponse();
+            newSuperblockClaimFailedEventResponse.log = eventValues.getLog();
+            newSuperblockClaimFailedEventResponse.claimId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            newSuperblockClaimFailedEventResponse.claimant = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            result.add(newSuperblockClaimFailedEventResponse);
+        }
+
+        return result;
+    }
 }

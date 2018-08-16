@@ -50,6 +50,9 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             removeApproved(fromBlock, toBlock);
             removeInvalid(fromBlock, toBlock);
 
+            logErrorClaimEvents(fromBlock, toBlock);
+            logSuperblockClaimFailedEvents(fromBlock, toBlock);
+
             synchronized (this) {
                 flushSemiApprovedSet();
             }
@@ -84,6 +87,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                     ethWrapper.getChainHeight().longValue() >= semiApprovedHeight + confirmations) {
                 log.info("Semi-approved superblock {} not found in main chain. Invalidating.", superblockId);
                 ethWrapper.rejectClaim(superblockId);
+                Thread.sleep(200);
             }
         }
     }
@@ -312,6 +316,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     void removeInvalid(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SuperblockEvent> invalidSuperblockEvents = ethWrapper.getInvalidSuperblocks(fromBlock, toBlock);
         for (EthWrapper.SuperblockEvent superblockEvent : invalidSuperblockEvents) {
+        log.debug("Invalid superblock {}", superblockEvent.superblockId);
             if (semiApprovedSet.contains(superblockEvent.superblockId))
                 semiApprovedSet.remove(superblockEvent.superblockId);
         }
