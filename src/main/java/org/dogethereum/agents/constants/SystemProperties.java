@@ -177,7 +177,7 @@ public class SystemProperties {
     }
 
     public boolean isReGedientoChallengerEnabled() {
-        return getBooleanProperty("doge.block.regedientochallenger.enabled", false);
+        return getBooleanProperty("doge.superblock.regedientochallenger.enabled", false);
     }
 
     public boolean isGanache() {
