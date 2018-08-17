@@ -37,8 +37,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     public long reactToEvents(long fromBlock, long toBlock) {
         try {
             respondToRequestScryptHashValidation(fromBlock, toBlock);
-            respondToBlockHeaderQueries(fromBlock, toBlock);
             respondToMerkleRootHashesQueries(fromBlock, toBlock);
+            respondToBlockHeaderQueries(fromBlock, toBlock);
             sendDescendantsOfSemiApproved(fromBlock, toBlock);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
