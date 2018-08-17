@@ -114,6 +114,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             Superblock superblock = superblockChain.getSuperblock(superblockId);
             if (superblock != null && inBattleAndSemiApprovable(superblockChain.getSuperblock(superblockId))) {
                 log.debug("Confirming descendant of semi-approved {}", superblockId);
+                log.debug("Status of parent: {}", ethWrapper.getSuperblockStatus(superblock.getParentId()));
                 ethWrapper.checkClaimFinished(superblockId);
             }
         }
