@@ -321,7 +321,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         }
     }
 
-
     /* ---- OVERRIDE ABSTRACT METHODS ---- */
 
     @Override
