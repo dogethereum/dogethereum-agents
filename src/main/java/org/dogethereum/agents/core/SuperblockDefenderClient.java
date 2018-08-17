@@ -60,7 +60,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         try {
             confirmEarliestApprovableSuperblock();
             callBattleTimeouts();
-            confirmDescendantsOfSemiApproved();
+            confirmAllSemiApprovable();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
@@ -112,13 +112,12 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      * Confirm superblocks for which the defender has won all the battles, but whose parent might not be approved.
      * @throws Exception
      */
-    private void confirmDescendantsOfSemiApproved() throws Exception {
+    private void confirmAllSemiApprovable() throws Exception {
         for (Keccak256Hash sessionId : battleMap.keySet()) {
             Keccak256Hash superblockId = battleMap.get(sessionId);
             Superblock superblock = superblockChain.getSuperblock(superblockId);
             if (superblock != null && inBattleAndSemiApprovable(superblockChain.getSuperblock(superblockId))) {
-                log.debug("Confirming descendant of semi-approved {}", superblockId);
-                log.debug("Status of parent: {}", ethWrapper.getSuperblockStatus(superblock.getParentId()));
+                log.info("Confirming semi-approvable superblock {}", superblockId);
                 ethWrapper.checkClaimFinished(superblockId);
             }
         }
