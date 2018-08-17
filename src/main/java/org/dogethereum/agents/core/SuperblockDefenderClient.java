@@ -119,7 +119,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             Keccak256Hash superblockId = battleMap.get(sessionId);
             Superblock superblock = superblockChain.getSuperblock(superblockId);
             if (superblock != null && inBattleAndSemiApprovable(superblockChain.getSuperblock(superblockId))) {
-                log.info("Confirming semi-approvable superblock {}", superblockId);
+                log.debug("Confirming descendant of semi-approved {}", superblockId);
                 ethWrapper.checkClaimFinished(superblockId);
             }
         }
