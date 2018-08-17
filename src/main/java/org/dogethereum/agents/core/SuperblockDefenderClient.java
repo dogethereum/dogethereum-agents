@@ -117,7 +117,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     /* - Reacting to events - */
 
-    // TODO: document
     private void respondToBlockHeaderQueries(long fromBlock, long toBlock)
             throws IOException, BlockStoreException, Exception {
         List<EthWrapper.QueryBlockHeaderEvent> queryBlockHeaderEvents =
@@ -127,9 +126,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             if (isMine(queryBlockHeader)) {
                 log.info("Header requested for Doge block {}, session {}. Responding now.",
                         queryBlockHeader.dogeBlockHash, queryBlockHeader.sessionId);
-                List<Sha256Hash> allDogeBlockHashes =
-                        superblockChain.getSuperblock(queryBlockHeader.superblockId).getDogeBlockHashes();
-//                log.debug("Superblock hashes: {}", allDogeBlockHashes);
 
                 StoredBlock dogeBlock = dogecoinWrapper.getBlock(queryBlockHeader.dogeBlockHash);
                 ethWrapper.respondBlockHeader(queryBlockHeader.superblockId, queryBlockHeader.sessionId,

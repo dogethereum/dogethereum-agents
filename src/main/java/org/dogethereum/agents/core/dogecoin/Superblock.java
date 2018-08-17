@@ -148,52 +148,6 @@ public class Superblock {
         this.dogeBlockHashes = deserializeHashesLE(payload, DOGE_BLOCK_HASHES_PAYLOAD_OFFSET, numberOfDogeBlockHashes);
     }
 
-    // TODO: see if the following two methods should be deleted
-
-    /**
-     * Calculate the Merkle root hash of a tree containing all the blocks in `blocks`.
-     * @param hashes List of hashes belonging to all Dogecoin blocks mined within the one hour lapse
-     *               corresponding to this superblock.
-     * @return Root of a Merkle tree with all these blocks as its leaves.
-     */
-    public Sha256Hash calculateMerkleRoot(List<Sha256Hash> hashes) {
-        List<byte[]> tree = buildMerkleTree(hashes);
-        return Sha256Hash.wrap(tree.get(tree.size() - 1));
-    }
-
-    /**
-     * Build a Merkle tree with all the blocks in `blocks` as its leaves.
-     * @param hashes List of hashes belonging to all Dogecoin blocks mined within the one hour lapse
-     *               corresponding to this superblock.
-     * @return Merkle tree in List<> format, with its lower levels first and its root as the last element.
-     */
-    private List<byte[]> buildMerkleTree(List<Sha256Hash> hashes) {
-        // adapted from bitcoinj's implementation of Merkle trees for transactions
-        List<byte[]> tree = new ArrayList<>(); // check if this should be a List or an ArrayList
-        // add all the block hashes in bytes[] format
-        for (Sha256Hash h : hashes) {
-            tree.add(h.getBytes());
-        }
-
-        int levelOffset = 0;
-        // hashes the current level; levelSize = 1 means it's reached the root and there's nothing else to hash
-        for (int levelSize = hashes.size(); levelSize > 1; levelSize = (levelSize + 1) / 2) {
-            // hashes each pair of nodes
-            for (int left = 0; left < levelSize; left += 2) {
-                // The right hand node can be the same as the left hand,
-                // in the case where we don't have enough transactions.
-                int right = Math.min(left + 1, levelSize - 1); // in case left needs to be hashed with itself
-                byte[] leftBytes = tree.get(levelOffset + left);
-                byte[] rightBytes = tree.get(levelOffset + right);
-                tree.add(Sha256Hash.hashTwice(leftBytes, 0, 32, rightBytes, 0, 32));
-            }
-            // Move to the next level.
-            levelOffset += levelSize;
-        }
-
-        return tree;
-    }
-
     /**
      * Calculates Keccak-256 hash of superblock data.
      * @return Superblock ID in Keccak wrapper format.
