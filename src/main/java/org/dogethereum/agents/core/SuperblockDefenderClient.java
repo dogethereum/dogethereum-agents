@@ -136,6 +136,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             if (isMine(queryBlockHeader)) {
                 log.info("Header requested for Doge block {}, session {}. Responding now.",
                         queryBlockHeader.dogeBlockHash, queryBlockHeader.sessionId);
+
                 StoredBlock dogeBlock = dogecoinWrapper.getBlock(queryBlockHeader.dogeBlockHash);
                 if (dogeBlock == null) {
                     dogeBlock = dogecoinWrapper.getFakeStoredDogeBlock(queryBlockHeader.dogeBlockHash);

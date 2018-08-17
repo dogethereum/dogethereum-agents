@@ -88,7 +88,6 @@ public abstract class SuperblockBaseClient {
 
     private Date getFirstExecutionDate() {
         Calendar firstExecution = Calendar.getInstance();
-        //firstExecution.add(Calendar.SECOND, 0);
         return firstExecution.getTime();
     }
 
@@ -133,7 +132,9 @@ public abstract class SuperblockBaseClient {
         }
     }
 
+
     /* ---- ABSTRACT METHODS ---- */
+
     protected abstract boolean arePendingTransactions() throws IOException;
 
     protected abstract long reactToEvents(long fromBlock, long toBlock);
