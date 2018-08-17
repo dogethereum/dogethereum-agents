@@ -37,7 +37,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     public long reactToEvents(long fromBlock, long toBlock) {
         try {
             respondToRequestScryptHashValidation(fromBlock, toBlock);
-            respondToBlockHeaderQueries(fromBlock, toBlock);
             respondToMerkleRootHashesQueries(fromBlock, toBlock);
             respondToBlockHeaderQueries(fromBlock, toBlock);
             logErrorBattleEvents(fromBlock, toBlock);
@@ -114,6 +113,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             Keccak256Hash superblockId = battleMap.get(sessionId);
             Superblock superblock = superblockChain.getSuperblock(superblockId);
             if (superblock != null && inBattleAndSemiApprovable(superblockChain.getSuperblock(superblockId))) {
+                log.debug("Confirming descendant of semi-approved {}", superblockId);
                 ethWrapper.checkClaimFinished(superblockId);
             }
         }
@@ -131,19 +131,12 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             if (isMine(queryBlockHeader)) {
                 log.info("Header requested for Doge block {}, session {}. Responding now.",
                         queryBlockHeader.dogeBlockHash, queryBlockHeader.sessionId);
-                log.debug("Block details: {}", dogecoinWrapper.getBlock(queryBlockHeader.dogeBlockHash));
-                List<Sha256Hash> allDogeBlockHashes =
-                        superblockChain.getSuperblock(queryBlockHeader.superblockId).getDogeBlockHashes();
-
                 StoredBlock dogeBlock = dogecoinWrapper.getBlock(queryBlockHeader.dogeBlockHash);
                 if (dogeBlock == null) {
                     dogeBlock = dogecoinWrapper.getFakeStoredDogeBlock(queryBlockHeader.dogeBlockHash);
                 }
                 ethWrapper.respondBlockHeader(queryBlockHeader.superblockId, queryBlockHeader.sessionId,
                         (AltcoinBlock) dogeBlock.getHeader());
-
-                log.debug("Superblock difficulty: {}",
-                        superblockChain.getSuperblock(queryBlockHeader.superblockId).getLastDogeBlockBits());
             }
         }
     }
@@ -291,7 +284,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             }
         }
     }
-
 
 
     /* ---- OVERRIDE ABSTRACT METHODS ---- */
