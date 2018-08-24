@@ -96,6 +96,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         } else {
             Keccak256Hash toConfirmId = toConfirm.getSuperblockId();
 
+            if (!isMine(toConfirmId)) return;
+
             if (newAndTimeoutPassed(toConfirm) || inBattleAndSemiApprovable(toConfirm)) {
                 log.info("Confirming superblock {}", toConfirmId);
                 ethWrapper.checkClaimFinished(toConfirmId);
