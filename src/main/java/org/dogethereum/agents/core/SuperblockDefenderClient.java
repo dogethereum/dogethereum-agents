@@ -45,7 +45,9 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             respondToBlockHeaderQueries(fromBlock, toBlock);
             logErrorBattleEvents(fromBlock, toBlock);
             deleteFinishedBattles(fromBlock, toBlock);
+            logApproved(fromBlock, toBlock);
             logSemiApproved(fromBlock, toBlock);
+            logInvalid(fromBlock, toBlock);
             logErrorClaimEvents(fromBlock, toBlock);
             sendDescendantsOfSemiApproved(fromBlock, toBlock);
         } catch (Exception e) {
@@ -98,7 +100,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
             if (!isMine(toConfirmId)) return;
 
-            log.debug("Potentially approvable superblock: {}", toConfirmId);
+//            log.debug("Potentially approvable superblock: {}", toConfirmId);
+//            log.debug("Parent of potentially approvable superblock: {}", bestSuperblockId);
 
             if (newAndTimeoutPassed(toConfirm) || inBattleAndSemiApprovable(toConfirm)) {
                 log.info("Confirming superblock {}", toConfirmId);
@@ -306,14 +309,36 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         }
     }
 
+    private void logApproved(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.SuperblockEvent> semiApprovedSuperblocks =
+                ethWrapper.getApprovedSuperblocks(fromBlock, toBlock);
+
+        for (EthWrapper.SuperblockEvent superblockEvent : semiApprovedSuperblocks) {
+//            if (isMine(superblockEvent)) {
+                log.debug("Approved: {}", superblockEvent.superblockId);
+//            }
+        }
+    }
+
     private void logSemiApproved(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SuperblockEvent> semiApprovedSuperblocks =
                 ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
 
         for (EthWrapper.SuperblockEvent superblockEvent : semiApprovedSuperblocks) {
-            if (isMine(superblockEvent)) {
+//            if (isMine(superblockEvent)) {
                 log.debug("Semi-approved: {}", superblockEvent.superblockId);
-            }
+//            }
+        }
+    }
+
+    private void logInvalid(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.SuperblockEvent> semiApprovedSuperblocks =
+                ethWrapper.getInvalidSuperblocks(fromBlock, toBlock);
+
+        for (EthWrapper.SuperblockEvent superblockEvent : semiApprovedSuperblocks) {
+//            if (isMine(superblockEvent)) {
+                log.debug("Invalid: {}", superblockEvent.superblockId);
+//            }
         }
     }
 
