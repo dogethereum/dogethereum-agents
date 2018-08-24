@@ -305,6 +305,10 @@ public abstract class SuperblockBaseClient {
         return superblockEvent.who.equals(myAddress);
     }
 
+    boolean isMine(Keccak256Hash superblockId) throws Exception {
+        return ethWrapper.getClaimSubmitter(superblockId).equals(myAddress);
+    }
+
     void deleteSuperblockBattles(Keccak256Hash superblockId) {
         if (superblockBattleMap.containsKey(superblockId)) {
             HashSet<Keccak256Hash> superblockBattles = superblockBattleMap.get(superblockId);
