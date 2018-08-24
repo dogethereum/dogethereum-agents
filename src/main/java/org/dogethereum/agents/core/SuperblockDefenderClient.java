@@ -178,7 +178,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
         for (EthWrapper.RequestScryptHashValidationEvent requestScryptHashValidationEvent : requestScryptHashValidationEvents) {
             if (isMine(requestScryptHashValidationEvent)) {
-                Sha256Hash dogeBlockHash = Sha256Hash.wrapReversed(Sha256Hash.hashTwice(requestScryptHashValidationEvent.blockHeader));
+                Sha256Hash dogeBlockHash =
+                        Sha256Hash.wrapReversed(Sha256Hash.hashTwice(requestScryptHashValidationEvent.blockHeader));
                 log.info("Request scrypt hash verification for session {}, superblock {}, " +
                                 "block {}, scrypt hash {}. Responding now.",
                         requestScryptHashValidationEvent.sessionId, requestScryptHashValidationEvent.superblockId,
