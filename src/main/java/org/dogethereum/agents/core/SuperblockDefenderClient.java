@@ -114,6 +114,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
             if (!isMine(toConfirmId)) return;
 
+            log.debug("Potentially approvable superblock: {}", toConfirmId);
+
             if (newAndTimeoutPassed(toConfirm) || inBattleAndSemiApprovable(toConfirm)) {
                 log.info("Confirming superblock {}", toConfirmId);
                 ethWrapper.checkClaimFinished(toConfirmId);
