@@ -1045,6 +1045,10 @@ public class EthWrapper implements SuperblockConstantProvider {
         return claimManager.getClaimSubmitter(superblockId.getBytes()).send();
     }
 
+    public String getClaimSubmitter(Keccak256Hash superblockId) throws Exception {
+        return claimManager.getClaimSubmitter(superblockId.getBytes()).send();
+    }
+
     public boolean getClaimDecided(Keccak256Hash superblockId) throws Exception {
         return claimManager.getClaimDecided(superblockId.getBytes()).send();
     }
