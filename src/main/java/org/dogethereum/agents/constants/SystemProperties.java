@@ -206,6 +206,10 @@ public class SystemProperties {
         return getStringProperty("doge.superblock.challenger.address", null);
     }
 
+    public String dogeMaliciousSubmitterAddress() {
+        return getStringProperty("doge.superblock.malicious.submitter.address", null);
+    }
+
     public String relayTxsAddress() {
         return getStringProperty("relay.txs.address", null);
     }

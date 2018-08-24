@@ -195,7 +195,7 @@ public class DogeToEthClient {
         }
 
         log.debug("First superblock missing in the bridge: {}.", toSend.getSuperblockId());
-        ethWrapper.sendStoreSuperblock(toSend);
+        ethWrapper.sendStoreSuperblock(toSend, ethWrapper.getClaimManager());
         log.debug("Invoked sendStoreSuperblocks with superblock {}.", toSend.getSuperblockId());
 
         return toSend.getSuperblockHeight();
@@ -226,7 +226,7 @@ public class DogeToEthClient {
         }
 
         log.debug("Sending malicious superblock {}.", toSend.getSuperblockId());
-        ethWrapper.sendStoreSuperblock(toSend);
+        ethWrapper.sendStoreSuperblock(toSend, ethWrapper.getMaliciousClaimManager());
         log.debug("Invoked sendStoreSuperblocks with superblock {}.", toSend.getSuperblockId());
 
         return toSend.getSuperblockHeight();

@@ -8,6 +8,12 @@ import org.springframework.stereotype.Service;
 public class SuperblockMaliciousDefenderClient extends SuperblockDefenderClient {
 
     @Override
+    protected void setupClient() {
+        myAddress = ethWrapper.getMaliciousSubmitterAddress();
+        claimManager = ethWrapper.getMaliciousClaimManager();
+    }
+
+    @Override
     protected boolean isEnabled() {
         return config.isDogeMaliciousSubmitterEnabled();
     }

@@ -5,6 +5,7 @@ import org.bitcoinj.core.AltcoinBlock;
 import org.bitcoinj.core.StoredBlock;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.core.Sha256Hash;
+import org.dogethereum.agents.contract.DogeClaimManagerExtended;
 import org.dogethereum.agents.core.dogecoin.*;
 import org.dogethereum.agents.core.eth.EthWrapper;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     private static long ETH_REQUIRED_CONFIRMATIONS = 5;
 
+    protected DogeClaimManagerExtended claimManager;
+
     public SuperblockDefenderClient() {
         super("Superblock defender client");
     }
@@ -31,6 +34,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     @Override
     protected void setupClient() {
         myAddress = ethWrapper.getGeneralPurposeAndSendSuperblocksAddress();
+        claimManager = ethWrapper.getClaimManager();
     }
 
     @Override
@@ -175,7 +179,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 if (descendant != null) {
                     log.info("Found superblock {}, descendant of semi-approved {}. Sending it now.",
                             descendant.getSuperblockId(), semiApprovedSuperblockEvent.superblockId);
-                    ethWrapper.sendStoreSuperblock(descendant);
+                    ethWrapper.sendStoreSuperblock(descendant, claimManager);
                 }
             }
         }
