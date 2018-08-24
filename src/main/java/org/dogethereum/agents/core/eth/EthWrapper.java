@@ -943,12 +943,13 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* --------- Battle section --------- */
     /* ---------------------------------- */
 
-    public void respondBlockHeader(Keccak256Hash superblockId, Keccak256Hash sessionId, AltcoinBlock dogeBlock)
+    public void respondBlockHeader(Keccak256Hash superblockId, Keccak256Hash sessionId, AltcoinBlock dogeBlock,
+                                   DogeClaimManagerExtended myClaimManager)
             throws InterruptedException, IOException {
         byte[] scryptHashBytes = dogeBlock.getScryptHash().getReversedBytes();
         byte[] blockHeaderBytes = dogeBlock.bitcoinSerialize();
         log.info("Sending header {}", Hex.toHexString(blockHeaderBytes));
-        CompletableFuture<TransactionReceipt> futureReceipt = claimManager.respondBlockHeader(
+        CompletableFuture<TransactionReceipt> futureReceipt = myClaimManager.respondBlockHeader(
                 superblockId.getBytes(), sessionId.getBytes(), scryptHashBytes, blockHeaderBytes).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("Responded to block header query for Doge block {}, session {}",
@@ -957,12 +958,13 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     public void respondMerkleRootHashes(Keccak256Hash superblockId, Keccak256Hash sessionId,
-                                        List<Sha256Hash> dogeBlockHashes) {
+                                        List<Sha256Hash> dogeBlockHashes, DogeClaimManagerExtended myClaimManager) {
         List<byte[]> rawHashes = new ArrayList<>();
         for (Sha256Hash dogeBlockHash : dogeBlockHashes)
             rawHashes.add(dogeBlockHash.getBytes());
         CompletableFuture<TransactionReceipt> futureReceipt =
-                claimManager.respondMerkleRootHashes(superblockId.getBytes(), sessionId.getBytes(), rawHashes).sendAsync();
+                myClaimManager.respondMerkleRootHashes(
+                        superblockId.getBytes(), sessionId.getBytes(), rawHashes).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("Responded to Merkle root hashes query for session {}", sessionId));
     }
@@ -1038,7 +1040,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             throws Exception {
         return myClaimManager.getClaimExists(superblockId.getBytes()).send();
     }
-
+    
     public boolean getClaimDecided(Keccak256Hash superblockId) throws Exception {
         return claimManager.getClaimDecided(superblockId.getBytes()).send();
     }
