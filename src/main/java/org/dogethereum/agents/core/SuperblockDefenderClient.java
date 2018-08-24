@@ -105,7 +105,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
             if (!isMine(toConfirmId)) return;
 
-            log.debug("Potentially approvable superblock: {}", toConfirmId);
+//            log.debug("Potentially approvable superblock: {}", toConfirmId);
+//            log.debug("Parent of potentially approvable superblock: {}", bestSuperblockId);
 
             if (newAndTimeoutPassed(toConfirm) || inBattleAndSemiApprovable(toConfirm)) {
                 log.info("Confirming superblock {}", toConfirmId);
@@ -318,6 +319,17 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         for (EthWrapper.SuperblockEvent superblockEvent : semiApprovedSuperblocks) {
 //            if (isMine(superblockEvent)) {
                 log.debug("Semi-approved: {}", superblockEvent.superblockId);
+//            }
+        }
+    }
+
+    private void logInvalid(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.SuperblockEvent> semiApprovedSuperblocks =
+                ethWrapper.getInvalidSuperblocks(fromBlock, toBlock);
+
+        for (EthWrapper.SuperblockEvent superblockEvent : semiApprovedSuperblocks) {
+//            if (isMine(superblockEvent)) {
+                log.debug("Invalid: {}", superblockEvent.superblockId);
 //            }
         }
     }
