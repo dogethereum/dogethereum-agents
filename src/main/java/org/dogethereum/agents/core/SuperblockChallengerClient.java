@@ -214,7 +214,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         Sha256Hash proposedBlockScryptHash = Sha256Hash.wrap(defenderResponse.blockScryptHash);
         Sha256Hash scryptBlockHash = Sha256Hash.wrap(Utils.scryptDigest(defenderResponse.powBlockHeader));
 
-        if (!verifyScryptHashAndSendValidationRequest(defenderResponse.sessionId, defenderResponse.superblockId, dogeBlockHash, proposedBlockScryptHash, scryptBlockHash)) {
+        if (!verifyScryptHashAndSendValidationRequest(defenderResponse.sessionId, defenderResponse.superblockId,
+                dogeBlockHash, proposedBlockScryptHash, scryptBlockHash)) {
             queryNextBlockHeaderOrVerifySuperblock(defenderResponse.sessionId, defenderResponse.superblockId, dogeBlockHash);
         }
     }
@@ -227,7 +228,9 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @param proposedBlockScryptHash Proposes scrypt hash
      * @param scryptBlockHash Calculated scrypt hash
      */
-    private boolean verifyScryptHashAndSendValidationRequest(Keccak256Hash sessionId, Keccak256Hash superblockId, Sha256Hash dogeBlockHash, Sha256Hash proposedBlockScryptHash, Sha256Hash scryptBlockHash) {
+    private boolean verifyScryptHashAndSendValidationRequest(Keccak256Hash sessionId, Keccak256Hash superblockId,
+                                                             Sha256Hash dogeBlockHash, Sha256Hash proposedBlockScryptHash,
+                                                             Sha256Hash scryptBlockHash) {
         if (!proposedBlockScryptHash.equals(scryptBlockHash)) {
             log.info("Sending request to validate scrypt hash session {}, superblock {}, scrypt hash {}, block {}",
                     sessionId, superblockId, proposedBlockScryptHash, dogeBlockHash);
@@ -244,7 +247,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @param dogeBlockHash Last Doge block hash requested
      * @throws Exception
      */
-    private void queryNextBlockHeaderOrVerifySuperblock(Keccak256Hash sessionId, Keccak256Hash superblockId, Sha256Hash dogeBlockHash) throws Exception {
+    private void queryNextBlockHeaderOrVerifySuperblock(Keccak256Hash sessionId, Keccak256Hash superblockId,
+                                                        Sha256Hash dogeBlockHash) throws Exception {
         List<Sha256Hash> sessionDogeBlockHashes = ethWrapper.getDogeBlockHashes(sessionId);
         Sha256Hash nextDogeBlockHash = getNextHashToQuery(dogeBlockHash, sessionDogeBlockHashes);
 
@@ -282,16 +286,19 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @param defenderResponse Doge block hash response from defender.
      * @throws Exception
      */
-    private void reactToResolveScryptHashValidation(EthWrapper.ResolvedScryptHashValidationEvent defenderResponse) throws Exception {
+    private void reactToResolveScryptHashValidation(EthWrapper.ResolvedScryptHashValidationEvent defenderResponse)
+            throws Exception {
         if (defenderResponse.valid) {
             log.info("Scrypt hash validation succeeded session {}, superblock {}, block {}, scrypt {}",
                     defenderResponse.sessionId, defenderResponse.superblockId, defenderResponse.blockSha256Hash,
                     defenderResponse.blockScryptHash);
 
-            queryNextBlockHeaderOrVerifySuperblock(defenderResponse.sessionId, defenderResponse.superblockId, defenderResponse.blockSha256Hash);
+            queryNextBlockHeaderOrVerifySuperblock(defenderResponse.sessionId, defenderResponse.superblockId,
+                    defenderResponse.blockSha256Hash);
         } else {
             // Scrypt hash
-            log.info("Scrypt hash verification failed! session {}, superblock {}", defenderResponse.sessionId, defenderResponse.superblockId);
+            log.info("Scrypt hash verification failed! session {}, superblock {}", defenderResponse.sessionId,
+                    defenderResponse.superblockId);
             ethWrapper.verifySuperblock(defenderResponse.sessionId, ethWrapper.getClaimManagerForChallenges());
         }
     }

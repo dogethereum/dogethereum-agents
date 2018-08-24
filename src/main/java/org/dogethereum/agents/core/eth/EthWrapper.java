@@ -1021,8 +1021,10 @@ public class EthWrapper implements SuperblockConstantProvider {
                 log.info("queryMerkleRootHashes receipt {}", receipt.toString()));
     }
 
-    public void requestScryptHashValidation(Keccak256Hash superblockId, Keccak256Hash sessionId, Sha256Hash blockSha256Hash) {
-        log.info("Requesting scrypt validation for block {} session {} superblock {}", blockSha256Hash, sessionId, superblockId);
+    public void requestScryptHashValidation(Keccak256Hash superblockId, Keccak256Hash sessionId,
+                                            Sha256Hash blockSha256Hash) {
+        log.info("Requesting scrypt validation for block {} session {} superblock {}",
+                blockSha256Hash, sessionId, superblockId);
         CompletableFuture<TransactionReceipt> futureReceipt = claimManagerForChallenges.requestScryptHashValidation(
                 superblockId.getBytes(), sessionId.getBytes(), blockSha256Hash.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
