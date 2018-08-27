@@ -48,7 +48,9 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
             getSemiApproved(fromBlock, toBlock);
             removeApproved(fromBlock, toBlock);
+            removeSemiApproved(fromBlock, toBlock);
             removeInvalid(fromBlock, toBlock);
+            deleteFinishedBattles(fromBlock, toBlock);
 
             synchronized (this) {
                 flushSemiApprovedSet();
@@ -299,6 +301,13 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
+    /**
+     * Add new semi-approved superblocks to a data structure that keeps track of them
+     * so that they can be invalidated if they turn out not to be in the main chain.
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
     private void getSemiApproved(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
                 ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
@@ -308,19 +317,38 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
+    /**
+     * Remove approved superblocks from the data structure that keeps track of semi-approved superblocks.
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
     private void removeApproved(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> approvedSuperblockEvents = ethWrapper.getApprovedSuperblocks(fromBlock, toBlock);
+        List<EthWrapper.SuperblockEvent> approvedSuperblockEvents =
+                ethWrapper.getApprovedSuperblocks(fromBlock, toBlock);
         for (EthWrapper.SuperblockEvent superblockEvent : approvedSuperblockEvents) {
             if (semiApprovedSet.contains(superblockEvent.superblockId))
                 semiApprovedSet.remove(superblockEvent.superblockId);
         }
     }
 
-    private void removeInvalid(long fromBlock, long toBlock) throws Exception {
+    /**
+     * Remove invalidated superblocks from data structures that keep track of semi-approved and in battle superblocks.
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
+    @Override
+    protected void removeInvalid(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SuperblockEvent> invalidSuperblockEvents = ethWrapper.getInvalidSuperblocks(fromBlock, toBlock);
         for (EthWrapper.SuperblockEvent superblockEvent : invalidSuperblockEvents) {
-            if (semiApprovedSet.contains(superblockEvent.superblockId))
+            Keccak256Hash superblockId = superblockEvent.superblockId;
+            if (semiApprovedSet.contains(superblockId)) {
                 semiApprovedSet.remove(superblockEvent.superblockId);
+            }
+            if (superblockToSessionsMap.containsKey(superblockId)) {
+                superblockToSessionsMap.remove(superblockId);
+            }
         }
     }
 
@@ -428,10 +456,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         List<EthWrapper.SubmitterConvictedEvent> submitterConvictedEvents =
                 ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock, ethWrapper.getClaimManagerForChallenges());
 
-        if (!submitterConvictedEvents.isEmpty()) {
-            log.debug("Battles before deletion: {}", sessionToSuperblockMap.keySet());
-        }
-
         for (EthWrapper.SubmitterConvictedEvent submitterConvictedEvent : submitterConvictedEvents) {
             if (sessionToSuperblockMap.containsKey(submitterConvictedEvent.sessionId)) {
                 log.info("Submitter convicted on session {}, superblock {}. Battle won!",
@@ -439,12 +463,9 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 sessionToSuperblockMap.remove(submitterConvictedEvent.sessionId);
             }
         }
-
-        if (!submitterConvictedEvents.isEmpty()) {
-            log.debug("Battles after deletion: {}", sessionToSuperblockMap.keySet());
-        }
     }
 
+    // TODO: see if this should have some fault tolerance for battles that were erroneously not added to set
     /**
      * Filter battles where this challenger battled the superblock and got convicted
      * and delete them from active battle set.
@@ -458,21 +479,12 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         List<EthWrapper.ChallengerConvictedEvent> challengerConvictedEvents =
                 ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock, ethWrapper.getClaimManagerForChallenges());
 
-        if (!challengerConvictedEvents.isEmpty()) {
-            log.debug("Battles before deletion: {}", sessionToSuperblockMap.keySet());
-        }
-
         for (EthWrapper.ChallengerConvictedEvent challengerConvictedEvent : challengerConvictedEvents) {
             if (challengerConvictedEvent.challenger.equals(myAddress)) {
                 log.info("Challenger convicted on session {}, superblock {}. Battle lost!",
                         challengerConvictedEvent.sessionId, challengerConvictedEvent.superblockId);
                 sessionToSuperblockMap.remove(challengerConvictedEvent.sessionId);
-                // TODO: see if this should have some fault tolerance for battles that were erroneously not added to set
             }
-        }
-
-        if (!challengerConvictedEvents.isEmpty()) {
-            log.debug("Battles after deletion: {}", sessionToSuperblockMap.keySet());
         }
     }
 
