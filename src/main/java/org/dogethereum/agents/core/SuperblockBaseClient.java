@@ -38,15 +38,17 @@ public abstract class SuperblockBaseClient {
 
     // These 2 structures have the same data. Data is duplicated for performance using it.
     protected long latestEthBlockProcessed;
+
     // key: session id, value: superblock id
-    protected HashMap<Keccak256Hash, Keccak256Hash> battleMap;
-    // key: superblock id, value: list of session id
-    protected HashMap<Keccak256Hash, HashSet<Keccak256Hash>> superblockBattleMap;
+    protected HashMap<Keccak256Hash, Keccak256Hash> sessionToSuperblockMap;
+
+    // key: superblock id, value: set of session ids
+    protected HashMap<Keccak256Hash, HashSet<Keccak256Hash>> superblockToSessionsMap;
 
     protected File dataDirectory;
     protected File latestEthBlockProcessedFile;
-    protected File battleMapFile;
-    protected File superblockBattleMapFile;
+    protected File sessionToSuperblockMapFile;
+    protected File superblockToSessionsMapFile;
 
     public SuperblockBaseClient(String clientName) {
         this.clientName = clientName;
@@ -59,8 +61,8 @@ public abstract class SuperblockBaseClient {
             setupFiles();
 
             restoreLatestEthBlockProcessed();
-            restoreBattleMap();
-            restoreSuperblockBattleMap();
+            restoreSessionToSuperblockMap();
+            restoreSuperblockToSessionsMap();
 
             setupClient();
 
@@ -74,8 +76,8 @@ public abstract class SuperblockBaseClient {
             log.info("{} tearDown starting...", clientName);
 
             flushLatestEthBlockProcessed();
-            flushBattleMap();
-            flushSuperblockBattleMap();
+            flushSessionToSuperblockMap();
+            flushSuperblockToSessionsMap();
 
             log.info("{} tearDown finished.", clientName);
         }
@@ -115,8 +117,8 @@ public abstract class SuperblockBaseClient {
                     latestEthBlockProcessed = reactToEvents(fromBlock, toBlock);
 
                     flushLatestEthBlockProcessed();
-                    flushBattleMap();
-                    flushSuperblockBattleMap();
+                    flushSessionToSuperblockMap();
+                    flushSuperblockToSessionsMap();
 
                 } else {
                     log.warn("SuperblocksBaseClientTimerTask skipped because the eth node is syncing blocks");
@@ -138,9 +140,9 @@ public abstract class SuperblockBaseClient {
 
     protected abstract String getLastEthBlockProcessedFilename();
 
-    protected abstract String getBattleMapFilename();
+    protected abstract String getSessionToSuperblockMapFilename();
 
-    protected abstract String getSuperblockBattleMapFilename();
+    protected abstract String getSuperblockToSessionsMapFilename();
 
     protected abstract void setupClient();
 
@@ -166,10 +168,12 @@ public abstract class SuperblockBaseClient {
         this.dataDirectory = new File(config.dataDirectory());
         this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() +
                 "/" + getLastEthBlockProcessedFilename());
-        this.battleMap =  new HashMap<>();
-        this.battleMapFile = new File(dataDirectory.getAbsolutePath() + "/" + getBattleMapFilename());
-        this.superblockBattleMap = new HashMap<>();
-        this.superblockBattleMapFile = new File(dataDirectory.getAbsolutePath() + "/" + getSuperblockBattleMapFilename());
+        this.sessionToSuperblockMap =  new HashMap<>();
+        this.sessionToSuperblockMapFile = new File(dataDirectory.getAbsolutePath() + "/" +
+                getSessionToSuperblockMapFilename());
+        this.superblockToSessionsMap = new HashMap<>();
+        this.superblockToSessionsMapFile = new File(dataDirectory.getAbsolutePath() + "/"
+                + getSuperblockToSessionsMapFilename());
 
     }
 
@@ -196,66 +200,72 @@ public abstract class SuperblockBaseClient {
             }
             try (
                 FileOutputStream latestEthBlockProcessedFileOs = new FileOutputStream(latestEthBlockProcessedFile);
-                ObjectOutputStream latestEthBlockProcessedObjectOs = new ObjectOutputStream(latestEthBlockProcessedFileOs);
+                ObjectOutputStream latestEthBlockProcessedObjectOs =
+                        new ObjectOutputStream(latestEthBlockProcessedFileOs);
             ) {
                 latestEthBlockProcessedObjectOs.writeLong(latestEthBlockProcessed);
             }
         }
     }
 
-    private void restoreBattleMap() throws IOException, ClassNotFoundException {
-        if (battleMapFile.exists()) {
+    private void restoreSessionToSuperblockMap() throws IOException, ClassNotFoundException {
+        if (sessionToSuperblockMapFile.exists()) {
             synchronized (this) {
                 try (
-                    FileInputStream battleMapFileIs = new FileInputStream(battleMapFile);
-                    ObjectInputStream battleMapObjectIs = new ObjectInputStream(battleMapFileIs);
+                    FileInputStream sessionToSuperblockMapFileIs = new FileInputStream(sessionToSuperblockMapFile);
+                    ObjectInputStream sessionToSuperblockMapObjectIs =
+                            new ObjectInputStream(sessionToSuperblockMapFileIs);
                 ) {
-                    battleMap = (HashMap<Keccak256Hash, Keccak256Hash>) battleMapObjectIs.readObject();
+                    sessionToSuperblockMap =
+                            (HashMap<Keccak256Hash, Keccak256Hash>) sessionToSuperblockMapObjectIs.readObject();
                 }
             }
         }
     }
 
-    private void flushBattleMap() throws IOException {
+    private void flushSessionToSuperblockMap() throws IOException {
         if (!dataDirectory.exists()) {
             if (!dataDirectory.mkdirs()) {
                 throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());
             }
         }
         try (
-            FileOutputStream battleMapFileOs = new FileOutputStream(battleMapFile);
-            ObjectOutputStream battleMapObjectOs = new ObjectOutputStream(battleMapFileOs);
+            FileOutputStream sessionToSuperblockMapFileOs = new FileOutputStream(sessionToSuperblockMapFile);
+            ObjectOutputStream sessionToSuperblockMapObjectOs = new ObjectOutputStream(sessionToSuperblockMapFileOs);
         ) {
-            battleMapObjectOs.writeObject(battleMap);
+            sessionToSuperblockMapObjectOs.writeObject(sessionToSuperblockMap);
         }
     }
 
 
-    private void restoreSuperblockBattleMap() throws IOException, ClassNotFoundException {
-        if (superblockBattleMapFile.exists()) {
+    private void restoreSuperblockToSessionsMap() throws IOException, ClassNotFoundException {
+        if (superblockToSessionsMapFile.exists()) {
             synchronized (this) {
                 try (
-                        FileInputStream superblockBattleMapFileIs = new FileInputStream(superblockBattleMapFile);
-                        ObjectInputStream superblockBattleMapObjectIs = new ObjectInputStream(superblockBattleMapFileIs);
+                        FileInputStream superblockToSessionsMapFileIs =
+                                new FileInputStream(superblockToSessionsMapFile);
+                        ObjectInputStream superblockToSessionsMapObjectIs =
+                                new ObjectInputStream(superblockToSessionsMapFileIs);
                 ) {
-                    superblockBattleMap = (HashMap<Keccak256Hash, HashSet<Keccak256Hash>>)
-                            superblockBattleMapObjectIs.readObject();
+                    superblockToSessionsMap = (HashMap<Keccak256Hash, HashSet<Keccak256Hash>>)
+                            superblockToSessionsMapObjectIs.readObject();
                 }
             }
         }
     }
 
-    private void flushSuperblockBattleMap() throws IOException {
+    private void flushSuperblockToSessionsMap() throws IOException {
         if (!dataDirectory.exists()) {
             if (!dataDirectory.mkdirs()) {
                 throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());
             }
         }
         try (
-                FileOutputStream superblockBattleMapFileOs = new FileOutputStream(superblockBattleMapFile);
-                ObjectOutputStream superblockBattleMapObjectOs = new ObjectOutputStream(superblockBattleMapFileOs);
+                FileOutputStream superblockToSessionsMapFileOs = new FileOutputStream(superblockToSessionsMapFile);
+                ObjectOutputStream superblockToSessionsMapObjectOs =
+                        new ObjectOutputStream(superblockToSessionsMapFileOs);
         ) {
-            superblockBattleMapObjectOs.writeObject(superblockBattleMap);
+            superblockToSessionsMapObjectOs.writeObject(superblockToSessionsMap);
         }
     }
 
@@ -274,14 +284,14 @@ public abstract class SuperblockBaseClient {
             if (isMine(newBattleEvent)) {
                 Keccak256Hash sessionId = newBattleEvent.sessionId;
                 Keccak256Hash superblockId = newBattleEvent.superblockId;
-                battleMap.put(sessionId, superblockId);
+                sessionToSuperblockMap.put(sessionId, superblockId);
 
-                if (superblockBattleMap.containsKey(superblockId)) {
-                    superblockBattleMap.get(superblockId).add(sessionId);
+                if (superblockToSessionsMap.containsKey(superblockId)) {
+                    superblockToSessionsMap.get(superblockId).add(sessionId);
                 } else {
                     HashSet<Keccak256Hash> newSuperblockBattles = new HashSet<>();
                     newSuperblockBattles.add(sessionId);
-                    superblockBattleMap.put(superblockId, newSuperblockBattles);
+                    superblockToSessionsMap.put(superblockId, newSuperblockBattles);
                 }
             }
         }
@@ -310,14 +320,14 @@ public abstract class SuperblockBaseClient {
     }
 
     void deleteSuperblockBattles(Keccak256Hash superblockId) {
-        if (superblockBattleMap.containsKey(superblockId)) {
-            HashSet<Keccak256Hash> superblockBattles = superblockBattleMap.get(superblockId);
+        if (superblockToSessionsMap.containsKey(superblockId)) {
+            HashSet<Keccak256Hash> superblockBattles = superblockToSessionsMap.get(superblockId);
 
             for (Keccak256Hash sessionId : superblockBattles) {
-                battleMap.remove(sessionId);
+                sessionToSuperblockMap.remove(sessionId);
             }
 
-            superblockBattleMap.remove(superblockId);
+            superblockToSessionsMap.remove(superblockId);
         }
     }
 }
