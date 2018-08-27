@@ -363,7 +363,7 @@ public abstract class SuperblockBaseClient {
         List<EthWrapper.ErrorClaimEvent> errorClaimEvents = ethWrapper.getErrorClaimEvents(fromBlock, toBlock);
 
         for (EthWrapper.ErrorClaimEvent errorClaimEvent : errorClaimEvents) {
-            log.info("ErrorClaim. Session ID: {}, error: {}", errorClaimEvent.claimId, errorClaimEvent.err);
+            log.info("ErrorClaim. Claim ID: {}, error: {}", errorClaimEvent.claimId, errorClaimEvent.err);
         }
     }
 
