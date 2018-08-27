@@ -50,6 +50,11 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             logInvalid(fromBlock, toBlock);
             logErrorClaimEvents(fromBlock, toBlock);
             sendDescendantsOfSemiApproved(fromBlock, toBlock);
+
+            // Maintain data structures
+            deleteFinishedBattles(fromBlock, toBlock);
+            removeInvalid(fromBlock, toBlock);
+            removeSemiApproved(fromBlock, toBlock);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return latestEthBlockProcessed;
@@ -103,7 +108,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             if (newAndTimeoutPassed(toConfirm) || inBattleAndSemiApprovable(toConfirm)) {
                 log.info("Confirming superblock {}", toConfirmId);
                 ethWrapper.checkClaimFinished(toConfirmId);
-                deleteSuperblockBattles(toConfirmId);
             } else if (semiApprovedAndApprovable(toConfirm)) {
                 Keccak256Hash descendantId = superblockChain.getFirstDescendant(toConfirmId).getSuperblockId();
                 log.info("Confirming semi-approved superblock {}", toConfirmId);
@@ -117,10 +121,9 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      * @throws Exception
      */
     private void confirmAllSemiApprovable() throws Exception {
-        for (Keccak256Hash sessionId : sessionToSuperblockMap.keySet()) {
-            Keccak256Hash superblockId = sessionToSuperblockMap.get(sessionId);
+        for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
             Superblock superblock = superblockChain.getSuperblock(superblockId);
-            if (superblock != null && inBattleAndSemiApprovable(superblockChain.getSuperblock(superblockId))) {
+            if (superblock != null && inBattleAndSemiApprovable(superblock)) {
                 log.info("Confirming semi-approvable superblock {}", superblockId);
                 ethWrapper.checkClaimFinished(superblockId);
             }
@@ -387,11 +390,29 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         }
     }
 
+    /**
+     * Remove invalidated superblocks from the data structure that keeps track of in battle superblocks.
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
+    @Override
+    protected void removeInvalid(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.SuperblockEvent> invalidSuperblockEvents = ethWrapper.getInvalidSuperblocks(fromBlock, toBlock);
+        for (EthWrapper.SuperblockEvent superblockEvent : invalidSuperblockEvents) {
+            Keccak256Hash superblockId = superblockEvent.superblockId;
+            if (superblockToSessionsMap.containsKey(superblockId)) {
+                superblockToSessionsMap.remove(superblockId);
+            }
+        }
+    }
+
     @Override
     protected long getTimerTaskPeriod() {
         return config.getAgentConstants().getDefenderTimerTaskPeriod();
     }
 
+    // TODO: see if this should have some fault tolerance for battles that were erroneously not added to set
     /**
      * Filter battles where this defender submitted the superblock and got convicted
      * and delete them from active battle set.
@@ -410,7 +431,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 log.info("Submitter convicted on session {}, superblock {}. Battle lost!",
                         submitterConvictedEvent.sessionId, submitterConvictedEvent.superblockId);
                 sessionToSuperblockMap.remove(submitterConvictedEvent.sessionId);
-                // TODO: see if this should have some fault tolerance for battles that were erroneously not added to set
             }
         }
     }

@@ -48,7 +48,9 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
             getSemiApproved(fromBlock, toBlock);
             removeApproved(fromBlock, toBlock);
+            removeSemiApproved(fromBlock, toBlock);
             removeInvalid(fromBlock, toBlock);
+            deleteFinishedBattles(fromBlock, toBlock);
 
             logErrorClaimEvents(fromBlock, toBlock);
             logSuperblockClaimFailedEvents(fromBlock, toBlock);
@@ -304,7 +306,14 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
-    void getSemiApproved(long fromBlock, long toBlock) throws Exception {
+    /**
+     * Add new semi-approved superblocks to a data structure that keeps track of them
+     * so that they can be invalidated if they turn out not to be in the main chain.
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
+    private void getSemiApproved(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
                 ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
         for (EthWrapper.SuperblockEvent superblockEvent : semiApprovedSuperblockEvents) {
@@ -313,20 +322,38 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
-    void removeApproved(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> approvedSuperblockEvents = ethWrapper.getApprovedSuperblocks(fromBlock, toBlock);
+    /**
+     * Remove approved superblocks from the data structure that keeps track of semi-approved superblocks.
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
+    private void removeApproved(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.SuperblockEvent> approvedSuperblockEvents =
+                ethWrapper.getApprovedSuperblocks(fromBlock, toBlock);
         for (EthWrapper.SuperblockEvent superblockEvent : approvedSuperblockEvents) {
             if (semiApprovedSet.contains(superblockEvent.superblockId))
                 semiApprovedSet.remove(superblockEvent.superblockId);
         }
     }
 
-    void removeInvalid(long fromBlock, long toBlock) throws Exception {
+    /**
+     * Remove invalidated superblocks from data structures that keep track of semi-approved and in battle superblocks.
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
+    @Override
+    protected void removeInvalid(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SuperblockEvent> invalidSuperblockEvents = ethWrapper.getInvalidSuperblocks(fromBlock, toBlock);
         for (EthWrapper.SuperblockEvent superblockEvent : invalidSuperblockEvents) {
-        log.debug("Invalid superblock {}", superblockEvent.superblockId);
-            if (semiApprovedSet.contains(superblockEvent.superblockId))
+            Keccak256Hash superblockId = superblockEvent.superblockId;
+            if (semiApprovedSet.contains(superblockId)) {
                 semiApprovedSet.remove(superblockEvent.superblockId);
+            }
+            if (superblockToSessionsMap.containsKey(superblockId)) {
+                superblockToSessionsMap.remove(superblockId);
+            }
         }
     }
 
@@ -443,6 +470,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
+    // TODO: see if this should have some fault tolerance for battles that were erroneously not added to set
     /**
      * Filter battles where this challenger battled the superblock and got convicted
      * and delete them from active battle set.
@@ -461,7 +489,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 log.info("Challenger convicted on session {}, superblock {}. Battle lost!",
                         challengerConvictedEvent.sessionId, challengerConvictedEvent.superblockId);
                 sessionToSuperblockMap.remove(challengerConvictedEvent.sessionId);
-                // TODO: see if this should have some fault tolerance for battles that were erroneously not added to set
             }
         }
     }

@@ -165,6 +165,8 @@ public abstract class SuperblockBaseClient {
 
     protected abstract void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception;
 
+    protected abstract void removeInvalid(long fromBlock, long toBlock) throws Exception;
+
 
     /* ---- DATABASE METHODS ---- */
 
@@ -242,7 +244,6 @@ public abstract class SuperblockBaseClient {
         }
     }
 
-
     private void restoreSuperblockToSessionsMap() throws IOException, ClassNotFoundException {
         if (superblockToSessionsMapFile.exists()) {
             synchronized (this) {
@@ -275,7 +276,7 @@ public abstract class SuperblockBaseClient {
     }
 
 
-    /* ---- BATTLE SET METHODS ---- */
+    /* ---- BATTLE MAP METHODS ---- */
 
     /**
      * Listen to NewBattle events to keep track of new battles that this client is taking part in.
@@ -303,12 +304,29 @@ public abstract class SuperblockBaseClient {
     }
 
     /**
+     * Remove semi-approved superblocks from a data structure that keeps track of in battle superblocks.
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
+    void removeSemiApproved(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
+                ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
+
+        for (EthWrapper.SuperblockEvent semiApprovedSuperblockEvent : semiApprovedSuperblockEvents) {
+            if (superblockToSessionsMap.containsKey(semiApprovedSuperblockEvent.superblockId)) {
+                superblockToSessionsMap.remove(semiApprovedSuperblockEvent.superblockId);
+            }
+        }
+    }
+
+    /**
      * Listen to SubmitterConvicted and ChallengerConvicted events to remove battles that have already ended.
      * @param fromBlock
      * @param toBlock
      * @throws IOException
      */
-    protected void deleteFinishedBattles(long fromBlock, long toBlock) throws Exception {
+    void deleteFinishedBattles(long fromBlock, long toBlock) throws Exception {
         deleteSubmitterConvictedBattles(fromBlock, toBlock);
         deleteChallengerConvictedBattles(fromBlock, toBlock);
     }
@@ -324,7 +342,12 @@ public abstract class SuperblockBaseClient {
         return ethWrapper.getClaimSubmitter(superblockId).equals(myAddress);
     }
 
-    void deleteSuperblockBattles(Keccak256Hash superblockId) {
+    // TODO: see if this should be deleted now that data structures are maintained by responding to events
+    /**
+     *
+     * @param superblockId
+     */
+    void deleteSuperblockSessions(Keccak256Hash superblockId) {
         if (superblockToSessionsMap.containsKey(superblockId)) {
             HashSet<Keccak256Hash> superblockBattles = superblockToSessionsMap.get(superblockId);
 
