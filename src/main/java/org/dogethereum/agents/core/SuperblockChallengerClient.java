@@ -313,7 +313,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @param toBlock
      * @throws Exception
      */
-    private void getSemiApproved(long fromBlock, long toBlock) throws Exception {
+    void getSemiApproved(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
                 ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
         for (EthWrapper.SuperblockEvent superblockEvent : semiApprovedSuperblockEvents) {
@@ -328,7 +328,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @param toBlock
      * @throws Exception
      */
-    private void removeApproved(long fromBlock, long toBlock) throws Exception {
+    void removeApproved(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SuperblockEvent> approvedSuperblockEvents =
                 ethWrapper.getApprovedSuperblocks(fromBlock, toBlock);
         for (EthWrapper.SuperblockEvent superblockEvent : approvedSuperblockEvents) {
