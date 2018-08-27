@@ -51,6 +51,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             removeApproved(fromBlock, toBlock);
             removeSemiApproved(fromBlock, toBlock);
             removeInvalid(fromBlock, toBlock);
+            deleteFinishedBattles(fromBlock, toBlock);
 
             logErrorClaimEvents(fromBlock, toBlock);
             logSuperblockClaimFailedEvents(fromBlock, toBlock);
@@ -338,7 +339,14 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
-    void removeInvalid(long fromBlock, long toBlock) throws Exception {
+    /**
+     * Remove invalidated superblocks from data structures that keep track of semi-approved and in battle superblocks.
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
+    @Override
+    protected void removeInvalid(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SuperblockEvent> invalidSuperblockEvents = ethWrapper.getInvalidSuperblocks(fromBlock, toBlock);
         for (EthWrapper.SuperblockEvent superblockEvent : invalidSuperblockEvents) {
             Keccak256Hash superblockId = superblockEvent.superblockId;

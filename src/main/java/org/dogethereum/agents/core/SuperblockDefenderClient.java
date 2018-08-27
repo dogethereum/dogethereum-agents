@@ -138,6 +138,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      */
     private void confirmAllSemiApprovable() throws Exception {
         for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
+<<<<<<< 2886db73a4c1f9e0b29cbd7e00faa262a3b3f183
             Superblock superblock = superblockChain.getSuperblock(superblockId);
             if (superblock != null && inBattleAndSemiApprovable(superblock)) {
                 log.info("Confirming semi-approvable superblock {}", superblockId);
