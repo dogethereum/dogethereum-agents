@@ -46,15 +46,12 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             respondToResolveScryptHashValidation(fromBlock, toBlock);
             deleteFinishedBattles(fromBlock, toBlock);
 
+            // Maintain data structures
+            deleteFinishedBattles(fromBlock, toBlock);
             getSemiApproved(fromBlock, toBlock);
             removeApproved(fromBlock, toBlock);
             removeSemiApproved(fromBlock, toBlock);
             removeInvalid(fromBlock, toBlock);
-            deleteFinishedBattles(fromBlock, toBlock);
-
-            synchronized (this) {
-                flushSemiApprovedSet();
-            }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return latestEthBlockProcessed;
@@ -486,6 +483,22 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 sessionToSuperblockMap.remove(challengerConvictedEvent.sessionId);
             }
         }
+    }
+
+    @Override
+    protected void restoreFiles() throws Exception {
+        restoreLatestEthBlockProcessed();
+        restoreSessionToSuperblockMap();
+        restoreSuperblockToSessionsMap();
+        restoreSemiApprovedSet();
+    }
+
+    @Override
+    protected void flushFiles() throws Exception {
+        flushLatestEthBlockProcessed();
+        flushSessionToSuperblockMap();
+        flushSuperblockToSessionsMap();
+        flushSemiApprovedSet();
     }
 
 

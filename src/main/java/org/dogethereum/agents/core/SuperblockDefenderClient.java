@@ -43,8 +43,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
             // Maintain data structures
             deleteFinishedBattles(fromBlock, toBlock);
-            removeInvalid(fromBlock, toBlock);
             removeSemiApproved(fromBlock, toBlock);
+            removeInvalid(fromBlock, toBlock);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return latestEthBlockProcessed;
@@ -385,5 +385,19 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 sessionToSuperblockMap.remove(challengerConvictedEvent.sessionId);
             }
         }
+    }
+
+    @Override
+    protected void restoreFiles() throws Exception {
+        restoreLatestEthBlockProcessed();
+        restoreSessionToSuperblockMap();
+        restoreSuperblockToSessionsMap();
+    }
+
+    @Override
+    protected void flushFiles() throws Exception {
+        flushLatestEthBlockProcessed();
+        flushSessionToSuperblockMap();
+        flushSuperblockToSessionsMap();
     }
 }
