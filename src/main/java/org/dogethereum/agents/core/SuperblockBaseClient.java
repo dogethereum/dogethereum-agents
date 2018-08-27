@@ -99,6 +99,8 @@ public abstract class SuperblockBaseClient {
             try {
 //                log.debug("/////////Running");
                 if (!ethWrapper.isEthNodeSyncing()) {
+                    restoreFiles();
+
                     if (arePendingTransactions()) {
                         log.debug("Skipping there are pending transaction for the sender address.");
                         return;
@@ -121,10 +123,7 @@ public abstract class SuperblockBaseClient {
                     getNewBattles(fromBlock, toBlock); // update battle set
                     latestEthBlockProcessed = reactToEvents(fromBlock, toBlock);
 
-                    flushLatestEthBlockProcessed();
-                    flushSessionToSuperblockMap();
-                    flushSuperblockToSessionsMap();
-
+                    flushFiles();
                 } else {
                     log.warn("SuperblocksBaseClientTimerTask skipped because the eth node is syncing blocks");
                 }
@@ -167,6 +166,10 @@ public abstract class SuperblockBaseClient {
 
     protected abstract void removeInvalid(long fromBlock, long toBlock) throws Exception;
 
+    protected abstract void restoreFiles() throws Exception;
+
+    protected abstract void flushFiles() throws Exception;
+
 
     /* ---- DATABASE METHODS ---- */
 
@@ -184,7 +187,7 @@ public abstract class SuperblockBaseClient {
 
     }
 
-    private void restoreLatestEthBlockProcessed() throws IOException {
+    void restoreLatestEthBlockProcessed() throws IOException {
         if (latestEthBlockProcessedFile.exists()) {
             synchronized (this) {
                 try (
@@ -198,7 +201,7 @@ public abstract class SuperblockBaseClient {
         }
     }
 
-    private void flushLatestEthBlockProcessed() throws IOException {
+    void flushLatestEthBlockProcessed() throws IOException {
         synchronized (this) {
             if (!dataDirectory.exists()) {
                 if (!dataDirectory.mkdirs()) {
@@ -215,7 +218,7 @@ public abstract class SuperblockBaseClient {
         }
     }
 
-    private void restoreSessionToSuperblockMap() throws IOException, ClassNotFoundException {
+    void restoreSessionToSuperblockMap() throws IOException, ClassNotFoundException {
         if (sessionToSuperblockMapFile.exists()) {
             synchronized (this) {
                 try (
@@ -230,7 +233,7 @@ public abstract class SuperblockBaseClient {
         }
     }
 
-    private void flushSessionToSuperblockMap() throws IOException {
+    void flushSessionToSuperblockMap() throws IOException {
         if (!dataDirectory.exists()) {
             if (!dataDirectory.mkdirs()) {
                 throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());
@@ -244,7 +247,7 @@ public abstract class SuperblockBaseClient {
         }
     }
 
-    private void restoreSuperblockToSessionsMap() throws IOException, ClassNotFoundException {
+    void restoreSuperblockToSessionsMap() throws IOException, ClassNotFoundException {
         if (superblockToSessionsMapFile.exists()) {
             synchronized (this) {
                 try (
@@ -260,7 +263,7 @@ public abstract class SuperblockBaseClient {
         }
     }
 
-    private void flushSuperblockToSessionsMap() throws IOException {
+    void flushSuperblockToSessionsMap() throws IOException {
         if (!dataDirectory.exists()) {
             if (!dataDirectory.mkdirs()) {
                 throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());
