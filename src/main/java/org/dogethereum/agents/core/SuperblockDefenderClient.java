@@ -334,16 +334,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         }
     }
 
-    private void logInvalid(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> semiApprovedSuperblocks =
-                ethWrapper.getInvalidSuperblocks(fromBlock, toBlock);
-
-        for (EthWrapper.SuperblockEvent superblockEvent : semiApprovedSuperblocks) {
-//            if (isMine(superblockEvent)) {
-                log.debug("Invalid: {}", superblockEvent.superblockId);
-//            }
-        }
-    }
 
     /* ---- OVERRIDE ABSTRACT METHODS ---- */
 
