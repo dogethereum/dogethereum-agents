@@ -889,8 +889,8 @@ public class EthWrapper implements SuperblockConstantProvider {
         CompletableFuture<TransactionReceipt> futureReceipt = claimManager.respondBlockHeader(
                 superblockId.getBytes(), sessionId.getBytes(), scryptHashBytes, blockHeaderBytes).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("Responded to block header query for Doge block {}, session {}",
-                        dogeBlock.getHash(), sessionId)
+                log.info("Responded to block header query for Doge block {}, session {}, superblock {}",
+                        dogeBlock.getHash(), sessionId, superblockId)
         );
     }
 
@@ -902,7 +902,8 @@ public class EthWrapper implements SuperblockConstantProvider {
         CompletableFuture<TransactionReceipt> futureReceipt =
                 claimManager.respondMerkleRootHashes(superblockId.getBytes(), sessionId.getBytes(), rawHashes).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("Responded to Merkle root hashes query for session {}", sessionId));
+                log.info("Responded to Merkle root hashes query for session {}, superblock {}",
+                        sessionId, superblockId));
     }
 
     public void queryBlockHeader(Keccak256Hash superblockId, Keccak256Hash sessionId, Sha256Hash dogeBlockHash) {
@@ -910,9 +911,10 @@ public class EthWrapper implements SuperblockConstantProvider {
                 claimManagerForChallenges.queryBlockHeader(superblockId.getBytes(),
                 sessionId.getBytes(), dogeBlockHash.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("Requested Doge block header for block {}", dogeBlockHash));
+                log.info("Requested Doge block header for block {}, superblock {}", dogeBlockHash, superblockId));
     }
 
+    // TODO: see if the challenger should know which superblock this is
     public void verifySuperblock(Keccak256Hash sessionId, DogeClaimManagerExtended myClaimManager) throws Exception {
         CompletableFuture<TransactionReceipt> futureReceipt =
                 myClaimManager.verifySuperblock(sessionId.getBytes()).sendAsync();
