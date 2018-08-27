@@ -117,8 +117,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      * @throws Exception
      */
     private void confirmAllSemiApprovable() throws Exception {
-        for (Keccak256Hash sessionId : battleMap.keySet()) {
-            Keccak256Hash superblockId = battleMap.get(sessionId);
+        for (Keccak256Hash sessionId : sessionToSuperblockMap.keySet()) {
+            Keccak256Hash superblockId = sessionToSuperblockMap.get(sessionId);
             Superblock superblock = superblockChain.getSuperblock(superblockId);
             if (superblock != null && inBattleAndSemiApprovable(superblockChain.getSuperblock(superblockId))) {
                 log.info("Confirming semi-approvable superblock {}", superblockId);
@@ -214,7 +214,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         List<EthWrapper.ErrorBattleEvent> errorBattleEvents = ethWrapper.getErrorBattleEvents(fromBlock, toBlock);
 
         for (EthWrapper.ErrorBattleEvent errorBattleEvent : errorBattleEvents) {
-            if (battleMap.containsKey(errorBattleEvent.sessionId)) {
+            if (sessionToSuperblockMap.containsKey(errorBattleEvent.sessionId)) {
                 log.info("ErrorBattle. Session ID: {}, error: {}", errorBattleEvent.sessionId, errorBattleEvent.err);
             }
         }
@@ -358,13 +358,13 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     @Override
-    protected String getBattleMapFilename() {
-        return "SuperblockDefenderBattleMap.dat";
+    protected String getSessionToSuperblockMapFilename() {
+        return "SuperblockDefenderSessionToSuperblockMap.dat";
     }
 
     @Override
-    protected String getSuperblockBattleMapFilename() {
-        return "SuperblockDefenderSuperblockBattleMap.dat";
+    protected String getSuperblockToSessionsMapFilename() {
+        return "SuperblockDefenderSuperblockToSessionsMap.dat";
     }
 
     @Override
@@ -379,7 +379,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     @Override
     protected void callBattleTimeouts() throws Exception {
-        for (Keccak256Hash sessionId : battleMap.keySet()) {
+        for (Keccak256Hash sessionId : sessionToSuperblockMap.keySet()) {
             if (ethWrapper.getChallengerHitTimeout(sessionId)) {
                 log.info("Challenger hit timeout on session {}. Calling timeout.", sessionId);
                 ethWrapper.timeout(sessionId, ethWrapper.getClaimManager());
@@ -409,7 +409,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             if (submitterConvictedEvent.submitter.equals(myAddress)) {
                 log.info("Submitter convicted on session {}, superblock {}. Battle lost!",
                         submitterConvictedEvent.sessionId, submitterConvictedEvent.superblockId);
-                battleMap.remove(submitterConvictedEvent.sessionId);
+                sessionToSuperblockMap.remove(submitterConvictedEvent.sessionId);
                 // TODO: see if this should have some fault tolerance for battles that were erroneously not added to set
             }
         }
@@ -429,10 +429,10 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock, ethWrapper.getClaimManager());
 
         for (EthWrapper.ChallengerConvictedEvent challengerConvictedEvent : challengerConvictedEvents) {
-            if (battleMap.containsKey(challengerConvictedEvent.sessionId)) {
+            if (sessionToSuperblockMap.containsKey(challengerConvictedEvent.sessionId)) {
                 log.info("Challenger convicted on session {}, superblock {}. Battle won!",
                         challengerConvictedEvent.sessionId, challengerConvictedEvent.superblockId);
-                battleMap.remove(challengerConvictedEvent.sessionId);
+                sessionToSuperblockMap.remove(challengerConvictedEvent.sessionId);
             }
         }
     }
