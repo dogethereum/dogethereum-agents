@@ -146,7 +146,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
         for (EthWrapper.QueryMerkleRootHashesEvent queryMerkleRootHashes : queryMerkleRootHashesEvents) {
             if (isMine(queryMerkleRootHashes)) {
-                log.info("Merkle root hashes requested for session {}. Responding now.",
+                log.info("Merkle root hashes requested for session {}, superblock {}. Responding now.",
                         queryMerkleRootHashes.sessionId);
 
                 Superblock superblock = superblockChain.getSuperblock(queryMerkleRootHashes.superblockId);
