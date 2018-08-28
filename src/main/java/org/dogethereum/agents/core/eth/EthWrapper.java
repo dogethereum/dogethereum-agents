@@ -1099,6 +1099,10 @@ public class EthWrapper implements SuperblockConstantProvider {
         return result;
     }
 
+    public boolean isChallenged(Superblock superblock) throws Exception {
+        return getClaimChallengers(superblock.getSuperblockId()).size() > 0;
+    }
+
 
     /* ---------------------------------- */
     /* ----- Relay Doge tx section ------ */

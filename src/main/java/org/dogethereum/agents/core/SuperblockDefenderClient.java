@@ -109,9 +109,11 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 log.info("Confirming superblock {}", toConfirmId);
                 ethWrapper.checkClaimFinished(toConfirmId);
             } else if (semiApprovedAndApprovable(toConfirm)) {
-                Keccak256Hash descendantId = superblockChain.getFirstDescendant(toConfirmId).getSuperblockId();
-                log.info("Confirming semi-approved superblock {}", toConfirmId);
-                ethWrapper.confirmClaim(toConfirmId, descendantId);
+                Keccak256Hash descendantId = getHighestApprovableDescendant(toConfirmId);
+                if (descendantId != null) {
+                    log.info("Confirming semi-approved superblock {}", toConfirmId);
+                    ethWrapper.confirmClaim(toConfirmId, descendantId);
+                }
             }
         }
     }
@@ -286,6 +288,45 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             return (ethWrapper.isSuperblockSemiApproved(descendantId) &&
                     ethWrapper.isSuperblockSemiApproved(superblockId));
         }
+    }
+
+    private Keccak256Hash getHighestApprovableDescendant(Keccak256Hash superblockId)
+            throws BlockStoreException, IOException, Exception {
+        Superblock highest = superblockChain.getChainHead();
+
+        // Find highest semi-approved unchallenged descendant
+        while (!semiApprovedAndUnchallenged(highest)) {
+            highest = superblockChain.getParent(highest);
+            if (highest.getSuperblockId().equals(superblockId)) {
+                // No semi-approved unchallenged descendants found
+                return null;
+            }
+        }
+
+        // Find highest semi-approved unchallenged descendant with no challenged ancestors
+        Superblock ancestor = superblockChain.getParent(highest);
+        while (ancestor != null && !ancestor.getSuperblockId().equals(superblockId) &&
+                !highest.getSuperblockId().equals(superblockId)) {
+            if (ethWrapper.isChallenged(ancestor)) {
+                highest = superblockChain.getParent(ancestor); // skip challenged superblock
+                ancestor = superblockChain.getParent(highest); // given the context, highest cannot be null
+            } else {
+                ancestor = superblockChain.getParent(ancestor);
+            }
+        }
+
+        if (highest.getSuperblockHeight() > superblockChain.getSuperblock(superblockId).getSuperblockHeight()) {
+            return highest.getSuperblockId();
+        } else {
+            // No unchallenged descendant
+            return null;
+        }
+    }
+
+    private boolean semiApprovedAndUnchallenged(Superblock superblock) throws Exception {
+        Keccak256Hash superblockId = superblock.getSuperblockId();
+        return (ethWrapper.isSuperblockSemiApproved(superblockId) &&
+                !ethWrapper.isChallenged(superblock));
     }
 
     private void logApproved(long fromBlock, long toBlock) throws Exception {
