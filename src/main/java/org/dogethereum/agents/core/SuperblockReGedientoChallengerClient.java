@@ -10,6 +10,9 @@ import java.util.List;
 @Slf4j(topic = "SuperblockReGedientoChallengerClient")
 public class SuperblockReGedientoChallengerClient extends SuperblockChallengerClient {
 
+    private boolean challengeNextSuperblock = true;
+    private int challengedSuperblocks = 0;
+
     @Override
     public long reactToEvents(long fromBlock, long toBlock) {
         try {
@@ -37,9 +40,15 @@ public class SuperblockReGedientoChallengerClient extends SuperblockChallengerCl
         List<EthWrapper.SuperblockEvent> newSuperblockEvents = ethWrapper.getNewSuperblocks(fromBlock, toBlock);
         log.info("Challenging everything");
         for (EthWrapper.SuperblockEvent superblockEvent : newSuperblockEvents) {
-            log.info("Challenging superblock {}", superblockEvent.superblockId);
-            ethWrapper.challengeSuperblock(superblockEvent.superblockId);
-            Thread.sleep(200);
+            if (challengeNextSuperblock) {
+                log.info("Challenging superblock {}", superblockEvent.superblockId);
+                ethWrapper.challengeSuperblock(superblockEvent.superblockId);
+                Thread.sleep(200);
+                challengedSuperblocks++;
+            }
+            if (challengedSuperblocks == 2) {
+                challengeNextSuperblock = false;
+            }
         }
     }
 
