@@ -44,7 +44,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             respondToMerkleRootHashesEventResponses(fromBlock, toBlock);
             respondToBlockHeaderEventResponses(fromBlock, toBlock);
             respondToResolveScryptHashValidation(fromBlock, toBlock);
-            deleteFinishedBattles(fromBlock, toBlock);
 
             // Maintain data structures
             deleteFinishedBattles(fromBlock, toBlock);
