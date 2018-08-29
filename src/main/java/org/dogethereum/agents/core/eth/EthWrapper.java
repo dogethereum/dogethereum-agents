@@ -1,4 +1,4 @@
-#package org.dogethereum.agents.core.eth;
+package org.dogethereum.agents.core.eth;
 
 
 import lombok.extern.slf4j.Slf4j;
@@ -1041,10 +1041,6 @@ public class EthWrapper implements SuperblockConstantProvider {
     public boolean getClaimExists(Keccak256Hash superblockId, DogeClaimManagerExtended myClaimManager)
             throws Exception {
         return myClaimManager.getClaimExists(superblockId.getBytes()).send();
-    }
-
-    public String getClaimSubmitter(Keccak256Hash superblockId) throws Exception {
-        return claimManager.getClaimSubmitter(superblockId.getBytes()).send();
     }
 
     public String getClaimSubmitter(Keccak256Hash superblockId) throws Exception {
