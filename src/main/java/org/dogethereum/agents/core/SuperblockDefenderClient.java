@@ -25,6 +25,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     private static long ETH_REQUIRED_CONFIRMATIONS = 5;
 
+    DogeClaimManagerExtended claimManager;
+
     // Temporary workaround; keep sent children here in order to semi approve them later
     // Delete them when they are semi approved or invalidated
     private HashSet<Keccak256Hash> descendantsOfSemiApprovedSet;
@@ -141,7 +143,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      */
     private void confirmAllSemiApprovable() throws Exception {
         for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
-<<<<<<< 2886db73a4c1f9e0b29cbd7e00faa262a3b3f183
             Superblock superblock = superblockChain.getSuperblock(superblockId);
             if (superblock != null && inBattleAndSemiApprovable(superblock)) {
                 log.info("Confirming semi-approvable superblock {}", superblockId);
@@ -213,7 +214,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             if (descendant != null) {
                 log.info("Found superblock {}, descendant of semi-approved {}. Sending it now.",
                         descendant.getSuperblockId(), semiApprovedSuperblockEvent.superblockId);
-                ethWrapper.sendStoreSuperblock(descendant);
+                ethWrapper.sendStoreSuperblock(descendant, claimManager);
                 descendantsOfSemiApprovedSet.add(descendant.getSuperblockId());
             }
         }
@@ -247,17 +248,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             if (sessionToSuperblockMap.containsKey(errorBattleEvent.sessionId)) {
                 log.info("ErrorBattle. Session ID: {}, error: {}", errorBattleEvent.sessionId, errorBattleEvent.err);
             }
-        }
-    }
-
-    private void getPendingClaims(long fromBlock, long toBlock) throws IOException, InterruptedException {
-        Thread.sleep(200);
-        List<EthWrapper.SuperblockClaimPendingEvent> superblockClaimPendingEvents =
-                ethWrapper.getSuperblockClaimPendingEvents(fromBlock, toBlock);
-        for (EthWrapper.SuperblockClaimPendingEvent superblockClaimPendingEvent : superblockClaimPendingEvents) {
-//            if (superblockClaimPendingEvent.claimant.equals(myAddress)) {
-                log.debug("Superblock claim {} pending");
-//            }
         }
     }
 
@@ -401,16 +391,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         }
     }
 
-    private void logInvalid(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> semiApprovedSuperblocks =
-                ethWrapper.getInvalidSuperblocks(fromBlock, toBlock);
-
-        for (EthWrapper.SuperblockEvent superblockEvent : semiApprovedSuperblocks) {
-//            if (isMine(superblockEvent)) {
-                log.debug("Invalid: {}", superblockEvent.superblockId);
-//            }
-        }
-    }
 
     /* ---- OVERRIDE ABSTRACT METHODS ---- */
 
