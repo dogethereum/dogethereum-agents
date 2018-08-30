@@ -25,7 +25,10 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     private static long ETH_REQUIRED_CONFIRMATIONS = 5;
 
-    protected DogeClaimManagerExtended claimManager;
+    // Temporary workaround; keep sent children here in order to semi approve them later
+    // Delete them when they are semi approved or invalidated
+    private HashSet<Keccak256Hash> descendantsOfSemiApprovedSet;
+    private File descendantsOfSemiApprovedSetFile;
 
     public SuperblockDefenderClient() {
         super("Superblock defender client");
@@ -35,6 +38,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     protected void setupClient() {
         myAddress = ethWrapper.getGeneralPurposeAndSendSuperblocksAddress();
         claimManager = ethWrapper.getClaimManager();
+	setupDescendantsOfSemiApprovedSet();
     }
 
     @Override
@@ -54,6 +58,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             // Maintain data structures
             deleteFinishedBattles(fromBlock, toBlock);
             removeSemiApproved(fromBlock, toBlock);
+            removeSemiApprovedDescendants(fromBlock, toBlock);
             removeInvalid(fromBlock, toBlock);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -130,6 +135,14 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 ethWrapper.checkClaimFinished(superblockId);
             }
         }
+
+        for (Keccak256Hash superblockId : descendantsOfSemiApprovedSet) {
+            Superblock superblock = superblockChain.getSuperblock(superblockId);
+            if (superblock != null && newAndTimeoutPassed(superblock)) {
+                log.info("Confirming semi-approvable superblock {}", superblockId);
+                ethWrapper.checkClaimFinished(superblockId);
+            }
+        }
     }
 
 
@@ -183,13 +196,12 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
 
         for (EthWrapper.SuperblockEvent semiApprovedSuperblockEvent : semiApprovedSuperblockEvents) {
-            if (isMine(semiApprovedSuperblockEvent)) {
-                Superblock descendant = superblockChain.getFirstDescendant(semiApprovedSuperblockEvent.superblockId);
-                if (descendant != null) {
-                    log.info("Found superblock {}, descendant of semi-approved {}. Sending it now.",
-                            descendant.getSuperblockId(), semiApprovedSuperblockEvent.superblockId);
-                    ethWrapper.sendStoreSuperblock(descendant, claimManager);
-                }
+            Superblock descendant = superblockChain.getFirstDescendant(semiApprovedSuperblockEvent.superblockId);
+            if (descendant != null) {
+                log.info("Found superblock {}, descendant of semi-approved {}. Sending it now.",
+                        descendant.getSuperblockId(), semiApprovedSuperblockEvent.superblockId);
+                ethWrapper.sendStoreSuperblock(descendant);
+                descendantsOfSemiApprovedSet.add(descendant.getSuperblockId());
             }
         }
     }
@@ -411,6 +423,25 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         }
     }
 
+
+    /**
+     * Remove semi-approved superblocks from a data structure that keeps track of sent superblocks to semi-approve.
+     * Temporary workaround!
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
+    void removeSemiApprovedDescendants(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
+                ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
+
+        for (EthWrapper.SuperblockEvent semiApprovedSuperblockEvent : semiApprovedSuperblockEvents) {
+            if (descendantsOfSemiApprovedSet.contains(semiApprovedSuperblockEvent.superblockId)) {
+                descendantsOfSemiApprovedSet.remove(semiApprovedSuperblockEvent.superblockId);
+            }
+        }
+    }
+
     /**
      * Remove invalidated superblocks from the data structure that keeps track of in battle superblocks.
      * @param fromBlock
@@ -424,6 +455,10 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             Keccak256Hash superblockId = superblockEvent.superblockId;
             if (superblockToSessionsMap.containsKey(superblockId)) {
                 superblockToSessionsMap.remove(superblockId);
+            }
+
+            if (descendantsOfSemiApprovedSet.contains(superblockEvent.superblockId)) {
+                descendantsOfSemiApprovedSet.remove(superblockId);
             }
         }
     }
@@ -483,6 +518,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         restoreLatestEthBlockProcessed();
         restoreSessionToSuperblockMap();
         restoreSuperblockToSessionsMap();
+        restoreDescendantsOfSemiApprovedSet();
     }
 
     @Override
@@ -490,5 +526,47 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         flushLatestEthBlockProcessed();
         flushSessionToSuperblockMap();
         flushSuperblockToSessionsMap();
+        flushDescendantsOfSemiApprovedSet();
+    }
+
+
+    /* ---- STORAGE ---- */
+
+    private void setupDescendantsOfSemiApprovedSet() {
+        this.descendantsOfSemiApprovedSet = new HashSet<>();
+        this.descendantsOfSemiApprovedSetFile = new File(dataDirectory.getAbsolutePath() +
+                "/DescendantsOfSemiApprovedSet.dat");
+    }
+
+    private void restoreDescendantsOfSemiApprovedSet() throws IOException, ClassNotFoundException {
+        if (descendantsOfSemiApprovedSetFile.exists()) {
+            synchronized (this) {
+                try (
+                        FileInputStream descendantsOfSemiApprovedSetFileIs =
+                                new FileInputStream(descendantsOfSemiApprovedSetFile);
+                        ObjectInputStream descendantsOfSemiApprovedSetObjectIs =
+                                new ObjectInputStream(descendantsOfSemiApprovedSetFileIs);
+                ) {
+                    descendantsOfSemiApprovedSet =
+                            (HashSet<Keccak256Hash>) descendantsOfSemiApprovedSetObjectIs.readObject();
+                }
+            }
+        }
+    }
+
+    private void flushDescendantsOfSemiApprovedSet() throws IOException {
+        if (!dataDirectory.exists()) {
+            if (!dataDirectory.mkdirs()) {
+                throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());
+            }
+        }
+        try (
+                FileOutputStream descendantsOfSemiApprovedSetFileOs =
+                        new FileOutputStream(descendantsOfSemiApprovedSetFile);
+                ObjectOutputStream descendantsOfSemiApprovedSetObjectOs =
+                        new ObjectOutputStream(descendantsOfSemiApprovedSetFileOs);
+        ) {
+            descendantsOfSemiApprovedSetObjectOs.writeObject(descendantsOfSemiApprovedSet);
+        }
     }
 }
