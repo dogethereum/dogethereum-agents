@@ -128,11 +128,9 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 log.info("Confirming superblock {}", toConfirmId);
                 ethWrapper.checkClaimFinished(toConfirmId);
             } else if (semiApprovedAndApprovable(toConfirm)) {
-                Keccak256Hash descendantId = getHighestApprovableDescendant(toConfirmId);
-                if (descendantId != null) {
-                    log.info("Confirming semi-approved superblock {}", toConfirmId);
-                    ethWrapper.confirmClaim(toConfirmId, descendantId);
-                }
+                Keccak256Hash descendantId = superblockChain.getFirstDescendant(toConfirmId).getSuperblockId();
+                log.info("Confirming semi-approved superblock {} with descendant {}", toConfirmId, descendantId);
+                ethWrapper.confirmClaim(toConfirmId, descendantId);
             }
         }
     }
