@@ -5,16 +5,16 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j(topic = "SuperblockMaliciousDefenderClient")
-public class SuperblockMaliciousDefenderClient extends SuperblockDefenderClient {
+public class SuperblockMaliciousDefenderClient {
 
-    @Override
-    protected void setupClient() {
-        myAddress = ethWrapper.getMaliciousSubmitterAddress();
-        claimManager = ethWrapper.getMaliciousClaimManager();
-    }
-
-    @Override
-    protected boolean isEnabled() {
-        return config.isDogeMaliciousSubmitterEnabled();
-    }
+//    @Override
+//    protected void setupClient() {
+//        myAddress = ethWrapper.getMaliciousSubmitterAddress();
+//        claimManager = ethWrapper.getMaliciousClaimManager();
+//    }
+//
+//    @Override
+//    protected boolean isEnabled() {
+//        return config.isDogeMaliciousSubmitterEnabled();
+//    }
 }
