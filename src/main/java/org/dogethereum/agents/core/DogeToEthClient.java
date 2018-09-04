@@ -86,7 +86,7 @@ public class DogeToEthClient {
                         updateBridgeSuperblockChain();
                     }
                     if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
-                        updateBridgeTransactionsSuperblocks();
+                        updateBridgeTransactions();
                     }
                 } else {
                     log.warn("DogeToEthClientTimerTask skipped because the eth node is syncing blocks");
@@ -171,31 +171,7 @@ public class DogeToEthClient {
         return matchedSuperblock;
     }
 
-    /**
-     * Helper method for updateBridgeSuperblockChain().
-     * Get all the superblocks from the agent's main chain that come after a certain superblock.
-     * Returns a Deque object because it provides an efficient interface for adding elements to the front;
-     * since the blocks are traversed from latest to earliest but they must be sent in the opposite order,
-     * this data structure is useful for this method.
-     * @param superblockId Hash of the best superblock from the bridge that was also found in the agent.
-     * @return Deque of superblocks newer than the given superblock, from earliest to latest.
-     * @throws BlockStoreException
-     * @throws IOException
-     */
-    private Deque<Superblock> getSuperblocksNewerThan(Keccak256Hash superblockId) throws BlockStoreException, IOException {
-        Deque<Superblock> superblocks = new ArrayDeque<>();
-        Superblock currentSuperblock = superblockChain.getChainHead();
-
-        while (!currentSuperblock.getSuperblockId().equals(superblockId)) {
-            superblocks.addFirst(currentSuperblock);
-            currentSuperblock = superblockChain.getSuperblock(currentSuperblock.getParentId());
-        }
-
-        return superblocks;
-    }
-
-    // Temporary
-    public void updateBridgeTransactionsSuperblocks() throws Exception {
+    public void updateBridgeTransactions() throws Exception {
         if (ethWrapper.arePendingTransactionsForRelayTxsAddress()) {
             log.debug("Skipping relay tx, there are pending transaction for the sender address.");
             return;
@@ -301,8 +277,6 @@ public class DogeToEthClient {
         // current superblock is null
         return null;
     }
-
-
 
 }
 
