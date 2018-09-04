@@ -36,7 +36,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     @Override
     protected void setupClient() {
         myAddress = ethWrapper.getGeneralPurposeAndSendSuperblocksAddress();
-        setupDescendantsOfSemiApprovedSet();
     }
 
     @Override
@@ -292,6 +291,12 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     /* ---- OVERRIDE ABSTRACT METHODS ---- */
 
     @Override
+    protected void setupFiles() throws IOException {
+        setupBaseFiles();
+        setupDescendantsOfSemiApprovedSet();
+    }
+
+    @Override
     protected boolean arePendingTransactions() throws IOException {
         return ethWrapper.arePendingTransactionsForSendSuperblocksAddress();
     }
@@ -427,19 +432,19 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     @Override
-    protected void restoreFiles() throws Exception {
-        restoreLatestEthBlockProcessed();
-        restoreSessionToSuperblockMap();
-        restoreSuperblockToSessionsMap();
-        restoreDescendantsOfSemiApprovedSet();
+    protected void restoreFiles() throws ClassNotFoundException, IOException {
+        restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
+        restore(sessionToSuperblockMap, sessionToSuperblockMapFile);
+        restore(superblockToSessionsMap, superblockToSessionsMapFile);
+        restore(descendantsOfSemiApprovedSet, descendantsOfSemiApprovedSetFile);
     }
 
     @Override
-    protected void flushFiles() throws Exception {
-        flushLatestEthBlockProcessed();
-        flushSessionToSuperblockMap();
-        flushSuperblockToSessionsMap();
-        flushDescendantsOfSemiApprovedSet();
+    protected void flushFiles() throws ClassNotFoundException, IOException {
+        flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
+        flush(sessionToSuperblockMap, sessionToSuperblockMapFile);
+        flush(superblockToSessionsMap, superblockToSessionsMapFile);
+        flush(descendantsOfSemiApprovedSet, descendantsOfSemiApprovedSetFile);
     }
 
 
@@ -451,35 +456,4 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 "/DescendantsOfSemiApprovedSet.dat");
     }
 
-    private void restoreDescendantsOfSemiApprovedSet() throws IOException, ClassNotFoundException {
-        if (descendantsOfSemiApprovedSetFile.exists()) {
-            synchronized (this) {
-                try (
-                        FileInputStream descendantsOfSemiApprovedSetFileIs =
-                                new FileInputStream(descendantsOfSemiApprovedSetFile);
-                        ObjectInputStream descendantsOfSemiApprovedSetObjectIs =
-                                new ObjectInputStream(descendantsOfSemiApprovedSetFileIs);
-                ) {
-                    descendantsOfSemiApprovedSet =
-                            (HashSet<Keccak256Hash>) descendantsOfSemiApprovedSetObjectIs.readObject();
-                }
-            }
-        }
-    }
-
-    private void flushDescendantsOfSemiApprovedSet() throws IOException {
-        if (!dataDirectory.exists()) {
-            if (!dataDirectory.mkdirs()) {
-                throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());
-            }
-        }
-        try (
-                FileOutputStream descendantsOfSemiApprovedSetFileOs =
-                        new FileOutputStream(descendantsOfSemiApprovedSetFile);
-                ObjectOutputStream descendantsOfSemiApprovedSetObjectOs =
-                        new ObjectOutputStream(descendantsOfSemiApprovedSetFileOs);
-        ) {
-            descendantsOfSemiApprovedSetObjectOs.writeObject(descendantsOfSemiApprovedSet);
-        }
-    }
 }

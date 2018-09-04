@@ -19,7 +19,7 @@ import java.util.*;
  */
 
 @Slf4j(topic = "SuperblockDefenderClient")
-public abstract class SuperblockBaseClient {
+public abstract class SuperblockBaseClient extends PersistentFileStore {
 
     @Autowired
     protected DogecoinWrapper dogecoinWrapper;
@@ -45,7 +45,6 @@ public abstract class SuperblockBaseClient {
     // key: superblock id, value: set of session ids
     protected HashMap<Keccak256Hash, HashSet<Keccak256Hash>> superblockToSessionsMap;
 
-    protected File dataDirectory;
     protected File latestEthBlockProcessedFile;
     protected File sessionToSuperblockMapFile;
     protected File superblockToSessionsMapFile;
@@ -56,13 +55,11 @@ public abstract class SuperblockBaseClient {
     }
 
     @PostConstruct
-    public void setup() throws Exception {
+    public void setup() throws ClassNotFoundException, IOException {
         if (isEnabled()) {
             setupFiles();
 
-            restoreLatestEthBlockProcessed();
-            restoreSessionToSuperblockMap();
-            restoreSuperblockToSessionsMap();
+            restoreFiles();
 
             setupClient();
 
@@ -71,13 +68,11 @@ public abstract class SuperblockBaseClient {
     }
 
     @PreDestroy
-    public void tearDown() throws BlockStoreException, IOException {
+    public void tearDown() throws BlockStoreException, ClassNotFoundException, IOException {
         if (isEnabled()) {
             log.info("{} tearDown starting...", clientName);
 
-            flushLatestEthBlockProcessed();
-            flushSessionToSuperblockMap();
-            flushSuperblockToSessionsMap();
+            flushFiles();
 
             log.info("{} tearDown finished.", clientName);
         }
@@ -161,14 +156,14 @@ public abstract class SuperblockBaseClient {
 
     protected abstract void removeInvalid(long fromBlock, long toBlock) throws Exception;
 
-    protected abstract void restoreFiles() throws Exception;
+    protected abstract void restoreFiles() throws ClassNotFoundException, IOException;
 
-    protected abstract void flushFiles() throws Exception;
+    protected abstract void flushFiles() throws ClassNotFoundException, IOException;
 
 
     /* ---- DATABASE METHODS ---- */
 
-    private void setupFiles() throws IOException {
+    void setupBaseFiles() throws IOException {
         this.latestEthBlockProcessed = config.getAgentConstants().getEthInitialCheckpoint();
         this.dataDirectory = new File(config.dataDirectory());
         this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() +
@@ -181,98 +176,6 @@ public abstract class SuperblockBaseClient {
                 + getSuperblockToSessionsMapFilename());
 
     }
-
-    void restoreLatestEthBlockProcessed() throws IOException {
-        if (latestEthBlockProcessedFile.exists()) {
-            synchronized (this) {
-                try (
-                    FileInputStream latestEthBlockProcessedFileIs = new FileInputStream(latestEthBlockProcessedFile);
-                    ObjectInputStream latestEthBlockProcessedObjectIs =
-                        new ObjectInputStream(latestEthBlockProcessedFileIs);
-                ) {
-                    latestEthBlockProcessed = latestEthBlockProcessedObjectIs.readLong();
-                }
-            }
-        }
-    }
-
-    void flushLatestEthBlockProcessed() throws IOException {
-        synchronized (this) {
-            if (!dataDirectory.exists()) {
-                if (!dataDirectory.mkdirs()) {
-                    throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());
-                }
-            }
-            try (
-                FileOutputStream latestEthBlockProcessedFileOs = new FileOutputStream(latestEthBlockProcessedFile);
-                ObjectOutputStream latestEthBlockProcessedObjectOs =
-                        new ObjectOutputStream(latestEthBlockProcessedFileOs);
-            ) {
-                latestEthBlockProcessedObjectOs.writeLong(latestEthBlockProcessed);
-            }
-        }
-    }
-
-    void restoreSessionToSuperblockMap() throws IOException, ClassNotFoundException {
-        if (sessionToSuperblockMapFile.exists()) {
-            synchronized (this) {
-                try (
-                    FileInputStream sessionToSuperblockMapFileIs = new FileInputStream(sessionToSuperblockMapFile);
-                    ObjectInputStream sessionToSuperblockMapObjectIs =
-                            new ObjectInputStream(sessionToSuperblockMapFileIs);
-                ) {
-                    sessionToSuperblockMap =
-                            (HashMap<Keccak256Hash, Keccak256Hash>) sessionToSuperblockMapObjectIs.readObject();
-                }
-            }
-        }
-    }
-
-    void flushSessionToSuperblockMap() throws IOException {
-        if (!dataDirectory.exists()) {
-            if (!dataDirectory.mkdirs()) {
-                throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());
-            }
-        }
-        try (
-            FileOutputStream sessionToSuperblockMapFileOs = new FileOutputStream(sessionToSuperblockMapFile);
-            ObjectOutputStream sessionToSuperblockMapObjectOs = new ObjectOutputStream(sessionToSuperblockMapFileOs);
-        ) {
-            sessionToSuperblockMapObjectOs.writeObject(sessionToSuperblockMap);
-        }
-    }
-
-    void restoreSuperblockToSessionsMap() throws IOException, ClassNotFoundException {
-        if (superblockToSessionsMapFile.exists()) {
-            synchronized (this) {
-                try (
-                        FileInputStream superblockToSessionsMapFileIs =
-                                new FileInputStream(superblockToSessionsMapFile);
-                        ObjectInputStream superblockToSessionsMapObjectIs =
-                                new ObjectInputStream(superblockToSessionsMapFileIs);
-                ) {
-                    superblockToSessionsMap = (HashMap<Keccak256Hash, HashSet<Keccak256Hash>>)
-                            superblockToSessionsMapObjectIs.readObject();
-                }
-            }
-        }
-    }
-
-    void flushSuperblockToSessionsMap() throws IOException {
-        if (!dataDirectory.exists()) {
-            if (!dataDirectory.mkdirs()) {
-                throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());
-            }
-        }
-        try (
-                FileOutputStream superblockToSessionsMapFileOs = new FileOutputStream(superblockToSessionsMapFile);
-                ObjectOutputStream superblockToSessionsMapObjectOs =
-                        new ObjectOutputStream(superblockToSessionsMapFileOs);
-        ) {
-            superblockToSessionsMapObjectOs.writeObject(superblockToSessionsMap);
-        }
-    }
-
 
     /* ---- BATTLE MAP METHODS ---- */
 
@@ -340,20 +243,4 @@ public abstract class SuperblockBaseClient {
         return ethWrapper.getClaimSubmitter(superblockId).equals(myAddress);
     }
 
-    // TODO: see if this should be deleted now that data structures are maintained by responding to events
-    /**
-     *
-     * @param superblockId
-     */
-    void deleteSuperblockSessions(Keccak256Hash superblockId) {
-        if (superblockToSessionsMap.containsKey(superblockId)) {
-            HashSet<Keccak256Hash> superblockBattles = superblockToSessionsMap.get(superblockId);
-
-            for (Keccak256Hash sessionId : superblockBattles) {
-                sessionToSuperblockMap.remove(sessionId);
-            }
-
-            superblockToSessionsMap.remove(superblockId);
-        }
-    }
 }

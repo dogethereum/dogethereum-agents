@@ -33,7 +33,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     @Override
     protected void setupClient() {
         myAddress = ethWrapper.getDogeSuperblockChallengerAddress();
-        setupSemiApprovedSet();
     }
 
     @Override
@@ -390,10 +389,15 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     /* ---- OVERRIDE ABSTRACT METHODS ---- */
 
     @Override
+    protected void setupFiles() throws IOException {
+        setupBaseFiles();
+        setupSemiApprovedSet();
+    }
+
+    @Override
     protected boolean arePendingTransactions() throws IOException {
         return ethWrapper.arePendingTransactionsForChallengerAddress();
     }
-
 
     @Override
     protected boolean isEnabled() {
@@ -486,19 +490,19 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     @Override
-    protected void restoreFiles() throws Exception {
-        restoreLatestEthBlockProcessed();
-        restoreSessionToSuperblockMap();
-        restoreSuperblockToSessionsMap();
-        restoreSemiApprovedSet();
+    protected void restoreFiles() throws ClassNotFoundException, IOException {
+        restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
+        restore(sessionToSuperblockMap, sessionToSuperblockMapFile);
+        restore(superblockToSessionsMap, superblockToSessionsMapFile);
+        restore(semiApprovedSet, semiApprovedSetFile);
     }
 
     @Override
-    protected void flushFiles() throws Exception {
-        flushLatestEthBlockProcessed();
-        flushSessionToSuperblockMap();
-        flushSuperblockToSessionsMap();
-        flushSemiApprovedSet();
+    protected void flushFiles() throws ClassNotFoundException, IOException {
+        flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
+        flush(sessionToSuperblockMap, sessionToSuperblockMapFile);
+        flush(superblockToSessionsMap, superblockToSessionsMapFile);
+        flush(semiApprovedSet, semiApprovedSetFile);
     }
 
 
@@ -509,30 +513,4 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         this.semiApprovedSetFile = new File(dataDirectory.getAbsolutePath() + "/SemiApprovedSet.dat");
     }
 
-    private void restoreSemiApprovedSet() throws IOException, ClassNotFoundException {
-        if (semiApprovedSetFile.exists()) {
-            synchronized (this) {
-                try (
-                    FileInputStream semiApprovedSetFileIs = new FileInputStream(semiApprovedSetFile);
-                    ObjectInputStream semiApprovedSetObjectIs = new ObjectInputStream(semiApprovedSetFileIs);
-                ) {
-                    semiApprovedSet = (HashSet<Keccak256Hash>) semiApprovedSetObjectIs.readObject();
-                }
-            }
-        }
-    }
-
-    private void flushSemiApprovedSet() throws IOException {
-        if (!dataDirectory.exists()) {
-            if (!dataDirectory.mkdirs()) {
-                throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());
-            }
-        }
-        try (
-            FileOutputStream semiApprovedSetFileOs = new FileOutputStream(semiApprovedSetFile);
-            ObjectOutputStream semiApprovedSetObjectOs = new ObjectOutputStream(semiApprovedSetFileOs);
-        ) {
-            semiApprovedSetObjectOs.writeObject(semiApprovedSet);
-        }
-    }
 }

@@ -21,7 +21,7 @@ import java.util.*;
  */
 @Service
 @Slf4j(topic = "EthToDogeClient")
-public class EthToDogeClient {
+public class EthToDogeClient extends PersistentFileStore {
 
     @Autowired
     private EthWrapper ethWrapper;
@@ -31,7 +31,6 @@ public class EthToDogeClient {
     private static long ETH_REQUIRED_CONFIRMATIONS = 5;
 
     private long latestEthBlockProcessed;
-    private File dataDirectory;
     private File latestEthBlockProcessedFile;
 
     @Autowired
@@ -51,8 +50,8 @@ public class EthToDogeClient {
             // then read the latestEthBlockProcessed from file and overwrite it.
             this.latestEthBlockProcessed = config.getAgentConstants().getEthInitialCheckpoint();
             this.dataDirectory = new File(config.dataDirectory());
-            this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() + "/EthToDogeClientLatestEthBlockProcessedFile.dat");
-            restoreLatestEthBlockProcessed();
+            setupFiles();
+            restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
 
             new Timer("Eth to Doge client").scheduleAtFixedRate(new UpdateEthToDogeTimerTask(), getFirstExecutionDate(), config.getAgentConstants().getEthToDogeTimerTaskPeriod());
         }
@@ -82,7 +81,7 @@ public class EthToDogeClient {
                         }
                     }
                     latestEthBlockProcessed = toBlock;
-                    flushLatestEthBlockProcessed();
+                    flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
                 } else {
                     log.warn("UpdateEthToDogeTimerTask skipped because the eth node is syncing blocks");
                 }
@@ -122,35 +121,11 @@ public class EthToDogeClient {
         return Arrays.equals(unlockRequestEvent.operatorPublicKeyHash, operatorKeyHandler.getPublicKeyHash());
     }
 
-    private void restoreLatestEthBlockProcessed() throws IOException {
-        if (latestEthBlockProcessedFile.exists()) {
-            synchronized (this) {
-                try (
-                    FileInputStream latestEthBlockProcessedFileIs = new FileInputStream(latestEthBlockProcessedFile);
-                    ObjectInputStream latestEthBlockProcessedObjectIs = new ObjectInputStream(latestEthBlockProcessedFileIs);
-                ) {
-                    latestEthBlockProcessed = latestEthBlockProcessedObjectIs.readLong();
-                }
-            }
-        }
+    @Override
+    void setupFiles() {
+        this.latestEthBlockProcessedFile =
+                new File(dataDirectory.getAbsolutePath() + "/EthToDogeClientLatestEthBlockProcessedFile.dat");
     }
-
-    private void flushLatestEthBlockProcessed() throws IOException {
-        if (!dataDirectory.exists()) {
-            if (!dataDirectory.mkdirs()) {
-                throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());
-            }
-        }
-        try (
-            FileOutputStream latestEthBlockProcessedFileOs = new FileOutputStream(latestEthBlockProcessedFile);
-            ObjectOutputStream latestEthBlockProcessedObjectOs = new ObjectOutputStream(latestEthBlockProcessedFileOs);
-        ) {
-            latestEthBlockProcessedObjectOs.writeLong(latestEthBlockProcessed);
-        }
-    }
-
-
-
 
 }
 
