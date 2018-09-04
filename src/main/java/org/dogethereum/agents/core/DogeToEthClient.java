@@ -117,7 +117,7 @@ public class DogeToEthClient {
         log.debug("Matched superblock {}.", matchedSuperblock.getSuperblockId());
 
         // We found the superblock in the agent's best chain. Send the earliest superblock that the relay is missing.
-        Superblock toSend = getNextSuperblockInMainChain(matchedSuperblock.getSuperblockId());
+        Superblock toSend = superblockChain.getFirstDescendant(matchedSuperblock.getSuperblockId());
 
         if (toSend == null) {
             log.debug("Bridge was just updated, no new superblocks to send. matchedSuperblock: {}.",
@@ -192,31 +192,6 @@ public class DogeToEthClient {
         }
 
         return superblocks;
-    }
-
-    /**
-     * Helper method for updateBridgeSuperblockChain().
-     * Find a superblock in the main chain with a given superblock as its parent.
-     * @param superblockId Parent of superblock being searched.
-     * @return Immediate child of given superblock if it's in the main chain and not the tip,
-     *         null if it's the tip.
-     * @throws BlockStoreException If the superblock whose hash is `superblockId` is not in the main chain.
-     */
-    private Superblock getNextSuperblockInMainChain(Keccak256Hash superblockId)
-            throws BlockStoreException, IOException {
-        if (superblockChain.getSuperblock(superblockId).getSuperblockHeight() == superblockChain.getChainHeight()) {
-            // There's nothing above the tip of the chain.
-            return null;
-        }
-
-        // There's a superblock after superblockId. Find it.
-        Superblock currentSuperblock = superblockChain.getChainHead();
-
-        while (currentSuperblock != null && !currentSuperblock.getParentId().equals(superblockId))
-            currentSuperblock = superblockChain.getSuperblock(currentSuperblock.getParentId());
-
-        checkNotNull(currentSuperblock, "Block is not in the main chain.");
-        return currentSuperblock;
     }
 
     // Temporary

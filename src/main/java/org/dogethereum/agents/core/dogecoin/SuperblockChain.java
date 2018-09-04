@@ -16,6 +16,8 @@ import java.io.*;
 import java.math.BigInteger;
 import java.util.*;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 
 /**
  * Provides methods for interacting with a superblock chain.
@@ -211,12 +213,18 @@ public class SuperblockChain {
      * @throws BlockStoreException
      */
     public Superblock getFirstDescendant(Keccak256Hash superblockId) throws BlockStoreException, IOException {
+        if (getSuperblock(superblockId).getSuperblockHeight() == getChainHeight()) {
+            // There's nothing above the tip of the chain.
+            return null;
+        }
+
         Superblock currentSuperblock = getChainHead();
 
         while (currentSuperblock != null && !currentSuperblock.getParentId().equals(superblockId)) {
             currentSuperblock = getSuperblock(currentSuperblock.getParentId());
         }
 
+        checkNotNull(currentSuperblock, "Block is not in the main chain.");
         return currentSuperblock;
     }
 
