@@ -78,7 +78,8 @@ public class SuperblockChain {
         if (allDogeHashesToHash.empty())
             return;
 
-        Date nextSuperblockStartTime = getStartTime(dogecoinWrapper.getBlock(allDogeHashesToHash.peek()).getHeader().getTime());
+        Date nextSuperblockStartTime =
+                getStartTime(dogecoinWrapper.getBlock(allDogeHashesToHash.peek()).getHeader().getTime());
         Date nextSuperblockEndTime = getEndTime(nextSuperblockStartTime);
 
         List<Sha256Hash> nextSuperblockDogeHashes = new ArrayList<>();
@@ -108,7 +109,8 @@ public class SuperblockChain {
             // set prev hash and end time for next superblock
             if (!allDogeHashesToHash.empty()) {
                 nextSuperblockPrevHash = newSuperblock.getSuperblockId();
-                nextSuperblockStartTime = getStartTime(dogecoinWrapper.getBlock(allDogeHashesToHash.peek()).getHeader().getTime());
+                nextSuperblockStartTime =
+                        getStartTime(dogecoinWrapper.getBlock(allDogeHashesToHash.peek()).getHeader().getTime());
                 nextSuperblockEndTime = getEndTime(nextSuperblockStartTime);
                 nextSuperblockHeight++;
             }
@@ -162,17 +164,6 @@ public class SuperblockChain {
      */
     public long getChainHeight() throws BlockStoreException, IOException {
         return getChainHead().getSuperblockHeight();
-    }
-
-    /**
-     * Get highest approved superblock.
-     * @return Highest approved superblock as saved on disk.
-     * @throws BlockStoreException
-     */
-    public Superblock getApprovedHead() throws BlockStoreException {
-        throw new UnsupportedOperationException("to be implemented");
-        // Oscar says: commented the line bellow because code does not compiles. There is no SuperblockLevelDBBlockStore.getApprovedHead()
-        // return superblockStorage.getApprovedHead();
     }
 
     /**
@@ -231,6 +222,12 @@ public class SuperblockChain {
 
     /* ---- HELPER METHODS AND CLASSES ---- */
 
+    /**
+     * Get the beginning of the latest superblock interval that starts before the time of a certain block,
+     * i.e. the superblock that the block should be part of.
+     * @param firstBlockTimestamp Timestamp of the first block in a superblock.
+     * @return Superblock start time.
+     */
     Date getStartTime(Date firstBlockTimestamp) {
         Calendar startTime = Calendar.getInstance();
         startTime.setTime(firstBlockTimestamp);
@@ -247,6 +244,11 @@ public class SuperblockChain {
         return startTime.getTime();
     }
 
+    /**
+     * Get the end time for a superblock.
+     * @param startTime Superblock start time.
+     * @return Superblock end time.
+     */
     Date getEndTime(Date startTime) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(startTime);
@@ -254,6 +256,12 @@ public class SuperblockChain {
         return calendar.getTime();
     }
 
+    /**
+     * To be used when building a superblock.
+     * Get the time limit for storing superblocks - for example, if SUPERBLOCK_DELAY is 3600,
+     * superblocks built will be from an hour ago or earlier.
+     * @return Time limit for building a superblock.
+     */
     private Date getStopTime() {
         return SuperblockUtils.getNSecondsAgo(SUPERBLOCK_DELAY);
     }

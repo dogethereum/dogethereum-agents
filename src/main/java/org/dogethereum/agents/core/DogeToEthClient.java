@@ -171,6 +171,10 @@ public class DogeToEthClient {
         return matchedSuperblock;
     }
 
+    /**
+     * Relay unprocessed transactions to Ethereum contracts.
+     * @throws Exception
+     */
     public void updateBridgeTransactions() throws Exception {
         if (ethWrapper.arePendingTransactionsForRelayTxsAddress()) {
             log.debug("Skipping relay tx, there are pending transaction for the sender address.");
