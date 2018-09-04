@@ -101,7 +101,7 @@ public abstract class SuperblockBaseClient {
                     restoreFiles();
 
                     if (arePendingTransactions()) {
-                        log.debug("Skipping there are pending transaction for the sender address.");
+                        log.debug("Skipping because there are pending transaction for the sender address.");
                         return;
                     }
 
