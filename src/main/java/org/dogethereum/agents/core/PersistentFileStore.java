@@ -14,11 +14,7 @@ public abstract class PersistentFileStore {
                     FileInputStream fileInputStream = new FileInputStream(file);
                     ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
                 ) {
-                    if (obj.getClass() == Long.class) {
-                        obj = objectInputStream.readLong();
-                    } else {
-                        obj = obj.getClass().cast(objectInputStream.readObject());
-                    }
+                    obj = obj.getClass().cast(objectInputStream.readObject());
                 }
             }
         }
@@ -34,11 +30,7 @@ public abstract class PersistentFileStore {
             FileOutputStream fileOutputStream = new FileOutputStream(file);
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
         ) {
-            if (obj.getClass() == Long.class) {
-                objectOutputStream.writeLong((long) obj);
-            } else {
-                objectOutputStream.writeObject(obj);
-            }
+            objectOutputStream.writeObject(obj);
         }
     }
 }
