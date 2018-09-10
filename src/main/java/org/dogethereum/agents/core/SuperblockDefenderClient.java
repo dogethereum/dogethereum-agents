@@ -277,7 +277,27 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         }
     }
 
+    private Keccak256Hash getHighestApprovableDescendant(Keccak256Hash superblockId)
+            throws BlockStoreException, IOException, Exception {
+        Superblock highest = superblockChain.getChainHead();
 
+        // Find highest semi-approved unchallenged descendant
+        while (!semiApprovedAndUnchallenged(highest)) {
+            highest = superblockChain.getParent(highest);
+            if (highest.getSuperblockId().equals(superblockId)) {
+                // No semi-approved unchallenged descendants found
+                return null;
+            }
+        }
+
+        return highest.getSuperblockId();
+    }
+
+    private boolean semiApprovedAndUnchallenged(Superblock superblock) throws Exception {
+        Keccak256Hash superblockId = superblock.getSuperblockId();
+        return (ethWrapper.isSuperblockSemiApproved(superblockId) &&
+                !ethWrapper.isChallenged(superblock));
+    }
 
     /* ---- OVERRIDE ABSTRACT METHODS ---- */
 
