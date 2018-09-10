@@ -306,11 +306,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         return highest;
     }
 
-    private boolean semiApprovedAndUnchallenged(Superblock superblock) throws Exception {
-        Keccak256Hash superblockId = superblock.getSuperblockId();
-        return (ethWrapper.isSuperblockSemiApproved(superblockId) &&
-                !ethWrapper.isChallenged(superblock));
-    }
 
     /* ---- OVERRIDE ABSTRACT METHODS ---- */
 
