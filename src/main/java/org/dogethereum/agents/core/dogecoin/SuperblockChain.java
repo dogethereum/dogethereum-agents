@@ -266,4 +266,8 @@ public class SuperblockChain {
         return SuperblockUtils.getNSecondsAgo(SUPERBLOCK_DELAY);
     }
 
+    public Superblock getParent(Superblock superblock) throws IOException {
+        return getSuperblock(superblock.getParentId());
+    }
+
 }
