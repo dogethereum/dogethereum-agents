@@ -103,10 +103,13 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             if (newAndTimeoutPassed(toConfirm) || inBattleAndSemiApprovable(toConfirm)) {
                 log.info("Confirming superblock {}", toConfirmId);
                 ethWrapper.checkClaimFinished(toConfirmId);
-            } else if (semiApprovedAndApprovable(toConfirm)) {
-                Keccak256Hash descendantId = superblockChain.getFirstDescendant(toConfirmId).getSuperblockId();
-                log.info("Confirming semi-approved superblock {} with descendant {}", toConfirmId, descendantId);
-                ethWrapper.confirmClaim(toConfirmId, descendantId);
+            } else if (ethWrapper.isSuperblockSemiApproved(toConfirmId)) {
+                Superblock descendant = getHighestSemiApprovedDescendant(toConfirmId);
+                if (descendant != null && semiApprovedAndApprovable(toConfirm, descendant)) {
+                    Keccak256Hash descendantId = descendant.getSuperblockId();
+                    log.info("Confirming semi-approved superblock {} with descendant {}", toConfirmId, descendantId);
+                    ethWrapper.confirmClaim(toConfirmId, descendantId);
+                }
             }
         }
     }
@@ -260,37 +263,47 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     /**
-     * Check if a superblock is semi-approved and has a semi-approved descendant.
+     * Check if a superblock is semi-approved and has enough confirmations, i.e. semi-approved descendants.
+     * To be used after finding a descendant with getHighestSemiApprovedDescendant.
      * @param superblock Superblock to be confirmed.
+     * @param descendant Highest semi-approved descendant of superblock to be confirmed.
      * @return True if the superblock can be safely approved, false otherwise.
      * @throws Exception
      */
-    private boolean semiApprovedAndApprovable(Superblock superblock) throws Exception {
+    private boolean semiApprovedAndApprovable(Superblock superblock, Superblock descendant) throws Exception {
         Keccak256Hash superblockId = superblock.getSuperblockId();
-        Superblock descendant = superblockChain.getFirstDescendant(superblockId);
-        if (descendant == null) {
-            return false;
-        } else {
-            Keccak256Hash descendantId = descendant.getSuperblockId();
-            return (ethWrapper.isSuperblockSemiApproved(descendantId) &&
-                    ethWrapper.isSuperblockSemiApproved(superblockId));
-        }
+        Keccak256Hash descendantId = descendant.getSuperblockId();
+        return (superblock.getSuperblockHeight() - descendant.getSuperblockHeight() <
+            ethWrapper.getSuperblockConfirmations() &&
+            ethWrapper.isSuperblockSemiApproved(descendantId) &&
+            ethWrapper.isSuperblockSemiApproved(superblockId));
     }
 
-    private Keccak256Hash getHighestApprovableDescendant(Keccak256Hash superblockId)
+    /**
+     * Helper method for confirming a semi-approved superblock.
+     * Find the highest semi-approved superblock in the main chain that comes after a given superblock.
+     * @param superblockId Superblock to be confirmed.
+     * @return Highest superblock in main chain that's newer than the given superblock
+     *         if such a superblock exists, null otherwise (i.e. given superblock isn't in main chain
+     *         or has no semi-approved descendants).
+     * @throws BlockStoreException
+     * @throws IOException
+     * @throws Exception
+     */
+    private Superblock getHighestSemiApprovedDescendant(Keccak256Hash superblockId)
             throws BlockStoreException, IOException, Exception {
         Superblock highest = superblockChain.getChainHead();
 
-        // Find highest semi-approved unchallenged descendant
-        while (!semiApprovedAndUnchallenged(highest)) {
+        // Find highest semi-approved descendant
+        while (highest != null && !ethWrapper.isSuperblockSemiApproved(highest.getSuperblockId())) {
             highest = superblockChain.getParent(highest);
             if (highest.getSuperblockId().equals(superblockId)) {
-                // No semi-approved unchallenged descendants found
+                // No semi-approved descendants found
                 return null;
             }
         }
 
-        return highest.getSuperblockId();
+        return highest;
     }
 
     private boolean semiApprovedAndUnchallenged(Superblock superblock) throws Exception {
