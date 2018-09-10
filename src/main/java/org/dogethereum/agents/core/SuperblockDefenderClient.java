@@ -24,10 +24,12 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     private static long ETH_REQUIRED_CONFIRMATIONS = 5;
 
-    // Temporary workaround; keep sent children here in order to semi approve them later
-    // Delete them when they are semi approved or invalidated
-    private HashSet<Keccak256Hash> descendantsOfSemiApprovedSet;
-    private File descendantsOfSemiApprovedSetFile;
+    // superblockToSessionsMap and superblockToSessionsMap (in the defender) have the same data.
+    // Data is duplicated for performance using it.
+    // sessionToSuperblockMap - key: superblock id, value: set of session ids
+    // superblockToSessionsMap - key: session id, value: superblock id
+    private HashMap<Keccak256Hash, HashSet<Keccak256Hash>> superblockToSessionsMap;
+    protected File superblockToSessionsMapFile;
 
     public SuperblockDefenderClient() {
         super("Superblock defender client");
@@ -47,10 +49,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             sendDescendantsOfSemiApproved(fromBlock, toBlock);
 
             // Maintain data structures
-            deleteFinishedBattles(fromBlock, toBlock);
-            removeSemiApproved(fromBlock, toBlock);
             removeSemiApprovedDescendants(fromBlock, toBlock);
-            removeInvalid(fromBlock, toBlock);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return latestEthBlockProcessed;
@@ -119,15 +118,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     private void confirmAllSemiApprovable() throws Exception {
         for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
             Superblock superblock = superblockChain.getSuperblock(superblockId);
-            if (superblock != null && inBattleAndSemiApprovable(superblock)) {
-                log.info("Confirming semi-approvable superblock {}", superblockId);
-                ethWrapper.checkClaimFinished(superblockId);
-            }
-        }
-
-        for (Keccak256Hash superblockId : descendantsOfSemiApprovedSet) {
-            Superblock superblock = superblockChain.getSuperblock(superblockId);
-            if (superblock != null && newAndTimeoutPassed(superblock)) {
+            if (superblock != null && (inBattleAndSemiApprovable(superblock) || newAndTimeoutPassed(superblock))) {
                 log.info("Confirming semi-approvable superblock {}", superblockId);
                 ethWrapper.checkClaimFinished(superblockId);
             }
@@ -187,7 +178,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 log.info("Found superblock {}, descendant of semi-approved {}. Sending it now.",
                         descendant.getSuperblockId(), semiApprovedSuperblockEvent.superblockId);
                 ethWrapper.sendStoreSuperblock(descendant);
-                descendantsOfSemiApprovedSet.add(descendant.getSuperblockId());
+                superblockToSessionsMap.put(descendant.getSuperblockId(), new HashSet<>());
             }
         }
     }
@@ -293,7 +284,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     @Override
     protected void setupFiles() throws IOException {
         setupBaseFiles();
-        setupDescendantsOfSemiApprovedSet();
+        setupSuperblockToSessionsMap();
     }
 
     @Override
@@ -341,22 +332,19 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         }
     }
 
-
     /**
-     * Remove semi-approved superblocks from a data structure that keeps track of sent superblocks to semi-approve.
-     * Temporary workaround!
+     * Remove approved superblocks from the data structure that keeps track of semi-approved superblocks.
      * @param fromBlock
      * @param toBlock
      * @throws Exception
      */
-    void removeSemiApprovedDescendants(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
-                ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
-
-        for (EthWrapper.SuperblockEvent semiApprovedSuperblockEvent : semiApprovedSuperblockEvents) {
-            if (descendantsOfSemiApprovedSet.contains(semiApprovedSuperblockEvent.superblockId)) {
-                descendantsOfSemiApprovedSet.remove(semiApprovedSuperblockEvent.superblockId);
-            }
+    @Override
+    protected void removeApproved(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.SuperblockEvent> approvedSuperblockEvents =
+                ethWrapper.getApprovedSuperblocks(fromBlock, toBlock);
+        for (EthWrapper.SuperblockEvent superblockEvent : approvedSuperblockEvents) {
+            if (superblockToSessionsMap.containsKey(superblockEvent.superblockId))
+                superblockToSessionsMap.remove(superblockEvent.superblockId);
         }
     }
 
@@ -374,10 +362,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             if (superblockToSessionsMap.containsKey(superblockId)) {
                 superblockToSessionsMap.remove(superblockId);
             }
-
-            if (descendantsOfSemiApprovedSet.contains(superblockEvent.superblockId)) {
-                descendantsOfSemiApprovedSet.remove(superblockId);
-            }
         }
     }
 
@@ -386,13 +370,91 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         return config.getAgentConstants().getDefenderTimerTaskPeriod();
     }
 
+
+    /* ---- BATTLE MAP METHODS ---- */
+
+    /**
+     * Listen to NewBattle events to keep track of new battles that this client is taking part in.
+     * @param fromBlock
+     * @param toBlock
+     * @throws IOException
+     */
+    private void getNewBattles(long fromBlock, long toBlock) throws IOException {
+        List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
+        for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
+            if (isMine(newBattleEvent)) {
+                Keccak256Hash sessionId = newBattleEvent.sessionId;
+                Keccak256Hash superblockId = newBattleEvent.superblockId;
+                sessionToSuperblockMap.put(sessionId, superblockId);
+
+                // TODO: see if this if/else is necessary; maybe we can assume it's in the mapping already
+                if (superblockToSessionsMap.containsKey(superblockId)) {
+                    superblockToSessionsMap.get(superblockId).add(sessionId);
+                } else {
+                    HashSet<Keccak256Hash> newSuperblockBattles = new HashSet<>();
+                    newSuperblockBattles.add(sessionId);
+                    superblockToSessionsMap.put(superblockId, newSuperblockBattles);
+                }
+            }
+        }
+    }
+
+    /**
+     * Remove semi-approved superblocks from superblock to session map.
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
+    private void removeSemiApprovedDescendants(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
+                ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
+
+        for (EthWrapper.SuperblockEvent semiApprovedSuperblockEvent : semiApprovedSuperblockEvents) {
+            if (superblockToSessionsMap.containsKey(semiApprovedSuperblockEvent.superblockId)) {
+                superblockToSessionsMap.remove(semiApprovedSuperblockEvent.superblockId);
+            }
+        }
+    }
+
+    /**
+     * Listen to NewSuperblock events to keep track of superblocks submitted by this client.
+     * @param fromBlock
+     * @param toBlock
+     * @throws IOException
+     */
+    private void getNewSuperblocks(long fromBlock, long toBlock) throws IOException {
+        List<EthWrapper.SuperblockEvent> newSuperblockEvents = ethWrapper.getNewSuperblocks(fromBlock, toBlock);
+
+        for (EthWrapper.SuperblockEvent newSuperblockEvent : newSuperblockEvents) {
+            if (isMine(newSuperblockEvent)) {
+                superblockToSessionsMap.put(newSuperblockEvent.superblockId, new HashSet<>());
+            }
+        }
+    }
+
+    /**
+     * Remove semi-approved superblocks from a data structure that keeps track of in battle superblocks.
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
+    private void removeSemiApproved(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
+                ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
+
+        for (EthWrapper.SuperblockEvent semiApprovedSuperblockEvent : semiApprovedSuperblockEvents) {
+            if (superblockToSessionsMap.containsKey(semiApprovedSuperblockEvent.superblockId)) {
+                superblockToSessionsMap.remove(semiApprovedSuperblockEvent.superblockId);
+            }
+        }
+    }
+
     // TODO: see if this should have some fault tolerance for battles that were erroneously not added to set
     /**
      * Filter battles where this defender submitted the superblock and got convicted
      * and delete them from active battle set.
      * @param fromBlock
      * @param toBlock
-     * @return
      * @throws Exception
      */
     @Override
@@ -414,7 +476,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      * and delete them from active battle set.
      * @param fromBlock
      * @param toBlock
-     * @return
      * @throws Exception
      */
     @Override
@@ -436,7 +497,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
         restore(sessionToSuperblockMap, sessionToSuperblockMapFile);
         restore(superblockToSessionsMap, superblockToSessionsMapFile);
-        restore(descendantsOfSemiApprovedSet, descendantsOfSemiApprovedSetFile);
     }
 
     @Override
@@ -444,16 +504,15 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
         flush(sessionToSuperblockMap, sessionToSuperblockMapFile);
         flush(superblockToSessionsMap, superblockToSessionsMapFile);
-        flush(descendantsOfSemiApprovedSet, descendantsOfSemiApprovedSetFile);
     }
 
 
     /* ---- STORAGE ---- */
 
-    private void setupDescendantsOfSemiApprovedSet() {
-        this.descendantsOfSemiApprovedSet = new HashSet<>();
-        this.descendantsOfSemiApprovedSetFile = new File(dataDirectory.getAbsolutePath() +
-                "/DescendantsOfSemiApprovedSet.dat");
+    private void setupSuperblockToSessionsMap() {
+        this.superblockToSessionsMap = new HashMap<>();
+        this.superblockToSessionsMapFile = new File(dataDirectory.getAbsolutePath() + "/"
+                + getSuperblockToSessionsMapFilename());
     }
 
 }

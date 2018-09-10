@@ -36,18 +36,16 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
 
     protected String myAddress;
 
-    // These 2 structures have the same data. Data is duplicated for performance using it.
     protected long latestEthBlockProcessed;
-
-    // key: session id, value: superblock id
-    protected HashMap<Keccak256Hash, Keccak256Hash> sessionToSuperblockMap;
-
-    // key: superblock id, value: set of session ids
-    protected HashMap<Keccak256Hash, HashSet<Keccak256Hash>> superblockToSessionsMap;
-
     protected File latestEthBlockProcessedFile;
+
+    // Data is duplicated for performance using it.
+    // superblockToSessionsMap and superblockToSessionsMap (in the defender) have the same data.
+    // superblockToSessionsMap - key: session id, value: superblock id
+    // sessionToSuperblockMap - key: superblock id, value: set of session ids
+    protected HashMap<Keccak256Hash, Keccak256Hash> sessionToSuperblockMap;
     protected File sessionToSuperblockMapFile;
-    protected File superblockToSessionsMapFile;
+
 
     public SuperblockBaseClient(String clientName) {
         this.clientName = clientName;
@@ -110,7 +108,10 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
                     // Ignore execution if nothing to process
                     if (fromBlock > toBlock) return;
 
-                    getNewBattles(fromBlock, toBlock); // update battle set
+                    // Maintain data structures and react to events
+                    removeApproved(fromBlock, toBlock);
+                    removeInvalid(fromBlock, toBlock);
+                    deleteFinishedBattles(fromBlock, toBlock);
                     latestEthBlockProcessed = reactToEvents(fromBlock, toBlock);
 
                     flushFiles();
@@ -154,6 +155,8 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
 
     protected abstract void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception;
 
+    protected abstract void removeApproved(long fromBlock, long toBlock) throws Exception;
+
     protected abstract void removeInvalid(long fromBlock, long toBlock) throws Exception;
 
     protected abstract void restoreFiles() throws ClassNotFoundException, IOException;
@@ -171,55 +174,11 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
         this.sessionToSuperblockMap =  new HashMap<>();
         this.sessionToSuperblockMapFile = new File(dataDirectory.getAbsolutePath() + "/" +
                 getSessionToSuperblockMapFilename());
-        this.superblockToSessionsMap = new HashMap<>();
-        this.superblockToSessionsMapFile = new File(dataDirectory.getAbsolutePath() + "/"
-                + getSuperblockToSessionsMapFilename());
 
     }
+
 
     /* ---- BATTLE MAP METHODS ---- */
-
-    /**
-     * Listen to NewBattle events to keep track of new battles that this client is taking part in.
-     * @param fromBlock
-     * @param toBlock
-     * @throws IOException
-     */
-    private void getNewBattles(long fromBlock, long toBlock) throws IOException {
-        List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
-        for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
-            if (isMine(newBattleEvent)) {
-                Keccak256Hash sessionId = newBattleEvent.sessionId;
-                Keccak256Hash superblockId = newBattleEvent.superblockId;
-                sessionToSuperblockMap.put(sessionId, superblockId);
-
-                if (superblockToSessionsMap.containsKey(superblockId)) {
-                    superblockToSessionsMap.get(superblockId).add(sessionId);
-                } else {
-                    HashSet<Keccak256Hash> newSuperblockBattles = new HashSet<>();
-                    newSuperblockBattles.add(sessionId);
-                    superblockToSessionsMap.put(superblockId, newSuperblockBattles);
-                }
-            }
-        }
-    }
-
-    /**
-     * Remove semi-approved superblocks from a data structure that keeps track of in battle superblocks.
-     * @param fromBlock
-     * @param toBlock
-     * @throws Exception
-     */
-    void removeSemiApproved(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
-                ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
-
-        for (EthWrapper.SuperblockEvent semiApprovedSuperblockEvent : semiApprovedSuperblockEvents) {
-            if (superblockToSessionsMap.containsKey(semiApprovedSuperblockEvent.superblockId)) {
-                superblockToSessionsMap.remove(semiApprovedSuperblockEvent.superblockId);
-            }
-        }
-    }
 
     /**
      * Listen to SubmitterConvicted and ChallengerConvicted events to remove battles that have already ended.
@@ -227,7 +186,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
      * @param toBlock
      * @throws IOException
      */
-    void deleteFinishedBattles(long fromBlock, long toBlock) throws Exception {
+    private void deleteFinishedBattles(long fromBlock, long toBlock) throws Exception {
         deleteSubmitterConvictedBattles(fromBlock, toBlock);
         deleteChallengerConvictedBattles(fromBlock, toBlock);
     }

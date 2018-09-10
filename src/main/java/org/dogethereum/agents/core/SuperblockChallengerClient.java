@@ -23,8 +23,8 @@ import java.util.*;
 @Slf4j(topic = "SuperblockChallengerClient")
 public class SuperblockChallengerClient extends SuperblockBaseClient {
 
-    private File semiApprovedSetFile;
     private HashSet<Keccak256Hash> semiApprovedSet;
+    private File semiApprovedSetFile;
 
     public SuperblockChallengerClient() {
         super("Superblock challenger client");
@@ -43,14 +43,9 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             respondToMerkleRootHashesEventResponses(fromBlock, toBlock);
             respondToBlockHeaderEventResponses(fromBlock, toBlock);
             respondToResolveScryptHashValidation(fromBlock, toBlock);
-            deleteFinishedBattles(fromBlock, toBlock);
 
             // Maintain data structures
-            deleteFinishedBattles(fromBlock, toBlock);
             getSemiApproved(fromBlock, toBlock);
-            removeApproved(fromBlock, toBlock);
-            removeSemiApproved(fromBlock, toBlock);
-            removeInvalid(fromBlock, toBlock);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return latestEthBlockProcessed;
@@ -319,7 +314,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @param toBlock
      * @throws Exception
      */
-    private void removeApproved(long fromBlock, long toBlock) throws Exception {
+    @Override
+    protected void removeApproved(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SuperblockEvent> approvedSuperblockEvents =
                 ethWrapper.getApprovedSuperblocks(fromBlock, toBlock);
         for (EthWrapper.SuperblockEvent superblockEvent : approvedSuperblockEvents) {
@@ -341,9 +337,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             Keccak256Hash superblockId = superblockEvent.superblockId;
             if (semiApprovedSet.contains(superblockId)) {
                 semiApprovedSet.remove(superblockEvent.superblockId);
-            }
-            if (superblockToSessionsMap.containsKey(superblockId)) {
-                superblockToSessionsMap.remove(superblockId);
             }
         }
     }
@@ -493,7 +486,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     protected void restoreFiles() throws ClassNotFoundException, IOException {
         restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
         restore(sessionToSuperblockMap, sessionToSuperblockMapFile);
-        restore(superblockToSessionsMap, superblockToSessionsMapFile);
         restore(semiApprovedSet, semiApprovedSetFile);
     }
 
@@ -501,7 +493,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     protected void flushFiles() throws ClassNotFoundException, IOException {
         flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
         flush(sessionToSuperblockMap, sessionToSuperblockMapFile);
-        flush(superblockToSessionsMap, superblockToSessionsMapFile);
         flush(semiApprovedSet, semiApprovedSetFile);
     }
 
