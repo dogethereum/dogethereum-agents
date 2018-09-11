@@ -59,6 +59,8 @@ public class EthWrapper implements SuperblockConstantProvider {
     private DogeTokenExtended dogeToken;
     private DogeClaimManagerExtended claimManager;
     private DogeClaimManagerExtended claimManagerForChallenges;
+    private DogeBattleManagerExtended battleManager;
+    private DogeBattleManagerExtended battleManagerForChallenges;
     private DogeSuperblocksExtended superblocks;
     private DogeSuperblocksExtended superblocksForRelayTxs;
     private ClaimManager scryptVerifier;
@@ -82,12 +84,14 @@ public class EthWrapper implements SuperblockConstantProvider {
         web3 = Web3j.build(new HttpService());  // defaults to http://localhost:8545/
         String dogeTokenContractAddress;
         String claimManagerContractAddress;
+        String battleManagerContractAddress;
         String superblocksContractAddress;
         String scryptVerifierAddress;
 
         if (config.isGanache()) {
             dogeTokenContractAddress = getContractAddress("DogeToken");
             claimManagerContractAddress = getContractAddress("DogeClaimManager");
+            battleManagerContractAddress = getContractAddress("DogeBattleManager");
             superblocksContractAddress = getContractAddress("DogeSuperblocks");
             scryptVerifierAddress = getContractAddress("ScryptCheckerDummy");
             List<String> accounts = web3.ethAccounts().send().getAccounts();
@@ -98,6 +102,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         } else {
             dogeTokenContractAddress = config.dogeTokenContractAddress();
             claimManagerContractAddress = config.dogeClaimManagerContractAddress();
+            battleManagerContractAddress = config.dogeBattleManagerContractAddress();
             superblocksContractAddress = config.dogeSuperblocksContractAddress();
             scryptVerifierAddress = config.dogeScryptVerifierContractAddress();
             generalPurposeAndSendSuperblocksAddress = config.generalPurposeAndSendSuperblocksAddress();
@@ -121,6 +126,14 @@ public class EthWrapper implements SuperblockConstantProvider {
                 new ClientTransactionManager(web3, dogeSuperblockChallengerAddress),
                 gasPriceMinimum, gasLimit);
         assert claimManagerForChallenges.isValid();
+        battleManager = DogeBattleManagerExtended.load(battleManagerContractAddress, web3,
+                new ClientTransactionManager(web3, generalPurposeAndSendSuperblocksAddress),
+                gasPriceMinimum, gasLimit);
+        assert battleManager.isValid();
+        battleManagerForChallenges = DogeBattleManagerExtended.load(battleManagerContractAddress, web3,
+                new ClientTransactionManager(web3, dogeSuperblockChallengerAddress),
+                gasPriceMinimum, gasLimit);
+        assert battleManagerForChallenges.isValid();
         superblocks = DogeSuperblocksExtended.load(superblocksContractAddress, web3,
                 new ClientTransactionManager(web3, generalPurposeAndSendSuperblocksAddress),
                 gasPriceMinimum, gasLimit);
@@ -227,6 +240,13 @@ public class EthWrapper implements SuperblockConstantProvider {
         return claimManagerForChallenges;
     }
 
+    public DogeBattleManagerExtended getBattleManager() {
+        return battleManager;
+    }
+
+    public DogeBattleManagerExtended getBattleManagerForChallenges() {
+        return battleManagerForChallenges;
+    }
 
     /* ---------------------------------- */
     /* - Relay Doge superblocks section - */
@@ -495,7 +515,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* ---- GETTERS ---- */
 
     public BigInteger getSuperblockDuration() throws Exception {
-        return claimManager.superblockDuration().send();
+        return battleManager.superblockDuration().send();
     }
 
     public BigInteger getSuperblockDelay() throws Exception {
@@ -565,12 +585,12 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     public List<NewBattleEvent> getNewBattleEvents(long startBlock, long endBlock) throws IOException {
         List<NewBattleEvent> result = new ArrayList<>();
-        List<DogeClaimManager.NewBattleEventResponse> newBattleEvents =
-                claimManagerForChallenges.getNewBattleEventResponses(
+        List<DogeBattleManager.NewBattleEventResponse> newBattleEvents =
+                battleManagerForChallenges.getNewBattleEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
-        for (DogeClaimManager.NewBattleEventResponse response : newBattleEvents) {
+        for (DogeBattleManager.NewBattleEventResponse response : newBattleEvents) {
             NewBattleEvent newBattleEvent = new NewBattleEvent();
             newBattleEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
             newBattleEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
@@ -583,15 +603,15 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     public List<ChallengerConvictedEvent> getChallengerConvictedEvents(long startBlock, long endBlock,
-                                                                       DogeClaimManagerExtended myClaimManager)
+                                                                       DogeBattleManagerExtended myBattleManager)
             throws IOException {
         List<ChallengerConvictedEvent> result = new ArrayList<>();
-        List<DogeClaimManager.ChallengerConvictedEventResponse> challengerConvictedEvents =
-                myClaimManager.getChallengerConvictedEventResponses(
+        List<DogeBattleManager.ChallengerConvictedEventResponse> challengerConvictedEvents =
+                myBattleManager.getChallengerConvictedEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
-        for (DogeClaimManager.ChallengerConvictedEventResponse response : challengerConvictedEvents) {
+        for (DogeBattleManager.ChallengerConvictedEventResponse response : challengerConvictedEvents) {
             ChallengerConvictedEvent challengerConvictedEvent = new ChallengerConvictedEvent();
             challengerConvictedEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
             challengerConvictedEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
@@ -603,15 +623,15 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     public List<SubmitterConvictedEvent> getSubmitterConvictedEvents(long startBlock, long endBlock,
-                                                                     DogeClaimManagerExtended myClaimManager)
+                                                                     DogeBattleManagerExtended myBattleManager)
             throws IOException {
         List<SubmitterConvictedEvent> result = new ArrayList<>();
-        List<DogeClaimManager.SubmitterConvictedEventResponse> submitterConvictedEvents =
-                myClaimManager.getSubmitterConvictedEventResponses(
+        List<DogeBattleManager.SubmitterConvictedEventResponse> submitterConvictedEvents =
+                myBattleManager.getSubmitterConvictedEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
-        for (DogeClaimManager.SubmitterConvictedEventResponse response : submitterConvictedEvents) {
+        for (DogeBattleManager.SubmitterConvictedEventResponse response : submitterConvictedEvents) {
             SubmitterConvictedEvent submitterConvictedEvent = new SubmitterConvictedEvent();
             submitterConvictedEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
             submitterConvictedEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
@@ -644,12 +664,12 @@ public class EthWrapper implements SuperblockConstantProvider {
     public List<QueryBlockHeaderEvent> getBlockHeaderQueries(long startBlock, long endBlock)
             throws IOException {
         List<QueryBlockHeaderEvent> result = new ArrayList<>();
-        List<DogeClaimManager.QueryBlockHeaderEventResponse> queryBlockHeaderEvents =
-                claimManager.getQueryBlockHeaderEventResponses(
+        List<DogeBattleManager.QueryBlockHeaderEventResponse> queryBlockHeaderEvents =
+                battleManager.getQueryBlockHeaderEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
-        for (DogeClaimManager.QueryBlockHeaderEventResponse response : queryBlockHeaderEvents) {
+        for (DogeBattleManager.QueryBlockHeaderEventResponse response : queryBlockHeaderEvents) {
             QueryBlockHeaderEvent queryBlockHeaderEvent = new QueryBlockHeaderEvent();
             queryBlockHeaderEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
             queryBlockHeaderEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
@@ -664,12 +684,12 @@ public class EthWrapper implements SuperblockConstantProvider {
     public List<QueryMerkleRootHashesEvent> getMerkleRootHashesQueries(long startBlock, long endBlock)
             throws IOException {
         List<QueryMerkleRootHashesEvent> result = new ArrayList<>();
-        List<DogeClaimManager.QueryMerkleRootHashesEventResponse> queryMerkleRootHashesEvents =
-                claimManager.getQueryMerkleRootHashesEventResponses(
+        List<DogeBattleManager.QueryMerkleRootHashesEventResponse> queryMerkleRootHashesEvents =
+                battleManager.getQueryMerkleRootHashesEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
-        for (DogeClaimManager.QueryMerkleRootHashesEventResponse response : queryMerkleRootHashesEvents) {
+        for (DogeBattleManager.QueryMerkleRootHashesEventResponse response : queryMerkleRootHashesEvents) {
             QueryMerkleRootHashesEvent queryMerkleRootHashesEvent = new QueryMerkleRootHashesEvent();
             queryMerkleRootHashesEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
             queryMerkleRootHashesEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
@@ -696,12 +716,12 @@ public class EthWrapper implements SuperblockConstantProvider {
     public List<RespondMerkleRootHashesEvent> getRespondMerkleRootHashesEvents(long startBlock, long endBlock)
             throws IOException {
         List<RespondMerkleRootHashesEvent> result = new ArrayList<>();
-        List<DogeClaimManager.RespondMerkleRootHashesEventResponse> respondMerkleRootHashesEvents =
-                claimManagerForChallenges.getRespondMerkleRootHashesEventResponses(
+        List<DogeBattleManager.RespondMerkleRootHashesEventResponse> respondMerkleRootHashesEvents =
+                battleManagerForChallenges.getRespondMerkleRootHashesEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
-        for (DogeClaimManager.RespondMerkleRootHashesEventResponse response : respondMerkleRootHashesEvents) {
+        for (DogeBattleManager.RespondMerkleRootHashesEventResponse response : respondMerkleRootHashesEvents) {
             RespondMerkleRootHashesEvent respondMerkleRootHashesEvent = new RespondMerkleRootHashesEvent();
             respondMerkleRootHashesEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
             respondMerkleRootHashesEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
@@ -719,12 +739,12 @@ public class EthWrapper implements SuperblockConstantProvider {
     public List<RespondBlockHeaderEvent> getRespondBlockHeaderEvents(long startBlock, long endBlock)
             throws IOException {
         List<RespondBlockHeaderEvent> result = new ArrayList<>();
-        List<DogeClaimManager.RespondBlockHeaderEventResponse> respondBlockHeaderEvents =
-                claimManagerForChallenges.getRespondBlockHeaderEventResponses(
+        List<DogeBattleManager.RespondBlockHeaderEventResponse> respondBlockHeaderEvents =
+                battleManagerForChallenges.getRespondBlockHeaderEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
-        for (DogeClaimManager.RespondBlockHeaderEventResponse response : respondBlockHeaderEvents) {
+        for (DogeBattleManager.RespondBlockHeaderEventResponse response : respondBlockHeaderEvents) {
             RespondBlockHeaderEvent respondBlockHeaderEvent = new RespondBlockHeaderEvent();
             respondBlockHeaderEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
             respondBlockHeaderEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
@@ -782,12 +802,12 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     public List<ErrorBattleEvent> getErrorBattleEvents(long startBlock, long endBlock) throws IOException {
         List<ErrorBattleEvent> result = new ArrayList<>();
-        List<DogeClaimManager.ErrorBattleEventResponse> errorBattleEvents =
-                claimManager.getErrorBattleEventResponses(
+        List<DogeBattleManager.ErrorBattleEventResponse> errorBattleEvents =
+                battleManager.getErrorBattleEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
-        for (DogeClaimManager.ErrorBattleEventResponse response : errorBattleEvents) {
+        for (DogeBattleManager.ErrorBattleEventResponse response : errorBattleEvents) {
             ErrorBattleEvent errorBattleEvent = new ErrorBattleEvent();
             errorBattleEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
             errorBattleEvent.err = response.err;
@@ -805,12 +825,12 @@ public class EthWrapper implements SuperblockConstantProvider {
     public List<RequestScryptHashValidationEvent> getRequestScryptHashValidation(long startBlock, long endBlock)
             throws IOException {
         List<RequestScryptHashValidationEvent> result = new ArrayList<>();
-        List<DogeClaimManager.RequestScryptHashValidationEventResponse> requestScryptHashValidationEvents =
-                claimManager.getRequestScryptHashValidationEventResponses(
+        List<DogeBattleManager.RequestScryptHashValidationEventResponse> requestScryptHashValidationEvents =
+                battleManager.getRequestScryptHashValidationEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
-        for (DogeClaimManager.RequestScryptHashValidationEventResponse response : requestScryptHashValidationEvents) {
+        for (DogeBattleManager.RequestScryptHashValidationEventResponse response : requestScryptHashValidationEvents) {
             RequestScryptHashValidationEvent requestScryptHashValidationEvent = new RequestScryptHashValidationEvent();
             requestScryptHashValidationEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
             requestScryptHashValidationEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
@@ -836,12 +856,12 @@ public class EthWrapper implements SuperblockConstantProvider {
     public List<ResolvedScryptHashValidationEvent> getResolvedScryptHashValidation(long startBlock, long endBlock)
             throws IOException {
         List<ResolvedScryptHashValidationEvent> result = new ArrayList<>();
-        List<DogeClaimManager.ResolvedScryptHashValidationEventResponse> resolvedScryptHashValidationEvents =
-                claimManagerForChallenges.getResolvedScryptHashValidationEventResponses(
+        List<DogeBattleManager.ResolvedScryptHashValidationEventResponse> resolvedScryptHashValidationEvents =
+                battleManagerForChallenges.getResolvedScryptHashValidationEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
-        for (DogeClaimManager.ResolvedScryptHashValidationEventResponse response : resolvedScryptHashValidationEvents) {
+        for (DogeBattleManager.ResolvedScryptHashValidationEventResponse response : resolvedScryptHashValidationEvents) {
             ResolvedScryptHashValidationEvent resolvedScryptHashValidationEvent = new ResolvedScryptHashValidationEvent();
             resolvedScryptHashValidationEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
             resolvedScryptHashValidationEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
@@ -886,7 +906,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     public void respondBlockHeader(Keccak256Hash superblockId, Keccak256Hash sessionId, AltcoinBlock dogeBlock) {
         byte[] scryptHashBytes = dogeBlock.getScryptHash().getReversedBytes();
         byte[] blockHeaderBytes = dogeBlock.bitcoinSerialize();
-        CompletableFuture<TransactionReceipt> futureReceipt = claimManager.respondBlockHeader(
+        CompletableFuture<TransactionReceipt> futureReceipt = battleManager.respondBlockHeader(
                 superblockId.getBytes(), sessionId.getBytes(), scryptHashBytes, blockHeaderBytes).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("Responded to block header query for Doge block {}, session {}, superblock {}",
@@ -900,7 +920,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         for (Sha256Hash dogeBlockHash : dogeBlockHashes)
             rawHashes.add(dogeBlockHash.getBytes());
         CompletableFuture<TransactionReceipt> futureReceipt =
-                claimManager.respondMerkleRootHashes(superblockId.getBytes(), sessionId.getBytes(), rawHashes).sendAsync();
+                battleManager.respondMerkleRootHashes(superblockId.getBytes(), sessionId.getBytes(), rawHashes).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("Responded to Merkle root hashes query for session {}, superblock {}",
                         sessionId, superblockId));
@@ -908,22 +928,22 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     public void queryBlockHeader(Keccak256Hash superblockId, Keccak256Hash sessionId, Sha256Hash dogeBlockHash) {
         CompletableFuture<TransactionReceipt> futureReceipt =
-                claimManagerForChallenges.queryBlockHeader(superblockId.getBytes(),
+                battleManagerForChallenges.queryBlockHeader(superblockId.getBytes(),
                 sessionId.getBytes(), dogeBlockHash.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("Requested Doge block header for block {}, superblock {}", dogeBlockHash, superblockId));
     }
 
     // TODO: see if the challenger should know which superblock this is
-    public void verifySuperblock(Keccak256Hash sessionId, DogeClaimManagerExtended myClaimManager) throws Exception {
+    public void verifySuperblock(Keccak256Hash sessionId, DogeBattleManagerExtended myBattleManager) throws Exception {
         CompletableFuture<TransactionReceipt> futureReceipt =
-                myClaimManager.verifySuperblock(sessionId.getBytes()).sendAsync();
+                myBattleManager.verifySuperblock(sessionId.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("Verified superblock for session {}", sessionId));
     }
 
-    public void timeout(Keccak256Hash sessionId, DogeClaimManagerExtended myClaimManager) throws Exception {
-        CompletableFuture<TransactionReceipt> futureReceipt = myClaimManager.timeout(sessionId.getBytes()).sendAsync();
+    public void timeout(Keccak256Hash sessionId, DogeBattleManagerExtended myBattleManager) throws Exception {
+        CompletableFuture<TransactionReceipt> futureReceipt = myBattleManager.timeout(sessionId.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("Called timeout for session {}", sessionId));
     }
@@ -955,7 +975,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     public void queryMerkleRootHashes(Keccak256Hash superblockId, Keccak256Hash sessionId)
             throws InterruptedException {
         log.info("Querying Merkle root hashes for superblock {}", superblockId);
-        CompletableFuture<TransactionReceipt> futureReceipt = claimManagerForChallenges.queryMerkleRootHashes(
+        CompletableFuture<TransactionReceipt> futureReceipt = battleManagerForChallenges.queryMerkleRootHashes(
                 superblockId.getBytes(), sessionId.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("queryMerkleRootHashes receipt {}", receipt.toString()));
@@ -965,7 +985,7 @@ public class EthWrapper implements SuperblockConstantProvider {
                                             Sha256Hash blockSha256Hash) {
         log.info("Requesting scrypt validation for block {} session {} superblock {}",
                 blockSha256Hash, sessionId, superblockId);
-        CompletableFuture<TransactionReceipt> futureReceipt = claimManagerForChallenges.requestScryptHashValidation(
+        CompletableFuture<TransactionReceipt> futureReceipt = battleManagerForChallenges.requestScryptHashValidation(
                 superblockId.getBytes(), sessionId.getBytes(), blockSha256Hash.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("requestScryptHashValidation receipt {}", receipt.toString()));
@@ -1015,16 +1035,16 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     public boolean getChallengerHitTimeout(Keccak256Hash sessionId) throws Exception {
-        return claimManager.getChallengerHitTimeout(sessionId.getBytes()).send();
+        return battleManager.getChallengerHitTimeout(sessionId.getBytes()).send();
     }
 
     public boolean getSubmitterHitTimeout(Keccak256Hash sessionId) throws Exception {
-        return claimManagerForChallenges.getSubmitterHitTimeout(sessionId.getBytes()).send();
+        return battleManagerForChallenges.getSubmitterHitTimeout(sessionId.getBytes()).send();
     }
 
     public List<Sha256Hash> getDogeBlockHashes(Keccak256Hash sessionId) throws Exception {
         List<Sha256Hash> result = new ArrayList<>();
-        List<byte[]> rawHashes = claimManager.getDogeBlockHashes(sessionId.getBytes()).send();
+        List<byte[]> rawHashes = battleManager.getDogeBlockHashes(sessionId.getBytes()).send();
         for (byte[] rawHash : rawHashes)
             result.add(Sha256Hash.wrap(rawHash)); // TODO: check endianness
         return result;

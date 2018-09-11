@@ -355,7 +355,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         for (Keccak256Hash sessionId : sessionToSuperblockMap.keySet()) {
             if (ethWrapper.getChallengerHitTimeout(sessionId)) {
                 log.info("Challenger hit timeout on session {}. Calling timeout.", sessionId);
-                ethWrapper.timeout(sessionId, ethWrapper.getClaimManager());
+                ethWrapper.timeout(sessionId, ethWrapper.getBattleManager());
             }
         }
     }
@@ -488,7 +488,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     @Override
     protected void deleteSubmitterConvictedBattles(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SubmitterConvictedEvent> submitterConvictedEvents =
-                ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock, ethWrapper.getClaimManager());
+                ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock, ethWrapper.getBattleManager());
 
         for (EthWrapper.SubmitterConvictedEvent submitterConvictedEvent : submitterConvictedEvents) {
             if (submitterConvictedEvent.submitter.equals(myAddress)) {
@@ -509,7 +509,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     @Override
     protected void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.ChallengerConvictedEvent> challengerConvictedEvents =
-                ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock, ethWrapper.getClaimManager());
+                ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock, ethWrapper.getBattleManager());
 
         for (EthWrapper.ChallengerConvictedEvent challengerConvictedEvent : challengerConvictedEvents) {
             if (sessionToSuperblockMap.containsKey(challengerConvictedEvent.sessionId)) {

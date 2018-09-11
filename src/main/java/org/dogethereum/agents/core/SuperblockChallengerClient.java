@@ -187,7 +187,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             ethWrapper.queryBlockHeader(superblockId, defenderResponse.sessionId, dogeBlockHashes.get(0));
         } else {
             log.info("Merkle root hashes response for superblock {} is empty. Verifying it now.", superblockId);
-            ethWrapper.verifySuperblock(defenderResponse.sessionId, ethWrapper.getClaimManagerForChallenges());
+            ethWrapper.verifySuperblock(defenderResponse.sessionId, ethWrapper.getBattleManagerForChallenges());
         }
     }
 
@@ -248,7 +248,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         } else {
             // last hash; end battle
             log.info("All block hashes for superblock {} have been received. Verifying it now.", superblockId);
-            ethWrapper.verifySuperblock(sessionId, ethWrapper.getClaimManagerForChallenges());
+            ethWrapper.verifySuperblock(sessionId, ethWrapper.getBattleManagerForChallenges());
         }
     }
 
@@ -288,7 +288,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             // Scrypt hash
             log.info("Scrypt hash verification failed! session {}, superblock {}", defenderResponse.sessionId,
                     defenderResponse.superblockId);
-            ethWrapper.verifySuperblock(defenderResponse.sessionId, ethWrapper.getClaimManagerForChallenges());
+            ethWrapper.verifySuperblock(defenderResponse.sessionId, ethWrapper.getBattleManagerForChallenges());
         }
     }
 
@@ -427,7 +427,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         for (Keccak256Hash sessionId : sessionToSuperblockMap.keySet()) {
             if (ethWrapper.getSubmitterHitTimeout(sessionId)) {
                 log.info("Submitter hit timeout on session {}. Calling timeout.", sessionId);
-                ethWrapper.timeout(sessionId, ethWrapper.getClaimManagerForChallenges());
+                ethWrapper.timeout(sessionId, ethWrapper.getBattleManagerForChallenges());
             }
         }
     }
@@ -448,7 +448,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     @Override
     protected void deleteSubmitterConvictedBattles(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SubmitterConvictedEvent> submitterConvictedEvents =
-                ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock, ethWrapper.getClaimManagerForChallenges());
+                ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock, ethWrapper.getBattleManagerForChallenges());
 
         for (EthWrapper.SubmitterConvictedEvent submitterConvictedEvent : submitterConvictedEvents) {
             if (sessionToSuperblockMap.containsKey(submitterConvictedEvent.sessionId)) {
@@ -471,7 +471,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     @Override
     protected void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.ChallengerConvictedEvent> challengerConvictedEvents =
-                ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock, ethWrapper.getClaimManagerForChallenges());
+                ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock, ethWrapper.getBattleManagerForChallenges());
 
         for (EthWrapper.ChallengerConvictedEvent challengerConvictedEvent : challengerConvictedEvents) {
             if (challengerConvictedEvent.challenger.equals(myAddress)) {

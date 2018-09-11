@@ -214,6 +214,10 @@ public class SystemProperties {
         return getStringProperty("dogeClaimManager.contract.address", null);
     }
 
+    public String dogeBattleManagerContractAddress() {
+        return getStringProperty("dogeBattleManager.contract.address", null);
+    }
+
     public String dogeSuperblocksContractAddress() {
         return getStringProperty("dogeSuperblocks.contract.address", null);
     }
