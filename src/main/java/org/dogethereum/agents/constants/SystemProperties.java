@@ -156,6 +156,10 @@ public class SystemProperties {
         return getBooleanProperty("doge.superblock.submitter.enabled", false);
     }
 
+    public boolean isMaliciousChallengerEnabled() {
+        return getBooleanProperty("doge.superblock.malicious.enabled", false);
+    }
+
     public boolean isDogeTxRelayerEnabled() {
         return getBooleanProperty("doge.tx.relayer.enabled", false);
     }
@@ -196,6 +200,10 @@ public class SystemProperties {
 
     public String dogeSuperblockChallengerAddress() {
         return getStringProperty("doge.superblock.challenger.address", null);
+    }
+
+    public String maliciousChallengerAddress() {
+        return getStringProperty("doge.superblock.malicious.address", null);
     }
 
     public String relayTxsAddress() {

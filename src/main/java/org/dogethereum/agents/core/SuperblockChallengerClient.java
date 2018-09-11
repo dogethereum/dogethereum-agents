@@ -126,7 +126,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @param toBlock
      * @throws Exception
      */
-    private void respondToNewBattles(long fromBlock, long toBlock) throws Exception {
+    void respondToNewBattles(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
 
         for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
@@ -142,7 +142,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @param toBlock
      * @throws Exception
      */
-    private void respondToMerkleRootHashesEventResponses(long fromBlock, long toBlock) throws Exception {
+    void respondToMerkleRootHashesEventResponses(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.RespondMerkleRootHashesEvent> defenderResponses =
                 ethWrapper.getRespondMerkleRootHashesEvents(fromBlock, toBlock);
 
@@ -160,7 +160,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @param toBlock
      * @throws Exception
      */
-    private void respondToBlockHeaderEventResponses(long fromBlock, long toBlock) throws Exception {
+    void respondToBlockHeaderEventResponses(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.RespondBlockHeaderEvent> defenderResponses =
                 ethWrapper.getRespondBlockHeaderEvents(fromBlock, toBlock);
 
@@ -259,7 +259,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @param toBlock
      * @throws Exception
      */
-    private void respondToResolveScryptHashValidation(long fromBlock, long toBlock) throws Exception {
+    void respondToResolveScryptHashValidation(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.ResolvedScryptHashValidationEvent> defenderResponses =
                 ethWrapper.getResolvedScryptHashValidation(fromBlock, toBlock);
 
@@ -299,7 +299,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @param toBlock
      * @throws Exception
      */
-    private void getSemiApproved(long fromBlock, long toBlock) throws Exception {
+    void getSemiApproved(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
                 ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
         for (EthWrapper.SuperblockEvent superblockEvent : semiApprovedSuperblockEvents) {

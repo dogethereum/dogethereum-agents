@@ -70,6 +70,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     private String relayTxsAddress;
     private String priceOracleAddress;
     private String dogeSuperblockChallengerAddress;
+    private String maliciousChallengerAddress;
 
 
     /* ---------------------------------- */
@@ -95,6 +96,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             relayTxsAddress = accounts.get(1);
             priceOracleAddress = accounts.get(2);
             dogeSuperblockChallengerAddress = accounts.get(3);
+            maliciousChallengerAddress = accounts.get(4);
         } else {
             dogeTokenContractAddress = config.dogeTokenContractAddress();
             claimManagerContractAddress = config.dogeClaimManagerContractAddress();
@@ -104,6 +106,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             relayTxsAddress = config.relayTxsAddress();
             priceOracleAddress = config.priceOracleAddress();
             dogeSuperblockChallengerAddress = config.dogeSuperblockChallengerAddress();
+            maliciousChallengerAddress = config.maliciousChallengerAddress();
         }
 
         gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
@@ -201,6 +204,10 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     public String getDogeSuperblockChallengerAddress() {
         return dogeSuperblockChallengerAddress;
+    }
+
+    public String getMaliciousChallengerAddress() {
+        return maliciousChallengerAddress;
     }
 
     /**
