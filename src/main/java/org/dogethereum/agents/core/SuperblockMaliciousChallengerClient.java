@@ -17,13 +17,12 @@ import java.util.List;
 public class SuperblockMaliciousChallengerClient extends SuperblockChallengerClient {
 
     private boolean challenge = true;
-    private String submitterAddress;
 
-    @Override
-    protected void setupClient() {
-        myAddress = ethWrapper.getMaliciousChallengerAddress();
-        submitterAddress = ethWrapper.getGeneralPurposeAndSendSuperblocksAddress();
-    }
+//    @Override
+//    protected void setupClient() {
+//        myAddress = ethWrapper.getMaliciousChallengerAddress();
+//        submitterAddress = ethWrapper.getGeneralPurposeAndSendSuperblocksAddress();
+//    }
 
     @Override
     public long reactToEvents(long fromBlock, long toBlock) {
@@ -50,6 +49,7 @@ public class SuperblockMaliciousChallengerClient extends SuperblockChallengerCli
 
     private void challengeFirstSuperblock(long fromBlock, long toBlock) throws InterruptedException, IOException {
         List<EthWrapper.SuperblockEvent> newSuperblockEvents = ethWrapper.getNewSuperblocks(fromBlock, toBlock);
+        String submitterAddress = ethWrapper.getGeneralPurposeAndSendSuperblocksAddress();
         for (EthWrapper.SuperblockEvent newSuperblockEvent : newSuperblockEvents) {
             if (newSuperblockEvent.who.equals(submitterAddress) && challenge) {
                 // Only challenge the first superblock submitted by the agent.
