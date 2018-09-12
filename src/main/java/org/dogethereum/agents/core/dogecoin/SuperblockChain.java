@@ -10,6 +10,7 @@ import org.dogethereum.agents.constants.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import sun.util.resources.cldr.gl.CalendarData_gl_ES;
 
 import javax.annotation.PostConstruct;
 import java.io.*;
@@ -36,7 +37,8 @@ public class SuperblockChain {
     private SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
 
     int SUPERBLOCK_DURATION; // time window for a superblock (in seconds)
-    int SUPERBLOCK_DELAY; // time to wait before building a superblock
+    private int SUPERBLOCK_DELAY; // time to wait before building a superblock
+    private int SUPERBLOCK_STORING_WINDOW; // small time window between storing and sending to avoid losing sync
 
 
     /* ---- CONSTRUCTION METHODS ---- */
@@ -60,6 +62,7 @@ public class SuperblockChain {
         this.superblockStorage = new SuperblockLevelDBBlockStore(context, chainFile, params);
         this.SUPERBLOCK_DURATION = provider.getSuperblockDuration().intValue();
         this.SUPERBLOCK_DELAY = provider.getSuperblockDelay().intValue();
+        this.SUPERBLOCK_STORING_WINDOW = 60; // store superblocks one minute before they should be sent
     }
 
     /**
@@ -87,7 +90,7 @@ public class SuperblockChain {
         long nextSuperblockHeight = getChainHeight() + 1;
 
         // build and store all superblocks whose last block was mined three hours ago or more
-        while (!allDogeHashesToHash.empty() && nextSuperblockEndTime.before(getStopTime())) {
+        while (!allDogeHashesToHash.empty() && nextSuperblockEndTime.before(getStoringStopTime())) {
             // Modify allDogeHashesToHash and get hashes for next superblock.
             nextSuperblockDogeHashes = popBlocksBeforeTime(allDogeHashesToHash, nextSuperblockEndTime);
             StoredBlock nextSuperblockLastBlock = dogecoinWrapper.getBlock(
@@ -245,7 +248,7 @@ public class SuperblockChain {
     }
 
     /**
-     * Get the end time for a superblock.
+     * Get the end time for building a superblock.
      * @param startTime Superblock start time.
      * @return Superblock end time.
      */
@@ -257,13 +260,44 @@ public class SuperblockChain {
     }
 
     /**
-     * To be used when building a superblock.
-     * Get the time limit for storing superblocks - for example, if SUPERBLOCK_DELAY is 3600,
-     * superblocks built will be from an hour ago or earlier.
-     * @return Time limit for building a superblock.
+     * Get the end time for an already built superblock.
+     * This is useful for knowing if a superblock
+     * @param superblock Already created superblock.
+     * @return Superblock end time.
      */
-    private Date getStopTime() {
+    public Date getEndTime(Superblock superblock) {
+        return getEndTime(getStartTime(new Date(superblock.getLastDogeBlockTime())));
+    }
+
+    /**
+     * To be used when building a superblock.
+     * Get the time limit for storing superblocks - for example, if SUPERBLOCK_DELAY is 3600
+     * and SUPERBLOCK_STORING_WINDOW is 60, superblocks built will be from 59 minutes ago or earlier.
+     * The reason for this is that, without the storing window, there's a very low chance that the challenger agent
+     * might not recognise an honest superblock just because the superblock chain agent hasn't finished building it;
+     * the storing window ensures that the challenger knows about all honest superblocks before they're submitted.
+     * @return Earliest acceptable time for building a superblock.
+     */
+    private Date getStoringStopTime() {
+        return SuperblockUtils.getNSecondsAgo(SUPERBLOCK_DELAY - SUPERBLOCK_STORING_WINDOW);
+    }
+
+    /**
+     * To be used when sending a superblock.
+     * Get the time limit for sending superblocks to the bridge.
+     * @return Earliest acceptable date for sending a superblock.
+     */
+    public Date getSendingStopTime() {
         return SuperblockUtils.getNSecondsAgo(SUPERBLOCK_DELAY);
+    }
+
+    /**
+     * Check if a superblock's time frame is long enough ago that it can be sent to the bridge.
+     * @param superblock
+     * @return
+     */
+    public boolean sendingTimePassed(Superblock superblock) {
+        return getEndTime(superblock).before(getSendingStopTime());
     }
 
     public Superblock getParent(Superblock superblock) throws IOException {

@@ -112,7 +112,6 @@ public class SuperblockUtils {
         return calendar.getTime();
     }
 
-
     /**
      * Copied from bitcoinj's Block.writeHeader().
      * @param block Dogecoin block.

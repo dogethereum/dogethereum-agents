@@ -125,6 +125,12 @@ public class DogeToEthClient {
             return 0;
         }
 
+        if (!superblockChain.sendingTimePassed(toSend)) {
+            log.debug("Too early to send superblock {}, will try again in a few seconds.",
+                    toSend.getSuperblockId());
+            return 0;
+        }
+
         if (ethWrapper.wasSuperblockAlreadySubmitted(toSend.getSuperblockId())) {
             log.debug("The contract already knows about the superblock, it won't be sent again: {}.",
                       toSend.getSuperblockId());
