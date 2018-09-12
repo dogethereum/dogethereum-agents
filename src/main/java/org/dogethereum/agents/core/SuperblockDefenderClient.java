@@ -50,6 +50,11 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
             // Maintain data structures
             removeSemiApprovedDescendants(fromBlock, toBlock);
+
+            // Debugging
+            logApproved(fromBlock, toBlock);
+            logSemiApproved(fromBlock, toBlock);
+            logInvalid(fromBlock, toBlock);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return latestEthBlockProcessed;
@@ -155,7 +160,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         for (EthWrapper.QueryMerkleRootHashesEvent queryMerkleRootHashes : queryMerkleRootHashesEvents) {
             if (isMine(queryMerkleRootHashes)) {
                 log.info("Merkle root hashes requested for session {}, superblock {}. Responding now.",
-                        queryMerkleRootHashes.sessionId);
+                        queryMerkleRootHashes.sessionId, queryMerkleRootHashes.superblockId);
 
                 Superblock superblock = superblockChain.getSuperblock(queryMerkleRootHashes.superblockId);
                 ethWrapper.respondMerkleRootHashes(queryMerkleRootHashes.superblockId, queryMerkleRootHashes.sessionId,
@@ -204,6 +209,33 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                         requestScryptHashValidationEvent.blockHeader,
                         requestScryptHashValidationEvent.blockScryptHash);
             }
+        }
+    }
+
+    private void logApproved(long fromBlock, long toBlock) throws IOException {
+        List<EthWrapper.SuperblockEvent> approvedSuperblockEvents =
+                ethWrapper.getApprovedSuperblocks(fromBlock, toBlock);
+
+        for (EthWrapper.SuperblockEvent approvedSuperblockEvent : approvedSuperblockEvents) {
+            log.info("Approved: {}", approvedSuperblockEvent.superblockId);
+        }
+    }
+
+    private void logSemiApproved(long fromBlock, long toBlock) throws IOException {
+        List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
+                ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
+
+        for (EthWrapper.SuperblockEvent semiApprovedSuperblockEvent : semiApprovedSuperblockEvents) {
+            log.info("Semi-approved: {}", semiApprovedSuperblockEvent.superblockId);
+        }
+    }
+
+    private void logInvalid(long fromBlock, long toBlock) throws IOException {
+        List<EthWrapper.SuperblockEvent> invalidSuperblockEvents =
+                ethWrapper.getInvalidSuperblocks(fromBlock, toBlock);
+
+        for (EthWrapper.SuperblockEvent invalidSuperblockEvent : invalidSuperblockEvents) {
+            log.info("Invalid: {}", invalidSuperblockEvent.superblockId);
         }
     }
 

@@ -17,6 +17,7 @@ import java.util.List;
 public class SuperblockMaliciousChallengerClient extends SuperblockChallengerClient {
 
     private boolean challenge = true;
+    private int challengedSuperblocks = 0;
 
 //    @Override
 //    protected void setupClient() {
@@ -51,10 +52,12 @@ public class SuperblockMaliciousChallengerClient extends SuperblockChallengerCli
         List<EthWrapper.SuperblockEvent> newSuperblockEvents = ethWrapper.getNewSuperblocks(fromBlock, toBlock);
         String submitterAddress = ethWrapper.getGeneralPurposeAndSendSuperblocksAddress();
         for (EthWrapper.SuperblockEvent newSuperblockEvent : newSuperblockEvents) {
-            if (newSuperblockEvent.who.equals(submitterAddress) && challenge) {
-                // Only challenge the first superblock submitted by the agent.
+            if (challenge) {
+                // Only challenge the genesis superblock and first superblock submitted by the agent.
                 ethWrapper.challengeSuperblock(newSuperblockEvent.superblockId);
-                challenge = false;
+                challengedSuperblocks++;
+                if (challengedSuperblocks == 2)
+                    challenge = false;
             }
         }
     }
