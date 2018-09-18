@@ -102,7 +102,7 @@ public class EthToDogeClient extends PersistentFileStore {
         }
         long unlockValue = unlock.value - unlock.operatorFee;
         long userValue = unlockValue - unlock.dogeTxFee;
-        tx.addOutput(Coin.valueOf(userValue), Address.fromBase58(params, unlock.dogeAddress));
+        tx.addOutput(Coin.valueOf(userValue), new Address(params, params.getAddressHeader(), unlock.dogeAddress));
         long change = totalInputValue - unlockValue;
         if (change > 0) {
             tx.addOutput(Coin.valueOf(change), operatorKeyHandler.getAddress());

@@ -1132,7 +1132,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     public Unlock getUnlock(Long unlockRequestId) throws Exception {
-        Tuple8<String, String, BigInteger, BigInteger, BigInteger, List<BigInteger>, BigInteger, byte[]> tuple =
+        Tuple8<String, byte[], BigInteger, BigInteger, BigInteger, List<BigInteger>, BigInteger, byte[]> tuple =
                 dogeToken.getUnlockPendingInvestorProof(BigInteger.valueOf(unlockRequestId)).send();
         Unlock unlock = new Unlock();
         unlock.from = tuple.getValue1();
@@ -1158,7 +1158,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     public static class Unlock {
         public String from;
-        public String dogeAddress;
+        public byte[] dogeAddress;
         public long value;
         public long operatorFee;
         public long timestamp;
