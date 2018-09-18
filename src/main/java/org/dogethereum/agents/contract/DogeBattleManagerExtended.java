@@ -46,11 +46,11 @@ public class DogeBattleManagerExtended extends  DogeBattleManager {
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
 
             QueryBlockHeaderEventResponse queryBlockHeaderEventResponse = new QueryBlockHeaderEventResponse();
             queryBlockHeaderEventResponse.log = eventValues.getLog();
-            queryBlockHeaderEventResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            queryBlockHeaderEventResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
             queryBlockHeaderEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
             queryBlockHeaderEventResponse.submitter = (String) eventValues.getNonIndexedValues().get(2).getValue();
             queryBlockHeaderEventResponse.blockSha256Hash = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
@@ -76,12 +76,12 @@ public class DogeBattleManagerExtended extends  DogeBattleManager {
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
 
             QueryMerkleRootHashesEventResponse queryMerkleRootHashesEventResponse =
                     new QueryMerkleRootHashesEventResponse();
             queryMerkleRootHashesEventResponse.log = eventValues.getLog();
-            queryMerkleRootHashesEventResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            queryMerkleRootHashesEventResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
             queryMerkleRootHashesEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
             queryMerkleRootHashesEventResponse.submitter = (String) eventValues.getNonIndexedValues().get(2).getValue();
             result.add(queryMerkleRootHashesEventResponse);
@@ -106,12 +106,12 @@ public class DogeBattleManagerExtended extends  DogeBattleManager {
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
 
             NewBattleEventResponse newBattleEventResponse =
                     new NewBattleEventResponse();
             newBattleEventResponse.log = eventValues.getLog();
-            newBattleEventResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            newBattleEventResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
             newBattleEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
             newBattleEventResponse.submitter = (String) eventValues.getNonIndexedValues().get(2).getValue();
             newBattleEventResponse.challenger = (String) eventValues.getNonIndexedValues().get(3).getValue();
@@ -137,12 +137,12 @@ public class DogeBattleManagerExtended extends  DogeBattleManager {
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
 
             ChallengerConvictedEventResponse newChallengerConvictedEventResponse =
                     new ChallengerConvictedEventResponse();
             newChallengerConvictedEventResponse.log = eventValues.getLog();
-            newChallengerConvictedEventResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            newChallengerConvictedEventResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
             newChallengerConvictedEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
             newChallengerConvictedEventResponse.challenger = (String) eventValues.getNonIndexedValues().get(2).getValue();
             result.add(newChallengerConvictedEventResponse);
@@ -167,12 +167,12 @@ public class DogeBattleManagerExtended extends  DogeBattleManager {
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
 
             SubmitterConvictedEventResponse newSubmitterConvictedEventResponse =
                     new SubmitterConvictedEventResponse();
             newSubmitterConvictedEventResponse.log = eventValues.getLog();
-            newSubmitterConvictedEventResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            newSubmitterConvictedEventResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
             newSubmitterConvictedEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
             newSubmitterConvictedEventResponse.submitter = (String) eventValues.getNonIndexedValues().get(2).getValue();
             result.add(newSubmitterConvictedEventResponse);
@@ -197,12 +197,12 @@ public class DogeBattleManagerExtended extends  DogeBattleManager {
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
 
             RespondMerkleRootHashesEventResponse newRespondMerkleRootHashesEventResponse =
                     new RespondMerkleRootHashesEventResponse();
             newRespondMerkleRootHashesEventResponse.log = eventValues.getLog();
-            newRespondMerkleRootHashesEventResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            newRespondMerkleRootHashesEventResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
             newRespondMerkleRootHashesEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
             newRespondMerkleRootHashesEventResponse.challenger = (String) eventValues.getNonIndexedValues().get(2).getValue();
             newRespondMerkleRootHashesEventResponse.blockHashes = new ArrayList<>();
@@ -233,12 +233,12 @@ public class DogeBattleManagerExtended extends  DogeBattleManager {
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
 
             RespondBlockHeaderEventResponse newRespondBlockHeaderEventResponse =
                     new RespondBlockHeaderEventResponse();
             newRespondBlockHeaderEventResponse.log = eventValues.getLog();
-            newRespondBlockHeaderEventResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            newRespondBlockHeaderEventResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
             newRespondBlockHeaderEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
             newRespondBlockHeaderEventResponse.challenger = (String) eventValues.getNonIndexedValues().get(2).getValue();
             newRespondBlockHeaderEventResponse.blockScryptHash = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
@@ -295,12 +295,12 @@ public class DogeBattleManagerExtended extends  DogeBattleManager {
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
 
             RequestScryptHashValidationEventResponse newRequestScryptHashValidationEventResponse =
                     new RequestScryptHashValidationEventResponse();
             newRequestScryptHashValidationEventResponse.log = eventValues.getLog();
-            newRequestScryptHashValidationEventResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            newRequestScryptHashValidationEventResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
             newRequestScryptHashValidationEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
             newRequestScryptHashValidationEventResponse.blockScryptHash = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
             newRequestScryptHashValidationEventResponse.blockHeader = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
@@ -330,12 +330,12 @@ public class DogeBattleManagerExtended extends  DogeBattleManager {
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
 
             ResolvedScryptHashValidationEventResponse newResolvedScryptHashValidationEventResponse =
                     new ResolvedScryptHashValidationEventResponse();
             newResolvedScryptHashValidationEventResponse.log = eventValues.getLog();
-            newResolvedScryptHashValidationEventResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            newResolvedScryptHashValidationEventResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
             newResolvedScryptHashValidationEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
             newResolvedScryptHashValidationEventResponse.blockScryptHash = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
             newResolvedScryptHashValidationEventResponse.blockSha256Hash = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();

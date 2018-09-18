@@ -407,7 +407,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (DogeSuperblocks.NewSuperblockEventResponse response : newSuperblockEvents) {
             SuperblockEvent newSuperblockEvent = new SuperblockEvent();
-            newSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+            newSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockHash);
             newSuperblockEvent.who = response.who;
             result.add(newSuperblockEvent);
         }
@@ -425,7 +425,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (DogeSuperblocks.ApprovedSuperblockEventResponse response : approvedSuperblockEvents) {
             SuperblockEvent approvedSuperblockEvent = new SuperblockEvent();
-            approvedSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+            approvedSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockHash);
             approvedSuperblockEvent.who = response.who;
             result.add(approvedSuperblockEvent);
         }
@@ -462,7 +462,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (DogeSuperblocks.SemiApprovedSuperblockEventResponse response : semiApprovedSuperblockEvents) {
             SuperblockEvent semiApprovedSuperblockEvent = new SuperblockEvent();
-            semiApprovedSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+            semiApprovedSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockHash);
             semiApprovedSuperblockEvent.who = response.who;
             result.add(semiApprovedSuperblockEvent);
         }
@@ -480,7 +480,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (DogeSuperblocks.InvalidSuperblockEventResponse response : invalidSuperblockEvents) {
             SuperblockEvent invalidSuperblockEvent = new SuperblockEvent();
-            invalidSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+            invalidSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockHash);
             invalidSuperblockEvent.who = response.who;
             result.add(invalidSuperblockEvent);
         }
@@ -592,7 +592,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (DogeBattleManager.NewBattleEventResponse response : newBattleEvents) {
             NewBattleEvent newBattleEvent = new NewBattleEvent();
-            newBattleEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+            newBattleEvent.superblockId = Keccak256Hash.wrap(response.superblockHash);
             newBattleEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
             newBattleEvent.submitter = response.submitter;
             newBattleEvent.challenger = response.challenger;
@@ -613,7 +613,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (DogeBattleManager.ChallengerConvictedEventResponse response : challengerConvictedEvents) {
             ChallengerConvictedEvent challengerConvictedEvent = new ChallengerConvictedEvent();
-            challengerConvictedEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+            challengerConvictedEvent.superblockId = Keccak256Hash.wrap(response.superblockHash);
             challengerConvictedEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
             challengerConvictedEvent.challenger = response.challenger;
             result.add(challengerConvictedEvent);
@@ -633,7 +633,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (DogeBattleManager.SubmitterConvictedEventResponse response : submitterConvictedEvents) {
             SubmitterConvictedEvent submitterConvictedEvent = new SubmitterConvictedEvent();
-            submitterConvictedEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+            submitterConvictedEvent.superblockId = Keccak256Hash.wrap(response.superblockHash);
             submitterConvictedEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
             submitterConvictedEvent.submitter = response.submitter;
             result.add(submitterConvictedEvent);
@@ -671,7 +671,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (DogeBattleManager.QueryBlockHeaderEventResponse response : queryBlockHeaderEvents) {
             QueryBlockHeaderEvent queryBlockHeaderEvent = new QueryBlockHeaderEvent();
-            queryBlockHeaderEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+            queryBlockHeaderEvent.superblockId = Keccak256Hash.wrap(response.superblockHash);
             queryBlockHeaderEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
             queryBlockHeaderEvent.submitter = response.submitter;
             queryBlockHeaderEvent.dogeBlockHash = Sha256Hash.wrap(response.blockSha256Hash);
@@ -691,7 +691,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (DogeBattleManager.QueryMerkleRootHashesEventResponse response : queryMerkleRootHashesEvents) {
             QueryMerkleRootHashesEvent queryMerkleRootHashesEvent = new QueryMerkleRootHashesEvent();
-            queryMerkleRootHashesEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+            queryMerkleRootHashesEvent.superblockId = Keccak256Hash.wrap(response.superblockHash);
             queryMerkleRootHashesEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
             queryMerkleRootHashesEvent.submitter = response.submitter;
             result.add(queryMerkleRootHashesEvent);
@@ -723,7 +723,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (DogeBattleManager.RespondMerkleRootHashesEventResponse response : respondMerkleRootHashesEvents) {
             RespondMerkleRootHashesEvent respondMerkleRootHashesEvent = new RespondMerkleRootHashesEvent();
-            respondMerkleRootHashesEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+            respondMerkleRootHashesEvent.superblockId = Keccak256Hash.wrap(response.superblockHash);
             respondMerkleRootHashesEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
             respondMerkleRootHashesEvent.challenger = response.challenger;
             respondMerkleRootHashesEvent.blockHashes = new ArrayList<>();
@@ -746,7 +746,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (DogeBattleManager.RespondBlockHeaderEventResponse response : respondBlockHeaderEvents) {
             RespondBlockHeaderEvent respondBlockHeaderEvent = new RespondBlockHeaderEvent();
-            respondBlockHeaderEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+            respondBlockHeaderEvent.superblockId = Keccak256Hash.wrap(response.superblockHash);
             respondBlockHeaderEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
             respondBlockHeaderEvent.challenger = response.challenger;
             respondBlockHeaderEvent.blockScryptHash = response.blockScryptHash;
@@ -832,7 +832,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (DogeBattleManager.RequestScryptHashValidationEventResponse response : requestScryptHashValidationEvents) {
             RequestScryptHashValidationEvent requestScryptHashValidationEvent = new RequestScryptHashValidationEvent();
-            requestScryptHashValidationEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+            requestScryptHashValidationEvent.superblockId = Keccak256Hash.wrap(response.superblockHash);
             requestScryptHashValidationEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
             requestScryptHashValidationEvent.blockScryptHash = new ScryptHash(response.blockScryptHash);
             requestScryptHashValidationEvent.blockHeader = response.blockHeader;
@@ -863,7 +863,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (DogeBattleManager.ResolvedScryptHashValidationEventResponse response : resolvedScryptHashValidationEvents) {
             ResolvedScryptHashValidationEvent resolvedScryptHashValidationEvent = new ResolvedScryptHashValidationEvent();
-            resolvedScryptHashValidationEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
+            resolvedScryptHashValidationEvent.superblockId = Keccak256Hash.wrap(response.superblockHash);
             resolvedScryptHashValidationEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
             resolvedScryptHashValidationEvent.blockScryptHash = new ScryptHash(response.blockScryptHash);
             resolvedScryptHashValidationEvent.blockSha256Hash = Sha256Hash.wrap(response.blockSha256Hash);

@@ -57,11 +57,11 @@ public class DogeSuperblocksExtended extends DogeSuperblocks {
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
 
             NewSuperblockEventResponse newSuperblockResponse = new NewSuperblockEventResponse();
             newSuperblockResponse.log = eventValues.getLog();
-            newSuperblockResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            newSuperblockResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
             newSuperblockResponse.who = (String) eventValues.getNonIndexedValues().get(1).getValue();
             result.add(newSuperblockResponse);
         }
@@ -86,11 +86,11 @@ public class DogeSuperblocksExtended extends DogeSuperblocks {
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
 
             ApprovedSuperblockEventResponse approvedSuperblockResponse = new ApprovedSuperblockEventResponse();
             approvedSuperblockResponse.log = eventValues.getLog();
-            approvedSuperblockResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            approvedSuperblockResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
             approvedSuperblockResponse.who = (String) eventValues.getNonIndexedValues().get(1).getValue();
             result.add(approvedSuperblockResponse);
         }
@@ -115,11 +115,11 @@ public class DogeSuperblocksExtended extends DogeSuperblocks {
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
 
             ChallengeSuperblockEventResponse challengeSuperblockResponse = new ChallengeSuperblockEventResponse();
             challengeSuperblockResponse.log = eventValues.getLog();
-            challengeSuperblockResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            challengeSuperblockResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
             challengeSuperblockResponse.who = (String) eventValues.getNonIndexedValues().get(1).getValue();
             result.add(challengeSuperblockResponse);
         }
@@ -144,11 +144,11 @@ public class DogeSuperblocksExtended extends DogeSuperblocks {
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
 
             SemiApprovedSuperblockEventResponse semiApprovedSuperblockResponse = new SemiApprovedSuperblockEventResponse();
             semiApprovedSuperblockResponse.log = eventValues.getLog();
-            semiApprovedSuperblockResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            semiApprovedSuperblockResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
             semiApprovedSuperblockResponse.who = (String) eventValues.getNonIndexedValues().get(1).getValue();
             result.add(semiApprovedSuperblockResponse);
         }
@@ -173,11 +173,11 @@ public class DogeSuperblocksExtended extends DogeSuperblocks {
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
 
             InvalidSuperblockEventResponse invalidSuperblockEventResponse = new InvalidSuperblockEventResponse();
             invalidSuperblockEventResponse.log = eventValues.getLog();
-            invalidSuperblockEventResponse.superblockId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            invalidSuperblockEventResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
             invalidSuperblockEventResponse.who = (String) eventValues.getNonIndexedValues().get(1).getValue();
             result.add(invalidSuperblockEventResponse);
         }
