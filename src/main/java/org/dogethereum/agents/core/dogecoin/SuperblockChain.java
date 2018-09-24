@@ -124,7 +124,7 @@ public class SuperblockChain {
 
     /**
      * Given a stack of blocks sorted from least to most recently mined,
-     * returns a list of hashes belonging those which were mined before a certain time.
+     * returns a list of hashes belonging to those which were mined before a certain time.
      * These blocks can be used for constructing a superblock mined before a certain time.
      * @param hashStack All the Dogecoin blocks that come after the last block of the last stored superblock.
      *                  Must not be empty.
@@ -152,7 +152,7 @@ public class SuperblockChain {
     /* ---- GETTERS ---- */
 
     /**
-     * Get tip of superblock chain.
+     * Returns tip of superblock chain.
      * @return Tip of superblock chain as saved on disk.
      * @throws BlockStoreException
      */
@@ -161,7 +161,7 @@ public class SuperblockChain {
     }
 
     /**
-     * Get height of tip of superblock chain.
+     * Returns height of tip of superblock chain.
      * @return Height of tip of superblock chain as saved on disk.
      * @throws BlockStoreException
      */
@@ -170,7 +170,7 @@ public class SuperblockChain {
     }
 
     /**
-     * Look up a superblock by its hash.
+     * Looks up a superblock by its hash.
      * @param superblockHash Keccak-256 hash of a superblock.
      * @return Superblock with given hash if it's found in the database, null otherwise.
      */
@@ -179,7 +179,7 @@ public class SuperblockChain {
     }
 
     /**
-     * Look up a superblock by its height.
+     * Looks up a superblock by its height.
      * Slower than looking up by hash, as it traverses the chain backwards.
      * @param superblockHeight Height of a superblock
      * @return Superblock with the given height if said height is less than that of the chain tip,
@@ -200,7 +200,7 @@ public class SuperblockChain {
     }
 
     /**
-     * Find a superblock with a given parentId.
+     * Finds a superblock with a given parentId.
      * @param superblockId parentId of desired superblock.
      * @return Best superblock in main chain with superblockId as its parentId if said superblock exists,
      *         null otherwise.
@@ -226,7 +226,7 @@ public class SuperblockChain {
     /* ---- HELPER METHODS AND CLASSES ---- */
 
     /**
-     * Get the beginning of the latest superblock interval that starts before the time of a certain block,
+     * Returns the beginning of the latest superblock interval that starts before the time of a certain block,
      * i.e. the superblock that the block should be part of.
      * @param firstBlockTimestamp Timestamp of the first block in a superblock.
      * @return Superblock start time.
@@ -248,7 +248,7 @@ public class SuperblockChain {
     }
 
     /**
-     * Get the end time for building a superblock.
+     * Returns the end time for building a superblock.
      * @param startTime Superblock start time.
      * @return Superblock end time.
      */
@@ -260,7 +260,7 @@ public class SuperblockChain {
     }
 
     /**
-     * Get the end time for an already built superblock.
+     * Returns the end time for an already built superblock.
      * This is useful for knowing if a superblock
      * @param superblock Already created superblock.
      * @return Superblock end time.
@@ -271,7 +271,7 @@ public class SuperblockChain {
 
     /**
      * To be used when building a superblock.
-     * Get the time limit for storing superblocks - for example, if SUPERBLOCK_DELAY is 3600
+     * Returns the time limit for storing superblocks - for example, if SUPERBLOCK_DELAY is 3600
      * and SUPERBLOCK_STORING_WINDOW is 60, superblocks built will be from 59 minutes ago or earlier.
      * The reason for this is that, without the storing window, there's a very low chance that the challenger agent
      * might not recognise an honest superblock just because the superblock chain agent hasn't finished building it;
@@ -292,14 +292,20 @@ public class SuperblockChain {
     }
 
     /**
-     * Check if a superblock's time frame is long enough ago that it can be sent to the bridge.
-     * @param superblock
-     * @return
+     * Checks whether a superblock's time frame is long enough ago that it can be sent to the bridge.
+     * @param superblock Superblock to be sent to the bridge.
+     * @return True if superblock can be sent to the bridge, false otherwise.
      */
     public boolean sendingTimePassed(Superblock superblock) {
         return getEndTime(superblock).before(getSendingStopTime());
     }
 
+    /**
+     * Returns a superblock's parent by ID if it's in the main chain.
+     * @param superblock Superblock.
+     * @return Superblock parent if said parent is part of the main chain, null otherwise.
+     * @throws IOException
+     */
     public Superblock getParent(Superblock superblock) throws IOException {
         return getSuperblock(superblock.getParentId());
     }

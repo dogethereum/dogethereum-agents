@@ -23,13 +23,26 @@ public class Superblock {
 
     /* ---- INFO FIELDS ---- */
 
-    private Sha256Hash merkleRoot; // Root of a Merkle tree comprised of Dogecoin block hashes. 32 bytes.
-    private BigInteger chainWork; // Total chain work put into this superblock -- same as total chain work put into last block. 32 bytes.
-    private long lastDogeBlockTime; // Timestamp of last mined Dogecoin block in the superblock. 32 bytes to comply with Solidity version.
-    private long previousToLastDogeBlockTime; // Timestamp of previous to last mined Dogecoin block in the superblock. 32 bytes to comply with Solidity version.
-    private Sha256Hash lastDogeBlockHash; // SHA-256 hash of last mined Dogecoin block in the superblock. 32 bytes.
-    private long lastDogeBlockBits;  // Bits (difficulty) of last mined Dogecoin block in the superblock. 32 bytes.
-    private Keccak256Hash parentId; // SHA3-256 hash of previous superblock. 32 bytes.
+    // Root of a Merkle tree comprised of Dogecoin block hashes. 32 bytes.
+    private Sha256Hash merkleRoot;
+
+    // Total chain work put into this superblock -- same as total chain work put into last block. 32 bytes.
+    private BigInteger chainWork;
+
+    // Timestamp of last mined Dogecoin block in the superblock. 32 bytes to comply with Solidity version.
+    private long lastDogeBlockTime;
+
+    // Timestamp of previous to last mined Dogecoin block in the superblock. 32 bytes to comply with Solidity version.
+    private long previousToLastDogeBlockTime;
+
+    // SHA-256 hash of last mined Dogecoin block in the superblock. 32 bytes.
+    private Sha256Hash lastDogeBlockHash;
+
+    // Bits (difficulty) of last mined Dogecoin block in the superblock. 32 bytes.
+    private long lastDogeBlockBits;
+
+    // SHA3-256 hash of previous superblock. 32 bytes.
+    private Keccak256Hash parentId;
 
 
     /* ---- EXTRA FIELDS ---- */
@@ -45,6 +58,7 @@ public class Superblock {
     public static final int BIG_INTEGER_LENGTH = 32;
     public static final int UINT32_LENGTH = 4;
 
+    // Offsets for deserialising a Superblock object
     private static final int MERKLE_ROOT_PAYLOAD_OFFSET = 0;
     private static final int CHAIN_WORK_PAYLOAD_OFFSET = MERKLE_ROOT_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
     private static final int LAST_BLOCK_TIME_PAYLOAD_OFFSET = CHAIN_WORK_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
@@ -63,8 +77,8 @@ public class Superblock {
     /* ---- CONSTRUCTION METHODS ---- */
 
     /**
-     * Construct a Superblock object from a list of Dogecoin block hashes.
-     * @param params
+     * Constructs a Superblock object from a list of Dogecoin block hashes.
+     * @param params Doge network parameters
      * @param dogeBlockHashes List of hashes belonging to all Dogecoin blocks
      *                        mined within the one hour lapse corresponding to this superblock.
      * @param chainWork Last Dogecoin block's accumulated chainwork.
@@ -98,7 +112,7 @@ public class Superblock {
     }
 
     /**
-     * Construct a Superblock from an already calculated Merkle root.
+     * Constructs a Superblock object from an already calculated Merkle root.
      * @param merkleRoot Merkle root, already calculated from a list of Doge block hashes.
      * @param chainWork Last Dogecoin block's accumulated chainwork.
      * @param lastDogeBlockTime Last Dogecoin block's timestamp.
@@ -124,7 +138,7 @@ public class Superblock {
     }
 
     /**
-     * Construct a Superblock object from an array representing a serialized superblock.
+     * Constructs a Superblock object from an array representing a serialized superblock.
      * @param payload Serialized superblock.
      * @throws ProtocolException
      */
@@ -163,45 +177,84 @@ public class Superblock {
 
     /* ---- GETTERS ---- */
 
+    /**
+     * Accesses Merkle root attribute.
+     * @return Superblock Merkle root.
+     */
     public Sha256Hash getMerkleRoot() {
         return merkleRoot;
     }
 
+    /**
+     * Accesses chain work attribute.
+     * @return Superblock Merkle root.
+     */
     public BigInteger getChainWork() {
         return chainWork;
     }
 
+    /**
+     * Accesses last Doge block time attribute.
+     * @return Superblock last Doge block time.
+     */
     public long getLastDogeBlockTime() {
         return lastDogeBlockTime;
     }
 
+    /**
+     * Accesses previous to last Doge block time attribute.
+     * @return Superblock previous to last Doge block time.
+     */
     public long getPreviousToLastDogeBlockTime() {
         return previousToLastDogeBlockTime;
     }
 
+    /**
+     * Accesses last Doge block hash attribute.
+     * @return Superblock last Doge block hash.
+     */
     public Sha256Hash getLastDogeBlockHash() {
         return lastDogeBlockHash;
     }
 
+    /**
+     * Accesses last Doge block bits attribute.
+     * @return Superblock last Doge block bits.
+     */
     public long getLastDogeBlockBits() {
         return lastDogeBlockBits;
     }
 
-
+    /**
+     * Accesses parent hash attribute.
+     * @return Superblock parent hash.
+     */
     public Keccak256Hash getParentId() {
         return parentId;
     }
 
+    /**
+     * Accesses superblock hash attribute if already calculated, calculates it otherwise.
+     * @return Superblock hash.
+     */
     public Keccak256Hash getSuperblockId() throws IOException {
         if (superblockId == null)
             superblockId = calculateHash();
         return superblockId;
     }
 
+    /**
+     * Accesses height attribute.
+     * @return Superblock height within superblock chain.
+     */
     public long getSuperblockHeight() {
         return superblockHeight;
     }
 
+    /**
+     * Accesses Doge block hashes attribute.
+     * @return Superblock Doge block hashes.
+     */
     public List<Sha256Hash> getDogeBlockHashes() {
         return dogeBlockHashes;
     }
@@ -227,6 +280,12 @@ public class Superblock {
         stream.write(parentId.getReversedBytes()); // 32
     }
 
+    /**
+     * Serializes Merkle root, chain work, last block hash, last block time and previous superblock hash
+     * (in that order) to an output stream in big-endian format.
+     * @param stream Output stream where the information will be written. Modified by the function.
+     * @throws IOException if a byte operation fails.
+     */
     public void serializeBE(OutputStream stream) throws IOException {
         stream.write(merkleRoot.getBytes());
         stream.write(SuperblockUtils.toBytes32(chainWork));
@@ -295,6 +354,11 @@ public class Superblock {
 
     /* ---- OTHER METHODS ---- */
 
+    /**
+     * Checks whether a given Doge block hash is part of the superblock.
+     * @param hash Doge block hash to check.
+     * @return True if the block is in the superblock, false otherwise.
+     */
     public boolean hasDogeBlock(Sha256Hash hash) {
         for (Sha256Hash h : dogeBlockHashes) {
             if (h.equals(hash))
@@ -303,6 +367,11 @@ public class Superblock {
         return false;
     }
 
+    /**
+     * Returns index of a given Doge block hash in the superblock's list of hashes.
+     * @param hash Doge block hash to find.
+     * @return Position of hash within the list if it's part of the superblock, -1 otherwise.
+     */
     public int getDogeBlockLeafIndex(Sha256Hash hash) {
         return dogeBlockHashes.indexOf(hash);
     }

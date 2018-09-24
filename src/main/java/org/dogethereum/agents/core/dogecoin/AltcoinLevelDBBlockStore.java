@@ -18,7 +18,8 @@ import static org.bitcoinj.core.StoredBlock.EMPTY_BYTES;
 
 /**
  * Copy of LevelDBBlockStore with a fix for blocks with AuxPoW
- * put() does not call StoredBlock.serializeCompact(), it uses a custom serializeCompact() instead where block size is not trimmed to 80 bytes
+ * put() does not call StoredBlock.serializeCompact(),
+ * it uses a custom serializeCompact() instead where block size is not trimmed to 80 bytes
  */
 public class AltcoinLevelDBBlockStore implements BlockStore {
 
@@ -56,7 +57,8 @@ public class AltcoinLevelDBBlockStore implements BlockStore {
         }
     }
 
-    private synchronized void tryOpen(File directory, DBFactory dbFactory, Options options) throws IOException, BlockStoreException {
+    private synchronized void tryOpen(File directory, DBFactory dbFactory, Options options)
+            throws IOException, BlockStoreException {
         db = dbFactory.open(directory, options);
         initStoreIfNeeded();
     }
@@ -137,7 +139,8 @@ public class AltcoinLevelDBBlockStore implements BlockStore {
         }
     }
 
-    /** Erases the contents of the database (but NOT the underlying files themselves) and then reinitialises with the genesis block. */
+    /** Erases the contents of the database (but NOT the underlying files themselves)
+     * and then reinitialises with the genesis block. */
     public synchronized void reset() throws BlockStoreException {
         try {
             WriteBatch batch = db.createWriteBatch();

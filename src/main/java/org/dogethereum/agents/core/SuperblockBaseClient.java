@@ -181,9 +181,9 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
     /* ---- BATTLE MAP METHODS ---- */
 
     /**
-     * Listen to SubmitterConvicted and ChallengerConvicted events to remove battles that have already ended.
-     * @param fromBlock
-     * @param toBlock
+     * Listens to SubmitterConvicted and ChallengerConvicted events to remove battles that have already ended.
+     * @param fromBlock First Ethereum block to be polled.
+     * @param toBlock Last Ethereum block to be polled.
      * @throws IOException
      */
     private void deleteFinishedBattles(long fromBlock, long toBlock) throws Exception {

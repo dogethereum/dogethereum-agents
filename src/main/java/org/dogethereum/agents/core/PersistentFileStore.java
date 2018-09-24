@@ -2,6 +2,10 @@ package org.dogethereum.agents.core;
 
 import java.io.*;
 
+/**
+ * Base methods for managing file storage.
+ * @author Catalina Juarros
+ */
 public abstract class PersistentFileStore {
     File dataDirectory;
 

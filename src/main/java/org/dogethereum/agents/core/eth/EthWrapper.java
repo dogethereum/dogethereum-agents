@@ -56,6 +56,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     private Web3j web3;
 
+    // Extensions of contracts generated automatically by web3j
     private DogeTokenExtended dogeToken;
     private DogeClaimManagerExtended claimManager;
     private DogeClaimManagerExtended claimManagerForChallenges;
@@ -148,10 +149,10 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     /**
-     * Get the deployed contract address from a truffle json file
+     * Returns the deployed contract address from a Truffle JSON file.
      *
-     * @param contractName
-     * @return The contract address
+     * @param contractName Contract name, e.g DogeSuperblocks.
+     * @return Contract address.
      * @throws Exception
      */
     private String getContractAddress(String contractName) throws Exception {
@@ -164,6 +165,11 @@ public class EthWrapper implements SuperblockConstantProvider {
         return (String) data.get("address");
     }
 
+    /**
+     * Returns height of the Ethereum blockchain.
+     * @return Ethereum block count.
+     * @throws IOException
+     */
     public long getEthBlockCount() throws IOException {
         return web3.ethBlockNumber().send().getBlockNumber().longValue();
     }
@@ -171,7 +177,6 @@ public class EthWrapper implements SuperblockConstantProvider {
     public boolean isEthNodeSyncing() throws IOException {
         return web3.ethSyncing().send().isSyncing();
     }
-
 
     public boolean arePendingTransactionsForSendSuperblocksAddress() throws IOException {
         return arePendingTransactionsFor(generalPurposeAndSendSuperblocksAddress);
@@ -185,13 +190,23 @@ public class EthWrapper implements SuperblockConstantProvider {
         return arePendingTransactionsFor(dogeSuperblockChallengerAddress);
     }
 
+    /**
+     * Checks if there are pending transactions for a given contract.
+     * @param address
+     * @return
+     * @throws IOException
+     */
     private boolean arePendingTransactionsFor(String address) throws IOException {
         BigInteger latest = web3.ethGetTransactionCount(address, DefaultBlockParameterName.LATEST).send().getTransactionCount();
         BigInteger pending = web3.ethGetTransactionCount(address, DefaultBlockParameterName.PENDING).send().getTransactionCount();
         return pending.compareTo(latest) > 0;
     }
 
-
+    // TODO: see if this should also set the price for DogeBattleManager
+    /**
+     * Sets gas prices for all DogeToken, DogeClaimManager and DogeSuperblocks contract instances.
+     * @throws IOException
+     */
     public void updateContractFacadesGasPrice() throws IOException {
         BigInteger gasPriceSuggestedByEthNode = web3.ethGasPrice().send().getGasPrice();
         BigInteger gasPrice;
@@ -248,12 +263,13 @@ public class EthWrapper implements SuperblockConstantProvider {
         return battleManagerForChallenges;
     }
 
+
     /* ---------------------------------- */
     /* - Relay Doge superblocks section - */
     /* ---------------------------------- */
 
     /**
-     * Propose a superblock to DogeClaimManager in order to keep Dogethereum Contracts updated.
+     * Proposes a superblock to DogeClaimManager in order to keep the Dogethereum contracts updated.
      *
      * @param superblock Oldest superblock that is already stored in the local database,
      *                   but still hasn't been submitted to Dogethereum Contracts.
@@ -290,7 +306,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     /**
-     * Propose a superblock to DogeClaimManager.
+     * Proposes a superblock to DogeClaimManager. To be called from sendStoreSuperblock.
      *
      * @param superblock Superblock to be proposed.
      * @return
@@ -307,7 +323,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     /**
-     * Get 9 ancestors of the relay's top superblock:
+     * Get 9 ancestors of the contracts' top superblock:
      * ancestor -1 (parent), ancestor -5, ancestor -25, ancestor -125, ...
      *
      * @return List of 9 ancestors where result[i] = ancestor -(5**i).
@@ -321,6 +337,12 @@ public class EthWrapper implements SuperblockConstantProvider {
         return !superblocks.getSuperblockIndex(superblockId.getBytes()).send().equals(BigInteger.ZERO);
     }
 
+    /**
+     * Makes a deposit for proposing a superblock.
+     * @param weiValue Wei to be deposited.
+     * @return Receipt of makeDeposit transaction.
+     * @throws InterruptedException
+     */
     private CompletableFuture<TransactionReceipt> makeClaimDeposit(BigInteger weiValue) throws InterruptedException {
         CompletableFuture<TransactionReceipt> futureReceipt = claimManager.makeDeposit(weiValue).sendAsync();
         log.info("Deposited {} wei.", weiValue);
@@ -337,6 +359,12 @@ public class EthWrapper implements SuperblockConstantProvider {
         return claimManager.getBondedDeposit(claimId, generalPurposeAndSendSuperblocksAddress).send();
     }
 
+    /**
+     * Marks a superblock as invalid.
+     * @param superblockId Superblock to be invalidated.
+     * @param validator
+     * @throws Exception
+     */
     public void invalidate(Keccak256Hash superblockId, String validator) throws Exception {
         CompletableFuture<TransactionReceipt> futureReceipt =
                 superblocks.invalidate(superblockId.getBytes(), validator).sendAsync();
@@ -344,8 +372,9 @@ public class EthWrapper implements SuperblockConstantProvider {
                 log.info("Invalidated superblock {}", superblockId));
     }
 
+    // TODO: this function should probably be deleted.
     /**
-     * Return the size of the header as a 4-byte byte[]
+     * Returns the size of the header as a 4-byte byte[].
      */
     private byte[] calculateHeaderSize(byte[] header) {
         String size = BigInteger.valueOf(header.length).toString(16);
@@ -398,6 +427,14 @@ public class EthWrapper implements SuperblockConstantProvider {
         return superblocks.getChainHeight().send();
     }
 
+    /**
+     * Listens to NewSuperblock events from DogeSuperblocks contract within a given block window
+     * and parses web3j-generated instances into easier to manage SuperblockEvent objects.
+     * @param startBlock First Ethereum block to poll.
+     * @param endBlock Last Ethereum block to poll.
+     * @return All NewSuperblock events from DogeSuperblocks as SuperblockEvent objects.
+     * @throws IOException
+     */
     public List<SuperblockEvent> getNewSuperblocks(long startBlock, long endBlock) throws IOException {
         List<SuperblockEvent> result = new ArrayList<>();
         List<DogeSuperblocks.NewSuperblockEventResponse> newSuperblockEvents =
@@ -415,6 +452,14 @@ public class EthWrapper implements SuperblockConstantProvider {
         return result;
     }
 
+    /**
+     * Listens to ApprovedSuperblock events from DogeSuperblocks contract within a given block window
+     * and parses web3j-generated instances into easier to manage SuperblockEvent objects.
+     * @param startBlock First Ethereum block to poll.
+     * @param endBlock Last Ethereum block to poll.
+     * @return All ApprovedSuperblock events from DogeSuperblocks as SuperblockEvent objects.
+     * @throws IOException
+     */
     public List<SuperblockEvent> getApprovedSuperblocks(long startBlock, long endBlock)
             throws IOException {
         List<SuperblockEvent> result = new ArrayList<>();
@@ -452,6 +497,14 @@ public class EthWrapper implements SuperblockConstantProvider {
 //        return result;
 //    }
 //
+    /**
+     * Listens to SemiApprovedSuperblock events from DogeSuperblocks contract within a given block window
+     * and parses web3j-generated instances into easier to manage SuperblockEvent objects.
+     * @param startBlock First Ethereum block to poll.
+     * @param endBlock Last Ethereum block to poll.
+     * @return All SemiApprovedSuperblock events from DogeSuperblocks as SuperblockEvent objects.
+     * @throws IOException
+     */
     public List<SuperblockEvent> getSemiApprovedSuperblocks(long startBlock, long endBlock)
             throws IOException {
         List<SuperblockEvent> result = new ArrayList<>();
@@ -470,6 +523,14 @@ public class EthWrapper implements SuperblockConstantProvider {
         return result;
     }
 
+    /**
+     * Listens to InvalidSuperblock events from DogeSuperblocks contract within a given block window
+     * and parses web3j-generated instances into easier to manage SuperblockEvent objects.
+     * @param startBlock First Ethereum block to poll.
+     * @param endBlock Last Ethereum block to poll.
+     * @return All InvalidSuperblock events from DogeSuperblocks as SuperblockEvent objects.
+     * @throws IOException
+     */
     public List<SuperblockEvent> getInvalidSuperblocks(long startBlock, long endBlock)
             throws IOException {
         List<SuperblockEvent> result = new ArrayList<>();
@@ -534,10 +595,22 @@ public class EthWrapper implements SuperblockConstantProvider {
         return Keccak256Hash.wrap(superblocks.getBestSuperblock().send());
     }
 
+    /**
+     * Looks up a superblock's submission time in DogeClaimManager.
+     * @param superblockId Superblock hash.
+     * @return When the superblock was submitted.
+     * @throws Exception
+     */
     public BigInteger getNewEventTimestampBigInteger(Keccak256Hash superblockId) throws Exception {
         return claimManager.getNewSuperblockEventTimestamp(superblockId.getBytes()).send();
     }
 
+    /**
+     * Looks up a superblock's submission time in DogeClaimManager.
+     * @param superblockId Superblock hash.
+     * @return When the superblock was submitted.
+     * @throws Exception
+     */
     public Date getNewEventTimestampDate(Keccak256Hash superblockId) throws Exception {
         return new Date(getNewEventTimestampBigInteger(superblockId).longValue() * 1000);
     }
@@ -550,6 +623,11 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     /* ---- CONFIRMING/REJECTING ---- */
 
+    /**
+     * Approves, semi-approves or invalidates a superblock depending on its situation.
+     * See DogeClaimManager source code for further reference.
+     * @param superblockId Superblock to be approved, semi-approved or invalidated.
+     */
     public void checkClaimFinished(Keccak256Hash superblockId) {
         CompletableFuture<TransactionReceipt> futureReceipt =
                 claimManager.checkClaimFinished(superblockId.getBytes()).sendAsync();
@@ -559,10 +637,12 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     /**
-     * Confirm a semi-approved superblock.
-     *
-     * @param superblockId Superblock to be confirmed
-     * @param descendantId Its first descendant
+     * Confirms a semi-approved superblock with a high enough semi-approved descendant;
+     * 'high enough' means that superblock.height - descendant.height is greater than or equal
+     * to the number of confirmations necessary for appoving a superblock.
+     * See DogeClaimManager source code for further reference.
+     * @param superblockId Superblock to be confirmed.
+     * @param descendantId Its highest semi-approved descendant.
      */
     public void confirmClaim(Keccak256Hash superblockId, Keccak256Hash descendantId) {
         CompletableFuture<TransactionReceipt> futureReceipt =
@@ -572,6 +652,11 @@ public class EthWrapper implements SuperblockConstantProvider {
         );
     }
 
+    /**
+     * Rejects a claim.
+     * See DogeClaimManager source code for further reference.
+     * @param superblockId
+     */
     public void rejectClaim(Keccak256Hash superblockId) {
         CompletableFuture<TransactionReceipt> futureReceipt =
                 claimManager.rejectClaim(superblockId.getBytes()).sendAsync();
@@ -583,6 +668,14 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     /* ---- BATTLE EVENT RETRIEVAL METHODS AND CLASSES ---- */
 
+    /**
+     * Listens to NewBattle events from DogeBattleManager contract within a given block window
+     * and parses web3j-generated instances into easier to manage NewBattleEvent objects.
+     * @param startBlock First Ethereum block to poll.
+     * @param endBlock Last Ethereum block to poll.
+     * @return All NewBattle events from DogeBattleManager as NewBattleEvent objects.
+     * @throws IOException
+     */
     public List<NewBattleEvent> getNewBattleEvents(long startBlock, long endBlock) throws IOException {
         List<NewBattleEvent> result = new ArrayList<>();
         List<DogeBattleManager.NewBattleEventResponse> newBattleEvents =
@@ -602,6 +695,15 @@ public class EthWrapper implements SuperblockConstantProvider {
         return result;
     }
 
+    /**
+     * Listens to ChallengerConvicted events from a given DogeBattleManager contract within a given block window
+     * and parses web3j-generated instances into easier to manage ChallengerConvictedEvent objects.
+     * @param startBlock First Ethereum block to poll.
+     * @param endBlock Last Ethereum block to poll.
+     * @param myBattleManager DogeBattleManager contract that the caller is using to handle its battles.
+     * @return All ChallengerConvicted events from DogeBattleManager as ChallengerConvictedEvent objects.
+     * @throws IOException
+     */
     public List<ChallengerConvictedEvent> getChallengerConvictedEvents(long startBlock, long endBlock,
                                                                        DogeBattleManagerExtended myBattleManager)
             throws IOException {
@@ -622,6 +724,15 @@ public class EthWrapper implements SuperblockConstantProvider {
         return result;
     }
 
+    /**
+     * Listens to SubmitterConvicted events from a given DogeBattleManager contract within a given block window
+     * and parses web3j-generated instances into easier to manage SubmitterConvictedEvent objects.
+     * @param startBlock First Ethereum block to poll.
+     * @param endBlock Last Ethereum block to poll.
+     * @param myBattleManager DogeBattleManager contract that the caller is using to handle its battles.
+     * @return All SubmitterConvicted events from DogeBattleManager as SubmitterConvictedEvent objects.
+     * @throws IOException
+     */
     public List<SubmitterConvictedEvent> getSubmitterConvictedEvents(long startBlock, long endBlock,
                                                                      DogeBattleManagerExtended myBattleManager)
             throws IOException {
@@ -642,6 +753,8 @@ public class EthWrapper implements SuperblockConstantProvider {
         return result;
     }
 
+    // Event wrapper classes
+
     public static class NewBattleEvent {
         public Keccak256Hash superblockId;
         public Keccak256Hash sessionId;
@@ -661,6 +774,14 @@ public class EthWrapper implements SuperblockConstantProvider {
         public String submitter;
     }
 
+    /**
+     * Listens to QueryBlockHeader events from DogeBattleManager contract within a given block window
+     * and parses web3j-generated instances into easier to manage QueryBlockHeaderEvent objects.
+     * @param startBlock First Ethereum block to poll.
+     * @param endBlock Last Ethereum block to poll.
+     * @return All QueryBlockHeader events from DogeBattleManager as QueryBlockHeaderEvent objects.
+     * @throws IOException
+     */
     public List<QueryBlockHeaderEvent> getBlockHeaderQueries(long startBlock, long endBlock)
             throws IOException {
         List<QueryBlockHeaderEvent> result = new ArrayList<>();
@@ -681,6 +802,14 @@ public class EthWrapper implements SuperblockConstantProvider {
         return result;
     }
 
+    /**
+     * Listens to QueryMerkleRootHashes events from DogeBattleManager contract within a given block window
+     * and parses web3j-generated instances into easier to manage QueryMerkleRootHashesEvent objects.
+     * @param startBlock First Ethereum block to poll.
+     * @param endBlock Last Ethereum block to poll.
+     * @return All QueryMerkleRootHashes events from DogeBattleManager as QueryMerkleRootHashesEvent objects.
+     * @throws IOException
+     */
     public List<QueryMerkleRootHashesEvent> getMerkleRootHashesQueries(long startBlock, long endBlock)
             throws IOException {
         List<QueryMerkleRootHashesEvent> result = new ArrayList<>();
@@ -700,6 +829,8 @@ public class EthWrapper implements SuperblockConstantProvider {
         return result;
     }
 
+    // Event wrapper classes
+
     public static class QueryBlockHeaderEvent {
         public Keccak256Hash superblockId;
         public Keccak256Hash sessionId;
@@ -713,6 +844,14 @@ public class EthWrapper implements SuperblockConstantProvider {
         public String submitter;
     }
 
+    /**
+     * Listens to RespondMerkleRootHashes events from DogeBattleManager contract within a given block window
+     * and parses web3j-generated instances into easier to manage RespondMerkleRootHashesEvent objects.
+     * @param startBlock First Ethereum block to poll.
+     * @param endBlock Last Ethereum block to poll.
+     * @return All RespondMerkleRootHashes events from DogeBattleManager as RespondMerkleRootHashesEvent objects.
+     * @throws IOException
+     */
     public List<RespondMerkleRootHashesEvent> getRespondMerkleRootHashesEvents(long startBlock, long endBlock)
             throws IOException {
         List<RespondMerkleRootHashesEvent> result = new ArrayList<>();
@@ -736,6 +875,14 @@ public class EthWrapper implements SuperblockConstantProvider {
         return result;
     }
 
+    /**
+     * Listens to RespondBlockHeader events from DogeBattleManager contract within a given block window
+     * and parses web3j-generated instances into easier to manage RespondBlockHeaderEvent objects.
+     * @param startBlock First Ethereum block to poll.
+     * @param endBlock Last Ethereum block to poll.
+     * @return All RespondBlockHeader events from DogeBattleManager as RespondBlockHeaderEvent objects.
+     * @throws IOException
+     */
     public List<RespondBlockHeaderEvent> getRespondBlockHeaderEvents(long startBlock, long endBlock)
             throws IOException {
         List<RespondBlockHeaderEvent> result = new ArrayList<>();
@@ -757,6 +904,8 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         return result;
     }
+
+    // Event wrapper classes
 
     public static class RespondMerkleRootHashesEvent {
         public Keccak256Hash superblockId;
@@ -822,6 +971,14 @@ public class EthWrapper implements SuperblockConstantProvider {
         public BigInteger err;
     }
 
+    /**
+     * Listens to RequestScryptHashValidation events from DogeBattleManager contract within a given block window
+     * and parses web3j-generated instances into easier to manage RequestScryptHashValidationEvent objects.
+     * @param startBlock First Ethereum block to poll.
+     * @param endBlock Last Ethereum block to poll.
+     * @return All RequestScryptHashValidation events from DogeBattleManager as RequestScryptHashValidationEvent objects.
+     * @throws IOException
+     */
     public List<RequestScryptHashValidationEvent> getRequestScryptHashValidation(long startBlock, long endBlock)
             throws IOException {
         List<RequestScryptHashValidationEvent> result = new ArrayList<>();
@@ -853,6 +1010,15 @@ public class EthWrapper implements SuperblockConstantProvider {
         public String submitter;
     }
 
+    /**
+     * Listens to ResolvedScryptHashValidation events from DogeBattleManager contract within a given block window
+     * and parses web3j-generated instances into easier to manage ResolvedScryptHashValidationEvent objects.
+     * @param startBlock First Ethereum block to poll.
+     * @param endBlock Last Ethereum block to poll.
+     * @return All ResolvedScryptHashValidation events from DogeBattleManager
+     *         as ResolvedScryptHashValidationEvent objects.
+     * @throws IOException
+     */
     public List<ResolvedScryptHashValidationEvent> getResolvedScryptHashValidation(long startBlock, long endBlock)
             throws IOException {
         List<ResolvedScryptHashValidationEvent> result = new ArrayList<>();
@@ -903,6 +1069,12 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* --------- Battle section --------- */
     /* ---------------------------------- */
 
+    /**
+     * Responds to a Doge block header query.
+     * @param superblockId Hash of the superblock that the Doge block hash is supposedly in.
+     * @param sessionId Battle session ID.
+     * @param dogeBlock Doge block whose header was requested.
+     */
     public void respondBlockHeader(Keccak256Hash superblockId, Keccak256Hash sessionId, AltcoinBlock dogeBlock) {
         byte[] scryptHashBytes = dogeBlock.getScryptHash().getReversedBytes();
         byte[] blockHeaderBytes = dogeBlock.bitcoinSerialize();
@@ -914,6 +1086,12 @@ public class EthWrapper implements SuperblockConstantProvider {
         );
     }
 
+    /**
+     * Responds to a Merkle root hashes query.
+     * @param superblockId Hash of the superblock whose Merkle root hashes were requested.
+     * @param sessionId Battle session ID.
+     * @param dogeBlockHashes Doge block hashes that are supposedly in the superblock.
+     */
     public void respondMerkleRootHashes(Keccak256Hash superblockId, Keccak256Hash sessionId,
                                         List<Sha256Hash> dogeBlockHashes) {
         List<byte[]> rawHashes = new ArrayList<>();
@@ -926,6 +1104,12 @@ public class EthWrapper implements SuperblockConstantProvider {
                         sessionId, superblockId));
     }
 
+    /**
+     * Requests the header of a Doge block in a certain superblock.
+     * @param superblockId Hash of the superblock that the Doge block hash is supposedly in.
+     * @param sessionId Battle session ID.
+     * @param dogeBlockHash Hash of the Doge block whose header is being queried.
+     */
     public void queryBlockHeader(Keccak256Hash superblockId, Keccak256Hash sessionId, Sha256Hash dogeBlockHash) {
         CompletableFuture<TransactionReceipt> futureReceipt =
                 battleManagerForChallenges.queryBlockHeader(superblockId.getBytes(),
@@ -935,6 +1119,13 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     // TODO: see if the challenger should know which superblock this is
+
+    /**
+     * Verifies a challenged superblock once the battle is done with.
+     * @param sessionId Battle session ID.
+     * @param myBattleManager DogeBattleManager contract that the caller is using to handle its battles.
+     * @throws Exception
+     */
     public void verifySuperblock(Keccak256Hash sessionId, DogeBattleManagerExtended myBattleManager) throws Exception {
         CompletableFuture<TransactionReceipt> futureReceipt =
                 myBattleManager.verifySuperblock(sessionId.getBytes()).sendAsync();
@@ -942,6 +1133,12 @@ public class EthWrapper implements SuperblockConstantProvider {
                 log.info("Verified superblock for session {}", sessionId));
     }
 
+    /**
+     * Calls timeout for a session where a participant hasn't responded in time, thus closing the battle.
+     * @param sessionId Battle session ID.
+     * @param myBattleManager DogeBattleManager contract that the caller is using to handle its battles.
+     * @throws Exception
+     */
     public void timeout(Keccak256Hash sessionId, DogeBattleManagerExtended myBattleManager) throws Exception {
         CompletableFuture<TransactionReceipt> futureReceipt = myBattleManager.timeout(sessionId.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
@@ -951,6 +1148,11 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     /* ---- CHALLENGER ---- */
 
+    /**
+     * Challenges a superblock.
+     * @param superblockId Hash of superblock to be challenged.
+     * @throws InterruptedException
+     */
     public void challengeSuperblock(Keccak256Hash superblockId)
             throws InterruptedException {
         makeChallengerDeposit(BigInteger.valueOf(1000));
@@ -961,6 +1163,12 @@ public class EthWrapper implements SuperblockConstantProvider {
                 log.info("challengeSuperblock receipt {}", receipt.toString()));
     }
 
+    //TODO: unify return type with makeClaimDepositf
+    /**
+     * Makes a deposit for challenging a superblock.
+     * @param weiValue Wei to be deposited.
+     * @throws InterruptedException
+     */
     private void makeChallengerDeposit(BigInteger weiValue)
             throws InterruptedException {
         CompletableFuture<TransactionReceipt> futureReceipt = claimManagerForChallenges.makeDeposit(weiValue).sendAsync();
@@ -972,6 +1180,12 @@ public class EthWrapper implements SuperblockConstantProvider {
         Thread.sleep(200); // in case the transaction takes some time to complete
     }
 
+    /**
+     * Requests a list of all the hashes in a certain superblock.
+     * @param superblockId Hash of superblock being challenged.
+     * @param sessionId Battle session ID.
+     * @throws InterruptedException
+     */
     public void queryMerkleRootHashes(Keccak256Hash superblockId, Keccak256Hash sessionId)
             throws InterruptedException {
         log.info("Querying Merkle root hashes for superblock {}", superblockId);
@@ -981,6 +1195,7 @@ public class EthWrapper implements SuperblockConstantProvider {
                 log.info("queryMerkleRootHashes receipt {}", receipt.toString()));
     }
 
+    //TODO: document this and all other scrypt hash validation functions
     public void requestScryptHashValidation(Keccak256Hash superblockId, Keccak256Hash sessionId,
                                             Sha256Hash blockSha256Hash) {
         log.info("Requesting scrypt validation for block {} session {} superblock {}",
@@ -1059,6 +1274,17 @@ public class EthWrapper implements SuperblockConstantProvider {
         return dogeToken.wasDogeTxProcessed(txHash.toBigInteger()).send();
     }
 
+    /**
+     * Relays a Dogecoin transaction to Dogethereum contracts.
+     * @param tx Transaction to be relayed.
+     * @param operatorPublicKeyHash
+     * @param block Dogecoin block that the transaction is in.
+     * @param superblock Superblock that the Dogecoin block is in.
+     * @param txPMT Partial Merkle tree for constructing an SPV proof of the transaction's existence in the Doge block.
+     * @param superblockPMT Partial Merkle tree for constructing an SPV proof
+     *                      of the Doge block's existence in the superblock.
+     * @throws Exception
+     */
     public void sendRelayTx(org.bitcoinj.core.Transaction tx, byte[] operatorPublicKeyHash, AltcoinBlock block,
                             Superblock superblock, PartialMerkleTree txPMT, PartialMerkleTree superblockPMT)
             throws Exception {
@@ -1102,6 +1328,10 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* --------- Unlock section --------- */
     /* ---------------------------------- */
 
+    /**
+     * Sets price of DogeToken.
+     * @param price New price of DogeToken.
+     */
     public void updatePrice(long price) {
         BigInteger priceBI = BigInteger.valueOf(price);
         CompletableFuture<TransactionReceipt> futureReceipt = dogeToken.setDogeEthPrice(priceBI).sendAsync();
@@ -1110,6 +1340,8 @@ public class EthWrapper implements SuperblockConstantProvider {
                 log.info("Update doge-eth price tx receipt {}.", receipt.toString())
         );
     }
+
+    //TODO: learn more about unlock and document all of these
 
     public List<UnlockRequestEvent> getNewUnlockRequests(long startBlock, long endBlock)
             throws ExecutionException, InterruptedException, IOException {
@@ -1172,6 +1404,14 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* --------- Scrypt verifier -------- */
     /* ---------------------------------- */
 
+    /**
+     * Sends a scrypt hash to be verified.
+     * @param sessionId Battle session ID.
+     * @param superblockId Hash of the superblock containing the block whose scrypt hash is going to be verified.
+     * @param proposalId // TODO: see if this parameter is necessary at all
+     * @param data
+     * @param blockScryptHash Scrypt hash of Doge block.
+     */
     public void checkScrypt(Keccak256Hash sessionId, Keccak256Hash superblockId, Keccak256Hash proposalId,
                             byte[] data, ScryptHash blockScryptHash) {
         log.info("Send scrypt hash for verification session {}, superblock {}", sessionId, superblockId);

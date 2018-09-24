@@ -22,7 +22,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 /**
- * Informs DogeToken the doge-eth price
+ * Informs DogeToken of the Doge-Eth price
  * @author Oscar Guindzberg
  */
 @Service

@@ -84,7 +84,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     /* - Reacting to events */
 
     /**
-     * Start challenges for all new superblocks that aren't in the challenger's local chain.
+     * Starts challenges for all new superblocks that aren't in the challenger's local chain.
      * @param fromBlock
      * @param toBlock
      * @throws Exception
@@ -121,7 +121,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     /**
-     * Query Merkle root hashes for all new battle events that the challenger is taking part in.
+     * Queries Merkle root hashes for all new battle events that the challenger is taking part in.
      * @param fromBlock
      * @param toBlock
      * @throws Exception
@@ -137,7 +137,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     /**
-     * Query first block header for battles that the challenger is taking part in.
+     * Queries first block header for battles that the challenger is taking part in.
      * @param fromBlock
      * @param toBlock
      * @throws Exception
@@ -155,7 +155,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     /**
      * For all block header event responses corresponding to battles that the challenger is taking part in,
-     * query the next block header if there are more to go; otherwise, end the battle.
+     * queries the next block header if there are more to go; otherwise, end the battle.
      * @param fromBlock
      * @param toBlock
      * @throws Exception
@@ -172,8 +172,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     /**
-     * Query header of the first Doge block hash in a certain superblock that the challenger is battling.
-     * If it was empty, just verify it.
+     * Queries header of the first Doge block hash in a certain superblock that the challenger is battling.
+     * If it was empty, just verifies it.
      * @param defenderResponse Merkle root hashes response from the defender.
      * @throws Exception
      */
@@ -192,8 +192,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     /**
-     * Query the header for the next hash in the superblock's list of Doge hashes if there is one,
-     * end the battle by verifying the superblock if Doge block hash was the last one.
+     * Queries the header for the next hash in the superblock's list of Doge hashes if there is one,
+     * ends the battle by verifying the superblock if Doge block hash was the last one.
      * @param defenderResponse Doge block hash response from defender.
      * @throws Exception
      */
@@ -210,7 +210,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     /**
-     * Query the next block header or end battle verifying the superblock.
+     * Queries the next block header or end battle verifying the superblock.
      * @param sessionId Battle's session ID
      * @param superblockId Superblock ID
      * @param dogeBlockHash Doge block hash
@@ -230,7 +230,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     /**
-     * Query the next block header or end battle verifying the superblock.
+     * Queries the next block header or end battle verifying the superblock.
      * @param sessionId Battle's session ID
      * @param superblockId Superblock ID
      * @param dogeBlockHash Last Doge block hash requested
@@ -254,7 +254,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     /**
      * For scrypt hash validation events corresponding to battles that the challenger is taking part in,
-     * query the next block header or finish the battle.
+     * queries the next block header or finish the battle.
      * @param fromBlock
      * @param toBlock
      * @throws Exception
@@ -271,7 +271,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     /**
-     * When scrypt hash validation is complete query the next block header or end the battle.
+     * When scrypt hash validation is complete, queries the next block header or ends the battle.
      * @param defenderResponse Doge block hash response from defender.
      * @throws Exception
      */
@@ -293,7 +293,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     /**
-     * Add new semi-approved superblocks to a data structure that keeps track of them
+     * Adds new semi-approved superblocks to a data structure that keeps track of them
      * so that they can be invalidated if they turn out not to be in the main chain.
      * @param fromBlock
      * @param toBlock
@@ -309,7 +309,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     /**
-     * Remove approved superblocks from the data structure that keeps track of semi-approved superblocks.
+     * Removes approved superblocks from the data structure that keeps track of semi-approved superblocks.
      * @param fromBlock
      * @param toBlock
      * @throws Exception
@@ -325,7 +325,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     /**
-     * Remove invalidated superblocks from data structures that keep track of semi-approved and in battle superblocks.
+     * Removes invalidated superblocks from data structures that keep track of semi-approved and in battle superblocks.
      * @param fromBlock
      * @param toBlock
      * @throws Exception
@@ -361,7 +361,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     /**
-     * Get the next Doge block hash to be requested in a battle session.
+     * Gets the next Doge block hash to be requested in a battle session.
      * If the hash provided is either the last one in the list or not in the list at all,
      * this method returns null, because either of those conditions implies that the battle should end.
      * @param dogeBlockHash Hash of the last block in the session provided by the defender.
@@ -438,8 +438,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     /**
-     * Filter battles where this challenger battled the superblock and the submitter got convicted
-     * and delete them from active battle set.
+     * Filters battles where this challenger battled the superblock and the submitter got convicted
+     * and deletes them from active battle set.
      * @param fromBlock
      * @param toBlock
      * @return
@@ -461,8 +461,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     // TODO: see if this should have some fault tolerance for battles that were erroneously not added to set
     /**
-     * Filter battles where this challenger battled the superblock and got convicted
-     * and delete them from active battle set.
+     * Filters battles where this challenger battled the superblock and got convicted
+     * and deletes them from active battle set.
      * @param fromBlock
      * @param toBlock
      * @return

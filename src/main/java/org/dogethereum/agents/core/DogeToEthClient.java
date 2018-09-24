@@ -99,7 +99,7 @@ public class DogeToEthClient {
     }
 
     /**
-     * Update bridge with all the superblocks that the agent has but the bridge doesn't.
+     * Updates bridge with all the superblocks that the agent has but the bridge doesn't.
      * @return Number of superblocks sent to the bridge.
      * @throws Exception
      */
@@ -146,7 +146,7 @@ public class DogeToEthClient {
 
     /**
      * Helper method for updateBridgeSuperblockChain().
-     * Get the earliest superblock from the bridge's superblock locator
+     * Gets the earliest superblock from the bridge's superblock locator
      * that was also found in the agent's main chain.
      * @param superblockLocator List of ancestors provided by the bridge.
      * @return Earliest matched block if it is found,
@@ -178,7 +178,7 @@ public class DogeToEthClient {
     }
 
     /**
-     * Relay unprocessed transactions to Ethereum contracts.
+     * Relays all unprocessed transactions to Ethereum contracts by calling sendRelayTx.
      * @throws Exception
      */
     public void updateBridgeTransactions() throws Exception {

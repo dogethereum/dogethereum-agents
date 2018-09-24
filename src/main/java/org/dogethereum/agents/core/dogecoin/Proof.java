@@ -28,9 +28,9 @@ public class Proof implements Serializable {
 
     private static final long serialVersionUID = 7608116934274420667L;
 
-    // The hash of block where the tx is included.
+    // The hash of the block where the tx is included.
     private Sha256Hash blockHash;
-    // The tree that has the tx as a leaf and its root hash is in the block header
+    // The tree that has the tx as a leaf and whose root hash is in the Doge block header.
     private PartialMerkleTree partialMerkleTree;
 
     public Proof() {

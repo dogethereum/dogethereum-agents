@@ -74,11 +74,11 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     /* - Reacting to elapsed time - */
 
     /**
-     * Find earliest superblock that's unchallenged and stored locally,
-     * but not confirmed in Dogethereum Contracts, and confirm it if its timeout has passed
+     * Finds earliest superblock that's unchallenged and stored locally,
+     * but not confirmed in Dogethereum Contracts, and confirms it if its timeout has passed
      * and it either received no challenges or won all battles.
      * If the superblock is indeed confirmed, its status in Dogethereum Contracts
-     * will be set to Approved if it received no challenges and SemiApproved otherwise.
+     * is set to Approved if it received no challenges and SemiApproved otherwise.
      * @throws Exception
      */
     private void confirmEarliestApprovableSuperblock() throws Exception {
@@ -115,7 +115,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     /**
-     * Confirm superblocks for which the defender has won all the battles, but whose parent might not be approved.
+     * Confirms superblocks for which the defender has won all the battles, but whose parent might not be approved.
      * @throws Exception
      */
     private void confirmAllSemiApprovable() throws Exception {
@@ -165,7 +165,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     /**
-     * Listen to SemiApprovedSuperblock events and propose their direct descendants to the contracts
+     * Listens to SemiApprovedSuperblock events and propose their direct descendants to the contracts
      * if the semi-approved superblock was proposed by this defender.
      * @param fromBlock
      * @param toBlock
@@ -251,7 +251,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     /**
-     * Check if a given superblock is in battle and meets the necessary and sufficient conditions
+     * Checks if a given superblock is in battle and meets the necessary and sufficient conditions
      * for being semi-approved when calling checkClaimFinished.
      * @param superblock Superblock to be confirmed.
      * @return True if the superblock can be safely semi-approved, false otherwise.
@@ -263,7 +263,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     /**
-     * Check if a superblock is semi-approved and has enough confirmations, i.e. semi-approved descendants.
+     * Checks if a superblock is semi-approved and has enough confirmations, i.e. semi-approved descendants.
      * To be used after finding a descendant with getHighestSemiApprovedDescendant.
      * @param superblock Superblock to be confirmed.
      * @param descendant Highest semi-approved descendant of superblock to be confirmed.
@@ -281,7 +281,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     /**
      * Helper method for confirming a semi-approved superblock.
-     * Find the highest semi-approved superblock in the main chain that comes after a given superblock.
+     * Finds the highest semi-approved superblock in the main chain that comes after a given superblock.
      * @param superblockId Superblock to be confirmed.
      * @return Highest superblock in main chain that's newer than the given superblock
      *         if such a superblock exists, null otherwise (i.e. given superblock isn't in main chain
@@ -361,7 +361,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     /**
-     * Remove approved superblocks from the data structure that keeps track of semi-approved superblocks.
+     * Removes approved superblocks from the data structure that keeps track of semi-approved superblocks.
      * @param fromBlock
      * @param toBlock
      * @throws Exception
@@ -377,7 +377,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     /**
-     * Remove invalidated superblocks from the data structure that keeps track of in battle superblocks.
+     * Removes invalidated superblocks from the data structure that keeps track of in battle superblocks.
      * @param fromBlock
      * @param toBlock
      * @throws Exception
@@ -402,7 +402,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     /* ---- BATTLE MAP METHODS ---- */
 
     /**
-     * Listen to NewBattle events to keep track of new battles that this client is taking part in.
+     * Listens to NewBattle events to keep track of new battles that this client is taking part in.
      * @param fromBlock
      * @param toBlock
      * @throws IOException
@@ -428,7 +428,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     /**
-     * Remove semi-approved superblocks from superblock to session map.
+     * Removes semi-approved superblocks from superblock to session map.
      * @param fromBlock
      * @param toBlock
      * @throws Exception
@@ -445,7 +445,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     /**
-     * Listen to NewSuperblock events to keep track of superblocks submitted by this client.
+     * Listens to NewSuperblock events to keep track of superblocks submitted by this client.
      * @param fromBlock
      * @param toBlock
      * @throws IOException
@@ -461,7 +461,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     /**
-     * Remove semi-approved superblocks from a data structure that keeps track of in battle superblocks.
+     * Removes semi-approved superblocks from a data structure that keeps track of in battle superblocks.
      * @param fromBlock
      * @param toBlock
      * @throws Exception
@@ -479,8 +479,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     // TODO: see if this should have some fault tolerance for battles that were erroneously not added to set
     /**
-     * Filter battles where this defender submitted the superblock and got convicted
-     * and delete them from active battle set.
+     * Filters battles where this defender submitted the superblock and got convicted
+     * and deletes them from active battle set.
      * @param fromBlock
      * @param toBlock
      * @throws Exception
@@ -500,7 +500,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     /**
-     * Filter battles where this defender submitted the superblock and the challenger got convicted
+     * Filters battles where this defender submitted the superblock and the challenger got convicted
      * and delete them from active battle set.
      * @param fromBlock
      * @param toBlock
