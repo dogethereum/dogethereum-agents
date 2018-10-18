@@ -111,7 +111,7 @@ public class EthToDogeClient extends PersistentFileStore {
             TransactionOutPoint outPoint = new TransactionOutPoint(params, utxo.getIndex(), utxo.getHash());
             // ANYONECANPAY is used as a hack because we sign inputs as we add them.
             // TODO: Add all the inputs and then sign them and remove ANYONECANPAY usage
-            tx.addSignedInput(outPoint, operatorKeyHandler.getOutputScript(),  operatorPrivateKey, Transaction.SigHash.ALL, true);
+            tx.addSignedInput(outPoint, operatorKeyHandler.getOutputScript(), operatorPrivateKey, Transaction.SigHash.ALL, true);
         }
         return tx;
     }

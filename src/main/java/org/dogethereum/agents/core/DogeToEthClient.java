@@ -63,7 +63,6 @@ public class DogeToEthClient {
             new Timer("Doge to Eth client").scheduleAtFixedRate(new DogeToEthClientTimerTask(),
                     getFirstExecutionDate(), agentConstants.getDogeToEthTimerTaskPeriod());
 
-            Context context = new Context(agentConstants.getDogeParams());
         }
     }
 
@@ -75,6 +74,7 @@ public class DogeToEthClient {
     }
 
 
+    @SuppressWarnings("unused")
     private class DogeToEthClientTimerTask extends TimerTask {
         @Override
         public void run() {

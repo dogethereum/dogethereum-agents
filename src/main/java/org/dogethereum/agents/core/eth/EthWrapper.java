@@ -1388,6 +1388,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         return unlock;
     }
 
+    // TODO: replace with immutable data types, e.g. Sha256Hash
     public static class Unlock {
         public String from;
         public byte[] dogeAddress;
