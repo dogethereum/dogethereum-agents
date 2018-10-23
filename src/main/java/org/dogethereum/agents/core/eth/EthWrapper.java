@@ -8,6 +8,7 @@ import org.dogethereum.agents.constants.AgentConstants;
 import org.dogethereum.agents.constants.SystemProperties;
 import org.dogethereum.agents.contract.*;
 
+import org.dogethereum.agents.core.DogeToEthClient;
 import org.dogethereum.agents.core.dogecoin.*;
 import org.dogethereum.agents.core.dogecoin.SuperblockUtils;
 import org.json.simple.JSONObject;
@@ -46,7 +47,7 @@ import java.util.concurrent.ExecutionException;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Helps the agent communication with the Eth blockchain.
+ * Helps the agent communicate with the Eth blockchain.
  * @author Oscar Guindzberg
  * @author Catalina Juarros
  */
@@ -188,6 +189,10 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     public boolean arePendingTransactionsForChallengerAddress() throws IOException {
         return arePendingTransactionsFor(dogeSuperblockChallengerAddress);
+    }
+
+    public String getDogeTokenContractAddress() {
+        return dogeToken.getContractAddress();
     }
 
     /**
@@ -1274,49 +1279,38 @@ public class EthWrapper implements SuperblockConstantProvider {
         return dogeToken.wasDogeTxProcessed(txHash.toBigInteger()).send();
     }
 
+    public void sendRelayTx(DogeToEthClient.TxForRelay txForRelay) throws Exception {
+        sendRelayTx(txForRelay.tx, txForRelay.operatorPublicKeyHash, txForRelay.txIndex, txForRelay.txSiblings,
+                txForRelay.dogeBlock, txForRelay.dogeBlockIndex, txForRelay.dogeBlockSiblings, txForRelay.superblockId);
+    }
+
     /**
      * Relays a Dogecoin transaction to Dogethereum contracts.
      * @param tx Transaction to be relayed.
      * @param operatorPublicKeyHash
-     * @param block Dogecoin block that the transaction is in.
-     * @param superblock Superblock that the Dogecoin block is in.
-     * @param txPMT Partial Merkle tree for constructing an SPV proof of the transaction's existence in the Doge block.
-     * @param superblockPMT Partial Merkle tree for constructing an SPV proof
-     *                      of the Doge block's existence in the superblock.
+     * @param txIndex Index of transaction within Dogecoin block.
+     * @param txSiblings SPV proof of the transaction's existence in the Dogecoin block.
+     * @param dogeBlock Dogecoin block that the transaction is in.
+     * @param dogeBlockIndex Index of Doge block within superblock.
+     * @param dogeBlockSiblings SPV proof of the Doge block's existence in the superblock.
+     * @param superblockId ID of the superblock that the Dogecoin block is in.
      * @throws Exception
      */
-    public void sendRelayTx(org.bitcoinj.core.Transaction tx, byte[] operatorPublicKeyHash, AltcoinBlock block,
-                            Superblock superblock, PartialMerkleTree txPMT, PartialMerkleTree superblockPMT)
+    public void sendRelayTx(org.bitcoinj.core.Transaction tx, byte[] operatorPublicKeyHash, BigInteger txIndex,
+                            List<BigInteger> txSiblings, AltcoinBlock dogeBlock, BigInteger dogeBlockIndex,
+                            List<BigInteger> dogeBlockSiblings, Keccak256Hash superblockId)
             throws Exception {
-        byte[] dogeBlockHeader = Arrays.copyOfRange(block.bitcoinSerialize(), 0, 80);
-        Sha256Hash dogeBlockHash = block.getHash();
+        byte[] dogeBlockHeader = Arrays.copyOfRange(dogeBlock.bitcoinSerialize(), 0, 80);
+        Sha256Hash dogeBlockHash = dogeBlock.getHash();
         log.info("About to send to the bridge doge tx hash {}. Block hash {}", tx.getHash(), dogeBlockHash);
 
         byte[] txSerialized = tx.bitcoinSerialize();
 
-        // Construct SPV proof for transaction
-        BigInteger txIndex = BigInteger.valueOf(txPMT.getTransactionIndex(tx.getHash()));
-        List<Sha256Hash> txSiblingsSha256Hash = txPMT.getTransactionPath(tx.getHash());
-        List<BigInteger> txSiblingsBigInteger = new ArrayList<>();
-        for (Sha256Hash sha256Hash : txSiblingsSha256Hash) {
-            txSiblingsBigInteger.add(sha256Hash.toBigInteger());
-        }
-        BigInteger dogeBlockHashBigInteger = dogeBlockHash.toBigInteger();
-
-        // Construct SPV proof for block
-        BigInteger dogeBlockIndex = BigInteger.valueOf(superblockPMT.getTransactionIndex(dogeBlockHash));
-        List<Sha256Hash> dogeBlockSiblingsSha256Hash = superblockPMT.getTransactionPath(dogeBlockHash);
-        List<BigInteger> dogeBlockSiblingsBigInteger = new ArrayList<>();
-        for (Sha256Hash sha256Hash : dogeBlockSiblingsSha256Hash)
-            dogeBlockSiblingsBigInteger.add(sha256Hash.toBigInteger());
-
-        BigInteger superblockMerkleRootBigInteger = superblock.getMerkleRoot().toBigInteger();
-
         String targetContract = dogeToken.getContractAddress();
 
         CompletableFuture<TransactionReceipt> futureReceipt = superblocksForRelayTxs.relayTx(txSerialized,
-                operatorPublicKeyHash, txIndex, txSiblingsBigInteger, dogeBlockHeader, dogeBlockIndex,
-                dogeBlockSiblingsBigInteger, superblock.getSuperblockId().getBytes(), targetContract).sendAsync();
+                operatorPublicKeyHash, txIndex, txSiblings, dogeBlockHeader, dogeBlockIndex,
+                dogeBlockSiblings, superblockId.getBytes(), targetContract).sendAsync();
         log.info("Sent relayTx {}", tx.getHash());
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("RelayTx receipt {}.", receipt.toString())

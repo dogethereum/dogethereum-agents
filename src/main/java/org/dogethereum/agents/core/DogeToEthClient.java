@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.io.*;
+import java.math.BigInteger;
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -195,56 +196,107 @@ public class DogeToEthClient {
         int numberOfTxsSent = 0;
 
         for (Transaction operatorWalletTx : operatorWalletTxSet) {
-            if (!ethWrapper.wasDogeTxProcessed(operatorWalletTx.getHash())) {
+            Sha256Hash txHash = operatorWalletTx.getHash();
+            if (!ethWrapper.wasDogeTxProcessed(txHash)) {
                 synchronized (this) {
-                    List<Proof> proofs = dogecoinWrapper.getTransactionsToSendToEth().get(operatorWalletTx.getHash());
-
-                    if (proofs == null || proofs.isEmpty())
-                        continue;
-
-                    StoredBlock txStoredBlock = findBestChainStoredBlockFor(operatorWalletTx);
-                    PartialMerkleTree txPMT = null;
-
-                    for (Proof proof : proofs) {
-                        if (proof.getBlockHash().equals(txStoredBlock.getHeader().getHash())) {
-                            txPMT = proof.getPartialMerkleTree();
+                    TxForRelay txForRelay = buildTxForRelay(operatorWalletTx);
+                    if (txForRelay != null) {
+                        ethWrapper.sendRelayTx(txForRelay);
+                        numberOfTxsSent++;
+                        // Send a maximum of 40 registerTransaction txs per turn
+                        if (numberOfTxsSent >= MAXIMUM_REGISTER_DOGE_LOCK_TXS_PER_TURN) {
+                            break;
                         }
+                        log.debug("Invoked registerTransaction for tx {}", operatorWalletTx.getHash());
                     }
-
-                    Superblock txSuperblock = findBestSuperblockFor(txStoredBlock.getHeader().getHash());
-
-                    if (txSuperblock == null) {
-                        // no superblock found for tx
-                        log.debug("Tx {} not relayed because the superblock it's in hasn't been stored in local" +
-                                        "database yet. Block hash: {}",
-                                  operatorWalletTx.getHash(), txStoredBlock.getHeader().getHash());
-                        continue;
-                    }
-
-                    if (!ethWrapper.isSuperblockApproved(txSuperblock.getSuperblockId())) {
-                        log.debug("Tx {} not relayed because the superblock it's in hasn't been approved yet." +
-                                        "Block hash: {}, superblock ID: {}",
-                                operatorWalletTx.getHash(), txStoredBlock.getHeader().getHash(),
-                                txSuperblock.getSuperblockId());
-                        continue;
-                    }
-
-                    int dogeBlockIndex = txSuperblock.getDogeBlockLeafIndex(txStoredBlock.getHeader().getHash());
-                    byte[] includeBits = new byte[(int) Math.ceil(txSuperblock.getDogeBlockHashes().size() / 8.0)];
-                    Utils.setBitLE(includeBits, dogeBlockIndex);
-                    PartialMerkleTree superblockPMT = PartialMerkleTree.buildFromLeaves(agentConstants.getDogeParams(),
-                            includeBits, txSuperblock.getDogeBlockHashes());
-
-                    ethWrapper.sendRelayTx(operatorWalletTx, operatorPublicKeyHandler.getPublicKeyHash(),
-                            (AltcoinBlock) txStoredBlock.getHeader(), txSuperblock, txPMT, superblockPMT);
-                    numberOfTxsSent++;
-                    // Send a maximum of 40 registerTransaction txs per turn
-                    if (numberOfTxsSent >= MAXIMUM_REGISTER_DOGE_LOCK_TXS_PER_TURN) {
-                        break;
-                    }
-                    log.debug("Invoked registerTransaction for tx {}", operatorWalletTx.getHash());
                 }
             }
+        }
+    }
+
+    public TxForRelay buildTxForRelay(Transaction operatorWalletTx) throws BlockStoreException, IOException, Exception {
+        Sha256Hash txHash = operatorWalletTx.getHash();
+        List<Proof> proofs = dogecoinWrapper.getTransactionsToSendToEth().get(txHash);
+
+        if (proofs == null || proofs.isEmpty()) {
+            log.debug("Tx {} cannot be relayed because it has no proofs.");
+            return null;
+        }
+
+        StoredBlock txStoredBlock = findBestChainStoredBlockFor(operatorWalletTx);
+        PartialMerkleTree txPMT = null;
+
+        for (Proof proof : proofs) {
+            if (proof.getBlockHash().equals(txStoredBlock.getHeader().getHash())) {
+                txPMT = proof.getPartialMerkleTree();
+            }
+        }
+
+        Superblock txSuperblock = findBestSuperblockFor(txStoredBlock.getHeader().getHash());
+
+        if (txSuperblock == null) {
+            // no superblock found for tx
+            log.debug("Tx {} cannot be relayed because the superblock it's in hasn't been stored in local" +
+                            "database yet. Block hash: {}",
+                    operatorWalletTx.getHash(), txStoredBlock.getHeader().getHash());
+            return null;
+        }
+
+        if (!ethWrapper.isSuperblockApproved(txSuperblock.getSuperblockId())) {
+            log.debug("Tx {} cannot be relayed because the superblock it's in hasn't been approved yet." +
+                            "Block hash: {}, superblock ID: {}",
+                    operatorWalletTx.getHash(), txStoredBlock.getHeader().getHash(),
+                    txSuperblock.getSuperblockId());
+            return null;
+        }
+
+        int dogeBlockIndex = txSuperblock.getDogeBlockLeafIndex(txStoredBlock.getHeader().getHash());
+        byte[] includeBits = new byte[(int) Math.ceil(txSuperblock.getDogeBlockHashes().size() / 8.0)];
+        Utils.setBitLE(includeBits, dogeBlockIndex);
+        PartialMerkleTree superblockPMT = PartialMerkleTree.buildFromLeaves(agentConstants.getDogeParams(),
+                includeBits, txSuperblock.getDogeBlockHashes());
+
+        return new TxForRelay(operatorWalletTx, operatorPublicKeyHandler.getPublicKeyHash(),
+                (AltcoinBlock) txStoredBlock.getHeader(), txSuperblock, txPMT, superblockPMT);
+    }
+
+    public static class TxForRelay {
+        public Transaction tx;
+        public byte[] operatorPublicKeyHash;
+        public BigInteger txIndex;
+        public List<BigInteger> txSiblings;
+        public AltcoinBlock dogeBlock;
+        public BigInteger dogeBlockIndex;
+        public List<BigInteger> dogeBlockSiblings;
+        public Keccak256Hash superblockId;
+
+        TxForRelay(Transaction tx, byte[] operatorPublicKeyHash, AltcoinBlock dogeBlock, Superblock superblock,
+                   PartialMerkleTree txPMT, PartialMerkleTree superblockPMT) throws IOException {
+            Sha256Hash dogeBlockHash = dogeBlock.getHash();
+
+            // Construct SPV proof for transaction
+            BigInteger txIndex = BigInteger.valueOf(txPMT.getTransactionIndex(tx.getHash()));
+            List<Sha256Hash> txSiblingsSha256Hash = txPMT.getTransactionPath(tx.getHash());
+            List<BigInteger> txSiblingsBigInteger = new ArrayList<>();
+            for (Sha256Hash sha256Hash : txSiblingsSha256Hash) {
+                txSiblingsBigInteger.add(sha256Hash.toBigInteger());
+            }
+
+            // Construct SPV proof for block
+            BigInteger dogeBlockIndex = BigInteger.valueOf(superblockPMT.getTransactionIndex(dogeBlockHash));
+            List<Sha256Hash> dogeBlockSiblingsSha256Hash = superblockPMT.getTransactionPath(dogeBlockHash);
+            List<BigInteger> dogeBlockSiblingsBigInteger = new ArrayList<>();
+            for (Sha256Hash sha256Hash : dogeBlockSiblingsSha256Hash)
+                dogeBlockSiblingsBigInteger.add(sha256Hash.toBigInteger());
+
+            this.tx = tx;
+            this.operatorPublicKeyHash = operatorPublicKeyHash;
+            this.txIndex = txIndex;
+            this.txSiblings = txSiblingsBigInteger;
+            this.dogeBlock = dogeBlock;
+            this.dogeBlockIndex = dogeBlockIndex;
+            this.dogeBlockSiblings = dogeBlockSiblingsBigInteger;
+            this.superblockId = superblock.getSuperblockId();
         }
     }
 
