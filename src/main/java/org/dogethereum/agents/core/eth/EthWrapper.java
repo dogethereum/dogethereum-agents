@@ -274,7 +274,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      *                   but still hasn't been submitted to Dogethereum Contracts.
      * @throws Exception If superblock hash cannot be calculated.
      */
-    public void sendStoreSuperblock(Superblock superblock) throws Exception {
+    public void sendStoreSuperblock(Superblock superblock, String account) throws Exception {
         log.info("About to send superblock {} to the bridge.", superblock.getSuperblockId());
 
         // Check if the parent has been approved before sending this superblock.
@@ -290,9 +290,14 @@ public class EthWrapper implements SuperblockConstantProvider {
             return;
         }
 
-//        BigInteger bondedDeposit = getBondedDeposit(superblock.getSuperblockId());
-
-        makeClaimDeposit(AgentConstants.getSuperblockInitialDeposit());
+        // TODO: test
+        // Make any necessary deposits for sending the superblock
+        BigInteger deposit = getDeposit(account);
+        BigInteger minDeposit = getMinDeposit();
+        if (deposit.compareTo(minDeposit) < 0) {
+            BigInteger diff = minDeposit.subtract(deposit);
+            makeClaimDeposit(diff);
+        }
 
         // The parent is either approved or semi approved. We can send the superblock.
         CompletableFuture<TransactionReceipt> futureReceipt = proposeSuperblock(superblock);
@@ -350,8 +355,12 @@ public class EthWrapper implements SuperblockConstantProvider {
         log.info("Claimant deposited {} wei.", weiValue);
     }
 
-    private BigInteger getBondedDeposit(byte[] claimId) throws Exception {
-        return claimManager.getBondedDeposit(claimId, generalPurposeAndSendSuperblocksAddress).send();
+    private BigInteger getBondedDeposit(Keccak256Hash claimId) throws Exception {
+        return claimManager.getBondedDeposit(claimId.getBytes(), generalPurposeAndSendSuperblocksAddress).send();
+    }
+
+    private BigInteger getDeposit(String account) throws Exception {
+        return claimManager.getDeposit(account).send();
     }
 
     /**
@@ -365,18 +374,6 @@ public class EthWrapper implements SuperblockConstantProvider {
                 superblocks.invalidate(superblockId.getBytes(), validator).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("Invalidated superblock {}", superblockId));
-    }
-
-    // TODO: this function should probably be deleted.
-    /**
-     * Returns the size of the header as a 4-byte byte[].
-     */
-    private byte[] calculateHeaderSize(byte[] header) {
-        String size = BigInteger.valueOf(header.length).toString(16);
-        while (size.length() < 8) {
-            size = "0" + size;
-        }
-        return Hex.decode(size);
     }
 
 
@@ -473,25 +470,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         return result;
     }
 
-    //
-//    public List<SuperblockEvent> getChallengedSuperblocks(long startBlock, long endBlock)
-//            throws IOException {
-//        List<SuperblockEvent> result = new ArrayList<>();
-//        List<DogeSuperblocks.ChallengeSuperblockEventResponse> challengeSuperblockEvents =
-//                superblocks.getChallengeSuperblockEvents(
-//                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-//                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
-//
-//        for (DogeSuperblocks.ChallengeSuperblockEventResponse response : challengeSuperblockEvents) {
-//            SuperblockEvent challengeSuperblockEvent = new SuperblockEvent();
-//            challengeSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockId);
-//            challengeSuperblockEvent.who = response.who;
-//            result.add(challengeSuperblockEvent);
-//        }
-//
-//        return result;
-//    }
-//
     /**
      * Listens to SemiApprovedSuperblock events from DogeSuperblocks contract within a given block window
      * and parses web3j-generated instances into easier to manage SuperblockEvent objects.
@@ -582,8 +560,8 @@ public class EthWrapper implements SuperblockConstantProvider {
         return claimManager.superblockTimeout().send();
     }
 
-    public int getMinDeposit() throws Exception {
-        return claimManager.minDeposit().send().intValue();
+    public BigInteger getMinDeposit() throws Exception {
+        return claimManager.minDeposit().send();
     }
 
     public Keccak256Hash getBestSuperblockId() throws Exception {
@@ -916,26 +894,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         public byte[] blockScryptHash; // TODO: see if these three fields should be made immutable
         public byte[] blockHeader;
         public byte[] powBlockHeader;
-    }
-
-    // TODO: see if this should be deleted
-    public List<SuperblockBattleDecidedEvent> getSuperblockBattleDecidedEvents(long startBlock, long endBlock)
-            throws IOException {
-        List<SuperblockBattleDecidedEvent> result = new ArrayList<>();
-        List<DogeClaimManager.SuperblockBattleDecidedEventResponse> superblockBattleDecidedEvents =
-                claimManager.getSuperblockBattleDecidedEventResponses(
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
-
-        for (DogeClaimManager.SuperblockBattleDecidedEventResponse response : superblockBattleDecidedEvents) {
-            SuperblockBattleDecidedEvent superblockBattleDecidedEvent = new SuperblockBattleDecidedEvent();
-            superblockBattleDecidedEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
-            superblockBattleDecidedEvent.winner = response.winner;
-            superblockBattleDecidedEvent.loser = response.loser;
-            result.add(superblockBattleDecidedEvent);
-        }
-
-        return result;
     }
 
     public static class SuperblockBattleDecidedEvent {

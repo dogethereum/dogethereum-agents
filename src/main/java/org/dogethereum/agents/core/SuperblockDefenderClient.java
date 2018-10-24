@@ -180,7 +180,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             if (descendant != null) {
                 log.info("Found superblock {}, descendant of semi-approved {}. Sending it now.",
                         descendant.getSuperblockId(), semiApprovedSuperblockEvent.superblockId);
-                ethWrapper.sendStoreSuperblock(descendant);
+                ethWrapper.sendStoreSuperblock(descendant, myAddress);
                 superblockToSessionsMap.put(descendant.getSuperblockId(), new HashSet<>());
             }
         }
