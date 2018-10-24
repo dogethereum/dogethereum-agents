@@ -270,7 +270,6 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     /**
      * Proposes a superblock to DogeClaimManager in order to keep the Dogethereum contracts updated.
-     *
      * @param superblock Oldest superblock that is already stored in the local database,
      *                   but still hasn't been submitted to Dogethereum Contracts.
      * @throws Exception If superblock hash cannot be calculated.
@@ -293,8 +292,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
 //        BigInteger bondedDeposit = getBondedDeposit(superblock.getSuperblockId());
 
-        CompletableFuture<TransactionReceipt> depositsReceipt =
-                makeClaimDeposit(AgentConstants.getSuperblockInitialDeposit());
+        makeClaimDeposit(AgentConstants.getSuperblockInitialDeposit());
 
         // The parent is either approved or semi approved. We can send the superblock.
         CompletableFuture<TransactionReceipt> futureReceipt = proposeSuperblock(superblock);
@@ -307,7 +305,6 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     /**
      * Proposes a superblock to DogeClaimManager. To be called from sendStoreSuperblock.
-     *
      * @param superblock Superblock to be proposed.
      * @return
      */
@@ -325,7 +322,6 @@ public class EthWrapper implements SuperblockConstantProvider {
     /**
      * Get 9 ancestors of the contracts' top superblock:
      * ancestor -1 (parent), ancestor -5, ancestor -25, ancestor -125, ...
-     *
      * @return List of 9 ancestors where result[i] = ancestor -(5**i).
      * @throws Exception
      */
@@ -343,7 +339,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @return Receipt of makeDeposit transaction.
      * @throws InterruptedException
      */
-    private CompletableFuture<TransactionReceipt> makeClaimDeposit(BigInteger weiValue) throws InterruptedException {
+    private void makeClaimDeposit(BigInteger weiValue) throws InterruptedException {
         CompletableFuture<TransactionReceipt> futureReceipt = claimManager.makeDeposit(weiValue).sendAsync();
         log.info("Deposited {} wei.", weiValue);
 
@@ -351,8 +347,7 @@ public class EthWrapper implements SuperblockConstantProvider {
                 log.info("makeClaimDeposit receipt {}", receipt.toString())
         );
         Thread.sleep(200); // in case the transaction takes some time to complete
-
-        return futureReceipt;
+        log.info("Claimant deposited {} wei.", weiValue);
     }
 
     private BigInteger getBondedDeposit(byte[] claimId) throws Exception {
@@ -1163,7 +1158,6 @@ public class EthWrapper implements SuperblockConstantProvider {
                 log.info("challengeSuperblock receipt {}", receipt.toString()));
     }
 
-    //TODO: unify return type with makeClaimDepositf
     /**
      * Makes a deposit for challenging a superblock.
      * @param weiValue Wei to be deposited.
