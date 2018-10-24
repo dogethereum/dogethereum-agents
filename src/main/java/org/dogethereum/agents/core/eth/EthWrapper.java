@@ -1106,9 +1106,14 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @param superblockId Hash of superblock to be challenged.
      * @throws InterruptedException
      */
-    public void challengeSuperblock(Keccak256Hash superblockId)
-            throws InterruptedException {
-        makeChallengerDeposit(BigInteger.valueOf(1000));
+    public void challengeSuperblock(Keccak256Hash superblockId, String account)
+            throws InterruptedException, Exception {
+        // Make necessary deposit for challenge
+        BigInteger deposit = getDeposit(account);
+        BigInteger minDeposit = getMinDeposit();
+        if (deposit.compareTo(minDeposit) < 0) {
+            makeChallengerDeposit(minDeposit.subtract(deposit));
+        }
 
         CompletableFuture<TransactionReceipt> futureReceipt =
                 claimManagerForChallenges.challengeSuperblock(superblockId.getBytes()).sendAsync();

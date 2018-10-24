@@ -116,7 +116,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
 
         for (Keccak256Hash superblockId : toChallenge) {
-            ethWrapper.challengeSuperblock(superblockId);
+            ethWrapper.challengeSuperblock(superblockId, myAddress);
         }
     }
 
