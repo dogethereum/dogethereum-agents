@@ -192,7 +192,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
         if (!dogeBlockHashes.isEmpty()) {
             log.info("Querying first block header for superblock {}", superblockId);
-            ethWrapper.queryBlockHeader(superblockId, defenderResponse.sessionId, dogeBlockHashes.get(0));
+            ethWrapper.queryBlockHeader(superblockId, defenderResponse.sessionId, dogeBlockHashes.get(0),
+                    myAddress);
         } else {
             log.info("Merkle root hashes response for superblock {} is empty. Verifying it now.", superblockId);
             ethWrapper.verifySuperblock(defenderResponse.sessionId, ethWrapper.getBattleManagerForChallenges());
@@ -252,7 +253,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         if (nextDogeBlockHash != null) {
             // not last hash
             log.info("Querying block header {}", nextDogeBlockHash);
-            ethWrapper.queryBlockHeader(superblockId, sessionId, nextDogeBlockHash);
+            ethWrapper.queryBlockHeader(superblockId, sessionId, nextDogeBlockHash, myAddress);
         } else {
             // last hash; end battle
             log.info("All block hashes for superblock {} have been received. Verifying it now.", superblockId);
