@@ -38,7 +38,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     @Override
     public long reactToEvents(long fromBlock, long toBlock) {
         try {
-            validateNewSuperblocks(fromBlock, toBlock);
+//            validateNewSuperblocks(fromBlock, toBlock);
+            challengeEverything(fromBlock, toBlock);
             respondToNewBattles(fromBlock, toBlock);
             respondToMerkleRootHashesEventResponses(fromBlock, toBlock);
             respondToBlockHeaderEventResponses(fromBlock, toBlock);
@@ -117,6 +118,13 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
         for (Keccak256Hash superblockId : toChallenge) {
             ethWrapper.challengeSuperblock(superblockId, myAddress);
+        }
+    }
+
+    private void challengeEverything(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.SuperblockEvent> newSuperblockEvents = ethWrapper.getNewSuperblocks(fromBlock, toBlock);
+        for (EthWrapper.SuperblockEvent superblockEvent : newSuperblockEvents) {
+            ethWrapper.challengeSuperblock(superblockEvent.superblockId, myAddress);
         }
     }
 

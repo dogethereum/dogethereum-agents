@@ -115,7 +115,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     /**
-     * Confirms superblocks for which the defender has won all the battles, but whose parent might not be approved.
+     * Confirms superblocks which weren't challenged or for which the defender has won all the battles,
+     * but whose parent might not be approved.
      * @throws Exception
      */
     private void confirmAllSemiApprovable() throws Exception {
@@ -165,7 +166,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     /**
-     * Listens to SemiApprovedSuperblock events and propose their direct descendants to the contracts
+     * Listens to SemiApprovedSuperblock events and proposes their direct descendants to the contracts
      * if the semi-approved superblock was proposed by this defender.
      * @param fromBlock
      * @param toBlock
