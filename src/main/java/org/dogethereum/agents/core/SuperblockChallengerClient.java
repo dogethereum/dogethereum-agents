@@ -38,8 +38,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     @Override
     public long reactToEvents(long fromBlock, long toBlock) {
         try {
-//            validateNewSuperblocks(fromBlock, toBlock);
-            challengeEverything(fromBlock, toBlock);
+            validateNewSuperblocks(fromBlock, toBlock);
             respondToNewBattles(fromBlock, toBlock);
             respondToMerkleRootHashesEventResponses(fromBlock, toBlock);
             respondToBlockHeaderEventResponses(fromBlock, toBlock);
@@ -72,7 +71,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     private void invalidateNonMainChainSuperblocks() throws Exception {
         for (Keccak256Hash superblockId : semiApprovedSet) {
             long semiApprovedHeight = ethWrapper.getSuperblockHeight(superblockId).longValue();
-            Keccak256Hash mainChainId = superblockChain.getSuperblockByHeight(semiApprovedHeight).getSuperblockId();
+            Keccak256Hash mainChainId = superblockChain.getSuperblockByHeight(semiApprovedHeight).getSuperblockId(); // TODO: fix null pointer exception
             long confirmations = ethWrapper.getSuperblockConfirmations();
             if (!mainChainId.equals(superblockId) &&
                     ethWrapper.getChainHeight().longValue() >= semiApprovedHeight + confirmations) {
@@ -139,7 +138,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
         for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
             if (isMine(newBattleEvent)) {
-                ethWrapper.queryMerkleRootHashes(newBattleEvent.superblockId, newBattleEvent.sessionId);
+                ethWrapper.queryMerkleRootHashes(newBattleEvent.superblockId, newBattleEvent.sessionId, myAddress);
             }
         }
     }
@@ -228,11 +227,11 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      */
     private boolean verifyScryptHashAndSendValidationRequest(Keccak256Hash sessionId, Keccak256Hash superblockId,
                                                              Sha256Hash dogeBlockHash, Sha256Hash proposedBlockScryptHash,
-                                                             Sha256Hash scryptBlockHash) {
+                                                             Sha256Hash scryptBlockHash) throws Exception {
         if (!proposedBlockScryptHash.equals(scryptBlockHash)) {
             log.info("Sending request to validate scrypt hash session {}, superblock {}, scrypt hash {}, block {}",
                     sessionId, superblockId, proposedBlockScryptHash, dogeBlockHash);
-            ethWrapper.requestScryptHashValidation(superblockId, sessionId, dogeBlockHash);
+            ethWrapper.requestScryptHashValidation(superblockId, sessionId, dogeBlockHash, myAddress);
             return true;
         }
         return false;

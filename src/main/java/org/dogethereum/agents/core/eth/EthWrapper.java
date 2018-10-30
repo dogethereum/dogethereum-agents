@@ -68,7 +68,6 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     private SystemProperties config;
     private BigInteger gasPriceMinimum;
-    private BigInteger depositLeeway; // Extra deposit for battles in case a superblock has more hashes than expected
 
     private String generalPurposeAndSendSuperblocksAddress;
     private String relayTxsAddress;
@@ -115,7 +114,6 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
         BigInteger gasLimit = BigInteger.valueOf(config.gasLimit());
-        depositLeeway = BigInteger.valueOf(5); // TODO: see if this should be a config variable
 
         dogeToken = DogeTokenExtended.load(dogeTokenContractAddress, web3,
                 new ClientTransactionManager(web3, priceOracleAddress),
@@ -294,7 +292,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         // TODO: test
         // Make any necessary deposits for sending the superblock
-        makeDepositIfNeeded(account, claimManager);
+        makeDepositIfNeeded(account, claimManager, getSuperblockDeposit(superblock.getDogeBlockHashes().size()));
 
         // The parent is either approved or semi approved. We can send the superblock.
         CompletableFuture<TransactionReceipt> futureReceipt = proposeSuperblock(superblock);
@@ -351,6 +349,21 @@ public class EthWrapper implements SuperblockConstantProvider {
         Thread.sleep(200); // in case the transaction takes some time to complete
     }
 
+    /**
+     * Returns the initial deposit for proposing a superblock, i.e. enough to cover all battle steps
+     * (all header queries plus Merkle hashes query, multiplied by min deposit) and a reward for the opponent
+     * in case the battle is lost.
+     * This deposit only covers one battle and it's meant to optimise the number of transactions performed
+     * by the submitter - it's still necessary to make a deposit for each step if another battle is carried out
+     * over the same superblock.
+     * @param nHashes Number of hashes in the superblock.
+     * @return Initial deposit for covering a reward and a single battle.
+     * @throws Exception
+     */
+    private BigInteger getSuperblockDeposit(int nHashes) throws Exception {
+        return getMinDeposit().multiply(BigInteger.valueOf(nHashes+1)).add(getBattleReward());
+    }
+
     private BigInteger getBondedDeposit(Keccak256Hash claimId) throws Exception {
         return claimManager.getBondedDeposit(claimId.getBytes(), generalPurposeAndSendSuperblocksAddress).send();
     }
@@ -360,16 +373,17 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     /**
-     * Makes the minimum necessary deposit for proposing a superblock or continuing a battle.
+     * Makes the minimum necessary deposit for reaching a given amount.
      * @param account Caller's address.
      * @param myClaimManager this.claimManager if proposing/defending, this.claimManagerForChallenges if challenging.
+     * @param deposit Deposit to be reached. This should be the caller's total deposit in the end.
      * @throws Exception
      */
-    private void makeDepositIfNeeded(String account, DogeClaimManager myClaimManager) throws Exception {
+    private void makeDepositIfNeeded(String account, DogeClaimManager myClaimManager, BigInteger deposit)
+            throws Exception {
         BigInteger currentDeposit = getDeposit(account, myClaimManager);
-        BigInteger minDeposit = getMinDeposit();
-        if (currentDeposit.compareTo(minDeposit) < 0) {
-            BigInteger diff = minDeposit.subtract(currentDeposit);
+        if (currentDeposit.compareTo(deposit) < 0) {
+            BigInteger diff = deposit.subtract(currentDeposit);
             makeDeposit(diff, myClaimManager);
         }
     }
@@ -575,13 +589,17 @@ public class EthWrapper implements SuperblockConstantProvider {
         return claimManager.minDeposit().send();
     }
 
-    public BigInteger getHashesPerSuperblock() throws Exception {
-        return claimManager.hashesPerSuperblock().send();
+    public BigInteger getBattleReward() throws Exception {
+        return claimManager.battleReward().send();
     }
 
-    public BigInteger getInitialChallengeDeposit() throws Exception {
-        return getMinDeposit().multiply(getHashesPerSuperblock()).add(depositLeeway);
-    }
+    //    public BigInteger getHashesPerSuperblock() throws Exception {
+//        return claimManager.hashesPerSuperblock().send();
+//    }
+
+//    public BigInteger getInitialChallengeDeposit() throws Exception {
+//        return getMinDeposit().multiply(getHashesPerSuperblock()).add(depositLeeway);
+//    }
 
     public Keccak256Hash getBestSuperblockId() throws Exception {
         return Keccak256Hash.wrap(superblocks.getBestSuperblock().send());
@@ -1049,14 +1067,14 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     public void respondBlockHeader(Keccak256Hash superblockId, Keccak256Hash sessionId,
                                    AltcoinBlock dogeBlock, String account) throws Exception {
-        makeDepositIfNeeded(account, claimManager);
+        makeDepositIfNeeded(account, claimManager, getMinDeposit());
         byte[] scryptHashBytes = dogeBlock.getScryptHash().getReversedBytes();
         byte[] blockHeaderBytes = dogeBlock.bitcoinSerialize();
         CompletableFuture<TransactionReceipt> futureReceipt = battleManager.respondBlockHeader(
                 superblockId.getBytes(), sessionId.getBytes(), scryptHashBytes, blockHeaderBytes).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("Responded to block header query for Doge block {}, session {}, superblock {}. Receipt",
-                        dogeBlock.getHash(), sessionId, superblockId)
+                log.info("Responded to block header query for Doge block {}, session {}, superblock {}. Receipt: {}",
+                        dogeBlock.getHash(), sessionId, superblockId, receipt)
         );
     }
 
@@ -1067,9 +1085,10 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @param dogeBlockHashes Doge block hashes that are supposedly in the superblock.
      */
     public void respondMerkleRootHashes(Keccak256Hash superblockId, Keccak256Hash sessionId,
-                                        List<Sha256Hash> dogeBlockHashes, String account) throws Exception {
+                                        List<Sha256Hash> dogeBlockHashes, String account)
+            throws Exception {
         List<byte[]> rawHashes = new ArrayList<>();
-        makeDeposit(getInitialChallengeDeposit(), claimManager);
+        makeDepositIfNeeded(account, claimManager, getMinDeposit());
         for (Sha256Hash dogeBlockHash : dogeBlockHashes)
             rawHashes.add(dogeBlockHash.getBytes());
         CompletableFuture<TransactionReceipt> futureReceipt =
@@ -1087,7 +1106,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     public void queryBlockHeader(Keccak256Hash superblockId, Keccak256Hash sessionId,
                                  Sha256Hash dogeBlockHash, String account) throws Exception {
-        makeDepositIfNeeded(account, claimManagerForChallenges);
+        makeDepositIfNeeded(account, claimManagerForChallenges, getMinDeposit());
         CompletableFuture<TransactionReceipt> futureReceipt =
                 battleManagerForChallenges.queryBlockHeader(superblockId.getBytes(),
                 sessionId.getBytes(), dogeBlockHash.getBytes()).sendAsync();
@@ -1132,8 +1151,8 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     public void challengeSuperblock(Keccak256Hash superblockId, String account)
             throws InterruptedException, Exception {
-        // Make necessary deposit for challenge
-        makeChallengerDeposit(getInitialChallengeDeposit());
+        // Make necessary deposit to cover reward
+        makeDepositIfNeeded(account, claimManagerForChallenges, getBattleReward());
 
         CompletableFuture<TransactionReceipt> futureReceipt =
                 claimManagerForChallenges.challengeSuperblock(superblockId.getBytes()).sendAsync();
@@ -1163,9 +1182,10 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @param sessionId Battle session ID.
      * @throws InterruptedException
      */
-    public void queryMerkleRootHashes(Keccak256Hash superblockId, Keccak256Hash sessionId)
-            throws InterruptedException {
+    public void queryMerkleRootHashes(Keccak256Hash superblockId, Keccak256Hash sessionId, String account)
+            throws InterruptedException, Exception {
         log.info("Querying Merkle root hashes for superblock {}", superblockId);
+        makeDepositIfNeeded(account, claimManagerForChallenges, getMinDeposit());
         CompletableFuture<TransactionReceipt> futureReceipt = battleManagerForChallenges.queryMerkleRootHashes(
                 superblockId.getBytes(), sessionId.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
@@ -1174,9 +1194,10 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     //TODO: document this and all other scrypt hash validation functions
     public void requestScryptHashValidation(Keccak256Hash superblockId, Keccak256Hash sessionId,
-                                            Sha256Hash blockSha256Hash) {
+                                            Sha256Hash blockSha256Hash, String account) throws Exception {
         log.info("Requesting scrypt validation for block {} session {} superblock {}",
                 blockSha256Hash, sessionId, superblockId);
+        makeDepositIfNeeded(account, claimManagerForChallenges, getMinDeposit());
         CompletableFuture<TransactionReceipt> futureReceipt = battleManagerForChallenges.requestScryptHashValidation(
                 superblockId.getBytes(), sessionId.getBytes(), blockSha256Hash.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
