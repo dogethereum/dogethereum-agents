@@ -71,12 +71,14 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     private void invalidateNonMainChainSuperblocks() throws Exception {
         for (Keccak256Hash superblockId : semiApprovedSet) {
             long semiApprovedHeight = ethWrapper.getSuperblockHeight(superblockId).longValue();
-            Keccak256Hash mainChainId = superblockChain.getSuperblockByHeight(semiApprovedHeight).getSuperblockId(); // TODO: fix null pointer exception
-            long confirmations = ethWrapper.getSuperblockConfirmations();
-            if (!mainChainId.equals(superblockId) &&
-                    ethWrapper.getChainHeight().longValue() >= semiApprovedHeight + confirmations) {
-                log.info("Semi-approved superblock {} not found in main chain. Invalidating.", superblockId);
-                ethWrapper.rejectClaim(superblockId);
+            Superblock mainChainSuperblock = superblockChain.getSuperblockByHeight(semiApprovedHeight);
+            if (mainChainSuperblock != null) {
+                long confirmations = ethWrapper.getSuperblockConfirmations();
+                if (!mainChainSuperblock.getSuperblockId().equals(superblockId) &&
+                        ethWrapper.getChainHeight().longValue() >= semiApprovedHeight + confirmations) {
+                    log.info("Semi-approved superblock {} not found in main chain. Invalidating.", superblockId);
+                    ethWrapper.rejectClaim(superblockId);
+                }
             }
         }
     }
@@ -120,6 +122,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
+    // For testing only. To be eventually deleted.
     private void challengeEverything(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SuperblockEvent> newSuperblockEvents = ethWrapper.getNewSuperblocks(fromBlock, toBlock);
         for (EthWrapper.SuperblockEvent superblockEvent : newSuperblockEvents) {
