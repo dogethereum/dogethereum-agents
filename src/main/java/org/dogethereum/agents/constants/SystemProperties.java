@@ -242,7 +242,6 @@ public class SystemProperties {
         return getLongProperty("operator.address.creation.time", 0);
     }
 
-
     public long gasPriceMinimum() {
         return getLongProperty("gas.price.min", 0);
     }
@@ -251,6 +250,13 @@ public class SystemProperties {
         return getLongProperty("gas.limit", 0);
     }
 
+    public boolean isWithdrawFundsEnabled() {
+        return getBooleanProperty("withdraw.funds.enabled", false);
+    }
+
+    public long depositedFundsLimit() {
+        return getLongProperty("deposited.funds.limit", 0);
+    }
 
     protected String getStringProperty(String propertyName, String defaultValue) {
         return config.hasPath(propertyName) ? config.getString(propertyName) : defaultValue;
