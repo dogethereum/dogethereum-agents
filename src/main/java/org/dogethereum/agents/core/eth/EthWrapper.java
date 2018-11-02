@@ -339,7 +339,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @param myClaimManager this.claimManager if proposing/defending, this.claimManagerForChallenges if challenging.
      * @throws InterruptedException
      */
-    private void makeDeposit(BigInteger weiValue, DogeClaimManager myClaimManager) throws InterruptedException {
+    private void makeDeposit(DogeClaimManager myClaimManager, BigInteger weiValue) throws InterruptedException {
         CompletableFuture<TransactionReceipt> futureReceipt = myClaimManager.makeDeposit(weiValue).sendAsync();
         log.info("Deposited {} wei.", weiValue);
 
@@ -376,15 +376,39 @@ public class EthWrapper implements SuperblockConstantProvider {
      * Makes the minimum necessary deposit for reaching a given amount.
      * @param account Caller's address.
      * @param myClaimManager this.claimManager if proposing/defending, this.claimManagerForChallenges if challenging.
-     * @param deposit Deposit to be reached. This should be the caller's total deposit in the end.
+     * @param weiValue Deposit to be reached. This should be the caller's total deposit in the end.
      * @throws Exception
      */
-    private void makeDepositIfNeeded(String account, DogeClaimManager myClaimManager, BigInteger deposit)
+    private void makeDepositIfNeeded(String account, DogeClaimManager myClaimManager, BigInteger weiValue)
             throws Exception {
         BigInteger currentDeposit = getDeposit(account, myClaimManager);
-        if (currentDeposit.compareTo(deposit) < 0) {
-            BigInteger diff = deposit.subtract(currentDeposit);
-            makeDeposit(diff, myClaimManager);
+        if (currentDeposit.compareTo(weiValue) < 0) {
+            BigInteger diff = weiValue.subtract(currentDeposit);
+            makeDeposit(myClaimManager, diff);
+        }
+    }
+
+    private void withdrawDeposit(DogeClaimManager myClaimManager, BigInteger weiValue) throws Exception {
+        CompletableFuture<TransactionReceipt> futureReceipt = claimManager.withdrawDeposit(weiValue).sendAsync();
+        log.info("Withdrew {} wei.", weiValue);
+        futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
+                log.info("withdrawDeposit receipt {}", receipt.toString())
+        );
+    }
+
+    /**
+     * Withdraw deposits so that only the maximum amount of funds (as determined by user configuration)
+     * is left in the contract.
+     * To be called after battles or when a superblock is approved.
+     * @param account Caller's address.
+     * @param myClaimManager this.claimManager if proposing/defending, this.claimManagerForChallenges if challenging.
+     * @throws Exception
+     */
+    public void withdrawAllFundsExceptLimit(String account, DogeClaimManager myClaimManager) throws Exception {
+        BigInteger currentDeposit = getDeposit(account, myClaimManager);
+        BigInteger limit = BigInteger.valueOf(config.depositedFundsLimit());
+        if (currentDeposit.compareTo(limit) > 0) {
+            withdrawDeposit(myClaimManager, currentDeposit.subtract(limit));
         }
     }
 
@@ -638,12 +662,16 @@ public class EthWrapper implements SuperblockConstantProvider {
      * See DogeClaimManager source code for further reference.
      * @param superblockId Superblock to be approved, semi-approved or invalidated.
      */
-    public void checkClaimFinished(Keccak256Hash superblockId) {
+    public void checkClaimFinished(Keccak256Hash superblockId, String account) throws Exception {
         CompletableFuture<TransactionReceipt> futureReceipt =
                 claimManager.checkClaimFinished(superblockId.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("checkClaimFinished receipt {}", receipt.toString())
         );
+
+        if (config.isWithdrawFundsEnabled()) {
+            withdrawAllFundsExceptLimit(account, claimManager);
+        }
     }
 
     /**
@@ -654,12 +682,16 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @param superblockId Superblock to be confirmed.
      * @param descendantId Its highest semi-approved descendant.
      */
-    public void confirmClaim(Keccak256Hash superblockId, Keccak256Hash descendantId) {
+    public void confirmClaim(Keccak256Hash superblockId, Keccak256Hash descendantId, String account) throws Exception {
         CompletableFuture<TransactionReceipt> futureReceipt =
                 claimManager.confirmClaim(superblockId.getBytes(), descendantId.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("confirmClaim receipt {}", receipt.toString())
         );
+
+        if (config.isWithdrawFundsEnabled()) {
+            withdrawAllFundsExceptLimit(account, claimManager);
+        }
     }
 
     /**
@@ -667,12 +699,16 @@ public class EthWrapper implements SuperblockConstantProvider {
      * See DogeClaimManager source code for further reference.
      * @param superblockId
      */
-    public void rejectClaim(Keccak256Hash superblockId) {
+    public void rejectClaim(Keccak256Hash superblockId, String account) throws Exception {
         CompletableFuture<TransactionReceipt> futureReceipt =
                 claimManager.rejectClaim(superblockId.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
                 log.info("rejectClaim receipt {}", receipt.toString())
         );
+
+        if (config.isWithdrawFundsEnabled()) {
+            withdrawAllFundsExceptLimit(account, claimManagerForChallenges);
+        }
     }
 
 

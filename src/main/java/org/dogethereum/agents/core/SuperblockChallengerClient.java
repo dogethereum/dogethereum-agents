@@ -38,6 +38,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     @Override
     public long reactToEvents(long fromBlock, long toBlock) {
         try {
+//            challengeEverything(fromBlock, toBlock);
             validateNewSuperblocks(fromBlock, toBlock);
             respondToNewBattles(fromBlock, toBlock);
             respondToMerkleRootHashesEventResponses(fromBlock, toBlock);
@@ -77,7 +78,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 if (!mainChainSuperblock.getSuperblockId().equals(superblockId) &&
                         ethWrapper.getChainHeight().longValue() >= semiApprovedHeight + confirmations) {
                     log.info("Semi-approved superblock {} not found in main chain. Invalidating.", superblockId);
-                    ethWrapper.rejectClaim(superblockId);
+                    ethWrapper.rejectClaim(superblockId, myAddress);
                 }
             }
         }

@@ -102,13 +102,13 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
             if (newAndTimeoutPassed(toConfirm) || inBattleAndSemiApprovable(toConfirm)) {
                 log.info("Confirming superblock {}", toConfirmId);
-                ethWrapper.checkClaimFinished(toConfirmId);
+                ethWrapper.checkClaimFinished(toConfirmId, myAddress);
             } else if (ethWrapper.isSuperblockSemiApproved(toConfirmId)) {
                 Superblock descendant = getHighestSemiApprovedDescendant(toConfirmId);
                 if (descendant != null && semiApprovedAndApprovable(toConfirm, descendant)) {
                     Keccak256Hash descendantId = descendant.getSuperblockId();
                     log.info("Confirming semi-approved superblock {} with descendant {}", toConfirmId, descendantId);
-                    ethWrapper.confirmClaim(toConfirmId, descendantId);
+                    ethWrapper.confirmClaim(toConfirmId, descendantId, myAddress);
                 }
             }
         }
@@ -124,7 +124,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             Superblock superblock = superblockChain.getSuperblock(superblockId);
             if (superblock != null && (inBattleAndSemiApprovable(superblock) || newAndTimeoutPassed(superblock))) {
                 log.info("Confirming semi-approvable superblock {}", superblockId);
-                ethWrapper.checkClaimFinished(superblockId);
+                ethWrapper.checkClaimFinished(superblockId, myAddress);
             }
         }
     }
@@ -156,7 +156,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         for (EthWrapper.QueryMerkleRootHashesEvent queryMerkleRootHashes : queryMerkleRootHashesEvents) {
             if (isMine(queryMerkleRootHashes)) {
                 log.info("Merkle root hashes requested for session {}, superblock {}. Responding now.",
-                        queryMerkleRootHashes.sessionId);
+                        queryMerkleRootHashes.superblockId, queryMerkleRootHashes.sessionId);
 
                 Superblock superblock = superblockChain.getSuperblock(queryMerkleRootHashes.superblockId);
                 ethWrapper.respondMerkleRootHashes(queryMerkleRootHashes.superblockId, queryMerkleRootHashes.sessionId,
