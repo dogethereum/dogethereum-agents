@@ -143,6 +143,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
             if (isMine(newBattleEvent)) {
                 ethWrapper.queryMerkleRootHashes(newBattleEvent.superblockId, newBattleEvent.sessionId, myAddress);
+                sessionToSuperblockMap.put(newBattleEvent.sessionId, newBattleEvent.superblockId);
             }
         }
     }
