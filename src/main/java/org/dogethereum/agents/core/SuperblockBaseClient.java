@@ -39,12 +39,17 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
     protected long latestEthBlockProcessed;
     protected File latestEthBlockProcessedFile;
 
+
     // Data is duplicated for performance using it.
-    // superblockToSessionsMap and superblockToSessionsMap (in the defender) have the same data.
-    // superblockToSessionsMap - key: session id, value: superblock id
-    // sessionToSuperblockMap - key: superblock id, value: set of session ids
+
+    // key: session id, value: superblock id
     protected HashMap<Keccak256Hash, Keccak256Hash> sessionToSuperblockMap;
+
+    // key: superblock id, value: set of session ids
+    protected HashMap<Keccak256Hash, HashSet<Keccak256Hash>> superblockToSessionsMap;
+
     protected File sessionToSuperblockMapFile;
+    protected File superblockToSessionsMapFile;
 
 
     public SuperblockBaseClient(String clientName) {
@@ -124,6 +129,34 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
         }
     }
 
+    /**
+     * Listens to NewBattle events to keep track of new battles that this client is taking part in.
+     * @param fromBlock
+     * @param toBlock
+     * @throws IOException
+     */
+    protected void getNewBattles(long fromBlock, long toBlock) throws IOException {
+        List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
+        for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
+            if (isMine(newBattleEvent)) {
+                Keccak256Hash sessionId = newBattleEvent.sessionId;
+                Keccak256Hash superblockId = newBattleEvent.superblockId;
+                sessionToSuperblockMap.put(sessionId, superblockId);
+                addToSuperblockToSessionsMap(sessionId, superblockId);
+            }
+        }
+    }
+
+    protected void addToSuperblockToSessionsMap(Keccak256Hash sessionId, Keccak256Hash superblockId) {
+        if (superblockToSessionsMap.containsKey(superblockId)) {
+            superblockToSessionsMap.get(superblockId).add(sessionId);
+        } else {
+            HashSet<Keccak256Hash> newSuperblockBattles = new HashSet<>();
+            newSuperblockBattles.add(sessionId);
+            superblockToSessionsMap.put(superblockId, newSuperblockBattles);
+        }
+    }
+
 
     /* ---- ABSTRACT METHODS ---- */
 
@@ -174,6 +207,9 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
         this.sessionToSuperblockMap =  new HashMap<>();
         this.sessionToSuperblockMapFile = new File(dataDirectory.getAbsolutePath() + "/" +
                 getSessionToSuperblockMapFilename());
+        this.superblockToSessionsMap = new HashMap<>();
+        this.superblockToSessionsMapFile = new File(dataDirectory.getAbsolutePath() + "/"
+                + getSuperblockToSessionsMapFilename());
 
     }
 

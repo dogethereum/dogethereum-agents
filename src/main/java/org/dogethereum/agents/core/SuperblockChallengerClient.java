@@ -47,6 +47,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
             // Maintain data structures
             getSemiApproved(fromBlock, toBlock);
+            removeApproved(fromBlock, toBlock);
+            removeInvalid(fromBlock, toBlock);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return latestEthBlockProcessed;
@@ -58,6 +60,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     protected void reactToElapsedTime() {
         try {
             callBattleTimeouts();
+            invalidateLoserSuperblocks();
             invalidateNonMainChainSuperblocks();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -83,6 +86,16 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             }
         }
     }
+
+    private void invalidateLoserSuperblocks() throws Exception {
+        for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
+            if (ethWrapper.getClaimInvalid(superblockId)) {
+                log.info("Superblock {} lost a battle. Invalidating.", superblockId);
+                ethWrapper.checkClaimFinished(superblockId, myAddress, true);
+            }
+        }
+    }
+
 
     /* - Reacting to events */
 
@@ -144,6 +157,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             if (isMine(newBattleEvent)) {
                 ethWrapper.queryMerkleRootHashes(newBattleEvent.superblockId, newBattleEvent.sessionId, myAddress);
                 sessionToSuperblockMap.put(newBattleEvent.sessionId, newBattleEvent.superblockId);
+                addToSuperblockToSessionsMap(newBattleEvent.sessionId, newBattleEvent.superblockId);
             }
         }
     }
@@ -332,8 +346,15 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         List<EthWrapper.SuperblockEvent> approvedSuperblockEvents =
                 ethWrapper.getApprovedSuperblocks(fromBlock, toBlock);
         for (EthWrapper.SuperblockEvent superblockEvent : approvedSuperblockEvents) {
-            if (semiApprovedSet.contains(superblockEvent.superblockId))
-                semiApprovedSet.remove(superblockEvent.superblockId);
+            // TODO: refactor repeated code
+            Keccak256Hash superblockId = superblockEvent.superblockId;
+            if (semiApprovedSet.contains(superblockId)) {
+                semiApprovedSet.remove(superblockId);
+            }
+
+            if (superblockToSessionsMap.containsKey(superblockId)) {
+                superblockToSessionsMap.remove(superblockId);
+            }
         }
     }
 
@@ -349,7 +370,11 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         for (EthWrapper.SuperblockEvent superblockEvent : invalidSuperblockEvents) {
             Keccak256Hash superblockId = superblockEvent.superblockId;
             if (semiApprovedSet.contains(superblockId)) {
-                semiApprovedSet.remove(superblockEvent.superblockId);
+                semiApprovedSet.remove(superblockId);
+            }
+
+            if (superblockToSessionsMap.containsKey(superblockId)) {
+                superblockToSessionsMap.remove(superblockId);
             }
         }
     }

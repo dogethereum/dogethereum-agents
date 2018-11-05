@@ -24,13 +24,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     private static long ETH_REQUIRED_CONFIRMATIONS = 5;
 
-    // superblockToSessionsMap and superblockToSessionsMap (in the defender) have the same data.
-    // Data is duplicated for performance using it.
-    // sessionToSuperblockMap - key: superblock id, value: set of session ids
-    // superblockToSessionsMap - key: session id, value: superblock id
-    private HashMap<Keccak256Hash, HashSet<Keccak256Hash>> superblockToSessionsMap;
-    protected File superblockToSessionsMapFile;
-
     public SuperblockDefenderClient() {
         super("Superblock defender client");
     }
@@ -50,6 +43,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
             // Maintain data structures
             removeSemiApprovedDescendants(fromBlock, toBlock);
+            removeApproved(fromBlock, toBlock);
+            removeInvalid(fromBlock, toBlock);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return latestEthBlockProcessed;
@@ -102,7 +97,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
             if (newAndTimeoutPassed(toConfirm) || inBattleAndSemiApprovable(toConfirm)) {
                 log.info("Confirming superblock {}", toConfirmId);
-                ethWrapper.checkClaimFinished(toConfirmId, myAddress);
+                ethWrapper.checkClaimFinished(toConfirmId, myAddress, false);
             } else if (ethWrapper.isSuperblockSemiApproved(toConfirmId)) {
                 Superblock descendant = getHighestSemiApprovedDescendant(toConfirmId);
                 if (descendant != null && semiApprovedAndApprovable(toConfirm, descendant)) {
@@ -124,7 +119,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             Superblock superblock = superblockChain.getSuperblock(superblockId);
             if (superblock != null && (inBattleAndSemiApprovable(superblock) || newAndTimeoutPassed(superblock))) {
                 log.info("Confirming semi-approvable superblock {}", superblockId);
-                ethWrapper.checkClaimFinished(superblockId, myAddress);
+                ethWrapper.checkClaimFinished(superblockId, myAddress, false);
             }
         }
     }
@@ -313,7 +308,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     @Override
     protected void setupFiles() throws IOException {
         setupBaseFiles();
-        setupSuperblockToSessionsMap();
     }
 
     @Override
@@ -403,32 +397,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     /* ---- BATTLE MAP METHODS ---- */
 
     /**
-     * Listens to NewBattle events to keep track of new battles that this client is taking part in.
-     * @param fromBlock
-     * @param toBlock
-     * @throws IOException
-     */
-    private void getNewBattles(long fromBlock, long toBlock) throws IOException {
-        List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
-        for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
-            if (isMine(newBattleEvent)) {
-                Keccak256Hash sessionId = newBattleEvent.sessionId;
-                Keccak256Hash superblockId = newBattleEvent.superblockId;
-                sessionToSuperblockMap.put(sessionId, superblockId);
-
-                // TODO: see if this if/else is necessary; maybe we can assume it's in the mapping already
-                if (superblockToSessionsMap.containsKey(superblockId)) {
-                    superblockToSessionsMap.get(superblockId).add(sessionId);
-                } else {
-                    HashSet<Keccak256Hash> newSuperblockBattles = new HashSet<>();
-                    newSuperblockBattles.add(sessionId);
-                    superblockToSessionsMap.put(superblockId, newSuperblockBattles);
-                }
-            }
-        }
-    }
-
-    /**
      * Removes semi-approved superblocks from superblock to session map.
      * @param fromBlock
      * @param toBlock
@@ -479,6 +447,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     // TODO: see if this should have some fault tolerance for battles that were erroneously not added to set
+    // TODO: look into refactoring this and moving it to the base class
     /**
      * Filters battles where this defender submitted the superblock and got convicted
      * and deletes them from active battle set.
@@ -533,15 +502,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
         flush(sessionToSuperblockMap, sessionToSuperblockMapFile);
         flush(superblockToSessionsMap, superblockToSessionsMapFile);
-    }
-
-
-    /* ---- STORAGE ---- */
-
-    private void setupSuperblockToSessionsMap() {
-        this.superblockToSessionsMap = new HashMap<>();
-        this.superblockToSessionsMapFile = new File(dataDirectory.getAbsolutePath() + "/"
-                + getSuperblockToSessionsMapFilename());
     }
 
 }

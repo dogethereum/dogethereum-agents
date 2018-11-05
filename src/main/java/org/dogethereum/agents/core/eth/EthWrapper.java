@@ -389,7 +389,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     private void withdrawDeposit(DogeClaimManager myClaimManager, BigInteger weiValue) throws Exception {
-        CompletableFuture<TransactionReceipt> futureReceipt = claimManager.withdrawDeposit(weiValue).sendAsync();
+        CompletableFuture<TransactionReceipt> futureReceipt = myClaimManager.withdrawDeposit(weiValue).sendAsync();
         log.info("Withdrew {} wei.", weiValue);
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("withdrawDeposit receipt {}", receipt.toString())
@@ -662,15 +662,23 @@ public class EthWrapper implements SuperblockConstantProvider {
      * See DogeClaimManager source code for further reference.
      * @param superblockId Superblock to be approved, semi-approved or invalidated.
      */
-    public void checkClaimFinished(Keccak256Hash superblockId, String account) throws Exception {
+    public void checkClaimFinished(Keccak256Hash superblockId, String account, boolean isChallenger)
+            throws Exception {
+        DogeClaimManagerExtended myClaimManager;
+        if (isChallenger) {
+            myClaimManager = claimManagerForChallenges;
+        } else {
+            myClaimManager = claimManager;
+        }
+
         CompletableFuture<TransactionReceipt> futureReceipt =
-                claimManager.checkClaimFinished(superblockId.getBytes()).sendAsync();
+                myClaimManager.checkClaimFinished(superblockId.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("checkClaimFinished receipt {}", receipt.toString())
         );
 
         if (config.isWithdrawFundsEnabled()) {
-            withdrawAllFundsExceptLimit(account, claimManager);
+            withdrawAllFundsExceptLimit(account, myClaimManager);
         }
     }
 
