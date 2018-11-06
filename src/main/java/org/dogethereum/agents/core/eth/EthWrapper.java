@@ -290,7 +290,6 @@ public class EthWrapper implements SuperblockConstantProvider {
             return;
         }
 
-        // TODO: test
         // Make any necessary deposits for sending the superblock
         makeDepositIfNeeded(account, claimManager, getSuperblockDeposit(superblock.getDogeBlockHashes().size()));
 
@@ -657,11 +656,13 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     /* ---- CONFIRMING/REJECTING ---- */
 
-    // TODO: document missing params
     /**
      * Approves, semi-approves or invalidates a superblock depending on its situation.
      * See DogeClaimManager source code for further reference.
      * @param superblockId Superblock to be approved, semi-approved or invalidated.
+     * @param account Caller's address.
+     * @param isChallenger Whether the caller is challenging. Used to determine
+     *                     which DogeClaimManager should be used for withdrawing funds.
      */
     public void checkClaimFinished(Keccak256Hash superblockId, String account, boolean isChallenger)
             throws Exception {
@@ -690,6 +691,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * See DogeClaimManager source code for further reference.
      * @param superblockId Superblock to be confirmed.
      * @param descendantId Its highest semi-approved descendant.
+     * @param account Caller's address.
      */
     public void confirmClaim(Keccak256Hash superblockId, Keccak256Hash descendantId, String account) throws Exception {
         CompletableFuture<TransactionReceipt> futureReceipt =
@@ -706,7 +708,9 @@ public class EthWrapper implements SuperblockConstantProvider {
     /**
      * Rejects a claim.
      * See DogeClaimManager source code for further reference.
-     * @param superblockId
+     * @param superblockId ID of superblock to be rejected.
+     * @param account Caller's address.
+     * @throws Exception
      */
     public void rejectClaim(Keccak256Hash superblockId, String account) throws Exception {
         CompletableFuture<TransactionReceipt> futureReceipt =
@@ -1109,6 +1113,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @param superblockId Hash of the superblock that the Doge block hash is supposedly in.
      * @param sessionId Battle session ID.
      * @param dogeBlock Doge block whose header was requested.
+     * @param account Caller's address.
      */
     public void respondBlockHeader(Keccak256Hash superblockId, Keccak256Hash sessionId,
                                    AltcoinBlock dogeBlock, String account) throws Exception {
@@ -1128,6 +1133,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @param superblockId Hash of the superblock whose Merkle root hashes were requested.
      * @param sessionId Battle session ID.
      * @param dogeBlockHashes Doge block hashes that are supposedly in the superblock.
+     * @param account Caller's address.
      */
     public void respondMerkleRootHashes(Keccak256Hash superblockId, Keccak256Hash sessionId,
                                         List<Sha256Hash> dogeBlockHashes, String account)
@@ -1148,7 +1154,8 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @param superblockId Hash of the superblock that the Doge block hash is supposedly in.
      * @param sessionId Battle session ID.
      * @param dogeBlockHash Hash of the Doge block whose header is being queried.
-     */
+     * @param account Caller's address.
+     * */
     public void queryBlockHeader(Keccak256Hash superblockId, Keccak256Hash sessionId,
                                  Sha256Hash dogeBlockHash, String account) throws Exception {
         makeDepositIfNeeded(account, claimManagerForChallenges, getMinDeposit());
@@ -1192,6 +1199,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     /**
      * Challenges a superblock.
      * @param superblockId Hash of superblock to be challenged.
+     * @param account Caller's address.
      * @throws InterruptedException
      */
     public void challengeSuperblock(Keccak256Hash superblockId, String account)
@@ -1225,6 +1233,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * Requests a list of all the hashes in a certain superblock.
      * @param superblockId Hash of superblock being challenged.
      * @param sessionId Battle session ID.
+     * @param account Caller's address.
      * @throws InterruptedException
      */
     public void queryMerkleRootHashes(Keccak256Hash superblockId, Keccak256Hash sessionId, String account)
