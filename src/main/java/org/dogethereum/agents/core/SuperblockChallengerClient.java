@@ -335,50 +335,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
-    /**
-     * Removes approved superblocks from the data structure that keeps track of semi-approved superblocks.
-     * @param fromBlock
-     * @param toBlock
-     * @throws Exception
-     */
-    @Override
-    protected void removeApproved(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> approvedSuperblockEvents =
-                ethWrapper.getApprovedSuperblocks(fromBlock, toBlock);
-        for (EthWrapper.SuperblockEvent superblockEvent : approvedSuperblockEvents) {
-            // TODO: refactor repeated code
-            Keccak256Hash superblockId = superblockEvent.superblockId;
-            if (semiApprovedSet.contains(superblockId)) {
-                semiApprovedSet.remove(superblockId);
-            }
-
-            if (superblockToSessionsMap.containsKey(superblockId)) {
-                superblockToSessionsMap.remove(superblockId);
-            }
-        }
-    }
-
-    /**
-     * Removes invalidated superblocks from data structures that keep track of semi-approved and in battle superblocks.
-     * @param fromBlock
-     * @param toBlock
-     * @throws Exception
-     */
-    @Override
-    protected void removeInvalid(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> invalidSuperblockEvents = ethWrapper.getInvalidSuperblocks(fromBlock, toBlock);
-        for (EthWrapper.SuperblockEvent superblockEvent : invalidSuperblockEvents) {
-            Keccak256Hash superblockId = superblockEvent.superblockId;
-            if (semiApprovedSet.contains(superblockId)) {
-                semiApprovedSet.remove(superblockId);
-            }
-
-            if (superblockToSessionsMap.containsKey(superblockId)) {
-                superblockToSessionsMap.remove(superblockId);
-            }
-        }
-    }
-
 
     /* ---- HELPER METHODS ---- */
 
@@ -466,6 +422,28 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             if (ethWrapper.getSubmitterHitTimeout(sessionId)) {
                 log.info("Submitter hit timeout on session {}. Calling timeout.", sessionId);
                 ethWrapper.timeout(sessionId, ethWrapper.getBattleManagerForChallenges());
+            }
+        }
+    }
+
+    /**
+     * Removes superblocks from the data structures that keep track of semi-approved superblocks.
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
+    @Override
+    protected void removeSuperblocks(long fromBlock, long toBlock, List<EthWrapper.SuperblockEvent> superblockEvents)
+            throws Exception {
+        for (EthWrapper.SuperblockEvent superblockEvent : superblockEvents) {
+            Keccak256Hash superblockId = superblockEvent.superblockId;
+
+            if (superblockToSessionsMap.containsKey(superblockId)) {
+                superblockToSessionsMap.remove(superblockId);
+            }
+
+            if (semiApprovedSet.contains(superblockId)) {
+                semiApprovedSet.remove(superblockId);
             }
         }
     }

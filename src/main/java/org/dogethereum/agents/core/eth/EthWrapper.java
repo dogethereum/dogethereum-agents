@@ -657,6 +657,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     /* ---- CONFIRMING/REJECTING ---- */
 
+    // TODO: document missing params
     /**
      * Approves, semi-approves or invalidates a superblock depending on its situation.
      * See DogeClaimManager source code for further reference.

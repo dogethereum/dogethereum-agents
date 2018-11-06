@@ -188,9 +188,8 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
 
     protected abstract void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception;
 
-    protected abstract void removeApproved(long fromBlock, long toBlock) throws Exception;
-
-    protected abstract void removeInvalid(long fromBlock, long toBlock) throws Exception;
+    protected abstract void removeSuperblocks(long fromBlock, long toBlock,
+                                              List<EthWrapper.SuperblockEvent> superblockEvents) throws Exception;
 
     protected abstract void restoreFiles() throws ClassNotFoundException, IOException;
 
@@ -225,6 +224,29 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
     private void deleteFinishedBattles(long fromBlock, long toBlock) throws Exception {
         deleteSubmitterConvictedBattles(fromBlock, toBlock);
         deleteChallengerConvictedBattles(fromBlock, toBlock);
+    }
+
+    /**
+     * Removes approved superblocks from the data structures that keep track of semi-approved and in battle superblocks.
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
+    protected void removeApproved(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.SuperblockEvent> approvedSuperblockEvents =
+                ethWrapper.getApprovedSuperblocks(fromBlock, toBlock);
+        removeSuperblocks(fromBlock, toBlock, approvedSuperblockEvents);
+    }
+
+    /**
+     * Removes invalidated superblocks from data structures that keep track of semi-approved and in battle superblocks.
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
+    protected void removeInvalid(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.SuperblockEvent> invalidSuperblockEvents = ethWrapper.getInvalidSuperblocks(fromBlock, toBlock);
+        removeSuperblocks(fromBlock, toBlock, invalidSuperblockEvents);
     }
 
 

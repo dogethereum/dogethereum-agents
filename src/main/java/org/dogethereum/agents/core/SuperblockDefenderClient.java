@@ -356,35 +356,17 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     /**
-     * Removes approved superblocks from the data structure that keeps track of semi-approved superblocks.
+     * Removes superblocks from the data structure that keeps track of semi-approved superblocks.
      * @param fromBlock
      * @param toBlock
      * @throws Exception
      */
     @Override
-    protected void removeApproved(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> approvedSuperblockEvents =
-                ethWrapper.getApprovedSuperblocks(fromBlock, toBlock);
-        for (EthWrapper.SuperblockEvent superblockEvent : approvedSuperblockEvents) {
+    protected void removeSuperblocks(long fromBlock, long toBlock, List<EthWrapper.SuperblockEvent> superblockEvents)
+            throws Exception {
+        for (EthWrapper.SuperblockEvent superblockEvent : superblockEvents) {
             if (superblockToSessionsMap.containsKey(superblockEvent.superblockId))
                 superblockToSessionsMap.remove(superblockEvent.superblockId);
-        }
-    }
-
-    /**
-     * Removes invalidated superblocks from the data structure that keeps track of in battle superblocks.
-     * @param fromBlock
-     * @param toBlock
-     * @throws Exception
-     */
-    @Override
-    protected void removeInvalid(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> invalidSuperblockEvents = ethWrapper.getInvalidSuperblocks(fromBlock, toBlock);
-        for (EthWrapper.SuperblockEvent superblockEvent : invalidSuperblockEvents) {
-            Keccak256Hash superblockId = superblockEvent.superblockId;
-            if (superblockToSessionsMap.containsKey(superblockId)) {
-                superblockToSessionsMap.remove(superblockId);
-            }
         }
     }
 
