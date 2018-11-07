@@ -69,7 +69,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     /* - Reacting to elapsed time - */
 
     /**
-     * Finds earliest superblock that's unchallenged and stored locally,
+     * Finds earliest superblock that's not invalid and stored locally,
      * but not confirmed in Dogethereum Contracts, and confirms it if its timeout has passed
      * and it either received no challenges or won all battles.
      * If the superblock is indeed confirmed, its status in Dogethereum Contracts
@@ -96,11 +96,16 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             if (!isMine(toConfirmId)) return;
 
             if (newAndTimeoutPassed(toConfirm) || inBattleAndSemiApprovable(toConfirm)) {
+                // Either the superblock is unchallenged or it won all the battles;
+                // it will get approved or semi-approved depending on the situation
+                // (look at DogeClaimManager contract source code for more details)
                 log.info("Confirming superblock {}", toConfirmId);
                 ethWrapper.checkClaimFinished(toConfirmId, myAddress, false);
             } else if (ethWrapper.isSuperblockSemiApproved(toConfirmId)) {
                 Superblock descendant = getHighestSemiApprovedDescendant(toConfirmId);
                 if (descendant != null && semiApprovedAndApprovable(toConfirm, descendant)) {
+                    // The superblock is semi approved and it can be approved if it has enough confirmations
+                    // TODO: see if this should be done by polling semi approved superblocks with enough confirmations
                     Keccak256Hash descendantId = descendant.getSuperblockId();
                     log.info("Confirming semi-approved superblock {} with descendant {}", toConfirmId, descendantId);
                     ethWrapper.confirmClaim(toConfirmId, descendantId, myAddress);
@@ -269,7 +274,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     private boolean semiApprovedAndApprovable(Superblock superblock, Superblock descendant) throws Exception {
         Keccak256Hash superblockId = superblock.getSuperblockId();
         Keccak256Hash descendantId = descendant.getSuperblockId();
-        return (superblock.getSuperblockHeight() - descendant.getSuperblockHeight() <
+        return (superblock.getSuperblockHeight() - descendant.getSuperblockHeight() >=
             ethWrapper.getSuperblockConfirmations() &&
             ethWrapper.isSuperblockSemiApproved(descendantId) &&
             ethWrapper.isSuperblockSemiApproved(superblockId));
