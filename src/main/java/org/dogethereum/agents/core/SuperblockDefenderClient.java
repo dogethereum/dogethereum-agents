@@ -58,7 +58,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             confirmEarliestApprovableSuperblock();
             callBattleTimeouts();
             confirmAllSemiApprovable();
-//            confirmAllApprovable();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
@@ -126,20 +125,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             if (superblock != null && (inBattleAndSemiApprovable(superblock) || newAndTimeoutPassed(superblock))) {
                 log.info("Confirming semi-approvable superblock {}", superblockId);
                 ethWrapper.checkClaimFinished(superblockId, myAddress, false);
-            }
-        }
-    }
-
-    private void confirmAllApprovable() throws Exception {
-        for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
-            Superblock superblock = superblockChain.getSuperblock(superblockId);
-            if (superblock != null && ethWrapper.isSuperblockSemiApproved(superblockId)) {
-                Superblock descendant = getHighestSemiApprovedDescendant(superblockId);
-                if (descendant != null && semiApprovedAndApprovable(superblock, descendant)) {
-                    Keccak256Hash descendantId = descendant.getSuperblockId();
-                    log.info("Confirming semi-approved superblock {} with descendant {}", superblockId, descendantId);
-                    ethWrapper.confirmClaim(superblockId, descendantId, myAddress);
-                }
             }
         }
     }
