@@ -38,8 +38,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     @Override
     public long reactToEvents(long fromBlock, long toBlock) {
         try {
-//            challengeEverything(fromBlock, toBlock);
-            validateNewSuperblocks(fromBlock, toBlock);
+            challengeEverything(fromBlock, toBlock);
+//            validateNewSuperblocks(fromBlock, toBlock);
             respondToNewBattles(fromBlock, toBlock);
             respondToMerkleRootHashesEventResponses(fromBlock, toBlock);
             respondToBlockHeaderEventResponses(fromBlock, toBlock);
@@ -47,8 +47,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
             // Maintain data structures
             getSemiApproved(fromBlock, toBlock);
-            removeApproved(fromBlock, toBlock);
-            removeInvalid(fromBlock, toBlock);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return latestEthBlockProcessed;

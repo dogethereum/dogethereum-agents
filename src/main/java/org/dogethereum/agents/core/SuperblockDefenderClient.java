@@ -47,8 +47,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
             // Maintain data structures
             removeSemiApprovedDescendants(fromBlock, toBlock);
-            removeApproved(fromBlock, toBlock);
-            removeInvalid(fromBlock, toBlock);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             return latestEthBlockProcessed;
