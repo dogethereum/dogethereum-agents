@@ -2,6 +2,7 @@ src/main/resources/dogethereum-agents.local.conf
 src/main/resources/dogethereum-agents-thread2.conf
 src/main/resources/dogethereum-agents-defender.conf
 src/main/resources/dogethereum-agents-challenger.conf
+src/main/resources/dogethereum-agents-fake-submitter.conf
 src/main/resources/dogethereum-agents-malicious-defender.conf
 src/main/resources/dogethereum-agents-malicious-challenger.conf
 src/main/resources/dogethereum-agents.rinkeby.conf

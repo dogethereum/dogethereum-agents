@@ -60,8 +60,10 @@ public class EthWrapper implements SuperblockConstantProvider {
     private DogeTokenExtended dogeToken;
     private DogeClaimManagerExtended claimManager;
     private DogeClaimManagerExtended claimManagerForChallenges;
+    private DogeClaimManagerExtended maliciousClaimManager;
     private DogeBattleManagerExtended battleManager;
     private DogeBattleManagerExtended battleManagerForChallenges;
+    private DogeBattleManagerExtended maliciousBattleManager;
     private DogeSuperblocksExtended superblocks;
     private DogeSuperblocksExtended superblocksForRelayTxs;
     private ClaimManager scryptVerifier;
@@ -73,6 +75,8 @@ public class EthWrapper implements SuperblockConstantProvider {
     private String relayTxsAddress;
     private String priceOracleAddress;
     private String dogeSuperblockChallengerAddress;
+    private String maliciousSubmitterAddress;
+    private String maliciousBattleManagerAddress;
 
 
     /* ---------------------------------- */
@@ -100,6 +104,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             relayTxsAddress = accounts.get(1);
             priceOracleAddress = accounts.get(2);
             dogeSuperblockChallengerAddress = accounts.get(3);
+            maliciousSubmitterAddress = accounts.get(4);
         } else {
             dogeTokenContractAddress = config.dogeTokenContractAddress();
             claimManagerContractAddress = config.dogeClaimManagerContractAddress();
@@ -127,6 +132,10 @@ public class EthWrapper implements SuperblockConstantProvider {
                 new ClientTransactionManager(web3, dogeSuperblockChallengerAddress),
                 gasPriceMinimum, gasLimit);
         assert claimManagerForChallenges.isValid();
+        maliciousClaimManager = DogeClaimManagerExtended.load(claimManagerContractAddress, web3,
+                new ClientTransactionManager(web3, maliciousSubmitterAddress),
+                gasPriceMinimum, gasLimit);
+        assert maliciousClaimManager.isValid();
         battleManager = DogeBattleManagerExtended.load(battleManagerContractAddress, web3,
                 new ClientTransactionManager(web3, generalPurposeAndSendSuperblocksAddress),
                 gasPriceMinimum, gasLimit);
@@ -227,6 +236,10 @@ public class EthWrapper implements SuperblockConstantProvider {
         return generalPurposeAndSendSuperblocksAddress;
     }
 
+    public String getMaliciousSubmitterAddress() {
+        return maliciousSubmitterAddress;
+    }
+
     public String getDogeSuperblockChallengerAddress() {
         return dogeSuperblockChallengerAddress;
     }
@@ -261,6 +274,10 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     public DogeBattleManagerExtended getBattleManagerForChallenges() {
         return battleManagerForChallenges;
+    }
+
+    public DogeClaimManagerExtended getMaliciousClaimManager() {
+        return maliciousClaimManager;
     }
 
 
@@ -299,6 +316,36 @@ public class EthWrapper implements SuperblockConstantProvider {
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("proposeSuperblock receipt {}", receipt.toString())
         );
+
+        Thread.sleep(200);
+    }
+
+    public void sendStoreFakeSuperblock(Superblock superblock, String account) throws Exception {
+        log.info("About to send superblock {} to the bridge.", superblock.getSuperblockId());
+
+        // Check if the parent has been approved before sending this superblock.
+        Keccak256Hash parentId = superblock.getParentId();
+        if (!(isSuperblockApproved(parentId) || isSuperblockSemiApproved(parentId))) {
+//            log.info("Superblock {} not sent because its parent was neither approved nor semi approved.",
+//                    superblock.getSuperblockId());
+            return;
+        }
+
+        if (getClaimExists(superblock.getSuperblockId())) {
+//            log.info("Superblock {} has already been sent. Returning.", superblock.getSuperblockId());
+            return;
+        }
+
+        // Make any necessary deposits for sending the superblock
+        makeDepositIfNeeded(account, maliciousClaimManager,
+                getSuperblockDeposit(superblock.getDogeBlockHashes().size()));
+
+        // The parent is either approved or semi approved. We can send the superblock.
+        CompletableFuture<TransactionReceipt> futureReceipt = proposeSuperblock(superblock);
+        log.info("Sent superblock {}", superblock.getSuperblockId());
+        futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
+                log.info("proposeSuperblock receipt {}", receipt.toString())
+        );
         Thread.sleep(200);
     }
 
@@ -309,6 +356,17 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     private CompletableFuture<TransactionReceipt> proposeSuperblock(Superblock superblock) {
         return claimManager.proposeSuperblock(superblock.getMerkleRoot().getBytes(),
+                superblock.getChainWork(),
+                BigInteger.valueOf(superblock.getLastDogeBlockTime()),
+                BigInteger.valueOf(superblock.getPreviousToLastDogeBlockTime()),
+                superblock.getLastDogeBlockHash().getBytes(),
+                BigInteger.valueOf(superblock.getLastDogeBlockBits()),
+                superblock.getParentId().getBytes()
+        ).sendAsync();
+    }
+
+    private CompletableFuture<TransactionReceipt> proposeFakeSuperblock(Superblock superblock) {
+        return maliciousClaimManager.proposeSuperblock(superblock.getMerkleRoot().getBytes(),
                 superblock.getChainWork(),
                 BigInteger.valueOf(superblock.getLastDogeBlockTime()),
                 BigInteger.valueOf(superblock.getPreviousToLastDogeBlockTime()),
@@ -1117,10 +1175,20 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     public void respondBlockHeader(Keccak256Hash superblockId, Keccak256Hash sessionId,
                                    AltcoinBlock dogeBlock, String account) throws Exception {
-        makeDepositIfNeeded(account, claimManager, getMinDeposit());
+        DogeBattleManager myBattleManager;
+        DogeClaimManager myClaimManager;
+        if (account.equals(generalPurposeAndSendSuperblocksAddress)) {
+            myBattleManager = battleManager;
+            myClaimManager = claimManager;
+        } else {
+            myBattleManager = maliciousBattleManager;
+            myClaimManager = maliciousClaimManager;
+        }
+
+        makeDepositIfNeeded(account, myClaimManager, getMinDeposit());
         byte[] scryptHashBytes = dogeBlock.getScryptHash().getReversedBytes();
         byte[] blockHeaderBytes = dogeBlock.bitcoinSerialize();
-        CompletableFuture<TransactionReceipt> futureReceipt = battleManager.respondBlockHeader(
+        CompletableFuture<TransactionReceipt> futureReceipt = myBattleManager.respondBlockHeader(
                 superblockId.getBytes(), sessionId.getBytes(), scryptHashBytes, blockHeaderBytes).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("Responded to block header query for Doge block {}, session {}, superblock {}. Receipt: {}",
@@ -1138,12 +1206,22 @@ public class EthWrapper implements SuperblockConstantProvider {
     public void respondMerkleRootHashes(Keccak256Hash superblockId, Keccak256Hash sessionId,
                                         List<Sha256Hash> dogeBlockHashes, String account)
             throws Exception {
+        DogeBattleManager myBattleManager;
+        DogeClaimManager myClaimManager;
+        if (account.equals(generalPurposeAndSendSuperblocksAddress)) {
+            myBattleManager = battleManager;
+            myClaimManager = claimManager;
+        } else {
+            myBattleManager = maliciousBattleManager;
+            myClaimManager = maliciousClaimManager;
+        }
+
         List<byte[]> rawHashes = new ArrayList<>();
-        makeDepositIfNeeded(account, claimManager, getMinDeposit());
+        makeDepositIfNeeded(account, myClaimManager, getMinDeposit());
         for (Sha256Hash dogeBlockHash : dogeBlockHashes)
             rawHashes.add(dogeBlockHash.getBytes());
         CompletableFuture<TransactionReceipt> futureReceipt =
-                battleManager.respondMerkleRootHashes(superblockId.getBytes(), sessionId.getBytes(), rawHashes).sendAsync();
+                myBattleManager.respondMerkleRootHashes(superblockId.getBytes(), sessionId.getBytes(), rawHashes).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("Responded to Merkle root hashes query for session {}, superblock {}. Receipt: {}",
                         sessionId, superblockId, receipt.toString()));

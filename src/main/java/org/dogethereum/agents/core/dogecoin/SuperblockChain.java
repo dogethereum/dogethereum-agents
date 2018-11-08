@@ -310,4 +310,8 @@ public class SuperblockChain {
         return getSuperblock(superblock.getParentId());
     }
 
+    public void putForgedSuperblock(Superblock superblock) throws IOException {
+        superblockStorage.put(superblock);
+    }
+
 }

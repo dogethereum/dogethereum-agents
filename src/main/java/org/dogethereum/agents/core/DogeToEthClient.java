@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import java.io.*;
 import java.util.*;
+import java.math.BigInteger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -57,7 +58,8 @@ public class DogeToEthClient {
     @PostConstruct
     public void setup() throws Exception {
         config = SystemProperties.CONFIG;
-        if (config.isDogeSuperblockSubmitterEnabled() || config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
+        if (config.isDogeSuperblockSubmitterEnabled() || config.isDogeTxRelayerEnabled() ||
+                config.isOperatorEnabled() || config.isDogeSuperblockFakeSubmitterEnabled()) {
             agentConstants = config.getAgentConstants();
 
             new Timer("Doge to Eth client").scheduleAtFixedRate(new DogeToEthClientTimerTask(),
@@ -84,6 +86,9 @@ public class DogeToEthClient {
                     ethWrapper.updateContractFacadesGasPrice();
                     if (config.isDogeSuperblockSubmitterEnabled()) {
                         updateBridgeSuperblockChain();
+                    }
+                    if (config.isDogeSuperblockFakeSubmitterEnabled()) {
+                        updateBridgeSuperblockChainMalicious();
                     }
                     if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
                         updateBridgeTransactions();
@@ -139,6 +144,37 @@ public class DogeToEthClient {
 
         log.debug("First superblock missing in the bridge: {}.", toSend.getSuperblockId());
         ethWrapper.sendStoreSuperblock(toSend, ethWrapper.getGeneralPurposeAndSendSuperblocksAddress());
+        log.debug("Invoked sendStoreSuperblocks with superblock {}.", toSend.getSuperblockId());
+
+        return toSend.getSuperblockHeight();
+    }
+
+    public long updateBridgeSuperblockChainMalicious() throws Exception {
+        if (ethWrapper.arePendingTransactionsForSendSuperblocksAddress()) {
+            log.debug("Skipping sending superblocks, there are pending transaction for the sender address.");
+            return 0;
+        }
+
+        // Get the best superblock from the relay that is also in the main chain.
+        List<byte[]> superblockLocator = ethWrapper.getSuperblockLocator();
+        Superblock matchedSuperblock = getEarliestMatchingSuperblock(superblockLocator);
+
+        checkNotNull(matchedSuperblock, "No best chain superblock found");
+        log.debug("Matched superblock {}.", matchedSuperblock.getSuperblockId());
+
+        Superblock toSend = forgeNewChildSuperblock(matchedSuperblock);
+        superblockChain.putForgedSuperblock(toSend);
+
+//        List<Sha256Hash> dogeBlockHashes = toSend.getDogeBlockHashes();
+
+        if (ethWrapper.wasSuperblockAlreadySubmitted(toSend.getSuperblockId())) {
+            log.debug("The contract already knows about the superblock, it won't be sent again: {}.",
+                    toSend.getSuperblockId());
+            return 0;
+        }
+
+        log.debug("Sending malicious superblock {}.", toSend.getSuperblockId());
+        ethWrapper.sendStoreSuperblock(toSend, ethWrapper.getMaliciousSubmitterAddress());
         log.debug("Invoked sendStoreSuperblocks with superblock {}.", toSend.getSuperblockId());
 
         return toSend.getSuperblockHeight();
@@ -286,6 +322,35 @@ public class DogeToEthClient {
 
         // current superblock is null
         return null;
+    }
+
+    private Superblock forgeNewChildSuperblock(Superblock superblock) throws BlockStoreException, IOException {
+        StoredBlock topBlock = dogecoinWrapper.getChainHead();
+        long time = topBlock.getHeader().getTimeSeconds();
+        BigInteger chainWork = topBlock.getChainWork();
+        Sha256Hash prevBlockHash = superblock.getLastDogeBlockHash();
+        AltcoinBlock prevBlock = (AltcoinBlock) dogecoinWrapper.getBlock(prevBlockHash).getHeader();
+
+        AltcoinBlock fakeDogeBlock = createFakeDogeBlock(prevBlockHash, time);
+        dogecoinWrapper.storeFakeDogeBlock(fakeDogeBlock, chainWork,
+                dogecoinWrapper.getBlock(prevBlockHash).getHeight() + 1);
+
+        List<Sha256Hash> dogeBlockHashes = new ArrayList<>();
+        dogeBlockHashes.add(fakeDogeBlock.getHash());
+
+        return new Superblock(agentConstants.getDogeParams(), dogeBlockHashes, chainWork,
+                fakeDogeBlock.getTimeSeconds(), prevBlock.getTimeSeconds(),
+                fakeDogeBlock.getDifficultyTarget(), superblock.getSuperblockId(),
+                superblock.getSuperblockHeight() + 1);
+    }
+
+    private AltcoinBlock createFakeDogeBlock(Sha256Hash prevBlockHash, long time) throws BlockStoreException {
+        AltcoinBlock prevBlock = (AltcoinBlock) dogecoinWrapper.getBlock(prevBlockHash).getHeader();
+        long version = prevBlock.getVersion();
+        Sha256Hash merkleRoot = Sha256Hash.twiceOf("fake block".getBytes());
+        List<Transaction> transactions = new ArrayList<>();
+        return new AltcoinBlock(agentConstants.getDogeParams(), version, prevBlockHash, merkleRoot, time,
+                prevBlock.getDifficultyTarget(), prevBlock.getNonce(), transactions);
     }
 
 }

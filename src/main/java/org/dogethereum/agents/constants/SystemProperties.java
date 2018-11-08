@@ -172,6 +172,10 @@ public class SystemProperties {
         return getBooleanProperty("doge.superblock.challenger.enabled", false);
     }
 
+    public boolean isDogeSuperblockFakeSubmitterEnabled() {
+        return getBooleanProperty("doge.fake.superblock.submitter.enabled", false);
+    }
+
     public boolean isGanache() {
         return LOCAL.equals(constants()) || ETHGANACHE_DOGEMAIN.equals(constants());
     }
