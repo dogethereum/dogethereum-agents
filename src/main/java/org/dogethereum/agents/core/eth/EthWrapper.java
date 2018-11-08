@@ -76,6 +76,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     private String priceOracleAddress;
     private String dogeSuperblockChallengerAddress;
     private String maliciousSubmitterAddress;
+    private String maliciousBattleManagerAddress;
 
     private BigInteger minProposalDeposit;
     private BigInteger minChallengeDeposit;
