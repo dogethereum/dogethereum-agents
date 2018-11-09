@@ -165,8 +165,6 @@ public class DogeToEthClient {
         Superblock toSend = forgeNewChildSuperblock(matchedSuperblock);
         superblockChain.putForgedSuperblock(toSend);
 
-//        List<Sha256Hash> dogeBlockHashes = toSend.getDogeBlockHashes();
-
         if (ethWrapper.wasSuperblockAlreadySubmitted(toSend.getSuperblockId())) {
             log.debug("The contract already knows about the superblock, it won't be sent again: {}.",
                     toSend.getSuperblockId());
@@ -174,7 +172,7 @@ public class DogeToEthClient {
         }
 
         log.debug("Sending malicious superblock {}.", toSend.getSuperblockId());
-        ethWrapper.sendStoreSuperblock(toSend, ethWrapper.getMaliciousSubmitterAddress());
+        ethWrapper.sendStoreFakeSuperblock(toSend, ethWrapper.getMaliciousSubmitterAddress());
         log.debug("Invoked sendStoreSuperblocks with superblock {}.", toSend.getSuperblockId());
 
         return toSend.getSuperblockHeight();

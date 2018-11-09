@@ -76,7 +76,6 @@ public class EthWrapper implements SuperblockConstantProvider {
     private String priceOracleAddress;
     private String dogeSuperblockChallengerAddress;
     private String maliciousSubmitterAddress;
-    private String maliciousBattleManagerAddress;
 
 
     /* ---------------------------------- */
@@ -144,6 +143,10 @@ public class EthWrapper implements SuperblockConstantProvider {
                 new ClientTransactionManager(web3, dogeSuperblockChallengerAddress),
                 gasPriceMinimum, gasLimit);
         assert battleManagerForChallenges.isValid();
+        maliciousBattleManager = DogeBattleManagerExtended.load(battleManagerContractAddress, web3,
+                new ClientTransactionManager(web3, maliciousSubmitterAddress),
+                gasPriceMinimum, gasLimit);
+        assert maliciousBattleManager.isValid();
         superblocks = DogeSuperblocksExtended.load(superblocksContractAddress, web3,
                 new ClientTransactionManager(web3, generalPurposeAndSendSuperblocksAddress),
                 gasPriceMinimum, gasLimit);
@@ -326,13 +329,13 @@ public class EthWrapper implements SuperblockConstantProvider {
         // Check if the parent has been approved before sending this superblock.
         Keccak256Hash parentId = superblock.getParentId();
         if (!(isSuperblockApproved(parentId) || isSuperblockSemiApproved(parentId))) {
-//            log.info("Superblock {} not sent because its parent was neither approved nor semi approved.",
-//                    superblock.getSuperblockId());
+            log.info("Superblock {} not sent because its parent was neither approved nor semi approved.",
+                    superblock.getSuperblockId());
             return;
         }
 
         if (getClaimExists(superblock.getSuperblockId())) {
-//            log.info("Superblock {} has already been sent. Returning.", superblock.getSuperblockId());
+            log.info("Superblock {} has already been sent. Returning.", superblock.getSuperblockId());
             return;
         }
 
@@ -341,7 +344,7 @@ public class EthWrapper implements SuperblockConstantProvider {
                 getSuperblockDeposit(superblock.getDogeBlockHashes().size()));
 
         // The parent is either approved or semi approved. We can send the superblock.
-        CompletableFuture<TransactionReceipt> futureReceipt = proposeSuperblock(superblock);
+        CompletableFuture<TransactionReceipt> futureReceipt = proposeFakeSuperblock(superblock);
         log.info("Sent superblock {}", superblock.getSuperblockId());
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("proposeSuperblock receipt {}", receipt.toString())

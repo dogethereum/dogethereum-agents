@@ -147,6 +147,10 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                         queryBlockHeader.dogeBlockHash, queryBlockHeader.sessionId);
 
                 StoredBlock dogeBlock = dogecoinWrapper.getBlock(queryBlockHeader.dogeBlockHash);
+                if (dogeBlock == null) {
+                    dogeBlock = dogecoinWrapper.getFakeStoredDogeBlock(queryBlockHeader.dogeBlockHash);
+                }
+
                 ethWrapper.respondBlockHeader(queryBlockHeader.superblockId, queryBlockHeader.sessionId,
                         (AltcoinBlock) dogeBlock.getHeader(), myAddress);
             }
