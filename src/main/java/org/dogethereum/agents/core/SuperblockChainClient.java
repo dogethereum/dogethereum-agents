@@ -39,7 +39,8 @@ public class SuperblockChainClient {
         SystemProperties config = SystemProperties.CONFIG;
         AgentConstants agentConstants = config.getAgentConstants();
         if (config.isDogeSuperblockSubmitterEnabled() || config.isDogeTxRelayerEnabled() ||
-                config.isOperatorEnabled() || config.isDogeBlockChallengerEnabled()) {
+                config.isOperatorEnabled() || config.isDogeBlockChallengerEnabled() ||
+                config.isDogeSuperblockFakeSubmitterEnabled()) {
             new Timer("SuperblockChainClient").scheduleAtFixedRate(new UpdateSuperblocksTimerTask(),
                       getFirstExecutionDate(), agentConstants.getDogeToEthTimerTaskPeriod());
         }
