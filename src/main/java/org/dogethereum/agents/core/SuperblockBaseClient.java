@@ -116,6 +116,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
                     // Maintain data structures and react to events
                     removeApproved(fromBlock, toBlock);
                     removeInvalid(fromBlock, toBlock);
+                    getNewBattles(fromBlock, toBlock);
                     deleteFinishedBattles(fromBlock, toBlock);
                     latestEthBlockProcessed = reactToEvents(fromBlock, toBlock);
 
