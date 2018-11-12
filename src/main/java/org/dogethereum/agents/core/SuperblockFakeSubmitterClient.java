@@ -15,4 +15,15 @@ public class SuperblockFakeSubmitterClient extends SuperblockDefenderClient {
     protected boolean isEnabled() {
         return config.isDogeSuperblockFakeSubmitterEnabled();
     }
+
+    @Override
+    protected void reactToElapsedTime() {
+        try {
+            confirmFakeApprovableSuperblock();
+            callBattleTimeouts();
+            confirmAllSemiApprovable();
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+        }
+    }
 }

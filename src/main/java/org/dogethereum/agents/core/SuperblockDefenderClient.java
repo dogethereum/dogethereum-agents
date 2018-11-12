@@ -116,12 +116,45 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         }
     }
 
+    protected void confirmFakeApprovableSuperblock() throws Exception {
+        Keccak256Hash bestSuperblockId = ethWrapper.getBestSuperblockId();
+        Superblock chainHead = superblockChain.getChainHead();
+
+        if (chainHead.getSuperblockId().equals(bestSuperblockId)) {
+            // Contract and local db best superblocks are the same, do nothing.
+            return;
+        }
+
+        Superblock toConfirm = getFakeChild(bestSuperblockId);
+
+        if (toConfirm == null) {
+            log.info("No children for best superblock from contracts, {}, found in local database. Stopping.",
+                    bestSuperblockId);
+        } else {
+            Keccak256Hash toConfirmId = toConfirm.getSuperblockId();
+            if (!isMine(toConfirmId)) return;
+
+            if (newAndTimeoutPassed(toConfirm) || inBattleAndSemiApprovable(toConfirm)) {
+                log.info("Confirming fake superblock {}", toConfirmId);
+                ethWrapper.checkClaimFinished(toConfirmId, myAddress, false);
+            } else if (ethWrapper.isSuperblockSemiApproved(toConfirmId)) {
+                Superblock descendant = getHighestSemiApprovedDescendant(toConfirmId);
+                if (descendant != null && semiApprovedAndApprovable(toConfirm, descendant)) {
+                    Keccak256Hash descendantId = descendant.getSuperblockId();
+                    log.info("Confirming semi-approved fake superblock {} with fake descendant {}",
+                            toConfirmId, descendantId);
+                    ethWrapper.confirmClaim(toConfirmId, descendantId, myAddress);
+                }
+            }
+        }
+    }
+
     /**
      * Confirms superblocks which weren't challenged or for which the defender has won all the battles,
      * but whose parent might not be approved.
      * @throws Exception
      */
-    private void confirmAllSemiApprovable() throws Exception {
+    protected void confirmAllSemiApprovable() throws Exception {
         for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
             Superblock superblock = superblockChain.getSuperblock(superblockId);
             if (superblock != null && (inBattleAndSemiApprovable(superblock) || newAndTimeoutPassed(superblock))) {
@@ -311,6 +344,16 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         }
 
         return highest;
+    }
+
+    private Superblock getFakeChild(Keccak256Hash parentId) throws IOException {
+        for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
+            Superblock child = superblockChain.getSuperblock(superblockId);
+            if (child != null && child.getParentId().equals(parentId))
+                return child;
+        }
+
+        return null;
     }
 
 
