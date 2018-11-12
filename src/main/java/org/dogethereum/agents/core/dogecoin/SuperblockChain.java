@@ -218,7 +218,6 @@ public class SuperblockChain {
             currentSuperblock = getSuperblock(currentSuperblock.getParentId());
         }
 
-        checkNotNull(currentSuperblock, "Block is not in the main chain.");
         return currentSuperblock;
     }
 
