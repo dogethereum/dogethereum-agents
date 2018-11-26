@@ -207,6 +207,12 @@ public class SuperblockChain {
      * @throws BlockStoreException
      */
     public Superblock getFirstDescendant(Keccak256Hash superblockId) throws BlockStoreException, IOException {
+        if (getSuperblock(superblockId) == null) {
+            // The superblock isn't in the main chain.
+            log.info("Superblock {} is not in the main chain. Returning from getFirstDescendant.", superblockId);
+            return null;
+        }
+
         if (getSuperblock(superblockId).getSuperblockHeight() == getChainHeight()) {
             // There's nothing above the tip of the chain.
             return null;
