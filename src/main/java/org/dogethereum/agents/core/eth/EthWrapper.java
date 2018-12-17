@@ -459,17 +459,36 @@ public class EthWrapper implements SuperblockConstantProvider {
     /**
      * Withdraw deposits so that only the maximum amount of funds (as determined by user configuration)
      * is left in the contract.
-     * To be called after battles or when a superblock is approved.
+     * To be called after battles or when a superblock is approved/invalidated.
      * @param account Caller's address.
      * @param myClaimManager this.claimManager if proposing/defending, this.claimManagerForChallenges if challenging.
      * @throws Exception
      */
-    public void withdrawAllFundsExceptLimit(String account, DogeClaimManager myClaimManager) throws Exception {
+    private void withdrawAllFundsExceptLimit(String account, DogeClaimManager myClaimManager) throws Exception {
         BigInteger currentDeposit = getDeposit(account, myClaimManager);
         BigInteger limit = BigInteger.valueOf(config.depositedFundsLimit());
         if (currentDeposit.compareTo(limit) > 0) {
             withdrawDeposit(myClaimManager, currentDeposit.subtract(limit));
         }
+    }
+
+    /**
+     * Withdraw deposits so that only the maximum amount of funds (as determined by user configuration)
+     * is left in the contract.
+     * To be called after battles or when a superblock is approved/invalidated.
+     * @param account Caller's address.
+     * @param isChallenger true if challenging, false if proposing/defending.
+     * @throws Exception
+     */
+    public void withdrawAllFundsExceptLimit(String account, boolean isChallenger) throws Exception {
+        DogeClaimManagerExtended myClaimManager;
+        if (isChallenger) {
+            myClaimManager = claimManagerForChallenges;
+        } else {
+            myClaimManager = claimManager;
+        }
+
+        withdrawAllFundsExceptLimit(account, myClaimManager);
     }
 
     /**
@@ -739,10 +758,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("checkClaimFinished receipt {}", receipt.toString())
         );
-
-        if (config.isWithdrawFundsEnabled()) {
-            withdrawAllFundsExceptLimit(account, myClaimManager);
-        }
     }
 
     /**
@@ -760,10 +775,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("confirmClaim receipt {}", receipt.toString())
         );
-
-        if (config.isWithdrawFundsEnabled()) {
-            withdrawAllFundsExceptLimit(account, claimManager);
-        }
     }
 
     /**
@@ -779,10 +790,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
                 log.info("rejectClaim receipt {}", receipt.toString())
         );
-
-        if (config.isWithdrawFundsEnabled()) {
-            withdrawAllFundsExceptLimit(account, claimManagerForChallenges);
-        }
     }
 
 

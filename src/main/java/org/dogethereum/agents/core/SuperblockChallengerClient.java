@@ -426,6 +426,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     /**
      * Removes superblocks from the data structures that keep track of semi-approved superblocks.
+     * If fund withdrawal is enabled, also withdraws any deposits that might have been unbonded
+     * or any rewards that might have resulted from the superblocks' status change.
      * @param fromBlock
      * @param toBlock
      * @throws Exception
@@ -442,6 +444,10 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
             if (semiApprovedSet.contains(superblockId)) {
                 semiApprovedSet.remove(superblockId);
+            }
+
+            if (config.isWithdrawFundsEnabled()) {
+                ethWrapper.withdrawAllFundsExceptLimit(myAddress, true);
             }
         }
     }

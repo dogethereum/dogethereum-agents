@@ -419,8 +419,13 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     protected void removeSuperblocks(long fromBlock, long toBlock, List<EthWrapper.SuperblockEvent> superblockEvents)
             throws Exception {
         for (EthWrapper.SuperblockEvent superblockEvent : superblockEvents) {
-            if (superblockToSessionsMap.containsKey(superblockEvent.superblockId))
+            if (superblockToSessionsMap.containsKey(superblockEvent.superblockId)) {
                 superblockToSessionsMap.remove(superblockEvent.superblockId);
+            }
+
+            if (config.isWithdrawFundsEnabled()) {
+                ethWrapper.withdrawAllFundsExceptLimit(myAddress, false);
+            }
         }
     }
 
