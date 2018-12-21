@@ -38,8 +38,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     @Override
     public long reactToEvents(long fromBlock, long toBlock) {
         try {
-//            challengeEverything(fromBlock, toBlock);
-            validateNewSuperblocks(fromBlock, toBlock);
+            challengeEverything(fromBlock, toBlock);
+//            validateNewSuperblocks(fromBlock, toBlock);
             respondToNewBattles(fromBlock, toBlock);
             respondToMerkleRootHashesEventResponses(fromBlock, toBlock);
             respondToBlockHeaderEventResponses(fromBlock, toBlock);
