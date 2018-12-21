@@ -1200,7 +1200,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             myClaimManager = maliciousClaimManager;
         }
 
-        makeDepositIfNeeded(account, myClaimManager, verifySuperblockCost);
+        makeDepositIfNeeded(account, claimManager, verifySuperblockCost);
         byte[] scryptHashBytes = dogeBlock.getScryptHash().getReversedBytes();
         byte[] blockHeaderBytes = dogeBlock.bitcoinSerialize();
         CompletableFuture<TransactionReceipt> futureReceipt = myBattleManager.respondBlockHeader(
