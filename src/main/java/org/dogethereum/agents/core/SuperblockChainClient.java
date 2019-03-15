@@ -9,6 +9,8 @@ import org.dogethereum.agents.constants.SystemProperties;
 import org.dogethereum.agents.core.dogecoin.DogecoinWrapper;
 import org.dogethereum.agents.core.dogecoin.Superblock;
 import org.dogethereum.agents.core.dogecoin.SuperblockChain;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +27,7 @@ import java.util.*;
 @Slf4j(topic = "SuperblockChainClient")
 
 public class SuperblockChainClient {
+    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
     @Autowired
     private SuperblockChain superblockChain;
 
@@ -38,8 +41,8 @@ public class SuperblockChainClient {
     public void setup() throws Exception {
         SystemProperties config = SystemProperties.CONFIG;
         AgentConstants agentConstants = config.getAgentConstants();
-        if (config.isDogeSuperblockSubmitterEnabled() || config.isDogeTxRelayerEnabled() ||
-                config.isOperatorEnabled() || config.isDogeBlockChallengerEnabled()) {
+        if (config.isDogeSuperblockSubmitterEnabled() ||
+                 config.isDogeBlockChallengerEnabled()) {
             new Timer("SuperblockChainClient").scheduleAtFixedRate(new UpdateSuperblocksTimerTask(),
                       getFirstExecutionDate(), agentConstants.getDogeToEthTimerTaskPeriod());
         }

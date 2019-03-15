@@ -241,9 +241,8 @@ public class DogeBattleManagerExtended extends  DogeBattleManager {
             newRespondBlockHeaderEventResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
             newRespondBlockHeaderEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
             newRespondBlockHeaderEventResponse.challenger = (String) eventValues.getNonIndexedValues().get(2).getValue();
-            newRespondBlockHeaderEventResponse.blockScryptHash = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
-            newRespondBlockHeaderEventResponse.blockHeader = (byte[]) eventValues.getNonIndexedValues().get(4).getValue();
-            newRespondBlockHeaderEventResponse.powBlockHeader = (byte[]) eventValues.getNonIndexedValues().get(5).getValue();
+            newRespondBlockHeaderEventResponse.blockHeader = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
+            newRespondBlockHeaderEventResponse.powBlockHeader = (byte[]) eventValues.getNonIndexedValues().get(4).getValue();
             result.add(newRespondBlockHeaderEventResponse);
         }
 
@@ -273,76 +272,6 @@ public class DogeBattleManagerExtended extends  DogeBattleManager {
             newErrorBattleEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
             newErrorBattleEventResponse.err = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
             result.add(newErrorBattleEventResponse);
-        }
-
-        return result;
-    }
-
-    public List<RequestScryptHashValidationEventResponse> getRequestScryptHashValidationEventResponses(
-            DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
-            throws IOException {
-        final Event event = new Event("RequestScryptHashValidation",
-                Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
-                        new TypeReference<Bytes32>() {}, new TypeReference<DynamicBytes>() {},
-                        new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
-
-        List<RequestScryptHashValidationEventResponse> result = new ArrayList<>();
-        EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(event));
-        EthLog ethLog = web3j.ethGetLogs(filter).send();
-        List<EthLog.LogResult> logResults = ethLog.getLogs();
-
-        for (EthLog.LogResult logResult : logResults) {
-            Log log = (Log) logResult.get();
-            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
-
-            RequestScryptHashValidationEventResponse newRequestScryptHashValidationEventResponse =
-                    new RequestScryptHashValidationEventResponse();
-            newRequestScryptHashValidationEventResponse.log = eventValues.getLog();
-            newRequestScryptHashValidationEventResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            newRequestScryptHashValidationEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
-            newRequestScryptHashValidationEventResponse.blockScryptHash = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
-            newRequestScryptHashValidationEventResponse.blockHeader = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
-            newRequestScryptHashValidationEventResponse.proposalId = (byte[]) eventValues.getNonIndexedValues().get(4).getValue();
-            newRequestScryptHashValidationEventResponse.submitter = (String) eventValues.getNonIndexedValues().get(5).getValue();
-            result.add(newRequestScryptHashValidationEventResponse);
-        }
-
-        return result;
-    }
-
-    public List<ResolvedScryptHashValidationEventResponse> getResolvedScryptHashValidationEventResponses(
-            DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
-            throws IOException {
-        final Event event = new Event("ResolvedScryptHashValidation",
-                Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
-                        new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
-                        new TypeReference<Bytes32>() {}, new TypeReference<Address>() {},
-                        new TypeReference<Bool>() {}));
-
-        List<ResolvedScryptHashValidationEventResponse> result = new ArrayList<>();
-        EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(event));
-        EthLog ethLog = web3j.ethGetLogs(filter).send();
-        List<EthLog.LogResult> logResults = ethLog.getLogs();
-
-        for (EthLog.LogResult logResult : logResults) {
-            Log log = (Log) logResult.get();
-            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
-
-            ResolvedScryptHashValidationEventResponse newResolvedScryptHashValidationEventResponse =
-                    new ResolvedScryptHashValidationEventResponse();
-            newResolvedScryptHashValidationEventResponse.log = eventValues.getLog();
-            newResolvedScryptHashValidationEventResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            newResolvedScryptHashValidationEventResponse.sessionId = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
-            newResolvedScryptHashValidationEventResponse.blockScryptHash = (byte[]) eventValues.getNonIndexedValues().get(2).getValue();
-            newResolvedScryptHashValidationEventResponse.blockSha256Hash = (byte[]) eventValues.getNonIndexedValues().get(3).getValue();
-            newResolvedScryptHashValidationEventResponse.proposalId = (byte[]) eventValues.getNonIndexedValues().get(4).getValue();
-            newResolvedScryptHashValidationEventResponse.challenger = (String) eventValues.getNonIndexedValues().get(5).getValue();
-            newResolvedScryptHashValidationEventResponse.valid = (Boolean) eventValues.getNonIndexedValues().get(6).getValue();
-            result.add(newResolvedScryptHashValidationEventResponse);
         }
 
         return result;

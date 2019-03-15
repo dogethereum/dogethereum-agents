@@ -58,6 +58,5 @@ public class IntegrationAgentConstants extends AgentConstants {
         unlockConfirmations = 4;
         ethInitialCheckpoint = 2766716;
 
-        priceOracleTimerTaskPeriod = 3600 * 1000;
     }
 }

@@ -588,12 +588,6 @@ public class DogeClaimManager extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteCall<BigInteger> requestScryptCost() {
-        final Function function = new Function("requestScryptCost", 
-                Arrays.<Type>asList(), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
-        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
-    }
 
     public RemoteCall<BigInteger> battleReward() {
         final Function function = new Function("battleReward", 

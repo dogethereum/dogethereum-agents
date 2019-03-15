@@ -30,11 +30,7 @@ import org.web3j.protocol.core.RemoteCall;
 import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
-import org.web3j.tuples.generated.Tuple2;
-import org.web3j.tuples.generated.Tuple3;
-import org.web3j.tuples.generated.Tuple6;
-import org.web3j.tuples.generated.Tuple7;
-import org.web3j.tuples.generated.Tuple8;
+import org.web3j.tuples.generated.*;
 import org.web3j.tx.Contract;
 import org.web3j.tx.TransactionManager;
 import rx.Observable;
@@ -145,7 +141,6 @@ public class DogeToken extends Contract {
             UnlockRequestEventResponse typedResponse = new UnlockRequestEventResponse();
             typedResponse.log = eventValues.getLog();
             typedResponse.id = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
-            typedResponse.operatorPublicKeyHash = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
             responses.add(typedResponse);
         }
         return responses;
@@ -164,7 +159,6 @@ public class DogeToken extends Contract {
                 UnlockRequestEventResponse typedResponse = new UnlockRequestEventResponse();
                 typedResponse.log = log;
                 typedResponse.id = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
-                typedResponse.operatorPublicKeyHash = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
                 return typedResponse;
             }
         });
@@ -291,25 +285,7 @@ public class DogeToken extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteCall<Tuple6<String, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger>> operators(byte[] param0) {
-        final Function function = new Function("operators", 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes20(param0)), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint32>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint24>() {}));
-        return new RemoteCall<Tuple6<String, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger>>(
-                new Callable<Tuple6<String, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger>>() {
-                    @Override
-                    public Tuple6<String, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger> call() throws Exception {
-                        List<Type> results = executeCallMultipleValueReturn(function);
-                        return new Tuple6<String, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger>(
-                                (String) results.get(0).getValue(), 
-                                (BigInteger) results.get(1).getValue(), 
-                                (BigInteger) results.get(2).getValue(), 
-                                (BigInteger) results.get(3).getValue(), 
-                                (BigInteger) results.get(4).getValue(), 
-                                (BigInteger) results.get(5).getValue());
-                    }
-                });
-    }
+
 
     public RemoteCall<Tuple7<String, byte[], BigInteger, BigInteger, BigInteger, BigInteger, byte[]>> unlocksPendingInvestorProof(BigInteger param0) {
         final Function function = new Function("unlocksPendingInvestorProof", 
@@ -353,12 +329,6 @@ public class DogeToken extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteCall<BigInteger> OPERATOR_UNLOCK_FEE() {
-        final Function function = new Function("OPERATOR_UNLOCK_FEE", 
-                Arrays.<Type>asList(), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
-        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
-    }
 
     public RemoteCall<String> symbol() {
         final Function function = new Function("symbol", 
@@ -397,21 +367,6 @@ public class DogeToken extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteCall<Tuple2<byte[], Boolean>> operatorKeys(BigInteger param0) {
-        final Function function = new Function("operatorKeys", 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(param0)), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes20>() {}, new TypeReference<Bool>() {}));
-        return new RemoteCall<Tuple2<byte[], Boolean>>(
-                new Callable<Tuple2<byte[], Boolean>>() {
-                    @Override
-                    public Tuple2<byte[], Boolean> call() throws Exception {
-                        List<Type> results = executeCallMultipleValueReturn(function);
-                        return new Tuple2<byte[], Boolean>(
-                                (byte[]) results.get(0).getValue(), 
-                                (Boolean) results.get(1).getValue());
-                    }
-                });
-    }
 
     public RemoteCall<TransactionReceipt> approveAndCall(String _spender, BigInteger _value, byte[] _extraData) {
         final Function function = new Function(
@@ -430,12 +385,6 @@ public class DogeToken extends Contract {
         return executeRemoteCallSingleValueReturn(function, String.class);
     }
 
-    public RemoteCall<BigInteger> OPERATOR_LOCK_FEE() {
-        final Function function = new Function("OPERATOR_LOCK_FEE", 
-                Arrays.<Type>asList(), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
-        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
-    }
 
     public RemoteCall<BigInteger> allowance(String _owner, String _spender) {
         final Function function = new Function("allowance", 
@@ -445,81 +394,26 @@ public class DogeToken extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteCall<String> trustedDogeEthPriceOracle() {
-        final Function function = new Function("trustedDogeEthPriceOracle", 
-                Arrays.<Type>asList(), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}));
-        return executeRemoteCallSingleValueReturn(function, String.class);
-    }
 
-    public RemoteCall<BigInteger> dogeEthPrice() {
-        final Function function = new Function("dogeEthPrice", 
-                Arrays.<Type>asList(), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
-        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
-    }
 
-    public static RemoteCall<DogeToken> deploy(Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit, String _trustedRelayerContract, String _trustedDogeEthPriceOracle, BigInteger _collateralRatio) {
-        String encodedConstructor = FunctionEncoder.encodeConstructor(Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(_trustedRelayerContract), 
-                new org.web3j.abi.datatypes.Address(_trustedDogeEthPriceOracle), 
+    public static RemoteCall<DogeToken> deploy(Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit, String _trustedRelayerContract, BigInteger _collateralRatio) {
+        String encodedConstructor = FunctionEncoder.encodeConstructor(Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(_trustedRelayerContract),
                 new org.web3j.abi.datatypes.generated.Uint8(_collateralRatio)));
         return deployRemoteCall(DogeToken.class, web3j, credentials, gasPrice, gasLimit, BINARY, encodedConstructor);
     }
 
-    public static RemoteCall<DogeToken> deploy(Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit, String _trustedRelayerContract, String _trustedDogeEthPriceOracle, BigInteger _collateralRatio) {
-        String encodedConstructor = FunctionEncoder.encodeConstructor(Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(_trustedRelayerContract), 
-                new org.web3j.abi.datatypes.Address(_trustedDogeEthPriceOracle), 
+    public static RemoteCall<DogeToken> deploy(Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit, String _trustedRelayerContract, BigInteger _collateralRatio) {
+        String encodedConstructor = FunctionEncoder.encodeConstructor(Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(_trustedRelayerContract),
                 new org.web3j.abi.datatypes.generated.Uint8(_collateralRatio)));
         return deployRemoteCall(DogeToken.class, web3j, transactionManager, gasPrice, gasLimit, BINARY, encodedConstructor);
     }
 
-    public RemoteCall<TransactionReceipt> addOperator(byte[] operatorPublicKeyCompressed, byte[] signature) {
-        final Function function = new Function(
-                "addOperator", 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicBytes(operatorPublicKeyCompressed), 
-                new org.web3j.abi.datatypes.DynamicBytes(signature)), 
-                Collections.<TypeReference<?>>emptyList());
-        return executeRemoteCallTransaction(function);
-    }
 
-    public RemoteCall<TransactionReceipt> deleteOperator(byte[] operatorPublicKeyHash) {
-        final Function function = new Function(
-                "deleteOperator", 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes20(operatorPublicKeyHash)), 
-                Collections.<TypeReference<?>>emptyList());
-        return executeRemoteCallTransaction(function);
-    }
-
-    public RemoteCall<BigInteger> getOperatorsLength() {
-        final Function function = new Function("getOperatorsLength", 
-                Arrays.<Type>asList(), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Uint24>() {}));
-        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
-    }
-
-    public RemoteCall<TransactionReceipt> addOperatorDeposit(byte[] operatorPublicKeyHash, BigInteger weiValue) {
-        final Function function = new Function(
-                "addOperatorDeposit", 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes20(operatorPublicKeyHash)), 
-                Collections.<TypeReference<?>>emptyList());
-        return executeRemoteCallTransaction(function, weiValue);
-    }
-
-    public RemoteCall<TransactionReceipt> withdrawOperatorDeposit(byte[] operatorPublicKeyHash, BigInteger value) {
-        final Function function = new Function(
-                "withdrawOperatorDeposit", 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes20(operatorPublicKeyHash), 
-                new org.web3j.abi.datatypes.generated.Uint256(value)), 
-                Collections.<TypeReference<?>>emptyList());
-        return executeRemoteCallTransaction(function);
-    }
-
-    public RemoteCall<TransactionReceipt> processTransaction(byte[] dogeTx, BigInteger txHash, byte[] operatorPublicKeyHash, String superblockSubmitterAddress) {
+    public RemoteCall<TransactionReceipt> processTransaction(byte[] dogeTx, BigInteger txHash, String superblockSubmitterAddress) {
         final Function function = new Function(
                 "processTransaction", 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicBytes(dogeTx), 
-                new org.web3j.abi.datatypes.generated.Uint256(txHash), 
-                new org.web3j.abi.datatypes.generated.Bytes20(operatorPublicKeyHash), 
+                new org.web3j.abi.datatypes.generated.Uint256(txHash),
                 new org.web3j.abi.datatypes.Address(superblockSubmitterAddress)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
@@ -532,70 +426,36 @@ public class DogeToken extends Contract {
         return executeRemoteCallSingleValueReturn(function, Boolean.class);
     }
 
-    public RemoteCall<TransactionReceipt> doUnlock(byte[] dogeAddress, BigInteger value, byte[] operatorPublicKeyHash) {
+    public RemoteCall<TransactionReceipt> doUnlock(byte[] dogeAddress, BigInteger value) {
         final Function function = new Function(
                 "doUnlock", 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes20(dogeAddress), 
-                new org.web3j.abi.datatypes.generated.Uint256(value), 
-                new org.web3j.abi.datatypes.generated.Bytes20(operatorPublicKeyHash)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes20(dogeAddress),
+                new org.web3j.abi.datatypes.generated.Uint256(value)),
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
-    public RemoteCall<TransactionReceipt> setDogeEthPrice(BigInteger _dogeEthPrice) {
-        final Function function = new Function(
-                "setDogeEthPrice", 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_dogeEthPrice)), 
-                Collections.<TypeReference<?>>emptyList());
-        return executeRemoteCallTransaction(function);
-    }
 
-    public RemoteCall<Tuple8<String, byte[], BigInteger, BigInteger, BigInteger, List<BigInteger>, BigInteger, byte[]>> getUnlockPendingInvestorProof(BigInteger index) {
+    public RemoteCall<Tuple5<String, byte[], BigInteger, BigInteger, BigInteger>> getUnlockPendingInvestorProof(BigInteger index) {
         final Function function = new Function("getUnlockPendingInvestorProof", 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint32(index)), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}, new TypeReference<Bytes20>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<DynamicArray<Uint32>>() {}, new TypeReference<Uint256>() {}, new TypeReference<Bytes20>() {}));
-        return new RemoteCall<Tuple8<String, byte[], BigInteger, BigInteger, BigInteger, List<BigInteger>, BigInteger, byte[]>>(
-                new Callable<Tuple8<String, byte[], BigInteger, BigInteger, BigInteger, List<BigInteger>, BigInteger, byte[]>>() {
+        return new RemoteCall<Tuple5<String, byte[], BigInteger, BigInteger, BigInteger>>(
+                new Callable<Tuple5<String, byte[], BigInteger, BigInteger, BigInteger>>() {
                     @Override
-                    public Tuple8<String, byte[], BigInteger, BigInteger, BigInteger, List<BigInteger>, BigInteger, byte[]> call() throws Exception {
+                    public Tuple5<String, byte[], BigInteger, BigInteger, BigInteger> call() throws Exception {
                         List<Type> results = executeCallMultipleValueReturn(function);
-                        return new Tuple8<String, byte[], BigInteger, BigInteger, BigInteger, List<BigInteger>, BigInteger, byte[]>(
+                        return new Tuple5<String, byte[], BigInteger, BigInteger, BigInteger>(
                                 (String) results.get(0).getValue(), 
                                 (byte[]) results.get(1).getValue(), 
-                                (BigInteger) results.get(2).getValue(), 
-                                (BigInteger) results.get(3).getValue(), 
-                                (BigInteger) results.get(4).getValue(), 
-                                convertToNative((List<Uint32>) results.get(5).getValue()), 
-                                (BigInteger) results.get(6).getValue(), 
-                                (byte[]) results.get(7).getValue());
+                                (BigInteger) results.get(2).getValue(),
+                                (BigInteger) results.get(3).getValue(),
+                                (BigInteger) results.get(4).getValue());
                     }
                 });
     }
 
-    public RemoteCall<BigInteger> getUtxosLength(byte[] operatorPublicKeyHash) {
-        final Function function = new Function("getUtxosLength", 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes20(operatorPublicKeyHash)), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
-        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
-    }
 
-    public RemoteCall<Tuple3<BigInteger, BigInteger, BigInteger>> getUtxo(byte[] operatorPublicKeyHash, BigInteger i) {
-        final Function function = new Function("getUtxo", 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes20(operatorPublicKeyHash), 
-                new org.web3j.abi.datatypes.generated.Uint256(i)), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint16>() {}));
-        return new RemoteCall<Tuple3<BigInteger, BigInteger, BigInteger>>(
-                new Callable<Tuple3<BigInteger, BigInteger, BigInteger>>() {
-                    @Override
-                    public Tuple3<BigInteger, BigInteger, BigInteger> call() throws Exception {
-                        List<Type> results = executeCallMultipleValueReturn(function);
-                        return new Tuple3<BigInteger, BigInteger, BigInteger>(
-                                (BigInteger) results.get(0).getValue(), 
-                                (BigInteger) results.get(1).getValue(), 
-                                (BigInteger) results.get(2).getValue());
-                    }
-                });
-    }
 
     public static DogeToken load(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
         return new DogeToken(contractAddress, web3j, credentials, gasPrice, gasLimit);
@@ -632,7 +492,6 @@ public class DogeToken extends Contract {
 
         public BigInteger id;
 
-        public byte[] operatorPublicKeyHash;
     }
 
     public static class TransferEventResponse {

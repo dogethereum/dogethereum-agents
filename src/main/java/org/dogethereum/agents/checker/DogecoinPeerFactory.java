@@ -4,12 +4,15 @@
  */
 package org.dogethereum.agents.checker;
 
+import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.PeerAddress;
+import org.dogethereum.agents.constants.SystemProperties;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+
 
 
 /**
@@ -18,16 +21,18 @@ import java.util.List;
 public class DogecoinPeerFactory {
 
     public static List<PeerAddress> buildDogecoinPeerAddresses(int defaultPort, List<String> dogecoinPeerAddressesString) throws UnknownHostException {
+        SystemProperties config = SystemProperties.CONFIG;
+        NetworkParameters networkParams = config.getAgentConstants().getDogeParams();
         List<PeerAddress> dogecoinPeerAddresses = new ArrayList<>();
         if(dogecoinPeerAddressesString != null) {
             for (String dogecoinPeerAddressString : dogecoinPeerAddressesString) {
                 PeerAddress dogecoinPeerAddress;
                 if (dogecoinPeerAddressString.indexOf(':') == -1) {
-                    dogecoinPeerAddress = new PeerAddress(InetAddress.getByName(dogecoinPeerAddressString), defaultPort);
+                    dogecoinPeerAddress = new PeerAddress(networkParams, InetAddress.getByName(dogecoinPeerAddressString), defaultPort);
                 } else {
                     String dogecoinPeerAddressesHost = dogecoinPeerAddressString.substring(0, dogecoinPeerAddressString.indexOf(':'));
                     String dogecoinPeerAddressesPort = dogecoinPeerAddressString.substring(dogecoinPeerAddressString.indexOf(':') + 1);
-                    dogecoinPeerAddress = new PeerAddress(InetAddress.getByName(dogecoinPeerAddressesHost), Integer.valueOf(dogecoinPeerAddressesPort));
+                    dogecoinPeerAddress = new PeerAddress(networkParams, InetAddress.getByName(dogecoinPeerAddressesHost), Integer.valueOf(dogecoinPeerAddressesPort));
                 }
                 dogecoinPeerAddresses.add(dogecoinPeerAddress);
             }

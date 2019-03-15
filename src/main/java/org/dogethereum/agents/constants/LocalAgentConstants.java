@@ -5,7 +5,7 @@ import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Sha256Hash;
 import org.dogethereum.agents.core.dogecoin.Keccak256Hash;
 import org.dogethereum.agents.core.dogecoin.Superblock;
-import org.libdohj.params.DogecoinRegTestParams;
+import org.libdohj.params.DogecoinTestNet3Params;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +27,7 @@ public class LocalAgentConstants extends AgentConstants {
     }
 
     LocalAgentConstants() {
-        dogeParams = DogecoinRegTestParams.get();
+        dogeParams = DogecoinTestNet3Params.get();
 
         dogeToEthTimerTaskPeriod = 10 * 1000;
         dogeToEthConfirmations = 1;
@@ -49,6 +49,5 @@ public class LocalAgentConstants extends AgentConstants {
         unlockConfirmations = 2;
         ethInitialCheckpoint = 0;
 
-        priceOracleTimerTaskPeriod = 60 * 1000;
     }
 }

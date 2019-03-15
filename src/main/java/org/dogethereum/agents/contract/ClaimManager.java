@@ -463,12 +463,6 @@ public class ClaimManager extends Contract {
         });
     }
 
-    public RemoteCall<String> scryptVerifier() {
-        final Function function = new Function("scryptVerifier", 
-                Arrays.<Type>asList(), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}));
-        return executeRemoteCallSingleValueReturn(function, String.class);
-    }
 
     public RemoteCall<BigInteger> defaultChallengeTimeout() {
         final Function function = new Function("defaultChallengeTimeout", 
@@ -514,16 +508,6 @@ public class ClaimManager extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public static RemoteCall<ClaimManager> deploy(Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit, String _scryptVerifier) {
-        String encodedConstructor = FunctionEncoder.encodeConstructor(Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(_scryptVerifier)));
-        return deployRemoteCall(ClaimManager.class, web3j, credentials, gasPrice, gasLimit, BINARY, encodedConstructor);
-    }
-
-    public static RemoteCall<ClaimManager> deploy(Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit, String _scryptVerifier) {
-        String encodedConstructor = FunctionEncoder.encodeConstructor(Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(_scryptVerifier)));
-        return deployRemoteCall(ClaimManager.class, web3j, transactionManager, gasPrice, gasLimit, BINARY, encodedConstructor);
-    }
-
     public RemoteCall<BigInteger> getBondedDeposit(BigInteger claimID, String account) {
         final Function function = new Function("getBondedDeposit", 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(claimID), 
@@ -551,16 +535,6 @@ public class ClaimManager extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteCall<TransactionReceipt> checkScrypt(byte[] _data, byte[] _hash, byte[] _proposalId, String _scryptDependent, BigInteger weiValue) {
-        final Function function = new Function(
-                "checkScrypt", 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicBytes(_data), 
-                new org.web3j.abi.datatypes.generated.Bytes32(_hash), 
-                new org.web3j.abi.datatypes.generated.Bytes32(_proposalId), 
-                new org.web3j.abi.datatypes.Address(_scryptDependent)), 
-                Collections.<TypeReference<?>>emptyList());
-        return executeRemoteCallTransaction(function, weiValue);
-    }
 
     public RemoteCall<TransactionReceipt> challengeClaim(BigInteger claimID) {
         final Function function = new Function(

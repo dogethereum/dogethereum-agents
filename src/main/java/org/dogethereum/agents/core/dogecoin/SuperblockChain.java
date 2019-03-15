@@ -8,16 +8,17 @@ import org.bitcoinj.store.BlockStoreException;
 import org.dogethereum.agents.constants.SystemProperties;
 import org.dogethereum.agents.constants.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import sun.util.resources.cldr.gl.CalendarData_gl_ES;
 
 import javax.annotation.PostConstruct;
 import java.io.*;
-import java.math.BigInteger;
+
 import java.util.*;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+
 
 
 /**
@@ -39,7 +40,7 @@ public class SuperblockChain {
     int SUPERBLOCK_DURATION; // time window for a superblock (in seconds)
     private int SUPERBLOCK_DELAY; // time to wait before building a superblock
     private int SUPERBLOCK_STORING_WINDOW; // small time window between storing and sending to avoid losing sync
-
+    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
 
     /* ---- CONSTRUCTION METHODS ---- */
 

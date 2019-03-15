@@ -14,7 +14,8 @@ import org.dogethereum.agents.constants.SystemProperties;
 import org.dogethereum.agents.core.dogecoin.DogecoinWrapper;
 import org.dogethereum.agents.core.dogecoin.Proof;
 import org.dogethereum.agents.core.eth.EthWrapper;
-import org.dogethereum.agents.util.OperatorPublicKeyHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -32,14 +33,12 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @Service
 @Slf4j(topic = "DogeToEthClient")
 public class DogeToEthClient {
-
+    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
     static final int MAXIMUM_REGISTER_DOGE_LOCK_TXS_PER_TURN = 40;
 
     @Autowired
     private EthWrapper ethWrapper;
 
-    @Autowired
-    private OperatorPublicKeyHandler operatorPublicKeyHandler;
 
     private SystemProperties config;
 
@@ -57,7 +56,7 @@ public class DogeToEthClient {
     @PostConstruct
     public void setup() throws Exception {
         config = SystemProperties.CONFIG;
-        if (config.isDogeSuperblockSubmitterEnabled() || config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
+        if (config.isDogeSuperblockSubmitterEnabled()) {
             agentConstants = config.getAgentConstants();
 
             new Timer("Doge to Eth client").scheduleAtFixedRate(new DogeToEthClientTimerTask(),
@@ -84,9 +83,6 @@ public class DogeToEthClient {
                     ethWrapper.updateContractFacadesGasPrice();
                     if (config.isDogeSuperblockSubmitterEnabled()) {
                         updateBridgeSuperblockChain();
-                    }
-                    if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
-                        updateBridgeTransactions();
                     }
                 } else {
                     log.warn("DogeToEthClientTimerTask skipped because the eth node is syncing blocks");
@@ -181,93 +177,59 @@ public class DogeToEthClient {
      * Relays all unprocessed transactions to Ethereum contracts by calling sendRelayTx.
      * @throws Exception
      */
-    public void updateBridgeTransactions() throws Exception {
+    public void getSuperblockSPVProof(Sha256Hash txToSendToEthHash) throws Exception {
         if (ethWrapper.arePendingTransactionsForRelayTxsAddress()) {
             log.debug("Skipping relay tx, there are pending transaction for the sender address.");
             return;
         }
 
-        Set<Transaction> operatorWalletTxSet = dogecoinWrapper.getTransactions(
-                agentConstants.getDogeToEthConfirmations(),
-                config.isDogeTxRelayerEnabled(),
-                config.isOperatorEnabled());
+        if (!ethWrapper.wasDogeTxProcessed(txToSendToEthHash)) {
+            synchronized (this) {
 
-        int numberOfTxsSent = 0;
-
-        for (Transaction operatorWalletTx : operatorWalletTxSet) {
-            if (!ethWrapper.wasDogeTxProcessed(operatorWalletTx.getHash())) {
-                synchronized (this) {
-                    List<Proof> proofs = dogecoinWrapper.getTransactionsToSendToEth().get(operatorWalletTx.getHash());
-
-                    if (proofs == null || proofs.isEmpty())
-                        continue;
-
-                    StoredBlock txStoredBlock = findBestChainStoredBlockFor(operatorWalletTx);
-                    PartialMerkleTree txPMT = null;
-
-                    for (Proof proof : proofs) {
-                        if (proof.getBlockHash().equals(txStoredBlock.getHeader().getHash())) {
-                            txPMT = proof.getPartialMerkleTree();
-                        }
-                    }
-
-                    Superblock txSuperblock = findBestSuperblockFor(txStoredBlock.getHeader().getHash());
-
-                    if (txSuperblock == null) {
-                        // no superblock found for tx
-                        log.debug("Tx {} not relayed because the superblock it's in hasn't been stored in local" +
-                                        "database yet. Block hash: {}",
-                                  operatorWalletTx.getHash(), txStoredBlock.getHeader().getHash());
-                        continue;
-                    }
-
-                    if (!ethWrapper.isSuperblockApproved(txSuperblock.getSuperblockId())) {
-                        log.debug("Tx {} not relayed because the superblock it's in hasn't been approved yet." +
-                                        "Block hash: {}, superblock ID: {}",
-                                operatorWalletTx.getHash(), txStoredBlock.getHeader().getHash(),
-                                txSuperblock.getSuperblockId());
-                        continue;
-                    }
-
-                    int dogeBlockIndex = txSuperblock.getDogeBlockLeafIndex(txStoredBlock.getHeader().getHash());
-                    byte[] includeBits = new byte[(int) Math.ceil(txSuperblock.getDogeBlockHashes().size() / 8.0)];
-                    Utils.setBitLE(includeBits, dogeBlockIndex);
-                    PartialMerkleTree superblockPMT = PartialMerkleTree.buildFromLeaves(agentConstants.getDogeParams(),
-                            includeBits, txSuperblock.getDogeBlockHashes());
-
-                    ethWrapper.sendRelayTx(operatorWalletTx, operatorPublicKeyHandler.getPublicKeyHash(),
-                            (AltcoinBlock) txStoredBlock.getHeader(), txSuperblock, txPMT, superblockPMT);
-                    numberOfTxsSent++;
-                    // Send a maximum of 40 registerTransaction txs per turn
-                    if (numberOfTxsSent >= MAXIMUM_REGISTER_DOGE_LOCK_TXS_PER_TURN) {
-                        break;
-                    }
-                    log.debug("Invoked registerTransaction for tx {}", operatorWalletTx.getHash());
+                StoredBlock txStoredBlock = dogecoinWrapper.getBlock(txToSendToEthHash);
+                if (txStoredBlock == null) {
+                    // no block found for tx
+                    log.debug("Tx {} not relayed because the block it's in hasn't been stored in local" +
+                                    "database yet. tx hash: {}",
+                            txToSendToEthHash);
+                    return;
                 }
+                Superblock txSuperblock = findBestSuperblockFor(txStoredBlock.getHeader().getHash());
+
+                if (txSuperblock == null) {
+                    // no superblock found for tx
+                    log.debug("Tx {} not relayed because the superblock it's in hasn't been stored in local" +
+                                    "database yet. Block hash: {}",
+                            txToSendToEthHash, txStoredBlock.getHeader().getHash());
+                    return;
+                }
+
+                if (!ethWrapper.isSuperblockApproved(txSuperblock.getSuperblockId())) {
+                    log.debug("Tx {} not relayed because the superblock it's in hasn't been approved yet." +
+                                    "Block hash: {}, superblock ID: {}",
+                            txToSendToEthHash, txStoredBlock.getHeader().getHash(),
+                            txSuperblock.getSuperblockId());
+                    return;
+                }
+
+                int dogeBlockIndex = txSuperblock.getDogeBlockLeafIndex(txStoredBlock.getHeader().getHash());
+                byte[] includeBits = new byte[(int) Math.ceil(txSuperblock.getDogeBlockHashes().size() / 8.0)];
+                Utils.setBitLE(includeBits, dogeBlockIndex);
+                SuperblockPartialMerkleTree superblockPMT = SuperblockPartialMerkleTree.buildFromLeaves(agentConstants.getDogeParams(),
+                        includeBits, txSuperblock.getDogeBlockHashes());
+
+                ethWrapper.getSuperblockSPVProof((AltcoinBlock) txStoredBlock.getHeader(), txSuperblock, superblockPMT);
+
+
+                log.debug("Invoked registerTransaction for tx {}", txToSendToEthHash);
             }
         }
     }
 
-    /**
-     * Finds the block in the best chain where supplied tx appears.
-     * @throws IllegalStateException If the tx is not in the best chain
-     */
-    private StoredBlock findBestChainStoredBlockFor(Transaction tx) throws IllegalStateException, BlockStoreException {
-        Map<Sha256Hash, Integer> blockHashes = tx.getAppearsInHashes();
 
-        if (blockHashes != null)
-            for (Sha256Hash blockHash : blockHashes.keySet()) {
-                StoredBlock storedBlock = dogecoinWrapper.getBlock(blockHash);
-                // Find out if that block is in the main chain
-                int height = storedBlock.getHeight();
-                StoredBlock storedBlockAtHeight = dogecoinWrapper.getStoredBlockAtHeight(height);
-                if (storedBlockAtHeight!=null && storedBlockAtHeight.getHeader().getHash().equals(blockHash)) {
-                    return storedBlockAtHeight;
-                }
-            }
 
-        throw new IllegalStateException("Tx not in the best chain: " + tx.getHash());
-    }
+
+
 
     /**
      * Finds the superblock in the superblock main chain that contains the block identified by `blockHash`.

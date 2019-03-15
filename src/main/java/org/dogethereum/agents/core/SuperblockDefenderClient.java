@@ -7,6 +7,8 @@ import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.core.Sha256Hash;
 import org.dogethereum.agents.core.dogecoin.*;
 import org.dogethereum.agents.core.eth.EthWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -21,7 +23,7 @@ import java.util.*;
 @Service
 @Slf4j(topic = "SuperblockDefenderClient")
 public class SuperblockDefenderClient extends SuperblockBaseClient {
-
+    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
     private static long ETH_REQUIRED_CONFIRMATIONS = 5;
 
     public SuperblockDefenderClient() {
@@ -36,7 +38,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     @Override
     public long reactToEvents(long fromBlock, long toBlock) {
         try {
-            respondToRequestScryptHashValidation(fromBlock, toBlock);
             respondToMerkleRootHashesQueries(fromBlock, toBlock);
             respondToBlockHeaderQueries(fromBlock, toBlock);
             sendDescendantsOfSemiApproved(fromBlock, toBlock);
@@ -185,27 +186,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         }
     }
 
-    private void respondToRequestScryptHashValidation(long fromBlock, long toBlock) throws IOException, Exception {
-        List<EthWrapper.RequestScryptHashValidationEvent> requestScryptHashValidationEvents =
-                ethWrapper.getRequestScryptHashValidation(fromBlock, toBlock);
-
-        for (EthWrapper.RequestScryptHashValidationEvent requestScryptHashValidationEvent : requestScryptHashValidationEvents) {
-            if (isMine(requestScryptHashValidationEvent)) {
-                Sha256Hash dogeBlockHash =
-                        Sha256Hash.wrapReversed(Sha256Hash.hashTwice(requestScryptHashValidationEvent.blockHeader));
-                log.info("Request scrypt hash verification for session {}, superblock {}, " +
-                                "block {}, scrypt hash {}. Responding now.",
-                        requestScryptHashValidationEvent.sessionId, requestScryptHashValidationEvent.superblockId,
-                        dogeBlockHash, requestScryptHashValidationEvent.blockScryptHash);
-                ethWrapper.checkScrypt(requestScryptHashValidationEvent.sessionId,
-                        requestScryptHashValidationEvent.superblockId,
-                        requestScryptHashValidationEvent.proposalId,
-                        requestScryptHashValidationEvent.blockHeader,
-                        requestScryptHashValidationEvent.blockScryptHash);
-            }
-        }
-    }
-
     private void logErrorBattleEvents(long fromBlock, long toBlock) throws IOException {
         List<EthWrapper.ErrorBattleEvent> errorBattleEvents = ethWrapper.getErrorBattleEvents(fromBlock, toBlock);
 
@@ -227,9 +207,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         return queryMerkleRootHashes.submitter.equals(myAddress);
     }
 
-    private boolean isMine(EthWrapper.RequestScryptHashValidationEvent requestScryptHashValidation) {
-        return requestScryptHashValidation.submitter.equals(myAddress);
-    }
 
     private boolean submittedTimeoutPassed(Keccak256Hash superblockId) throws Exception {
         return ethWrapper.getNewEventTimestampDate(superblockId).before(getTimeoutDate());

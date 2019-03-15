@@ -4,6 +4,8 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigRenderOptions;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.InputStream;
@@ -24,7 +26,7 @@ import java.util.Properties;
  */
 @Slf4j(topic = "SystemProperties")
 public class SystemProperties {
-
+    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
     private static final String LOCAL = "local";
     private static final String INTEGRATION = "integration";
     private static final String ETHGANACHE_DOGEMAIN = "ethganachedogemain";
@@ -156,18 +158,6 @@ public class SystemProperties {
         return getBooleanProperty("doge.superblock.submitter.enabled", false);
     }
 
-    public boolean isDogeTxRelayerEnabled() {
-        return getBooleanProperty("doge.tx.relayer.enabled", false);
-    }
-
-    public boolean isOperatorEnabled() {
-        return getBooleanProperty("operator.enabled", false);
-    }
-
-    public boolean isPriceOracleEnabled() {
-        return getBooleanProperty("price.oracle.enabled", false);
-    }
-
     public boolean isDogeBlockChallengerEnabled() {
         return getBooleanProperty("doge.superblock.challenger.enabled", false);
     }
@@ -202,9 +192,7 @@ public class SystemProperties {
         return getStringProperty("relay.txs.address", null);
     }
 
-    public String priceOracleAddress() {
-        return getStringProperty("price.oracle.address", null);
-    }
+
 
     public String dogeTokenContractAddress() {
         return getStringProperty("dogeToken.contract.address", null);
@@ -222,10 +210,6 @@ public class SystemProperties {
         return getStringProperty("dogeSuperblocks.contract.address", null);
     }
 
-    public String dogeScryptVerifierContractAddress() {
-        return getStringProperty("scryptVerifier.contract.address", null);
-    }
-
     public String truffleBuildContractsDirectory() {
         return getStringProperty("truffle.build.contracts.directory", null);
     }
@@ -234,13 +218,6 @@ public class SystemProperties {
         return getStringProperty("data.directory", null);
     }
 
-    public String operatorPrivateKeyFilePath() {
-        return getStringProperty("operator.private.key.file.path", null);
-    }
-
-    public Long operatorAddressCreationTime() {
-        return getLongProperty("operator.address.creation.time", 0);
-    }
 
     public long gasPriceMinimum() {
         return getLongProperty("gas.price.min", 0);

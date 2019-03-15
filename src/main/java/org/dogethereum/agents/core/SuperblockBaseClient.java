@@ -5,6 +5,8 @@ import org.bitcoinj.store.BlockStoreException;
 import org.dogethereum.agents.constants.SystemProperties;
 import org.dogethereum.agents.core.dogecoin.*;
 import org.dogethereum.agents.core.eth.EthWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
@@ -20,7 +22,7 @@ import java.util.*;
 
 @Slf4j(topic = "SuperblockDefenderClient")
 public abstract class SuperblockBaseClient extends PersistentFileStore {
-
+    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
     @Autowired
     protected DogecoinWrapper dogecoinWrapper;
 

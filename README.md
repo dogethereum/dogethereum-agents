@@ -5,8 +5,6 @@ A set of agents:
 - Superblock challenger (SuperblockChainClient.java): Challenges invalid superblocks sent by rogue submitters.
 - Superblock defender  (SuperblockDefenderClient.java): Replies to challenges made by rogue challengers.
 - Doge tx submitter (DogeToEthClient.java): Sends doge lock and unlock txs so they are validated and relayed to DogeToken ERC20 contract.
-- Operator agent (EthToDogeClient.java): Signs and broadcasts doge unlock txs
-- Oracle agent (PriceOracleClient.java): Informs the doge/eth price to DogeToken
 
 If you are new to the Dogecoin <-> Ethereum bridge, please check the [docs](https://github.com/dogethereum/docs) repository first.
 
@@ -42,7 +40,6 @@ If you are new to the Dogecoin <-> Ethereum bridge, please check the [docs](http
   - Edit these entries to point to your computer paths
     - truffle.build.contracts.directory
     - data.directory
-    - operator.private.key.file.path
   - Note: On windows paths have to be between "" and with a double backslash \\ as separator. E.g. data.directory = "D:\\dogethereum-agents\\storage\\data"  
 - Create Run configuration
   - In Run/Edit Configurations... add a new "Application" configuration

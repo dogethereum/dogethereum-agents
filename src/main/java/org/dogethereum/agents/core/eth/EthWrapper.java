@@ -3,22 +3,18 @@ package org.dogethereum.agents.core.eth;
 
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
-
-import org.dogethereum.agents.constants.AgentConstants;
 import org.dogethereum.agents.constants.SystemProperties;
 import org.dogethereum.agents.contract.*;
-
-import org.dogethereum.agents.core.dogecoin.*;
+import org.dogethereum.agents.core.dogecoin.Keccak256Hash;
+import org.dogethereum.agents.core.dogecoin.Superblock;
+import org.dogethereum.agents.core.dogecoin.SuperblockConstantProvider;
 import org.dogethereum.agents.core.dogecoin.SuperblockUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-
-import org.libdohj.core.ScryptHash;
-import org.spongycastle.util.encoders.Hex;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.DefaultBlockParameterName;
@@ -26,11 +22,7 @@ import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
-
-import org.web3j.tuples.generated.Tuple3;
-import org.web3j.tuples.generated.Tuple7;
-
-import org.web3j.tuples.generated.Tuple8;
+import org.web3j.tuples.generated.Tuple5;
 import org.web3j.tx.ClientTransactionManager;
 
 import java.io.FileReader;
@@ -38,8 +30,8 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -53,7 +45,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @Component
 @Slf4j(topic = "EthWrapper")
 public class EthWrapper implements SuperblockConstantProvider {
-
+    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
     private Web3j web3;
 
     // Extensions of contracts generated automatically by web3j
@@ -64,14 +56,12 @@ public class EthWrapper implements SuperblockConstantProvider {
     private DogeBattleManagerExtended battleManagerForChallenges;
     private DogeSuperblocksExtended superblocks;
     private DogeSuperblocksExtended superblocksForRelayTxs;
-    private ClaimManager scryptVerifier;
 
     private SystemProperties config;
     private BigInteger gasPriceMinimum;
 
     private String generalPurposeAndSendSuperblocksAddress;
     private String relayTxsAddress;
-    private String priceOracleAddress;
     private String dogeSuperblockChallengerAddress;
 
     private BigInteger minProposalDeposit;
@@ -95,28 +85,23 @@ public class EthWrapper implements SuperblockConstantProvider {
         String claimManagerContractAddress;
         String battleManagerContractAddress;
         String superblocksContractAddress;
-        String scryptVerifierAddress;
 
         if (config.isGanache()) {
             dogeTokenContractAddress = getContractAddress("DogeToken");
             claimManagerContractAddress = getContractAddress("DogeClaimManager");
             battleManagerContractAddress = getContractAddress("DogeBattleManager");
             superblocksContractAddress = getContractAddress("DogeSuperblocks");
-            scryptVerifierAddress = getContractAddress("ScryptCheckerDummy");
             List<String> accounts = web3.ethAccounts().send().getAccounts();
             generalPurposeAndSendSuperblocksAddress = accounts.get(0);
             relayTxsAddress = accounts.get(1);
-            priceOracleAddress = accounts.get(2);
-            dogeSuperblockChallengerAddress = accounts.get(3);
+            dogeSuperblockChallengerAddress = accounts.get(2);
         } else {
             dogeTokenContractAddress = config.dogeTokenContractAddress();
             claimManagerContractAddress = config.dogeClaimManagerContractAddress();
             battleManagerContractAddress = config.dogeBattleManagerContractAddress();
             superblocksContractAddress = config.dogeSuperblocksContractAddress();
-            scryptVerifierAddress = config.dogeScryptVerifierContractAddress();
             generalPurposeAndSendSuperblocksAddress = config.generalPurposeAndSendSuperblocksAddress();
             relayTxsAddress = config.relayTxsAddress();
-            priceOracleAddress = config.priceOracleAddress();
             dogeSuperblockChallengerAddress = config.dogeSuperblockChallengerAddress();
         }
 
@@ -124,7 +109,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         BigInteger gasLimit = BigInteger.valueOf(config.gasLimit());
 
         dogeToken = DogeTokenExtended.load(dogeTokenContractAddress, web3,
-                new ClientTransactionManager(web3, priceOracleAddress),
+                new ClientTransactionManager(web3, superblocksContractAddress),
                 gasPriceMinimum, gasLimit);
         assert dogeToken.isValid();
         claimManager = DogeClaimManagerExtended.load(claimManagerContractAddress, web3,
@@ -151,9 +136,6 @@ public class EthWrapper implements SuperblockConstantProvider {
                 new ClientTransactionManager(web3, relayTxsAddress),
                 gasPriceMinimum, gasLimit);
         assert superblocksForRelayTxs.isValid();
-        scryptVerifier = ClaimManager.load(scryptVerifierAddress, web3,
-                new ClientTransactionManager(web3, generalPurposeAndSendSuperblocksAddress),
-                gasPriceMinimum, gasLimit);
 
         minProposalDeposit = claimManager.minProposalDeposit().send();
         minChallengeDeposit = claimManager.minChallengeDeposit().send();
@@ -175,6 +157,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         String basePath = config.truffleBuildContractsDirectory();
         FileReader contractSpecFile = new FileReader(basePath + "/" + contractName + ".json");
         JSONParser parser = new JSONParser();
+
         JSONObject parsedSpecFile = (JSONObject) parser.parse(contractSpecFile);
         JSONObject networks = (JSONObject) parsedSpecFile.get("networks");
         JSONObject data = (JSONObject) networks.values().iterator().next();
@@ -967,7 +950,6 @@ public class EthWrapper implements SuperblockConstantProvider {
             respondBlockHeaderEvent.superblockId = Keccak256Hash.wrap(response.superblockHash);
             respondBlockHeaderEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
             respondBlockHeaderEvent.challenger = response.challenger;
-            respondBlockHeaderEvent.blockScryptHash = response.blockScryptHash;
             respondBlockHeaderEvent.blockHeader = response.blockHeader;
             respondBlockHeaderEvent.powBlockHeader = response.powBlockHeader;
             result.add(respondBlockHeaderEvent);
@@ -989,7 +971,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         public Keccak256Hash superblockId;
         public Keccak256Hash sessionId;
         public String challenger;
-        public byte[] blockScryptHash; // TODO: see if these three fields should be made immutable
         public byte[] blockHeader;
         public byte[] powBlockHeader;
     }
@@ -1022,86 +1003,8 @@ public class EthWrapper implements SuperblockConstantProvider {
         public BigInteger err;
     }
 
-    /**
-     * Listens to RequestScryptHashValidation events from DogeBattleManager contract within a given block window
-     * and parses web3j-generated instances into easier to manage RequestScryptHashValidationEvent objects.
-     * @param startBlock First Ethereum block to poll.
-     * @param endBlock Last Ethereum block to poll.
-     * @return All RequestScryptHashValidation events from DogeBattleManager as RequestScryptHashValidationEvent objects.
-     * @throws IOException
-     */
-    public List<RequestScryptHashValidationEvent> getRequestScryptHashValidation(long startBlock, long endBlock)
-            throws IOException {
-        List<RequestScryptHashValidationEvent> result = new ArrayList<>();
-        List<DogeBattleManager.RequestScryptHashValidationEventResponse> requestScryptHashValidationEvents =
-                battleManager.getRequestScryptHashValidationEventResponses(
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
-        for (DogeBattleManager.RequestScryptHashValidationEventResponse response : requestScryptHashValidationEvents) {
-            RequestScryptHashValidationEvent requestScryptHashValidationEvent = new RequestScryptHashValidationEvent();
-            requestScryptHashValidationEvent.superblockId = Keccak256Hash.wrap(response.superblockHash);
-            requestScryptHashValidationEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
-            requestScryptHashValidationEvent.blockScryptHash = new ScryptHash(response.blockScryptHash);
-            requestScryptHashValidationEvent.blockHeader = response.blockHeader;
-            requestScryptHashValidationEvent.proposalId = Keccak256Hash.wrap(response.proposalId);
-            requestScryptHashValidationEvent.submitter = response.submitter;
-            result.add(requestScryptHashValidationEvent);
-        }
 
-        return result;
-    }
-
-    public static class RequestScryptHashValidationEvent {
-        public Keccak256Hash superblockId;
-        public Keccak256Hash sessionId;
-        public ScryptHash blockScryptHash;
-        public byte[] blockHeader;
-        public Keccak256Hash proposalId;
-        public String submitter;
-    }
-
-    /**
-     * Listens to ResolvedScryptHashValidation events from DogeBattleManager contract within a given block window
-     * and parses web3j-generated instances into easier to manage ResolvedScryptHashValidationEvent objects.
-     * @param startBlock First Ethereum block to poll.
-     * @param endBlock Last Ethereum block to poll.
-     * @return All ResolvedScryptHashValidation events from DogeBattleManager
-     *         as ResolvedScryptHashValidationEvent objects.
-     * @throws IOException
-     */
-    public List<ResolvedScryptHashValidationEvent> getResolvedScryptHashValidation(long startBlock, long endBlock)
-            throws IOException {
-        List<ResolvedScryptHashValidationEvent> result = new ArrayList<>();
-        List<DogeBattleManager.ResolvedScryptHashValidationEventResponse> resolvedScryptHashValidationEvents =
-                battleManagerForChallenges.getResolvedScryptHashValidationEventResponses(
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
-
-        for (DogeBattleManager.ResolvedScryptHashValidationEventResponse response : resolvedScryptHashValidationEvents) {
-            ResolvedScryptHashValidationEvent resolvedScryptHashValidationEvent = new ResolvedScryptHashValidationEvent();
-            resolvedScryptHashValidationEvent.superblockId = Keccak256Hash.wrap(response.superblockHash);
-            resolvedScryptHashValidationEvent.sessionId = Keccak256Hash.wrap(response.sessionId);
-            resolvedScryptHashValidationEvent.blockScryptHash = new ScryptHash(response.blockScryptHash);
-            resolvedScryptHashValidationEvent.blockSha256Hash = Sha256Hash.wrap(response.blockSha256Hash);
-            resolvedScryptHashValidationEvent.proposalId = Keccak256Hash.wrap(response.proposalId);
-            resolvedScryptHashValidationEvent.challenger = response.challenger;
-            resolvedScryptHashValidationEvent.valid = response.valid;
-            result.add(resolvedScryptHashValidationEvent);
-        }
-
-        return result;
-    }
-
-    public static class ResolvedScryptHashValidationEvent {
-        public Keccak256Hash superblockId;
-        public Keccak256Hash sessionId;
-        public ScryptHash blockScryptHash;
-        public Sha256Hash blockSha256Hash;
-        public Keccak256Hash proposalId;
-        public String challenger;
-        public boolean valid;
-    }
 
 
     /* ---- GETTERS ---- */
@@ -1130,10 +1033,9 @@ public class EthWrapper implements SuperblockConstantProvider {
     public void respondBlockHeader(Keccak256Hash superblockId, Keccak256Hash sessionId,
                                    AltcoinBlock dogeBlock, String account) throws Exception {
         makeDepositIfNeeded(account, claimManager, verifySuperblockCost);
-        byte[] scryptHashBytes = dogeBlock.getScryptHash().getReversedBytes();
         byte[] blockHeaderBytes = dogeBlock.bitcoinSerialize();
         CompletableFuture<TransactionReceipt> futureReceipt = battleManager.respondBlockHeader(
-                superblockId.getBytes(), sessionId.getBytes(), scryptHashBytes, blockHeaderBytes).sendAsync();
+                superblockId.getBytes(), sessionId.getBytes(), blockHeaderBytes).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("Responded to block header query for Doge block {}, session {}, superblock {}. Receipt: {}",
                         dogeBlock.getHash(), sessionId, superblockId, receipt)
@@ -1258,18 +1160,6 @@ public class EthWrapper implements SuperblockConstantProvider {
                 log.info("queryMerkleRootHashes receipt {}", receipt.toString()));
     }
 
-    //TODO: document this and all other scrypt hash validation functions
-    public void requestScryptHashValidation(Keccak256Hash superblockId, Keccak256Hash sessionId,
-                                            Sha256Hash blockSha256Hash, String account) throws Exception {
-        log.info("Requesting scrypt validation for block {} session {} superblock {}",
-                blockSha256Hash, sessionId, superblockId);
-        makeDepositIfNeeded(account, claimManagerForChallenges, respondBlockHeaderCost);
-        CompletableFuture<TransactionReceipt> futureReceipt = battleManagerForChallenges.requestScryptHashValidation(
-                superblockId.getBytes(), sessionId.getBytes(), blockSha256Hash.getBytes()).sendAsync();
-        futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("requestScryptHashValidation receipt {}", receipt.toString()));
-    }
-
 
     /* ---- GETTERS ---- */
 
@@ -1339,33 +1229,20 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     /**
-     * Relays a Dogecoin transaction to Dogethereum contracts.
+     * Returns an SPV Proof to the superblock for a Dogecoin transaction to Dogethereum contracts.
      * @param tx Transaction to be relayed.
-     * @param operatorPublicKeyHash
      * @param block Dogecoin block that the transaction is in.
-     * @param superblock Superblock that the Dogecoin block is in.
-     * @param txPMT Partial Merkle tree for constructing an SPV proof of the transaction's existence in the Doge block.
      * @param superblockPMT Partial Merkle tree for constructing an SPV proof
      *                      of the Doge block's existence in the superblock.
      * @throws Exception
      */
-    public void sendRelayTx(org.bitcoinj.core.Transaction tx, byte[] operatorPublicKeyHash, AltcoinBlock block,
-                            Superblock superblock, PartialMerkleTree txPMT, PartialMerkleTree superblockPMT)
+    public void getSuperblockSPVProof( AltcoinBlock block,
+                            Superblock superblock, SuperblockPartialMerkleTree superblockPMT)
             throws Exception {
-        byte[] dogeBlockHeader = Arrays.copyOfRange(block.bitcoinSerialize(), 0, 80);
         Sha256Hash dogeBlockHash = block.getHash();
-        log.info("About to send to the bridge doge tx hash {}. Block hash {}", tx.getHash(), dogeBlockHash);
+        log.info("About to send to the bridge doge. Block hash {}", dogeBlockHash);
 
-        byte[] txSerialized = tx.bitcoinSerialize();
 
-        // Construct SPV proof for transaction
-        BigInteger txIndex = BigInteger.valueOf(txPMT.getTransactionIndex(tx.getHash()));
-        List<Sha256Hash> txSiblingsSha256Hash = txPMT.getTransactionPath(tx.getHash());
-        List<BigInteger> txSiblingsBigInteger = new ArrayList<>();
-        for (Sha256Hash sha256Hash : txSiblingsSha256Hash) {
-            txSiblingsBigInteger.add(sha256Hash.toBigInteger());
-        }
-        BigInteger dogeBlockHashBigInteger = dogeBlockHash.toBigInteger();
 
         // Construct SPV proof for block
         BigInteger dogeBlockIndex = BigInteger.valueOf(superblockPMT.getTransactionIndex(dogeBlockHash));
@@ -1374,17 +1251,10 @@ public class EthWrapper implements SuperblockConstantProvider {
         for (Sha256Hash sha256Hash : dogeBlockSiblingsSha256Hash)
             dogeBlockSiblingsBigInteger.add(sha256Hash.toBigInteger());
 
-        BigInteger superblockMerkleRootBigInteger = superblock.getMerkleRoot().toBigInteger();
+       /* dogeBlockIndex,
+                dogeBlockSiblingsBigInteger, superblock.getSuperblockId().getBytes()*/
 
-        String targetContract = dogeToken.getContractAddress();
 
-        CompletableFuture<TransactionReceipt> futureReceipt = superblocksForRelayTxs.relayTx(txSerialized,
-                operatorPublicKeyHash, txIndex, txSiblingsBigInteger, dogeBlockHeader, dogeBlockIndex,
-                dogeBlockSiblingsBigInteger, superblock.getSuperblockId().getBytes(), targetContract).sendAsync();
-        log.info("Sent relayTx {}", tx.getHash());
-        futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("RelayTx receipt {}.", receipt.toString())
-        );
     }
 
 
@@ -1392,18 +1262,6 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* --------- Unlock section --------- */
     /* ---------------------------------- */
 
-    /**
-     * Sets price of DogeToken.
-     * @param price New price of DogeToken.
-     */
-    public void updatePrice(long price) {
-        BigInteger priceBI = BigInteger.valueOf(price);
-        CompletableFuture<TransactionReceipt> futureReceipt = dogeToken.setDogeEthPrice(priceBI).sendAsync();
-        log.info("Sent update doge-eth price tx. Price: {}", price);
-        futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("Update doge-eth price tx receipt {}.", receipt.toString())
-        );
-    }
 
     //TODO: learn more about unlock and document all of these
 
@@ -1416,7 +1274,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         for (DogeToken.UnlockRequestEventResponse unlockRequestEvent : unlockRequestEvents) {
             UnlockRequestEvent unlockRequestEventEthWrapper = new UnlockRequestEvent();
             unlockRequestEventEthWrapper.id = unlockRequestEvent.id.longValue();
-            unlockRequestEventEthWrapper.operatorPublicKeyHash = unlockRequestEvent.operatorPublicKeyHash;
             result.add(unlockRequestEventEthWrapper);
         }
         return result;
@@ -1424,31 +1281,18 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     public static class UnlockRequestEvent {
         public long id;
-        public byte[] operatorPublicKeyHash;
     }
 
     public Unlock getUnlock(Long unlockRequestId) throws Exception {
-        Tuple8<String, byte[], BigInteger, BigInteger, BigInteger, List<BigInteger>, BigInteger, byte[]> tuple =
+        Tuple5<String, byte[], BigInteger, BigInteger, BigInteger> tuple =
                 dogeToken.getUnlockPendingInvestorProof(BigInteger.valueOf(unlockRequestId)).send();
         Unlock unlock = new Unlock();
         unlock.from = tuple.getValue1();
         unlock.dogeAddress = tuple.getValue2();
         unlock.value = tuple.getValue3().longValue();
-        unlock.operatorFee = tuple.getValue4().longValue();
-        unlock.timestamp = tuple.getValue5().longValue();
-        unlock.dogeTxFee = tuple.getValue7().longValue();
-        unlock.operatorPublicKeyHash = tuple.getValue8();
+        unlock.timestamp = tuple.getValue4().longValue();
+        unlock.dogeTxFee = tuple.getValue5().longValue();
 
-        List<BigInteger> selectedUtxosIndexes = tuple.getValue6();
-        List<UTXO> selectedUtxosOutpoints = new ArrayList<>();
-        for (BigInteger selectedUtxo : selectedUtxosIndexes) {
-            Tuple3<BigInteger, BigInteger, BigInteger> utxo = dogeToken.getUtxo(unlock.operatorPublicKeyHash, selectedUtxo).send();
-            long value = utxo.getValue1().longValue();
-            Sha256Hash txHash = Sha256Hash.wrap(bigIntegerToHexStringPad64(utxo.getValue2()));
-            long outputIndex = utxo.getValue3().longValue();
-            selectedUtxosOutpoints.add(new UTXO(txHash, outputIndex, Coin.valueOf(value), 0, false, null));
-        }
-        unlock.selectedUtxos = selectedUtxosOutpoints;
         return unlock;
     }
 
@@ -1457,33 +1301,9 @@ public class EthWrapper implements SuperblockConstantProvider {
         public String from;
         public byte[] dogeAddress;
         public long value;
-        public long operatorFee;
         public long timestamp;
-        public List<UTXO> selectedUtxos;
         public long dogeTxFee;
-        public byte[] operatorPublicKeyHash;
     }
 
 
-    /* ---------------------------------- */
-    /* --------- Scrypt verifier -------- */
-    /* ---------------------------------- */
-
-    /**
-     * Sends a scrypt hash to be verified.
-     * @param sessionId Battle session ID.
-     * @param superblockId Hash of the superblock containing the block whose scrypt hash is going to be verified.
-     * @param proposalId // TODO: see if this parameter is necessary at all
-     * @param data
-     * @param blockScryptHash Scrypt hash of Doge block.
-     */
-    public void checkScrypt(Keccak256Hash sessionId, Keccak256Hash superblockId, Keccak256Hash proposalId,
-                            byte[] data, ScryptHash blockScryptHash) {
-        log.info("Send scrypt hash for verification session {}, superblock {}", sessionId, superblockId);
-        CompletableFuture<TransactionReceipt> futureReceipt = scryptVerifier.checkScrypt(
-                data, blockScryptHash.getBytes(), proposalId.getBytes(), battleManager.getContractAddress(),
-                BigInteger.ZERO).sendAsync();
-        futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("checkScrypt receipt {}", receipt.toString()));
-    }
 }

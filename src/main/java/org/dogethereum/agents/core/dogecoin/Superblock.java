@@ -2,8 +2,6 @@ package org.dogethereum.agents.core.dogecoin;
 
 import org.bitcoinj.core.*;
 
-import org.spongycastle.util.encoders.Hex;
-import org.web3j.crypto.Hash;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -11,7 +9,7 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Date;
+
 
 /**
  * Constructs a superblock from a sequence of block hashes.

@@ -48,7 +48,6 @@ public class DogeTokenExtended extends DogeToken {
             DogeToken.UnlockRequestEventResponse typedResponse = new DogeToken.UnlockRequestEventResponse();
             typedResponse.log = log;
             typedResponse.id = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
-            typedResponse.operatorPublicKeyHash = (byte[]) eventValues.getNonIndexedValues().get(1).getValue();
             result.add(typedResponse);
         }
         return result;

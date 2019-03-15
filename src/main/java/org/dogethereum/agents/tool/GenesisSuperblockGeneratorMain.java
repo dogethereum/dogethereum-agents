@@ -10,9 +10,9 @@ import org.dogethereum.agents.constants.SystemProperties;
 import org.dogethereum.agents.core.dogecoin.DogecoinWrapper;
 import org.dogethereum.agents.core.dogecoin.Keccak256Hash;
 import org.dogethereum.agents.core.dogecoin.Superblock;
-import org.dogethereum.agents.core.dogecoin.SuperblockUtils;
-import org.dogethereum.agents.util.OperatorKeyHandler;
-import org.spongycastle.util.encoders.Hex;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import static org.bitcoinj.core.Utils.HEX;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -32,7 +32,7 @@ import java.util.List;
  * @author Oscar Guindzberg
  */
 public class GenesisSuperblockGeneratorMain {
-
+    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
     private static String baseDir = "/yourPath/dogethereum-agents";
     private static String subDir = "/src/main/java/org/dogethereum/agents/tool";
 
@@ -41,7 +41,6 @@ public class GenesisSuperblockGeneratorMain {
         log.info("Running GenesisSuperblockGeneratorMain version: {}-{}", config.projectVersion(), config.projectVersionModifier());
         // Instantiate the spring context
         AnnotationConfigApplicationContext c = new AnnotationConfigApplicationContext();
-        c.register(OperatorKeyHandler.class);
         c.register(DogecoinWrapper.class);
         c.refresh();
         DogecoinWrapper dogecoinWrapper = c.getBean(DogecoinWrapper.class);
@@ -76,7 +75,7 @@ public class GenesisSuperblockGeneratorMain {
         List<Sha256Hash> result = new ArrayList<>();
         String line = reader.readLine();
         while (line != null) {
-            byte[] rawBytes = Hex.decode(line);
+            byte[] rawBytes = HEX.decode(line);
             result.add(Sha256Hash.wrap(rawBytes));
             line = reader.readLine();
         }
