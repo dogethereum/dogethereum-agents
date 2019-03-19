@@ -313,9 +313,9 @@ public class EthWrapper implements SuperblockConstantProvider {
         return claimManager.proposeSuperblock(new Bytes32(superblock.getMerkleRoot().getBytes()),
                 new Uint256(superblock.getChainWork()),
                 new Uint256(superblock.getLastDogeBlockTime()),
-                new Uint256(superblock.getPreviousToLastDogeBlockTime()),
+                new Uint256(superblock.getpreviousDogeBlockTime()),
                 new Bytes32(superblock.getLastDogeBlockHash().getBytes()),
-                new Uint32(superblock.getLastDogeBlockBits()),
+                new Uint32(superblock.getpreviousDogeBlockBits()),
                 new Bytes32(superblock.getParentId().getBytes()),
                 new Uint32(superblock.getBlockHeight())).sendAsync();
     }

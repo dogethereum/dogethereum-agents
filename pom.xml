@@ -59,7 +59,7 @@
         <dependency>
             <groupId>org.libdohj</groupId>
             <artifactId>libdohj-core</artifactId>
-            <version>0.15.1-SNAPSHOT3</version>
+            <version>0.15.1-SNAPSHOT5</version>
         </dependency>
         <dependency>
             <groupId>org.web3j</groupId>

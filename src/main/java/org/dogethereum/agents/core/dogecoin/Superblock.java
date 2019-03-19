@@ -31,13 +31,13 @@ public class Superblock {
     private long lastDogeBlockTime;
 
     // Timestamp of previous to last mined Dogecoin block in the superblock. 32 bytes to comply with Solidity version.
-    private long previousToLastDogeBlockTime;
+    private long previousDogeBlockTime;
 
     // SHA-256 hash of last mined Dogecoin block in the superblock. 32 bytes.
     private Sha256Hash lastDogeBlockHash;
 
     // Bits (difficulty) of last mined Dogecoin block in the superblock. 32 bytes.
-    private long lastDogeBlockBits;
+    private long previousDogeBlockBits;
 
     // SHA3-256 hash of previous superblock. 32 bytes.
     private Keccak256Hash parentId;
@@ -82,14 +82,14 @@ public class Superblock {
      *                        mined within the one hour lapse corresponding to this superblock.
      * @param chainWork Last Dogecoin block's accumulated chainwork.
      * @param lastDogeBlockTime Last Dogecoin block's timestamp.
-     * @param previousToLastDogeBlockTime Previous to last Dogecoin block's timestamp.
-     * @param lastDogeBlockBits Last Dogecoin block's difficulty.
+     * @param previousDogeBlockTime Dogecoin block's timestamp of when last difficulty adjustment occured.
+     * @param previousDogeBlockBits Last Dogecoin block's difficulty.
      * @param parentId Previous superblock's SHA-256 hash.
      * @param superblockHeight Height of this superblock within superblock chain.
      * @param blockHeight Height of the last block in the superblock.
      */
     public Superblock(NetworkParameters params, List<Sha256Hash> dogeBlockHashes, BigInteger chainWork,
-                      long lastDogeBlockTime, long previousToLastDogeBlockTime, long lastDogeBlockBits,
+                      long lastDogeBlockTime, long previousDogeBlockTime, long previousDogeBlockBits,
                       Keccak256Hash parentId, long superblockHeight, long blockHeight) {
         // hash all the block dogeBlockHashes into a Merkle tree
         byte[] includeBits = new byte[(int) Math.ceil(dogeBlockHashes.size() / 8.0)];
@@ -101,9 +101,9 @@ public class Superblock {
         this.merkleRoot = dogeBlockHashesFullMerkleTree.getTxnHashAndMerkleRoot(dogeBlockHashes);
         this.chainWork = chainWork;
         this.lastDogeBlockTime = lastDogeBlockTime;
-        this.previousToLastDogeBlockTime = previousToLastDogeBlockTime;
+        this.previousDogeBlockTime = previousDogeBlockTime;
         this.lastDogeBlockHash = dogeBlockHashes.get(dogeBlockHashes.size() - 1);
-        this.lastDogeBlockBits = lastDogeBlockBits;
+        this.previousDogeBlockBits = previousDogeBlockBits;
         this.parentId = parentId;
         this.blockHeight = blockHeight;
         // set helper fields
@@ -116,21 +116,21 @@ public class Superblock {
      * @param merkleRoot Merkle root, already calculated from a list of Doge block hashes.
      * @param chainWork Last Dogecoin block's accumulated chainwork.
      * @param lastDogeBlockTime Last Dogecoin block's timestamp.
-     * @param previousToLastDogeBlockTime Previous to last Dogecoin block's timestamp.
-     * @param lastDogeBlockBits Last Dogecoin block's difficulty.
+     * @param previousDogeBlockTime Previous to last Dogecoin block's timestamp.
+     * @param previousDogeBlockBits Last Dogecoin block's difficulty.
      * @param parentId Previous superblock's SHA-256 hash.
      * @param superblockHeight Height of this superblock within superblock chain.
      * @param blockHeight Height of the last block in the superblock.
      */
     public Superblock(Sha256Hash merkleRoot, BigInteger chainWork, long lastDogeBlockTime,
-                      long previousToLastDogeBlockTime, Sha256Hash lastDogeBlockHash, long lastDogeBlockBits,
+                      long previousDogeBlockTime, Sha256Hash lastDogeBlockHash, long previousDogeBlockBits,
                       Keccak256Hash parentId, long superblockHeight, long blockHeight) {
         this.merkleRoot = merkleRoot;
         this.chainWork = chainWork;
         this.lastDogeBlockTime = lastDogeBlockTime;
-        this.previousToLastDogeBlockTime = previousToLastDogeBlockTime;
+        this.previousDogeBlockTime = previousDogeBlockTime;
         this.lastDogeBlockHash = lastDogeBlockHash;
-        this.lastDogeBlockBits = lastDogeBlockBits;
+        this.previousDogeBlockBits = previousDogeBlockBits;
         this.parentId = parentId;
         this.blockHeight = blockHeight;
 
@@ -151,10 +151,10 @@ public class Superblock {
         this.chainWork = new BigInteger(Utils.reverseBytes(SuperblockUtils.readBytes(
                 payload, CHAIN_WORK_PAYLOAD_OFFSET, BIG_INTEGER_LENGTH)));
         this.lastDogeBlockTime = Utils.readUint32(payload, LAST_BLOCK_TIME_PAYLOAD_OFFSET);
-        this.previousToLastDogeBlockTime = Utils.readUint32(payload, PREVIOUS_TO_LAST_BLOCK_TIME_PAYLOAD_OFFSET);
+        this.previousDogeBlockTime = Utils.readUint32(payload, PREVIOUS_TO_LAST_BLOCK_TIME_PAYLOAD_OFFSET);
         this.lastDogeBlockHash = Sha256Hash.wrapReversed(SuperblockUtils.readBytes(
                 payload, LAST_BLOCK_HASH_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
-        this.lastDogeBlockBits = Utils.readUint32(payload, LAST_BLOCK_BITS_PAYLOAD_OFFSET);
+        this.previousDogeBlockBits = Utils.readUint32(payload, LAST_BLOCK_BITS_PAYLOAD_OFFSET);
         this.parentId = Keccak256Hash.wrapReversed(
                 SuperblockUtils.readBytes(payload, PARENT_ID_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
         this.blockHeight = Utils.readUint32(payload, BLOCK_HEIGHT_PAYLOAD_OFFSET);
@@ -208,8 +208,8 @@ public class Superblock {
      * Accesses previous to last Doge block time attribute.
      * @return Superblock previous to last Doge block time.
      */
-    public long getPreviousToLastDogeBlockTime() {
-        return previousToLastDogeBlockTime;
+    public long getpreviousDogeBlockTime() {
+        return previousDogeBlockTime;
     }
 
     /**
@@ -224,8 +224,8 @@ public class Superblock {
      * Accesses last Doge block bits attribute.
      * @return Superblock last Doge block bits.
      */
-    public long getLastDogeBlockBits() {
-        return lastDogeBlockBits;
+    public long getpreviousDogeBlockBits() {
+        return previousDogeBlockBits;
     }
 
     /**
@@ -285,9 +285,9 @@ public class Superblock {
         stream.write(merkleRoot.getReversedBytes()); // 32
         stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(chainWork))); // 32
         stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(lastDogeBlockTime))); // 32
-        stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(previousToLastDogeBlockTime))); // 32
+        stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(previousDogeBlockTime))); // 32
         stream.write(lastDogeBlockHash.getReversedBytes()); // 32
-        stream.write(Utils.reverseBytes(SuperblockUtils.toUint32(lastDogeBlockBits))); // 4
+        stream.write(Utils.reverseBytes(SuperblockUtils.toUint32(previousDogeBlockBits))); // 4
         stream.write(parentId.getReversedBytes()); // 32
         stream.write(Utils.reverseBytes(SuperblockUtils.toUint32(blockHeight))); // 4
     }
@@ -302,9 +302,9 @@ public class Superblock {
         stream.write(merkleRoot.getBytes());
         stream.write(SuperblockUtils.toBytes32(chainWork));
         stream.write(SuperblockUtils.toBytes32(lastDogeBlockTime));
-        stream.write(SuperblockUtils.toBytes32(previousToLastDogeBlockTime));
+        stream.write(SuperblockUtils.toBytes32(previousDogeBlockTime));
         stream.write(lastDogeBlockHash.getBytes());
-        stream.write(SuperblockUtils.toUint32(lastDogeBlockBits));
+        stream.write(SuperblockUtils.toUint32(previousDogeBlockBits));
         stream.write(parentId.getBytes());
         stream.write(SuperblockUtils.toUint32(blockHeight));
     }
@@ -395,9 +395,9 @@ public class Superblock {
                 "merkleRoot=" + merkleRoot +
                 ", chainWork=" + chainWork +
                 ", lastDogeBlockTime=" + lastDogeBlockTime +
-                ", previousToLastDogeBlockTime=" + previousToLastDogeBlockTime +
                 ", lastDogeBlockHash=" + lastDogeBlockHash +
-                ", lastDogeBlockBits=" + lastDogeBlockBits +
+                ", previousDogeBlockTime=" + previousDogeBlockTime +
+                ", previousDogeBlockBits=" + previousDogeBlockBits +
                 ", parentId=" + parentId +
                 ", superblockId=" + superblockId +
                 ", superblockHeight=" + superblockHeight +

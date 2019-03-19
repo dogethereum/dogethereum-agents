@@ -98,11 +98,28 @@ public class SuperblockChain {
                     nextSuperblockDogeHashes.get(nextSuperblockDogeHashes.size() - 1));
             StoredBlock nextSuperblockPreviousToLastBlock =
                     dogecoinWrapper.getBlock(nextSuperblockLastBlock.getHeader().getPrevBlockHash());
+            StoredBlock prevBlock = nextSuperblockLastBlock;
+            long prevTarget = nextSuperblockPreviousToLastBlock.getHeader().getDifficultyTarget();
+            long prevTimestamp = nextSuperblockPreviousToLastBlock.getHeader().getTimeSeconds();
+            int blockCount = 0;
+            // walk back getInterval blocks max or until genesis and find when the difficulty last changed and record the bits/timestamp to pass into superblock for difficulty verification
+            // in the smart contract
+            while(prevBlock != null && blockCount <= this.params.getInterval() && this.params.getInterval() != Integer.MAX_VALUE){
+                prevBlock = dogecoinWrapper.getBlock(prevBlock.getHeader().getPrevBlockHash());
+                if(prevBlock != null) {
+                    if(prevBlock.getHeader().getDifficultyTarget() != prevTarget){
+                        prevTarget = prevBlock.getHeader().getDifficultyTarget();
+                        prevTimestamp = prevBlock.getHeader().getTimeSeconds();
+                        break;
+                    }
+                }
+                blockCount++;
+            }
             long nextblockHeight = nextSuperblockLastBlock.getHeight();
             Superblock newSuperblock = new Superblock(this.params, nextSuperblockDogeHashes,
                     nextSuperblockLastBlock.getChainWork(), nextSuperblockLastBlock.getHeader().getTimeSeconds(),
-                    nextSuperblockPreviousToLastBlock.getHeader().getTimeSeconds(),
-                    nextSuperblockLastBlock.getHeader().getDifficultyTarget(),
+                    prevTimestamp,
+                    prevTarget,
                     nextSuperblockPrevHash, nextSuperblockHeight, nextblockHeight);
             superblockStorage.put(newSuperblock);
             if (newSuperblock.getChainWork().compareTo(superblockStorage.getChainHeadWork()) > 0) {

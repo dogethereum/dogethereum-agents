@@ -37,16 +37,16 @@ public class IntegrationAgentConstants extends AgentConstants {
         Sha256Hash blocksMerkleRoot = Sha256Hash.wrap("629417921bc4ab79db4a4a02b4d7946a4d0dbc6a3c5bca898dd12eacaeb8b353");
         BigInteger chainWork = new BigInteger("4266257060811936889868");
         long lastDogeBlockTime = 1535743139l;
-        long previousToLastDogeBlockTime = 1535743100l;
+        long previousDogeBlockTime = 1535743100l;
         Sha256Hash lastDogeBlockHash = Sha256Hash.wrap("e2a056368784e63b9b5f9c17b613718ef7388a799e8535ab59be397019eff798");
-        long lastDogeBlockBits = 436759445;
+        long previousDogeBlockBits = 436759445;
         Keccak256Hash genesisSuperblockParentId = Keccak256Hash.wrap(new byte[32]); // initialised with 0s
         long superblockHeight = 0;
         BigInteger status = SuperblockUtils.STATUS_APPROVED;
         long lastBlockHeight = 0;
         genesisSuperblock = new Superblock(
                 blocksMerkleRoot, chainWork, lastDogeBlockTime,
-                previousToLastDogeBlockTime, lastDogeBlockHash, lastDogeBlockBits,
+                previousDogeBlockTime, lastDogeBlockHash, previousDogeBlockBits,
                 genesisSuperblockParentId, superblockHeight, lastBlockHeight);
 
         defenderTimerTaskPeriod = 15 * 1000;
