@@ -19,7 +19,7 @@ If you are new to the Dogecoin <-> Ethereum bridge, please check the [docs](http
 > ganache -l GAS_LIMIT -p 8545
 - Replace GAS_LIMIT with the value used in the configuration file
 - deploy https://github.com/dogethereum/dogethereum-contracts contracts to ganache
-- run scripts/init_contracts_regtest.js 
+- run scripts/initialiseForAgent.sh 
 
 
 ### Run dogecoin
