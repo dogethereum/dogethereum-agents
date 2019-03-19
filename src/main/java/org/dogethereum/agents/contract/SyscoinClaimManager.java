@@ -383,7 +383,7 @@ public class SyscoinClaimManager extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             DepositBondedEventResponse typedResponse = new DepositBondedEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
             typedResponse.account = (Address) eventValues.getNonIndexedValues().get(1);
             typedResponse.amount = (Uint256) eventValues.getNonIndexedValues().get(2);
             responses.add(typedResponse);
@@ -398,7 +398,7 @@ public class SyscoinClaimManager extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(DEPOSITBONDED_EVENT, log);
                 DepositBondedEventResponse typedResponse = new DepositBondedEventResponse();
                 typedResponse.log = log;
-                typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+                typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
                 typedResponse.account = (Address) eventValues.getNonIndexedValues().get(1);
                 typedResponse.amount = (Uint256) eventValues.getNonIndexedValues().get(2);
                 return typedResponse;
@@ -418,7 +418,7 @@ public class SyscoinClaimManager extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             DepositUnbondedEventResponse typedResponse = new DepositUnbondedEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
             typedResponse.account = (Address) eventValues.getNonIndexedValues().get(1);
             typedResponse.amount = (Uint256) eventValues.getNonIndexedValues().get(2);
             responses.add(typedResponse);
@@ -433,7 +433,7 @@ public class SyscoinClaimManager extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(DEPOSITUNBONDED_EVENT, log);
                 DepositUnbondedEventResponse typedResponse = new DepositUnbondedEventResponse();
                 typedResponse.log = log;
-                typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+                typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
                 typedResponse.account = (Address) eventValues.getNonIndexedValues().get(1);
                 typedResponse.amount = (Uint256) eventValues.getNonIndexedValues().get(2);
                 return typedResponse;
@@ -453,7 +453,7 @@ public class SyscoinClaimManager extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             SuperblockClaimCreatedEventResponse typedResponse = new SuperblockClaimCreatedEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
             typedResponse.submitter = (Address) eventValues.getNonIndexedValues().get(1);
             responses.add(typedResponse);
         }
@@ -467,7 +467,7 @@ public class SyscoinClaimManager extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(SUPERBLOCKCLAIMCREATED_EVENT, log);
                 SuperblockClaimCreatedEventResponse typedResponse = new SuperblockClaimCreatedEventResponse();
                 typedResponse.log = log;
-                typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+                typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
                 typedResponse.submitter = (Address) eventValues.getNonIndexedValues().get(1);
                 return typedResponse;
             }
@@ -486,7 +486,7 @@ public class SyscoinClaimManager extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             SuperblockClaimChallengedEventResponse typedResponse = new SuperblockClaimChallengedEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
             typedResponse.challenger = (Address) eventValues.getNonIndexedValues().get(1);
             responses.add(typedResponse);
         }
@@ -500,7 +500,7 @@ public class SyscoinClaimManager extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(SUPERBLOCKCLAIMCHALLENGED_EVENT, log);
                 SuperblockClaimChallengedEventResponse typedResponse = new SuperblockClaimChallengedEventResponse();
                 typedResponse.log = log;
-                typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+                typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
                 typedResponse.challenger = (Address) eventValues.getNonIndexedValues().get(1);
                 return typedResponse;
             }
@@ -519,7 +519,7 @@ public class SyscoinClaimManager extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             SuperblockBattleDecidedEventResponse typedResponse = new SuperblockBattleDecidedEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            typedResponse.sessionId = (Bytes32) eventValues.getNonIndexedValues().get(0);
             typedResponse.winner = (Address) eventValues.getNonIndexedValues().get(1);
             typedResponse.loser = (Address) eventValues.getNonIndexedValues().get(2);
             responses.add(typedResponse);
@@ -534,7 +534,7 @@ public class SyscoinClaimManager extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(SUPERBLOCKBATTLEDECIDED_EVENT, log);
                 SuperblockBattleDecidedEventResponse typedResponse = new SuperblockBattleDecidedEventResponse();
                 typedResponse.log = log;
-                typedResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+                typedResponse.sessionId = (Bytes32) eventValues.getNonIndexedValues().get(0);
                 typedResponse.winner = (Address) eventValues.getNonIndexedValues().get(1);
                 typedResponse.loser = (Address) eventValues.getNonIndexedValues().get(2);
                 return typedResponse;
@@ -554,7 +554,7 @@ public class SyscoinClaimManager extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             SuperblockClaimSuccessfulEventResponse typedResponse = new SuperblockClaimSuccessfulEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
             typedResponse.submitter = (Address) eventValues.getNonIndexedValues().get(1);
             responses.add(typedResponse);
         }
@@ -568,7 +568,7 @@ public class SyscoinClaimManager extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(SUPERBLOCKCLAIMSUCCESSFUL_EVENT, log);
                 SuperblockClaimSuccessfulEventResponse typedResponse = new SuperblockClaimSuccessfulEventResponse();
                 typedResponse.log = log;
-                typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+                typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
                 typedResponse.submitter = (Address) eventValues.getNonIndexedValues().get(1);
                 return typedResponse;
             }
@@ -587,7 +587,7 @@ public class SyscoinClaimManager extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             SuperblockClaimPendingEventResponse typedResponse = new SuperblockClaimPendingEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
             typedResponse.submitter = (Address) eventValues.getNonIndexedValues().get(1);
             responses.add(typedResponse);
         }
@@ -601,7 +601,7 @@ public class SyscoinClaimManager extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(SUPERBLOCKCLAIMPENDING_EVENT, log);
                 SuperblockClaimPendingEventResponse typedResponse = new SuperblockClaimPendingEventResponse();
                 typedResponse.log = log;
-                typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+                typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
                 typedResponse.submitter = (Address) eventValues.getNonIndexedValues().get(1);
                 return typedResponse;
             }
@@ -620,7 +620,7 @@ public class SyscoinClaimManager extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             SuperblockClaimFailedEventResponse typedResponse = new SuperblockClaimFailedEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
             typedResponse.submitter = (Address) eventValues.getNonIndexedValues().get(1);
             responses.add(typedResponse);
         }
@@ -634,7 +634,7 @@ public class SyscoinClaimManager extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(SUPERBLOCKCLAIMFAILED_EVENT, log);
                 SuperblockClaimFailedEventResponse typedResponse = new SuperblockClaimFailedEventResponse();
                 typedResponse.log = log;
-                typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+                typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
                 typedResponse.submitter = (Address) eventValues.getNonIndexedValues().get(1);
                 return typedResponse;
             }
@@ -653,10 +653,10 @@ public class SyscoinClaimManager extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             VerificationGameStartedEventResponse typedResponse = new VerificationGameStartedEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
             typedResponse.submitter = (Address) eventValues.getNonIndexedValues().get(1);
             typedResponse.challenger = (Address) eventValues.getNonIndexedValues().get(2);
-            typedResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(3).getValue());
+            typedResponse.sessionId = (Bytes32) eventValues.getNonIndexedValues().get(3);
             responses.add(typedResponse);
         }
         return responses;
@@ -669,10 +669,10 @@ public class SyscoinClaimManager extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(VERIFICATIONGAMESTARTED_EVENT, log);
                 VerificationGameStartedEventResponse typedResponse = new VerificationGameStartedEventResponse();
                 typedResponse.log = log;
-                typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+                typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
                 typedResponse.submitter = (Address) eventValues.getNonIndexedValues().get(1);
                 typedResponse.challenger = (Address) eventValues.getNonIndexedValues().get(2);
-                typedResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(3).getValue());
+                typedResponse.sessionId = (Bytes32) eventValues.getNonIndexedValues().get(3);
                 return typedResponse;
             }
         });
@@ -690,7 +690,7 @@ public class SyscoinClaimManager extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             ErrorClaimEventResponse typedResponse = new ErrorClaimEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
             typedResponse.err = (Uint256) eventValues.getNonIndexedValues().get(1);
             responses.add(typedResponse);
         }
@@ -704,7 +704,7 @@ public class SyscoinClaimManager extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(ERRORCLAIM_EVENT, log);
                 ErrorClaimEventResponse typedResponse = new ErrorClaimEventResponse();
                 typedResponse.log = log;
-                typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+                typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
                 typedResponse.err = (Uint256) eventValues.getNonIndexedValues().get(1);
                 return typedResponse;
             }
@@ -800,7 +800,7 @@ public class SyscoinClaimManager extends Contract {
 
     public RemoteCall<Uint256> getDeposit(Address account) {
         final Function function = new Function(FUNC_GETDEPOSIT, 
-                Arrays.<Type>asList(account),
+                Arrays.<Type>asList(account), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function);
     }

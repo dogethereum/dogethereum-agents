@@ -301,7 +301,7 @@ public class SyscoinSuperblocks extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             NewSuperblockEventResponse typedResponse = new NewSuperblockEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
             typedResponse.who = (Address) eventValues.getNonIndexedValues().get(1);
             responses.add(typedResponse);
         }
@@ -315,7 +315,7 @@ public class SyscoinSuperblocks extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(NEWSUPERBLOCK_EVENT, log);
                 NewSuperblockEventResponse typedResponse = new NewSuperblockEventResponse();
                 typedResponse.log = log;
-                typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+                typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
                 typedResponse.who = (Address) eventValues.getNonIndexedValues().get(1);
                 return typedResponse;
             }
@@ -334,7 +334,7 @@ public class SyscoinSuperblocks extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             ApprovedSuperblockEventResponse typedResponse = new ApprovedSuperblockEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
             typedResponse.who = (Address) eventValues.getNonIndexedValues().get(1);
             responses.add(typedResponse);
         }
@@ -348,7 +348,7 @@ public class SyscoinSuperblocks extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(APPROVEDSUPERBLOCK_EVENT, log);
                 ApprovedSuperblockEventResponse typedResponse = new ApprovedSuperblockEventResponse();
                 typedResponse.log = log;
-                typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+                typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
                 typedResponse.who = (Address) eventValues.getNonIndexedValues().get(1);
                 return typedResponse;
             }
@@ -367,7 +367,7 @@ public class SyscoinSuperblocks extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             ChallengeSuperblockEventResponse typedResponse = new ChallengeSuperblockEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
             typedResponse.who = (Address) eventValues.getNonIndexedValues().get(1);
             responses.add(typedResponse);
         }
@@ -381,7 +381,7 @@ public class SyscoinSuperblocks extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(CHALLENGESUPERBLOCK_EVENT, log);
                 ChallengeSuperblockEventResponse typedResponse = new ChallengeSuperblockEventResponse();
                 typedResponse.log = log;
-                typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+                typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
                 typedResponse.who = (Address) eventValues.getNonIndexedValues().get(1);
                 return typedResponse;
             }
@@ -400,7 +400,7 @@ public class SyscoinSuperblocks extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             SemiApprovedSuperblockEventResponse typedResponse = new SemiApprovedSuperblockEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
             typedResponse.who = (Address) eventValues.getNonIndexedValues().get(1);
             responses.add(typedResponse);
         }
@@ -414,7 +414,7 @@ public class SyscoinSuperblocks extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(SEMIAPPROVEDSUPERBLOCK_EVENT, log);
                 SemiApprovedSuperblockEventResponse typedResponse = new SemiApprovedSuperblockEventResponse();
                 typedResponse.log = log;
-                typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+                typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
                 typedResponse.who = (Address) eventValues.getNonIndexedValues().get(1);
                 return typedResponse;
             }
@@ -433,7 +433,7 @@ public class SyscoinSuperblocks extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             InvalidSuperblockEventResponse typedResponse = new InvalidSuperblockEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
             typedResponse.who = (Address) eventValues.getNonIndexedValues().get(1);
             responses.add(typedResponse);
         }
@@ -447,7 +447,7 @@ public class SyscoinSuperblocks extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(INVALIDSUPERBLOCK_EVENT, log);
                 InvalidSuperblockEventResponse typedResponse = new InvalidSuperblockEventResponse();
                 typedResponse.log = log;
-                typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+                typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
                 typedResponse.who = (Address) eventValues.getNonIndexedValues().get(1);
                 return typedResponse;
             }
@@ -466,7 +466,7 @@ public class SyscoinSuperblocks extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             ErrorSuperblockEventResponse typedResponse = new ErrorSuperblockEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
             typedResponse.err = (Uint256) eventValues.getNonIndexedValues().get(1);
             responses.add(typedResponse);
         }
@@ -480,7 +480,7 @@ public class SyscoinSuperblocks extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(ERRORSUPERBLOCK_EVENT, log);
                 ErrorSuperblockEventResponse typedResponse = new ErrorSuperblockEventResponse();
                 typedResponse.log = log;
-                typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+                typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
                 typedResponse.err = (Uint256) eventValues.getNonIndexedValues().get(1);
                 return typedResponse;
             }
@@ -499,7 +499,7 @@ public class SyscoinSuperblocks extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             VerifyTransactionEventResponse typedResponse = new VerifyTransactionEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.txHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            typedResponse.txHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
             typedResponse.returnCode = (Uint256) eventValues.getNonIndexedValues().get(1);
             responses.add(typedResponse);
         }
@@ -513,7 +513,7 @@ public class SyscoinSuperblocks extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(VERIFYTRANSACTION_EVENT, log);
                 VerifyTransactionEventResponse typedResponse = new VerifyTransactionEventResponse();
                 typedResponse.log = log;
-                typedResponse.txHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+                typedResponse.txHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
                 typedResponse.returnCode = (Uint256) eventValues.getNonIndexedValues().get(1);
                 return typedResponse;
             }
@@ -532,7 +532,7 @@ public class SyscoinSuperblocks extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             RelayTransactionEventResponse typedResponse = new RelayTransactionEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.txHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            typedResponse.txHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
             typedResponse.returnCode = (Uint256) eventValues.getNonIndexedValues().get(1);
             responses.add(typedResponse);
         }
@@ -546,7 +546,7 @@ public class SyscoinSuperblocks extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(RELAYTRANSACTION_EVENT, log);
                 RelayTransactionEventResponse typedResponse = new RelayTransactionEventResponse();
                 typedResponse.log = log;
-                typedResponse.txHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+                typedResponse.txHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
                 typedResponse.returnCode = (Uint256) eventValues.getNonIndexedValues().get(1);
                 return typedResponse;
             }

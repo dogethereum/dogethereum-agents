@@ -50,9 +50,9 @@ public class SyscoinClaimManagerExtended extends SyscoinClaimManager {
             SuperblockBattleDecidedEventResponse newSuperblockBattleDecidedEventResponse =
                     new SuperblockBattleDecidedEventResponse();
             newSuperblockBattleDecidedEventResponse.log = eventValues.getLog();
-            newSuperblockBattleDecidedEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            newSuperblockBattleDecidedEventResponse.winner = new org.web3j.abi.datatypes.Address((String) eventValues.getNonIndexedValues().get(1).getValue());
-            newSuperblockBattleDecidedEventResponse.loser =   new org.web3j.abi.datatypes.Address((String) eventValues.getNonIndexedValues().get(1).getValue());
+            newSuperblockBattleDecidedEventResponse.sessionId = new Bytes32((byte[])eventValues.getNonIndexedValues().get(0).getValue());
+            newSuperblockBattleDecidedEventResponse.winner = new Address((String)eventValues.getNonIndexedValues().get(1).getValue());
+            newSuperblockBattleDecidedEventResponse.loser = new Address((String)eventValues.getNonIndexedValues().get(2).getValue());
             result.add(newSuperblockBattleDecidedEventResponse);
         }
 

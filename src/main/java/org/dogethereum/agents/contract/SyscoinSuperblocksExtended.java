@@ -59,8 +59,8 @@ public class SyscoinSuperblocksExtended extends SyscoinSuperblocks {
 
             NewSuperblockEventResponse newSuperblockResponse = new NewSuperblockEventResponse();
             newSuperblockResponse.log = eventValues.getLog();
-            newSuperblockResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            newSuperblockResponse.who =  new org.web3j.abi.datatypes.Address((String) eventValues.getNonIndexedValues().get(1).getValue());
+            newSuperblockResponse.superblockHash = new Bytes32((byte[])eventValues.getNonIndexedValues().get(0).getValue());
+            newSuperblockResponse.who =  new Address((String)eventValues.getNonIndexedValues().get(1).getValue());
             result.add(newSuperblockResponse);
         }
 
@@ -87,8 +87,9 @@ public class SyscoinSuperblocksExtended extends SyscoinSuperblocks {
 
             ApprovedSuperblockEventResponse approvedSuperblockResponse = new ApprovedSuperblockEventResponse();
             approvedSuperblockResponse.log = eventValues.getLog();
-            approvedSuperblockResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            approvedSuperblockResponse.who =  new org.web3j.abi.datatypes.Address((String) eventValues.getNonIndexedValues().get(1).getValue());
+
+            approvedSuperblockResponse.superblockHash = new Bytes32((byte[])eventValues.getNonIndexedValues().get(0).getValue());
+            approvedSuperblockResponse.who =  new Address((String)eventValues.getNonIndexedValues().get(1).getValue());
             result.add(approvedSuperblockResponse);
         }
 
@@ -115,8 +116,8 @@ public class SyscoinSuperblocksExtended extends SyscoinSuperblocks {
 
             ChallengeSuperblockEventResponse challengeSuperblockResponse = new ChallengeSuperblockEventResponse();
             challengeSuperblockResponse.log = eventValues.getLog();
-            challengeSuperblockResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            challengeSuperblockResponse.who =  new org.web3j.abi.datatypes.Address((String) eventValues.getNonIndexedValues().get(1).getValue());
+            challengeSuperblockResponse.superblockHash = new Bytes32((byte[])eventValues.getNonIndexedValues().get(0).getValue());
+            challengeSuperblockResponse.who = new Address((String)eventValues.getNonIndexedValues().get(1).getValue());
             result.add(challengeSuperblockResponse);
         }
 
@@ -143,8 +144,8 @@ public class SyscoinSuperblocksExtended extends SyscoinSuperblocks {
 
             SemiApprovedSuperblockEventResponse semiApprovedSuperblockResponse = new SemiApprovedSuperblockEventResponse();
             semiApprovedSuperblockResponse.log = eventValues.getLog();
-            semiApprovedSuperblockResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            semiApprovedSuperblockResponse.who =  new org.web3j.abi.datatypes.Address((String) eventValues.getNonIndexedValues().get(1).getValue());
+            semiApprovedSuperblockResponse.superblockHash = new Bytes32((byte[])eventValues.getNonIndexedValues().get(0).getValue());
+            semiApprovedSuperblockResponse.who =  new Address((String)eventValues.getNonIndexedValues().get(1).getValue());
             result.add(semiApprovedSuperblockResponse);
         }
 
@@ -171,8 +172,8 @@ public class SyscoinSuperblocksExtended extends SyscoinSuperblocks {
 
             InvalidSuperblockEventResponse invalidSuperblockEventResponse = new InvalidSuperblockEventResponse();
             invalidSuperblockEventResponse.log = eventValues.getLog();
-            invalidSuperblockEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            invalidSuperblockEventResponse.who =  new org.web3j.abi.datatypes.Address((String) eventValues.getNonIndexedValues().get(1).getValue());
+            invalidSuperblockEventResponse.superblockHash = new Bytes32((byte[])eventValues.getNonIndexedValues().get(0).getValue());
+            invalidSuperblockEventResponse.who =  new Address((String)eventValues.getNonIndexedValues().get(1).getValue());
             result.add(invalidSuperblockEventResponse);
         }
 

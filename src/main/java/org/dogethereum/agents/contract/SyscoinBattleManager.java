@@ -297,8 +297,8 @@ public class SyscoinBattleManager extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             NewBattleEventResponse typedResponse = new NewBattleEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            typedResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
+            typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
+            typedResponse.sessionId = (Bytes32) eventValues.getNonIndexedValues().get(1);
             typedResponse.submitter = (Address) eventValues.getNonIndexedValues().get(2);
             typedResponse.challenger = (Address) eventValues.getNonIndexedValues().get(3);
             responses.add(typedResponse);
@@ -313,8 +313,8 @@ public class SyscoinBattleManager extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(NEWBATTLE_EVENT, log);
                 NewBattleEventResponse typedResponse = new NewBattleEventResponse();
                 typedResponse.log = log;
-                typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-                typedResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
+                typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
+                typedResponse.sessionId = (Bytes32) eventValues.getNonIndexedValues().get(1);
                 typedResponse.submitter = (Address) eventValues.getNonIndexedValues().get(2);
                 typedResponse.challenger = (Address) eventValues.getNonIndexedValues().get(3);
                 return typedResponse;
@@ -334,8 +334,8 @@ public class SyscoinBattleManager extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             ChallengerConvictedEventResponse typedResponse = new ChallengerConvictedEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            typedResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
+            typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
+            typedResponse.sessionId = (Bytes32) eventValues.getNonIndexedValues().get(1);
             typedResponse.challenger = (Address) eventValues.getNonIndexedValues().get(2);
             responses.add(typedResponse);
         }
@@ -349,8 +349,8 @@ public class SyscoinBattleManager extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(CHALLENGERCONVICTED_EVENT, log);
                 ChallengerConvictedEventResponse typedResponse = new ChallengerConvictedEventResponse();
                 typedResponse.log = log;
-                typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-                typedResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
+                typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
+                typedResponse.sessionId = (Bytes32) eventValues.getNonIndexedValues().get(1);
                 typedResponse.challenger = (Address) eventValues.getNonIndexedValues().get(2);
                 return typedResponse;
             }
@@ -369,8 +369,8 @@ public class SyscoinBattleManager extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             SubmitterConvictedEventResponse typedResponse = new SubmitterConvictedEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            typedResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
+            typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
+            typedResponse.sessionId = (Bytes32) eventValues.getNonIndexedValues().get(1);
             typedResponse.submitter = (Address) eventValues.getNonIndexedValues().get(2);
             responses.add(typedResponse);
         }
@@ -384,8 +384,8 @@ public class SyscoinBattleManager extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(SUBMITTERCONVICTED_EVENT, log);
                 SubmitterConvictedEventResponse typedResponse = new SubmitterConvictedEventResponse();
                 typedResponse.log = log;
-                typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-                typedResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
+                typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
+                typedResponse.sessionId = (Bytes32) eventValues.getNonIndexedValues().get(1);
                 typedResponse.submitter = (Address) eventValues.getNonIndexedValues().get(2);
                 return typedResponse;
             }
@@ -404,8 +404,8 @@ public class SyscoinBattleManager extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             QueryMerkleRootHashesEventResponse typedResponse = new QueryMerkleRootHashesEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            typedResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
+            typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
+            typedResponse.sessionId = (Bytes32) eventValues.getNonIndexedValues().get(1);
             typedResponse.submitter = (Address) eventValues.getNonIndexedValues().get(2);
             responses.add(typedResponse);
         }
@@ -419,8 +419,8 @@ public class SyscoinBattleManager extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(QUERYMERKLEROOTHASHES_EVENT, log);
                 QueryMerkleRootHashesEventResponse typedResponse = new QueryMerkleRootHashesEventResponse();
                 typedResponse.log = log;
-                typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-                typedResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
+                typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
+                typedResponse.sessionId = (Bytes32) eventValues.getNonIndexedValues().get(1);
                 typedResponse.submitter = (Address) eventValues.getNonIndexedValues().get(2);
                 return typedResponse;
             }
@@ -439,8 +439,8 @@ public class SyscoinBattleManager extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             RespondMerkleRootHashesEventResponse typedResponse = new RespondMerkleRootHashesEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            typedResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
+            typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
+            typedResponse.sessionId = (Bytes32) eventValues.getNonIndexedValues().get(1);
             typedResponse.challenger = (Address) eventValues.getNonIndexedValues().get(2);
             typedResponse.blockHashes = (DynamicArray<Bytes32>) eventValues.getNonIndexedValues().get(3);
             responses.add(typedResponse);
@@ -455,8 +455,8 @@ public class SyscoinBattleManager extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(RESPONDMERKLEROOTHASHES_EVENT, log);
                 RespondMerkleRootHashesEventResponse typedResponse = new RespondMerkleRootHashesEventResponse();
                 typedResponse.log = log;
-                typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-                typedResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
+                typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
+                typedResponse.sessionId = (Bytes32) eventValues.getNonIndexedValues().get(1);
                 typedResponse.challenger = (Address) eventValues.getNonIndexedValues().get(2);
                 typedResponse.blockHashes = (DynamicArray<Bytes32>) eventValues.getNonIndexedValues().get(3);
                 return typedResponse;
@@ -476,10 +476,10 @@ public class SyscoinBattleManager extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             QueryBlockHeaderEventResponse typedResponse = new QueryBlockHeaderEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            typedResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
+            typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
+            typedResponse.sessionId = (Bytes32) eventValues.getNonIndexedValues().get(1);
             typedResponse.submitter = (Address) eventValues.getNonIndexedValues().get(2);
-            typedResponse.blockSha256Hash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(3).getValue());
+            typedResponse.blockSha256Hash = (Bytes32) eventValues.getNonIndexedValues().get(3);
             responses.add(typedResponse);
         }
         return responses;
@@ -492,10 +492,10 @@ public class SyscoinBattleManager extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(QUERYBLOCKHEADER_EVENT, log);
                 QueryBlockHeaderEventResponse typedResponse = new QueryBlockHeaderEventResponse();
                 typedResponse.log = log;
-                typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-                typedResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
+                typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
+                typedResponse.sessionId = (Bytes32) eventValues.getNonIndexedValues().get(1);
                 typedResponse.submitter = (Address) eventValues.getNonIndexedValues().get(2);
-                typedResponse.blockSha256Hash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(3).getValue());
+                typedResponse.blockSha256Hash = (Bytes32) eventValues.getNonIndexedValues().get(3);
                 return typedResponse;
             }
         });
@@ -513,8 +513,8 @@ public class SyscoinBattleManager extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             RespondBlockHeaderEventResponse typedResponse = new RespondBlockHeaderEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            typedResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
+            typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
+            typedResponse.sessionId = (Bytes32) eventValues.getNonIndexedValues().get(1);
             typedResponse.challenger = (Address) eventValues.getNonIndexedValues().get(2);
             typedResponse.blockHeader = (DynamicBytes) eventValues.getNonIndexedValues().get(3);
             typedResponse.powBlockHeader = (DynamicBytes) eventValues.getNonIndexedValues().get(4);
@@ -530,8 +530,8 @@ public class SyscoinBattleManager extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(RESPONDBLOCKHEADER_EVENT, log);
                 RespondBlockHeaderEventResponse typedResponse = new RespondBlockHeaderEventResponse();
                 typedResponse.log = log;
-                typedResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-                typedResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
+                typedResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
+                typedResponse.sessionId = (Bytes32) eventValues.getNonIndexedValues().get(1);
                 typedResponse.challenger = (Address) eventValues.getNonIndexedValues().get(2);
                 typedResponse.blockHeader = (DynamicBytes) eventValues.getNonIndexedValues().get(3);
                 typedResponse.powBlockHeader = (DynamicBytes) eventValues.getNonIndexedValues().get(4);
@@ -552,7 +552,7 @@ public class SyscoinBattleManager extends Contract {
         for (EventValuesWithLog eventValues : valueList) {
             ErrorBattleEventResponse typedResponse = new ErrorBattleEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            typedResponse.sessionId = (Bytes32) eventValues.getNonIndexedValues().get(0);
             typedResponse.err = (Uint256) eventValues.getNonIndexedValues().get(1);
             responses.add(typedResponse);
         }
@@ -566,7 +566,7 @@ public class SyscoinBattleManager extends Contract {
                 EventValuesWithLog eventValues = extractEventParametersWithLog(ERRORBATTLE_EVENT, log);
                 ErrorBattleEventResponse typedResponse = new ErrorBattleEventResponse();
                 typedResponse.log = log;
-                typedResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+                typedResponse.sessionId = (Bytes32) eventValues.getNonIndexedValues().get(0);
                 typedResponse.err = (Uint256) eventValues.getNonIndexedValues().get(1);
                 return typedResponse;
             }

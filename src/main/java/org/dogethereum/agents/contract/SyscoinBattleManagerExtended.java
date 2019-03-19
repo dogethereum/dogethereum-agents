@@ -53,7 +53,7 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
             queryBlockHeaderEventResponse.log = eventValues.getLog();
             queryBlockHeaderEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
             queryBlockHeaderEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
-            queryBlockHeaderEventResponse.submitter = new org.web3j.abi.datatypes.Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
+            queryBlockHeaderEventResponse.submitter = new Address((String)eventValues.getNonIndexedValues().get(2).getValue());
             queryBlockHeaderEventResponse.blockSha256Hash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(3).getValue());
             result.add(queryBlockHeaderEventResponse);
         }
@@ -83,7 +83,7 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
             queryMerkleRootHashesEventResponse.log = eventValues.getLog();
             queryMerkleRootHashesEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
             queryMerkleRootHashesEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
-            queryMerkleRootHashesEventResponse.submitter =  new org.web3j.abi.datatypes.Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
+            queryMerkleRootHashesEventResponse.submitter = new Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
             result.add(queryMerkleRootHashesEventResponse);
         }
 
@@ -112,8 +112,8 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
             newBattleEventResponse.log = eventValues.getLog();
             newBattleEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
             newBattleEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
-            newBattleEventResponse.submitter =  new org.web3j.abi.datatypes.Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
-            newBattleEventResponse.challenger =  new org.web3j.abi.datatypes.Address ((String)eventValues.getNonIndexedValues().get(3).getValue());
+            newBattleEventResponse.submitter = new Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
+            newBattleEventResponse.challenger = new Address ((String)eventValues.getNonIndexedValues().get(3).getValue());
             result.add(newBattleEventResponse);
         }
 
@@ -142,7 +142,7 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
             newChallengerConvictedEventResponse.log = eventValues.getLog();
             newChallengerConvictedEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
             newChallengerConvictedEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
-            newChallengerConvictedEventResponse.challenger =  new org.web3j.abi.datatypes.Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
+            newChallengerConvictedEventResponse.challenger = new Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
             result.add(newChallengerConvictedEventResponse);
         }
 
@@ -171,7 +171,7 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
             newSubmitterConvictedEventResponse.log = eventValues.getLog();
             newSubmitterConvictedEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
             newSubmitterConvictedEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
-            newSubmitterConvictedEventResponse.submitter =  new org.web3j.abi.datatypes.Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
+            newSubmitterConvictedEventResponse.submitter = new Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
             result.add(newSubmitterConvictedEventResponse);
         }
 
@@ -200,7 +200,7 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
             newRespondMerkleRootHashesEventResponse.log = eventValues.getLog();
             newRespondMerkleRootHashesEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
             newRespondMerkleRootHashesEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
-            newRespondMerkleRootHashesEventResponse.challenger =  new org.web3j.abi.datatypes.Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
+            newRespondMerkleRootHashesEventResponse.challenger = new Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
             newRespondMerkleRootHashesEventResponse.blockHashes = new DynamicArray<>();
             List<Bytes32> rawBytes32Hashes = (List<Bytes32>) eventValues.getNonIndexedValues().get(3).getValue();
             for (Bytes32 rawBytes32Hash : rawBytes32Hashes) {
@@ -235,7 +235,7 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
             newRespondBlockHeaderEventResponse.log = eventValues.getLog();
             newRespondBlockHeaderEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
             newRespondBlockHeaderEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
-            newRespondBlockHeaderEventResponse.challenger = new org.web3j.abi.datatypes.Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
+            newRespondBlockHeaderEventResponse.challenger = new Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
             newRespondBlockHeaderEventResponse.blockHeader = new DynamicBytes ((byte[])eventValues.getNonIndexedValues().get(3).getValue());
             newRespondBlockHeaderEventResponse.powBlockHeader = new DynamicBytes ((byte[])eventValues.getNonIndexedValues().get(4).getValue());
             result.add(newRespondBlockHeaderEventResponse);
@@ -264,7 +264,7 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
                     new ErrorBattleEventResponse();
             newErrorBattleEventResponse.log = eventValues.getLog();
             newErrorBattleEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            newErrorBattleEventResponse.err = new Uint256((BigInteger) eventValues.getNonIndexedValues().get(1).getValue());
+            newErrorBattleEventResponse.err = new Uint256((BigInteger) eventValues.getNonIndexedValues().get(0).getValue());
             result.add(newErrorBattleEventResponse);
         }
 
