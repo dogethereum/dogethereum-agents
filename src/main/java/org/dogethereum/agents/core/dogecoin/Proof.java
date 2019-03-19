@@ -12,6 +12,7 @@ import org.bitcoinj.core.Sha256Hash;
 import org.libdohj.params.AbstractDogecoinParams;
 import org.libdohj.params.DogecoinMainNetParams;
 import org.libdohj.params.DogecoinTestNet3Params;
+import org.libdohj.params.DogecoinRegTestParams;
 
 
 import java.io.IOException;
@@ -76,6 +77,8 @@ public class Proof implements Serializable {
             return DogecoinMainNetParams.get();
         } else if (id.equals(AbstractDogecoinParams.ID_DOGE_TESTNET)) {
             return DogecoinTestNet3Params.get();
+        } else if (id.equals(AbstractDogecoinParams.ID_DOGE_REGTEST)) {
+            return DogecoinRegTestParams.get();
         } else {
             throw new IllegalArgumentException(id);
         }

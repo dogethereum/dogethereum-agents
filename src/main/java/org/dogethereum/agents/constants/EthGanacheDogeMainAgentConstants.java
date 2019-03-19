@@ -41,11 +41,11 @@ public class EthGanacheDogeMainAgentConstants extends AgentConstants {
         Keccak256Hash genesisSuperblockParentId = Keccak256Hash.wrap(new byte[32]); // initialised with 0s
         long superblockHeight = 0;
         BigInteger status = SuperblockUtils.STATUS_APPROVED;
-        long newSuperblockEventTime = 0;
+        long lastBlockHeight = 0;
         genesisSuperblock = new Superblock(
                 blocksMerkleRoot, chainWork, lastDogeBlockTime,
                 previousToLastDogeBlockTime, lastDogeBlockHash, lastDogeBlockBits,
-                genesisSuperblockParentId, superblockHeight);
+                genesisSuperblockParentId, superblockHeight, lastBlockHeight);
 
 
         defenderTimerTaskPeriod = 15 * 1000;

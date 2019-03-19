@@ -68,7 +68,7 @@ public class GenesisSuperblockGeneratorMain {
                 previousToLastDogeBlock.getHeader().getTimeSeconds(),
                 lastDogeBlock.getHeader().getDifficultyTarget(),
                 genesisParentHash,
-                0);
+                0, lastDogeBlock.getHeight());
     }
 
     private static List<Sha256Hash> parseBlockHashes(BufferedReader reader) throws IOException {

@@ -97,7 +97,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             if (newAndTimeoutPassed(toConfirm) || inBattleAndSemiApprovable(toConfirm)) {
                 // Either the superblock is unchallenged or it won all the battles;
                 // it will get approved or semi-approved depending on the situation
-                // (look at DogeClaimManager contract source code for more details)
+                // (look at SyscoinClaimManager contract source code for more details)
                 log.info("Confirming superblock {}", toConfirmId);
                 ethWrapper.checkClaimFinished(toConfirmId, myAddress, false);
             } else if (ethWrapper.isSuperblockSemiApproved(toConfirmId)) {

@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.web3j.abi.datatypes.generated.Bytes32;
 
 import javax.annotation.PostConstruct;
 import java.io.*;
@@ -106,7 +107,7 @@ public class DogeToEthClient {
         }
 
         // Get the best superblock from the relay that is also in the main chain.
-        List<byte[]> superblockLocator = ethWrapper.getSuperblockLocator();
+        List<Bytes32> superblockLocator = ethWrapper.getSuperblockLocator();
         Superblock matchedSuperblock = getEarliestMatchingSuperblock(superblockLocator);
 
         checkNotNull(matchedSuperblock, "No best chain superblock found");
@@ -150,12 +151,12 @@ public class DogeToEthClient {
      * @throws BlockStoreException
      * @throws IOException
      */
-    private Superblock getEarliestMatchingSuperblock(List<byte[]> superblockLocator)
+    private Superblock getEarliestMatchingSuperblock(List<Bytes32> superblockLocator)
             throws BlockStoreException, IOException {
         Superblock matchedSuperblock = null;
 
         for (int i = 0; i < superblockLocator.size(); i++) {
-            Keccak256Hash superblockBridgeHash = Keccak256Hash.wrap(superblockLocator.get(i));
+            Keccak256Hash superblockBridgeHash = Keccak256Hash.wrap(superblockLocator.get(i).getValue());
             Superblock bridgeSuperblock = superblockChain.getSuperblock(superblockBridgeHash);
 
             if (bridgeSuperblock == null)
@@ -183,7 +184,7 @@ public class DogeToEthClient {
             return;
         }
 
-        if (!ethWrapper.wasDogeTxProcessed(txToSendToEthHash)) {
+        if (!ethWrapper.wasSyscoinTxProcessed(txToSendToEthHash)) {
             synchronized (this) {
 
                 StoredBlock txStoredBlock = dogecoinWrapper.getBlock(txToSendToEthHash);

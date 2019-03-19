@@ -66,18 +66,7 @@ public class EthToDogeClient extends PersistentFileStore {
         public void run() {
             try {
                 if (!ethWrapper.isEthNodeSyncing()) {
-                    long fromBlock = latestEthBlockProcessed + 1;
                     long toBlock = ethWrapper.getEthBlockCount() - config.getAgentConstants().getUnlockConfirmations() + 1;
-                    // Ignore execution if nothing to process
-                    if (fromBlock > toBlock) return;
-                    List<EthWrapper.UnlockRequestEvent> newUnlockRequestEvents = ethWrapper.getNewUnlockRequests(fromBlock, toBlock);
-                    for (EthWrapper.UnlockRequestEvent unlockRequestEvent : newUnlockRequestEvents) {
-                        /*if (isMine(unlockRequestEvent)) {
-                            EthWrapper.Unlock unlock = ethWrapper.getUnlock(unlockRequestEvent.id);
-                            Transaction tx = buildDogeTransaction(unlock);
-                            dogecoinWrapper.broadcastDogecoinTransaction(tx);
-                        }*/
-                    }
                     latestEthBlockProcessed = toBlock;
                     flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
                 } else {

@@ -5,7 +5,7 @@ import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Sha256Hash;
 import org.dogethereum.agents.core.dogecoin.Keccak256Hash;
 import org.dogethereum.agents.core.dogecoin.Superblock;
-import org.libdohj.params.DogecoinTestNet3Params;
+import org.libdohj.params.DogecoinRegTestParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +27,7 @@ public class LocalAgentConstants extends AgentConstants {
     }
 
     LocalAgentConstants() {
-        dogeParams = DogecoinTestNet3Params.get();
+        dogeParams = DogecoinRegTestParams.get();
 
         dogeToEthTimerTaskPeriod = 10 * 1000;
         dogeToEthConfirmations = 1;
@@ -35,11 +35,11 @@ public class LocalAgentConstants extends AgentConstants {
 
         List<Sha256Hash> genesisSuperblockBlockList = Lists.newArrayList(dogeParams.getGenesisBlock().getHash());
         Keccak256Hash genesisSuperblockParentId = Keccak256Hash.wrap(new byte[32]); // initialised with 0s
+        long lastBlockHeight = 0;
         genesisSuperblock = new Superblock(
                 dogeParams, genesisSuperblockBlockList,
                 BigInteger.valueOf(0), dogeParams.getGenesisBlock().getTimeSeconds(), 0,
-                dogeParams.getGenesisBlock().getDifficultyTarget(), genesisSuperblockParentId, 0);
-
+                dogeParams.getGenesisBlock().getDifficultyTarget(), genesisSuperblockParentId, 0, lastBlockHeight);
         defenderTimerTaskPeriod = 15 * 1000;
         challengerTimerTaskPeriod = 15 * 1000;
         defenderConfirmations = 1;

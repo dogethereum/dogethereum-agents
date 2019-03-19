@@ -98,12 +98,12 @@ public class SuperblockChain {
                     nextSuperblockDogeHashes.get(nextSuperblockDogeHashes.size() - 1));
             StoredBlock nextSuperblockPreviousToLastBlock =
                     dogecoinWrapper.getBlock(nextSuperblockLastBlock.getHeader().getPrevBlockHash());
-
+            long nextblockHeight = nextSuperblockLastBlock.getHeight();
             Superblock newSuperblock = new Superblock(this.params, nextSuperblockDogeHashes,
                     nextSuperblockLastBlock.getChainWork(), nextSuperblockLastBlock.getHeader().getTimeSeconds(),
                     nextSuperblockPreviousToLastBlock.getHeader().getTimeSeconds(),
                     nextSuperblockLastBlock.getHeader().getDifficultyTarget(),
-                    nextSuperblockPrevHash, nextSuperblockHeight);
+                    nextSuperblockPrevHash, nextSuperblockHeight, nextblockHeight);
             superblockStorage.put(newSuperblock);
             if (newSuperblock.getChainWork().compareTo(superblockStorage.getChainHeadWork()) > 0) {
                 superblockStorage.setChainHead(newSuperblock);

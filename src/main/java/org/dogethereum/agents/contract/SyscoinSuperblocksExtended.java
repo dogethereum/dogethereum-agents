@@ -10,7 +10,6 @@ import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.response.EthLog;
 import org.web3j.protocol.core.methods.response.Log;
-import org.web3j.tx.Contract;
 import org.web3j.tx.TransactionManager;
 
 import java.io.IOException;
@@ -21,21 +20,21 @@ import java.util.List;
 
 
 /**
- * Extension of web3j auto-generated DogeSuperblocks class
+ * Extension of web3j auto-generated SyscoinSuperblocks class
  * with event polling methods for SuperblockDefenderClient.
  * @author Catalina Juarros
  */
 
-public class DogeSuperblocksExtended extends DogeSuperblocks {
-    protected DogeSuperblocksExtended(String contractAddress, Web3j web3j, TransactionManager transactionManager,
-                                      BigInteger gasPrice, BigInteger gasLimit) {
+public class SyscoinSuperblocksExtended extends SyscoinSuperblocks {
+    protected SyscoinSuperblocksExtended(String contractAddress, Web3j web3j, TransactionManager transactionManager,
+                                         BigInteger gasPrice, BigInteger gasLimit) {
         super(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
 
-    public static DogeSuperblocksExtended load(String contractAddress, Web3j web3j,
-                                               TransactionManager transactionManager, BigInteger gasPrice,
-                                               BigInteger gasLimit) {
-        return new DogeSuperblocksExtended(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
+    public static SyscoinSuperblocksExtended load(String contractAddress, Web3j web3j,
+                                                  TransactionManager transactionManager, BigInteger gasPrice,
+                                                  BigInteger gasLimit) {
+        return new SyscoinSuperblocksExtended(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
 
 
@@ -44,7 +43,6 @@ public class DogeSuperblocksExtended extends DogeSuperblocks {
     public List<NewSuperblockEventResponse> getNewSuperblockEvents(DefaultBlockParameter startBlock,
                                                                    DefaultBlockParameter endBlock) throws IOException {
         final Event event = new Event("NewSuperblock",
-                Arrays.<TypeReference<?>>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {
                 }, new TypeReference<Address>() {
                 }));
@@ -61,8 +59,8 @@ public class DogeSuperblocksExtended extends DogeSuperblocks {
 
             NewSuperblockEventResponse newSuperblockResponse = new NewSuperblockEventResponse();
             newSuperblockResponse.log = eventValues.getLog();
-            newSuperblockResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            newSuperblockResponse.who = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            newSuperblockResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            newSuperblockResponse.who =  new org.web3j.abi.datatypes.Address((String) eventValues.getNonIndexedValues().get(1).getValue());
             result.add(newSuperblockResponse);
         }
 
@@ -73,7 +71,6 @@ public class DogeSuperblocksExtended extends DogeSuperblocks {
                                                                              DefaultBlockParameter endBlock)
             throws IOException {
         final Event event = new Event("ApprovedSuperblock",
-                Arrays.<TypeReference<?>>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {
                 }, new TypeReference<Address>() {
                 }));
@@ -90,8 +87,8 @@ public class DogeSuperblocksExtended extends DogeSuperblocks {
 
             ApprovedSuperblockEventResponse approvedSuperblockResponse = new ApprovedSuperblockEventResponse();
             approvedSuperblockResponse.log = eventValues.getLog();
-            approvedSuperblockResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            approvedSuperblockResponse.who = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            approvedSuperblockResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            approvedSuperblockResponse.who =  new org.web3j.abi.datatypes.Address((String) eventValues.getNonIndexedValues().get(1).getValue());
             result.add(approvedSuperblockResponse);
         }
 
@@ -102,7 +99,6 @@ public class DogeSuperblocksExtended extends DogeSuperblocks {
                                                                                DefaultBlockParameter endBlock)
             throws IOException {
         final Event event = new Event("ChallengeSuperblock",
-                Arrays.<TypeReference<?>>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {
                 }, new TypeReference<Address>() {
                 }));
@@ -119,8 +115,8 @@ public class DogeSuperblocksExtended extends DogeSuperblocks {
 
             ChallengeSuperblockEventResponse challengeSuperblockResponse = new ChallengeSuperblockEventResponse();
             challengeSuperblockResponse.log = eventValues.getLog();
-            challengeSuperblockResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            challengeSuperblockResponse.who = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            challengeSuperblockResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            challengeSuperblockResponse.who =  new org.web3j.abi.datatypes.Address((String) eventValues.getNonIndexedValues().get(1).getValue());
             result.add(challengeSuperblockResponse);
         }
 
@@ -131,7 +127,6 @@ public class DogeSuperblocksExtended extends DogeSuperblocks {
                                                                                DefaultBlockParameter endBlock)
             throws IOException {
         final Event event = new Event("SemiApprovedSuperblock",
-                Arrays.<TypeReference<?>>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {
                 }, new TypeReference<Address>() {
                 }));
@@ -148,8 +143,8 @@ public class DogeSuperblocksExtended extends DogeSuperblocks {
 
             SemiApprovedSuperblockEventResponse semiApprovedSuperblockResponse = new SemiApprovedSuperblockEventResponse();
             semiApprovedSuperblockResponse.log = eventValues.getLog();
-            semiApprovedSuperblockResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            semiApprovedSuperblockResponse.who = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            semiApprovedSuperblockResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            semiApprovedSuperblockResponse.who =  new org.web3j.abi.datatypes.Address((String) eventValues.getNonIndexedValues().get(1).getValue());
             result.add(semiApprovedSuperblockResponse);
         }
 
@@ -160,7 +155,6 @@ public class DogeSuperblocksExtended extends DogeSuperblocks {
                                                                                DefaultBlockParameter endBlock)
             throws IOException {
         final Event event = new Event("InvalidSuperblock",
-                Arrays.<TypeReference<?>>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {
                 }, new TypeReference<Address>() {
                 }));
@@ -177,8 +171,8 @@ public class DogeSuperblocksExtended extends DogeSuperblocks {
 
             InvalidSuperblockEventResponse invalidSuperblockEventResponse = new InvalidSuperblockEventResponse();
             invalidSuperblockEventResponse.log = eventValues.getLog();
-            invalidSuperblockEventResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            invalidSuperblockEventResponse.who = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            invalidSuperblockEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            invalidSuperblockEventResponse.who =  new org.web3j.abi.datatypes.Address((String) eventValues.getNonIndexedValues().get(1).getValue());
             result.add(invalidSuperblockEventResponse);
         }
 
