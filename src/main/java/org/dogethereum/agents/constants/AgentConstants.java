@@ -17,10 +17,6 @@ public class AgentConstants {
 
     protected long dogeToEthTimerTaskPeriod;
     // Minimum number of confirmations a tx has to have in order to EVALUATE relaying it to eth
-    // Tx will be relayed only if they are part of an aproved superblock, so this value is just an optimization
-    // for the agent.
-    protected int dogeToEthConfirmations;
-    protected Coin minimumLockTxValue;
     protected Superblock genesisSuperblock;
     protected long defenderTimerTaskPeriod;
     protected long challengerTimerTaskPeriod;
@@ -37,13 +33,8 @@ public class AgentConstants {
     }
 
     public long getDogeToEthTimerTaskPeriod() { return dogeToEthTimerTaskPeriod; }
-    public int getDogeToEthConfirmations() { return dogeToEthConfirmations; }
-    public Coin getMinimumLockTxValue() { return minimumLockTxValue; }
     public Superblock getGenesisSuperblock() {
         return genesisSuperblock;
-    }
-    public static BigInteger getSuperblockInitialDeposit() {
-        return BigInteger.valueOf(1000);
     }
 
     public long getDefenderTimerTaskPeriod() {

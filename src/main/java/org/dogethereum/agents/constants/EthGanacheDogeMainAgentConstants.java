@@ -28,8 +28,6 @@ public class EthGanacheDogeMainAgentConstants extends AgentConstants {
         dogeParams = DogecoinMainNetParams.get();
 
         dogeToEthTimerTaskPeriod = 10 * 1000;
-        dogeToEthConfirmations = 1;
-        minimumLockTxValue = Coin.valueOf(300000000); // 3 doge
 
         // Genesis Superblock for doge mainnet
         Sha256Hash blocksMerkleRoot = Sha256Hash.wrap("629417921bc4ab79db4a4a02b4d7946a4d0dbc6a3c5bca898dd12eacaeb8b353");
