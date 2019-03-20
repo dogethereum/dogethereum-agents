@@ -188,11 +188,6 @@ public class SystemProperties {
         return getStringProperty("doge.superblock.challenger.address", null);
     }
 
-    public String relayTxsAddress() {
-        return getStringProperty("relay.txs.address", null);
-    }
-
-
 
     public String dogeTokenContractAddress() {
         return getStringProperty("dogeToken.contract.address", null);

@@ -179,10 +179,6 @@ public class DogeToEthClient {
      * @throws Exception
      */
     public void getSuperblockSPVProof(Sha256Hash txToSendToEthHash) throws Exception {
-        if (ethWrapper.arePendingTransactionsForRelayTxsAddress()) {
-            log.debug("Skipping relay tx, there are pending transaction for the sender address.");
-            return;
-        }
 
         if (!ethWrapper.wasSyscoinTxProcessed(txToSendToEthHash)) {
             synchronized (this) {

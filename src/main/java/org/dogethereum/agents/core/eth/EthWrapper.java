@@ -58,13 +58,11 @@ public class EthWrapper implements SuperblockConstantProvider {
     private SyscoinBattleManagerExtended battleManager;
     private SyscoinBattleManagerExtended battleManagerForChallenges;
     private SyscoinSuperblocksExtended superblocks;
-    private SyscoinSuperblocksExtended superblocksForRelayTxs;
 
     private SystemProperties config;
     private BigInteger gasPriceMinimum;
 
     private String generalPurposeAndSendSuperblocksAddress;
-    private String relayTxsAddress;
     private String dogeSuperblockChallengerAddress;
 
     private BigInteger minProposalDeposit;
@@ -96,15 +94,13 @@ public class EthWrapper implements SuperblockConstantProvider {
             superblocksContractAddress = getContractAddress("SyscoinSuperblocks");
             List<String> accounts = web3.ethAccounts().send().getAccounts();
             generalPurposeAndSendSuperblocksAddress = accounts.get(0);
-            relayTxsAddress = accounts.get(1);
-            dogeSuperblockChallengerAddress = accounts.get(2);
+            dogeSuperblockChallengerAddress = accounts.get(1);
         } else {
             dogeTokenContractAddress = config.dogeTokenContractAddress();
             claimManagerContractAddress = config.dogeClaimManagerContractAddress();
             battleManagerContractAddress = config.dogeBattleManagerContractAddress();
             superblocksContractAddress = config.dogeSuperblocksContractAddress();
             generalPurposeAndSendSuperblocksAddress = config.generalPurposeAndSendSuperblocksAddress();
-            relayTxsAddress = config.relayTxsAddress();
             dogeSuperblockChallengerAddress = config.dogeSuperblockChallengerAddress();
         }
 
@@ -135,10 +131,7 @@ public class EthWrapper implements SuperblockConstantProvider {
                 new ClientTransactionManager(web3, generalPurposeAndSendSuperblocksAddress),
                 gasPriceMinimum, gasLimit);
         assert superblocks.isValid();
-        superblocksForRelayTxs = SyscoinSuperblocksExtended.load(superblocksContractAddress, web3,
-                new ClientTransactionManager(web3, relayTxsAddress),
-                gasPriceMinimum, gasLimit);
-        assert superblocksForRelayTxs.isValid();
+
 
         minProposalDeposit = claimManager.minProposalDeposit().send().getValue();
         minChallengeDeposit = claimManager.minChallengeDeposit().send().getValue();
@@ -184,10 +177,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         return arePendingTransactionsFor(generalPurposeAndSendSuperblocksAddress);
     }
 
-    public boolean arePendingTransactionsForRelayTxsAddress() throws IOException {
-        return arePendingTransactionsFor(relayTxsAddress);
-    }
-
     public boolean arePendingTransactionsForChallengerAddress() throws IOException {
         return arePendingTransactionsFor(dogeSuperblockChallengerAddress);
     }
@@ -222,7 +211,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         claimManager.setGasPrice(gasPrice);
         claimManagerForChallenges.setGasPrice(gasPrice);
         superblocks.setGasPrice(gasPrice);
-        superblocksForRelayTxs.setGasPrice(gasPrice);
     }
 
     public String getGeneralPurposeAndSendSuperblocksAddress() {
