@@ -1,5 +1,6 @@
 package org.dogethereum.agents.constants;
 
+import com.google.common.collect.Lists;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Sha256Hash;
 import org.dogethereum.agents.core.dogecoin.Keccak256Hash;
@@ -10,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
+import java.util.List;
 
 /**
  * AgentConstants for Doge Mainnet and Eth Ganache.
@@ -29,21 +31,13 @@ public class EthGanacheDogeMainAgentConstants extends AgentConstants {
 
         dogeToEthTimerTaskPeriod = 10 * 1000;
 
-        // Genesis Superblock for doge mainnet
-        Sha256Hash blocksMerkleRoot = Sha256Hash.wrap("629417921bc4ab79db4a4a02b4d7946a4d0dbc6a3c5bca898dd12eacaeb8b353");
-        BigInteger chainWork = new BigInteger("4266257060811936889868");
-        long lastDogeBlockTime = 1535743139l;
-        long previousDogeBlockTime = 1535743100l;
-        Sha256Hash lastDogeBlockHash = Sha256Hash.wrap("e2a056368784e63b9b5f9c17b613718ef7388a799e8535ab59be397019eff798");
-        long previousDogeBlockBits = 436759445;
+        List<Sha256Hash> genesisSuperblockBlockList = Lists.newArrayList(dogeParams.getGenesisBlock().getHash());
         Keccak256Hash genesisSuperblockParentId = Keccak256Hash.wrap(new byte[32]); // initialised with 0s
-        long superblockHeight = 0;
-        BigInteger status = SuperblockUtils.STATUS_APPROVED;
         long lastBlockHeight = 0;
         genesisSuperblock = new Superblock(
-                blocksMerkleRoot, chainWork, lastDogeBlockTime,
-                previousDogeBlockTime, lastDogeBlockHash, previousDogeBlockBits,
-                genesisSuperblockParentId, superblockHeight, lastBlockHeight);
+                dogeParams, genesisSuperblockBlockList,
+                BigInteger.valueOf(0), dogeParams.getGenesisBlock().getTimeSeconds(), 0,
+                dogeParams.getGenesisBlock().getDifficultyTarget(), genesisSuperblockParentId, 0, lastBlockHeight);
 
 
         defenderTimerTaskPeriod = 15 * 1000;
