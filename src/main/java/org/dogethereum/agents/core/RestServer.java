@@ -49,7 +49,7 @@ public class RestServer {
     // http://localhost:8000/info
     static class InfoHandler implements HttpHandler {
         public void handle(HttpExchange httpExchange) throws IOException {
-            String response = "Use /spvproof?hash=<uint256> to get Superblock SPV Proof";
+            String response = "Use /spvproof?hash=<uint256> or /spvproof?height=<blockheight> to get Superblock SPV Proof";
             RestServer.writeResponse(httpExchange, response.toString());
         }
     }
@@ -59,7 +59,9 @@ public class RestServer {
             Map<String,String> parms = RestServer.queryToMap(httpExchange.getRequestURI().getQuery());
 
             try {
-                String spvString = dogeToEthClient.getSuperblockSPVProof(Sha256Hash.wrap(parms.get("hash")));
+                String hash = parms.get("hash");
+                String height = parms.get("height");
+                String spvString = dogeToEthClient.getSuperblockSPVProof(hash != null? Sha256Hash.wrap(hash): null, height != null? Integer.decode(height): -1);
                 response.append(spvString);
             }
             catch(java.lang.Exception exception){

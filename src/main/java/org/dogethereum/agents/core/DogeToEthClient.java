@@ -182,10 +182,14 @@ public class DogeToEthClient {
      * Relays all unprocessed transactions to Ethereum contracts by calling sendRelayTx.
      * @throws Exception
      */
-    public String getSuperblockSPVProof(Sha256Hash blockHash) throws Exception {
+    public String getSuperblockSPVProof(Sha256Hash blockHash, int height) throws Exception {
         synchronized (this) {
 
-            StoredBlock txStoredBlock = dogecoinWrapper.getBlock(blockHash);
+            StoredBlock txStoredBlock = null;
+            if(blockHash != null)
+                txStoredBlock  = dogecoinWrapper.getBlock(blockHash);
+            else
+                txStoredBlock  = dogecoinWrapper.getStoredBlockAtHeight(height);
             if (txStoredBlock == null) {
                 Gson g = new Gson();
                 SPVProofError spvProofError = new SPVProofError("Block has not been stored in local database. Block hash: " + blockHash);
