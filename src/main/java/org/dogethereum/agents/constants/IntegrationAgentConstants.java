@@ -49,7 +49,8 @@ public class IntegrationAgentConstants extends AgentConstants {
 
         ethToDogeTimerTaskPeriod = 30 * 1000;
         unlockConfirmations = 4;
-        ethInitialCheckpoint = 2766716;
+        ethInitialCheckpoint = 4073515;
+        networkId = "4"; // eth rinkeby
 
     }
 }

@@ -29,7 +29,9 @@ public class SyscoinClaimManagerExtended extends SyscoinClaimManager {
                                                    BigInteger gasLimit) {
         return new SyscoinClaimManagerExtended(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
-
+    public static String getAddress(String networkId) {
+        return getPreviouslyDeployedAddress(networkId);
+    }
     public List<SuperblockBattleDecidedEventResponse> getSuperblockBattleDecidedEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {

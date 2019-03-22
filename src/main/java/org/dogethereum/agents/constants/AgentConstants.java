@@ -26,6 +26,7 @@ public class AgentConstants {
     protected long ethToDogeTimerTaskPeriod;
     protected int unlockConfirmations;
     protected int ethInitialCheckpoint;
+    protected String networkId;
 
 
     public AbstractDogecoinParams getDogeParams() {
@@ -53,6 +54,9 @@ public class AgentConstants {
     public long getEthToDogeTimerTaskPeriod() { return ethToDogeTimerTaskPeriod; }
     public int getUnlockConfirmations() {
         return unlockConfirmations;
+    }
+    public String getNetworkId() {
+        return networkId;
     }
     public int getEthInitialCheckpoint() {
         return ethInitialCheckpoint;

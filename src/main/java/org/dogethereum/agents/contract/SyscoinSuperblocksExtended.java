@@ -37,7 +37,9 @@ public class SyscoinSuperblocksExtended extends SyscoinSuperblocks {
         return new SyscoinSuperblocksExtended(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
 
-
+    public static String getAddress(String networkId) {
+        return getPreviouslyDeployedAddress(networkId);
+    }
     /* ---- EVENTS FOR POLLING ---- */
 
     public List<NewSuperblockEventResponse> getNewSuperblockEvents(DefaultBlockParameter startBlock,

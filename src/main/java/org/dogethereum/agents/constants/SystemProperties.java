@@ -188,23 +188,6 @@ public class SystemProperties {
         return getStringProperty("doge.superblock.challenger.address", null);
     }
 
-
-    public String dogeTokenContractAddress() {
-        return getStringProperty("dogeToken.contract.address", null);
-    }
-
-    public String dogeClaimManagerContractAddress() {
-        return getStringProperty("dogeClaimManager.contract.address", null);
-    }
-
-    public String dogeBattleManagerContractAddress() {
-        return getStringProperty("dogeBattleManager.contract.address", null);
-    }
-
-    public String dogeSuperblocksContractAddress() {
-        return getStringProperty("dogeSuperblocks.contract.address", null);
-    }
-
     public String truffleBuildContractsDirectory() {
         return getStringProperty("truffle.build.contracts.directory", null);
     }

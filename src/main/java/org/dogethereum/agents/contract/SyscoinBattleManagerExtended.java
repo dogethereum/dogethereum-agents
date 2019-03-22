@@ -31,7 +31,9 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
                                                     BigInteger gasLimit) {
         return new SyscoinBattleManagerExtended(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
-
+    public static String getAddress(String networkId) {
+        return getPreviouslyDeployedAddress(networkId);
+    }
     public List<QueryBlockHeaderEventResponse> getQueryBlockHeaderEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {

@@ -18,6 +18,9 @@ public class SyscoinTokenExtended extends SyscoinToken {
     public static SyscoinTokenExtended load(String contractAddress, Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit) {
         return new SyscoinTokenExtended(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
+    public static String getAddress(String networkId) {
+        return getPreviouslyDeployedAddress(networkId);
+    }
 
 
 }

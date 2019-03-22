@@ -1,6 +1,7 @@
 package org.dogethereum.agents.core.eth;
 
 
+import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.dogethereum.agents.constants.SystemProperties;
@@ -88,18 +89,20 @@ public class EthWrapper implements SuperblockConstantProvider {
         String superblocksContractAddress;
 
         if (config.isGanache()) {
-            dogeTokenContractAddress = getContractAddress("SyscoinToken");
-            claimManagerContractAddress = getContractAddress("SyscoinClaimManager");
-            battleManagerContractAddress = getContractAddress("SyscoinBattleManager");
-            superblocksContractAddress = getContractAddress("SyscoinSuperblocks");
+            String networkId = config.getAgentConstants().getNetworkId();
+            dogeTokenContractAddress = SyscoinTokenExtended.getAddress(networkId);
+            claimManagerContractAddress = SyscoinClaimManagerExtended.getAddress(networkId);
+            battleManagerContractAddress = SyscoinBattleManagerExtended.getAddress(networkId);
+            superblocksContractAddress = SyscoinSuperblocksExtended.getAddress(networkId);
             List<String> accounts = web3.ethAccounts().send().getAccounts();
             generalPurposeAndSendSuperblocksAddress = accounts.get(0);
             dogeSuperblockChallengerAddress = accounts.get(1);
         } else {
-            dogeTokenContractAddress = config.dogeTokenContractAddress();
-            claimManagerContractAddress = config.dogeClaimManagerContractAddress();
-            battleManagerContractAddress = config.dogeBattleManagerContractAddress();
-            superblocksContractAddress = config.dogeSuperblocksContractAddress();
+            String networkId = config.getAgentConstants().getNetworkId();
+            dogeTokenContractAddress = SyscoinTokenExtended.getAddress(networkId);
+            claimManagerContractAddress = SyscoinClaimManagerExtended.getAddress(networkId);
+            battleManagerContractAddress = SyscoinBattleManagerExtended.getAddress(networkId);
+            superblocksContractAddress = SyscoinSuperblocksExtended.getAddress(networkId);
             generalPurposeAndSendSuperblocksAddress = config.generalPurposeAndSendSuperblocksAddress();
             dogeSuperblockChallengerAddress = config.dogeSuperblockChallengerAddress();
         }
@@ -142,23 +145,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         verifySuperblockCost = claimManager.verifySuperblockCost().send().getValue();
     }
 
-    /**
-     * Returns the deployed contract address from a Truffle JSON file.
-     *
-     * @param contractName Contract name, e.g SyscoinSuperblocks.
-     * @return Contract address.
-     * @throws Exception
-     */
-    private String getContractAddress(String contractName) throws Exception {
-        String basePath = config.truffleBuildContractsDirectory();
-        FileReader contractSpecFile = new FileReader(basePath + "/" + contractName + ".json");
-        JSONParser parser = new JSONParser();
-
-        JSONObject parsedSpecFile = (JSONObject) parser.parse(contractSpecFile);
-        JSONObject networks = (JSONObject) parsedSpecFile.get("networks");
-        JSONObject data = (JSONObject) networks.values().iterator().next();
-        return (String) data.get("address");
-    }
 
     /**
      * Returns height of the Ethereum blockchain.
@@ -1219,7 +1205,16 @@ public class EthWrapper implements SuperblockConstantProvider {
         Bool result = dogeToken.wasSyscoinTxProcessed(new org.web3j.abi.datatypes.generated.Uint256(txHash.toBigInteger())).send();
         return (result.getValue() == Boolean.TRUE);
     }
-
+    private class SPVProof {
+        public int index;
+        List<String> merklePath;
+        String superBlock;
+        public SPVProof(int indexIn, List<String> merklePathIn, String superBlockIn) {
+            this.index = indexIn;
+            this.merklePath = merklePathIn;
+            this.superBlock = superBlockIn;
+        }
+    }
     /**
      * Returns an SPV Proof to the superblock for a Dogecoin transaction to Dogethereum contracts.
      * @param block Dogecoin block that the transaction is in.
@@ -1227,24 +1222,21 @@ public class EthWrapper implements SuperblockConstantProvider {
      *                      of the Doge block's existence in the superblock.
      * @throws Exception
      */
-    public void getSuperblockSPVProof( AltcoinBlock block,
+    public String getSuperblockSPVProof( AltcoinBlock block,
                             Superblock superblock, SuperblockPartialMerkleTree superblockPMT)
             throws Exception {
         Sha256Hash dogeBlockHash = block.getHash();
-        log.info("About to send to the bridge doge. Block hash {}", dogeBlockHash);
-
-
 
         // Construct SPV proof for block
-        BigInteger dogeBlockIndex = BigInteger.valueOf(superblockPMT.getTransactionIndex(dogeBlockHash));
+        int dogeBlockIndex = superblockPMT.getTransactionIndex(dogeBlockHash);
         List<Sha256Hash> dogeBlockSiblingsSha256Hash = superblockPMT.getTransactionPath(dogeBlockHash);
-        List<BigInteger> dogeBlockSiblingsBigInteger = new ArrayList<>();
+        List<String> dogeBlockSiblingsBigInteger = new ArrayList<>();
         for (Sha256Hash sha256Hash : dogeBlockSiblingsSha256Hash)
-            dogeBlockSiblingsBigInteger.add(sha256Hash.toBigInteger());
+            dogeBlockSiblingsBigInteger.add(sha256Hash.toString());
 
-       /* dogeBlockIndex,
-                dogeBlockSiblingsBigInteger, superblock.getSuperblockId().getBytes()*/
-
+        SPVProof spvProof = new SPVProof(dogeBlockIndex, dogeBlockSiblingsBigInteger, superblock.getSuperblockId().toString());
+        Gson g = new Gson();
+        return g.toJson(spvProof);
 
     }
 

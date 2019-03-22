@@ -46,6 +46,7 @@ public class LocalAgentConstants extends AgentConstants {
         ethToDogeTimerTaskPeriod = 15 * 1000;
         unlockConfirmations = 2;
         ethInitialCheckpoint = 0;
+        networkId = "32001"; // local eth network
 
     }
 }

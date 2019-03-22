@@ -5,6 +5,7 @@
 package org.dogethereum.agents.core;
 
 
+import com.google.gson.Gson;
 import org.dogethereum.agents.core.dogecoin.*;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
@@ -12,7 +13,6 @@ import org.bitcoinj.store.BlockStoreException;
 import org.dogethereum.agents.constants.AgentConstants;
 import org.dogethereum.agents.constants.SystemProperties;
 import org.dogethereum.agents.core.dogecoin.DogecoinWrapper;
-import org.dogethereum.agents.core.dogecoin.Proof;
 import org.dogethereum.agents.core.eth.EthWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,12 +35,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @Slf4j(topic = "DogeToEthClient")
 public class DogeToEthClient {
     private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
-    static final int MAXIMUM_REGISTER_DOGE_LOCK_TXS_PER_TURN = 40;
 
     @Autowired
     private EthWrapper ethWrapper;
 
-
+    private RestServer restServer;
     private SystemProperties config;
 
     private AgentConstants agentConstants;
@@ -173,55 +172,51 @@ public class DogeToEthClient {
 
         return matchedSuperblock;
     }
-
+    private class SPVProofError {
+        public String error;
+        public SPVProofError(String errorIn) {
+            this.error = errorIn;
+        }
+    }
     /**
      * Relays all unprocessed transactions to Ethereum contracts by calling sendRelayTx.
      * @throws Exception
      */
-    public void getSuperblockSPVProof(Sha256Hash txToSendToEthHash) throws Exception {
+    public String getSuperblockSPVProof(Sha256Hash blockHash) throws Exception {
+        synchronized (this) {
 
-        if (!ethWrapper.wasSyscoinTxProcessed(txToSendToEthHash)) {
-            synchronized (this) {
-
-                StoredBlock txStoredBlock = dogecoinWrapper.getBlock(txToSendToEthHash);
-                if (txStoredBlock == null) {
-                    // no block found for tx
-                    log.debug("Tx {} not relayed because the block it's in hasn't been stored in local" +
-                                    "database yet. tx hash: {}",
-                            txToSendToEthHash);
-                    return;
-                }
-                Superblock txSuperblock = findBestSuperblockFor(txStoredBlock.getHeader().getHash());
-
-                if (txSuperblock == null) {
-                    // no superblock found for tx
-                    log.debug("Tx {} not relayed because the superblock it's in hasn't been stored in local" +
-                                    "database yet. Block hash: {}",
-                            txToSendToEthHash, txStoredBlock.getHeader().getHash());
-                    return;
-                }
-
-                if (!ethWrapper.isSuperblockApproved(txSuperblock.getSuperblockId())) {
-                    log.debug("Tx {} not relayed because the superblock it's in hasn't been approved yet." +
-                                    "Block hash: {}, superblock ID: {}",
-                            txToSendToEthHash, txStoredBlock.getHeader().getHash(),
-                            txSuperblock.getSuperblockId());
-                    return;
-                }
-
-                int dogeBlockIndex = txSuperblock.getDogeBlockLeafIndex(txStoredBlock.getHeader().getHash());
-                byte[] includeBits = new byte[(int) Math.ceil(txSuperblock.getDogeBlockHashes().size() / 8.0)];
-                Utils.setBitLE(includeBits, dogeBlockIndex);
-                SuperblockPartialMerkleTree superblockPMT = SuperblockPartialMerkleTree.buildFromLeaves(agentConstants.getDogeParams(),
-                        includeBits, txSuperblock.getDogeBlockHashes());
-
-                ethWrapper.getSuperblockSPVProof((AltcoinBlock) txStoredBlock.getHeader(), txSuperblock, superblockPMT);
-
-
-                log.debug("Invoked registerTransaction for tx {}", txToSendToEthHash);
+            StoredBlock txStoredBlock = dogecoinWrapper.getBlock(blockHash);
+            if (txStoredBlock == null) {
+                Gson g = new Gson();
+                SPVProofError spvProofError = new SPVProofError("Block has not been stored in local database. Block hash: " + blockHash);
+                return g.toJson(spvProofError);
             }
+            Superblock txSuperblock = findBestSuperblockFor(txStoredBlock.getHeader().getHash());
+
+            if (txSuperblock == null) {
+                Gson g = new Gson();
+                SPVProofError spvProofError = new SPVProofError("Superblock has not been stored in local database yet. " +
+                        "Block hash: " + txStoredBlock.getHeader().getHash());
+                return g.toJson(spvProofError);
+            }
+
+            if (!ethWrapper.isSuperblockApproved(txSuperblock.getSuperblockId())) {
+                Gson g = new Gson();
+                SPVProofError spvProofError = new SPVProofError("Superblock has not been approved yet. " +
+                        "Block hash: " + txStoredBlock.getHeader().getHash() + ", superblock ID: " + txSuperblock.getSuperblockId());
+                return g.toJson(spvProofError);
+            }
+
+            int dogeBlockIndex = txSuperblock.getDogeBlockLeafIndex(txStoredBlock.getHeader().getHash());
+            byte[] includeBits = new byte[(int) Math.ceil(txSuperblock.getDogeBlockHashes().size() / 8.0)];
+            Utils.setBitLE(includeBits, dogeBlockIndex);
+            SuperblockPartialMerkleTree superblockPMT = SuperblockPartialMerkleTree.buildFromLeaves(agentConstants.getDogeParams(),
+                    includeBits, txSuperblock.getDogeBlockHashes());
+
+            return ethWrapper.getSuperblockSPVProof((AltcoinBlock) txStoredBlock.getHeader(), txSuperblock, superblockPMT);
         }
     }
+
 
 
 

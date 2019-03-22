@@ -48,6 +48,7 @@ public class EthGanacheDogeMainAgentConstants extends AgentConstants {
         ethToDogeTimerTaskPeriod = 15 * 1000;
         unlockConfirmations = 2;
         ethInitialCheckpoint = 0;
+        networkId = "32000"; // eth mainnet
 
     }
 }
