@@ -106,7 +106,7 @@ public class SyscoinToken extends Contract {
 
     static {
         _addresses = new HashMap<String, String>();
-        _addresses.put("4", "0xd9584eec5314d9bb99e230372f0cf9ec6af761ec");
+        _addresses.put("4", "0x751d01b5c64c59dfbc134be5a636df623ee17e4b");
     }
 
     @Deprecated

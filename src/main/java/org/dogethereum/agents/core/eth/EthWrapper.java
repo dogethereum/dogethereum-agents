@@ -305,7 +305,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     public boolean wasSuperblockAlreadySubmitted(Keccak256Hash superblockId) throws Exception {
-        return !superblocks.getSuperblockIndex(new Bytes32(superblockId.getBytes())).send().equals(BigInteger.ZERO);
+        return !superblocks.getSuperblockIndex(new Bytes32(superblockId.getBytes())).send().equals(new Uint32(BigInteger.ZERO));
     }
 
     /**
