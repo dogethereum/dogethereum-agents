@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.dogethereum</groupId>
-    <artifactId>dogethereum-agents</artifactId>
+    <groupId>org.sysethereum</groupId>
+    <artifactId>sysethereum-agents</artifactId>
     <version>1.0</version>
 
     <properties>
@@ -22,7 +22,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>org.dogethereum.agents.Main</mainClass>
+                            <mainClass>org.sysethereum.agents.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -59,7 +59,7 @@
         <dependency>
             <groupId>org.libdohj</groupId>
             <artifactId>libdohj-core</artifactId>
-            <version>0.15.1-SNAPSHOT12</version>
+            <version>0.15.1-R</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>

@@ -9,7 +9,7 @@
 
   <logger name="org.springframework" level="INFO"/>
   <logger name="org.bitcoinj" level="INFO"/>
-  <logger name="DogeToEthClient" level="INFO"/>
+  <logger name="SyscoinToEthClient" level="INFO"/>
   <logger name="org.web3j.protocol.http" level="INFO"/>
 
 

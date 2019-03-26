@@ -1,13 +1,13 @@
-src/main/resources/dogethereum-agents.local.conf
-src/main/resources/dogethereum-agents-thread2.conf
-src/main/resources/dogethereum-agents-defender.conf
-src/main/resources/dogethereum-agents-challenger.conf
-src/main/resources/dogethereum-agents-malicious-defender.conf
-src/main/resources/dogethereum-agents-malicious-challenger.conf
-src/main/resources/dogethereum-agents.rinkeby.conf
-src/main/resources/dogethereum-agents.conf
-src/main/resources/dogethereum-agents-bkp.conf
-src/main/resources/dogethereum-agents.ethganachedogemain.conf
+src/main/resources/sysethereum-agents.local.conf
+src/main/resources/sysethereum-agents-thread2.conf
+src/main/resources/sysethereum-agents-defender.conf
+src/main/resources/sysethereum-agents-challenger.conf
+src/main/resources/sysethereum-agents-malicious-defender.conf
+src/main/resources/sysethereum-agents-malicious-challenger.conf
+src/main/resources/sysethereum-agents.rinkeby.conf
+src/main/resources/sysethereum-agents.conf
+src/main/resources/sysethereum-agents-bkp.conf
+src/main/resources/sysethereum-agents.ethganachesyscoinmain.conf
 src/main/resources/operator0.key
 
 src/main/java/test/SuperblockChainTest.java
