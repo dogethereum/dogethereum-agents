@@ -166,8 +166,6 @@ public class SystemProperties {
         return LOCAL.equals(constants()) || ETHGANACHE_SYSCOINMAIN.equals(constants());
     }
 
-    public boolean isProduction() { return false; }
-
     public String constants() {
         return config.hasPath("constants") ? config.getString("constants") : null;
     }
@@ -186,10 +184,6 @@ public class SystemProperties {
 
     public String syscoinSuperblockChallengerAddress() {
         return getStringProperty("syscoin.superblock.challenger.address", null);
-    }
-
-    public String truffleBuildContractsDirectory() {
-        return getStringProperty("truffle.build.contracts.directory", null);
     }
 
     public String dataDirectory() {
