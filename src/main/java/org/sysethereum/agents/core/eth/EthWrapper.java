@@ -53,7 +53,6 @@ public class EthWrapper implements SuperblockConstantProvider {
     private Web3j web3;
 
     // Extensions of contracts generated automatically by web3j
-    private SyscoinTokenExtended syscoinToken;
     private SyscoinClaimManagerExtended claimManager;
     private SyscoinClaimManagerExtended claimManagerForChallenges;
     private SyscoinBattleManagerExtended battleManager;
@@ -83,14 +82,12 @@ public class EthWrapper implements SuperblockConstantProvider {
     public EthWrapper() throws Exception {
         config = SystemProperties.CONFIG;
         web3 = Web3j.build(new HttpService());  // defaults to http://localhost:8545/
-        String syscoinTokenContractAddress;
         String claimManagerContractAddress;
         String battleManagerContractAddress;
         String superblocksContractAddress;
 
         if (config.isGanache()) {
             String networkId = config.getAgentConstants().getNetworkId();
-            syscoinTokenContractAddress = SyscoinTokenExtended.getAddress(networkId);
             claimManagerContractAddress = SyscoinClaimManagerExtended.getAddress(networkId);
             battleManagerContractAddress = SyscoinBattleManagerExtended.getAddress(networkId);
             superblocksContractAddress = SyscoinSuperblocksExtended.getAddress(networkId);
@@ -99,7 +96,6 @@ public class EthWrapper implements SuperblockConstantProvider {
             syscoinSuperblockChallengerAddress = accounts.get(1);
         } else {
             String networkId = config.getAgentConstants().getNetworkId();
-            syscoinTokenContractAddress = SyscoinTokenExtended.getAddress(networkId);
             claimManagerContractAddress = SyscoinClaimManagerExtended.getAddress(networkId);
             battleManagerContractAddress = SyscoinBattleManagerExtended.getAddress(networkId);
             superblocksContractAddress = SyscoinSuperblocksExtended.getAddress(networkId);
@@ -110,10 +106,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
         BigInteger gasLimit = BigInteger.valueOf(config.gasLimit());
 
-        syscoinToken = SyscoinTokenExtended.load(syscoinTokenContractAddress, web3,
-                new ClientTransactionManager(web3, superblocksContractAddress),
-                gasPriceMinimum, gasLimit);
-        assert syscoinToken.isValid();
         claimManager = SyscoinClaimManagerExtended.load(claimManagerContractAddress, web3,
                 new ClientTransactionManager(web3, generalPurposeAndSendSuperblocksAddress),
                 gasPriceMinimum, gasLimit);
@@ -193,7 +185,6 @@ public class EthWrapper implements SuperblockConstantProvider {
             gasPrice = gasPriceMinimum;
         }
 
-        syscoinToken.setGasPrice(gasPrice);
         claimManager.setGasPrice(gasPrice);
         claimManagerForChallenges.setGasPrice(gasPrice);
         superblocks.setGasPrice(gasPrice);
@@ -1201,10 +1192,6 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* ----- Relay Syscoin tx section ------ */
     /* ---------------------------------- */
 
-    public boolean wasSyscoinTxProcessed(Sha256Hash txHash) throws Exception {
-        Bool result = syscoinToken.wasSyscoinTxProcessed(new org.web3j.abi.datatypes.generated.Uint256(txHash.toBigInteger())).send();
-        return (result.getValue() == Boolean.TRUE);
-    }
     private class SPVProof {
         public int index;
         List<String> merklePath;
