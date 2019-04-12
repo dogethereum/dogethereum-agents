@@ -5,7 +5,7 @@ A set of agents:
 - Superblock challenger (SuperblockChainClient.java): Challenges invalid superblocks sent by rogue submitters.
 - Superblock defender  (SuperblockDefenderClient.java): Replies to challenges made by rogue challengers.
 
-If you are new to the Syscoin <-> Ethereum bridge, please check the [docs](https://github.com/sysethereum/docs) repository first.
+If you are new to the Syscoin <-> Ethereum bridge, please check the [docs](https://github.com/syscoin/sysethereum-docs) repository first.
 
 ## Development
 
