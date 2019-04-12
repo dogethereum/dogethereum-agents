@@ -29,6 +29,7 @@ import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
+import org.web3j.protocol.ipc.UnixIpcService;
 import org.web3j.tx.ClientTransactionManager;
 
 import java.io.FileReader;
@@ -81,7 +82,9 @@ public class EthWrapper implements SuperblockConstantProvider {
     @Autowired
     public EthWrapper() throws Exception {
         config = SystemProperties.CONFIG;
-        web3 = Web3j.build(new HttpService());  // defaults to http://localhost:8545/
+        String path = config.dataDirectory() + "/geth/geth.ipc";
+        web3 = Web3j.build(new UnixIpcService(path));
+
         String claimManagerContractAddress;
         String battleManagerContractAddress;
         String superblocksContractAddress;
