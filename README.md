@@ -18,16 +18,16 @@ If you are new to the Syscoin <-> Ethereum bridge, please check the [docs](https
 ### Run ganache
 > ganache -l GAS_LIMIT -p 8545
 - Replace GAS_LIMIT with the value used in the configuration file
-- deploy https://github.com/sysethereum/sysethereum-contracts contracts to ganache
+- deploy https://github.com/syscoin/sysethereum-contracts contracts to ganache
 - run scripts/initialiseForAgent.sh 
 
 
 ### Run syscoin
 -  Start the syscoin node in regtest mode
-> syscoind -rpcport=22220 -regtest -rpcuser=RPCUSER -rpcpassword=RPCPASS -datadir=DATADIR
+> syscoind -rpcport=8370 -regtest -rpcuser=RPCUSER -rpcpassword=RPCPASS -datadir=DATADIR
 - Mine 1 syscoin block to "wake up" the syscoin node in regtest mode
 - To verify it is working 
-> syscoind -rpcport=22220 -regtest -rpcuser=RPCUSER -rpcpassword=RPCPASS -datadir=DATADIR getinfo
+> syscoind -rpcport=8370 -regtest -rpcuser=RPCUSER -rpcpassword=RPCPASS -datadir=DATADIR getinfo
 
 
 ### Java project setup
@@ -60,5 +60,6 @@ If you are new to the Syscoin <-> Ethereum bridge, please check the [docs](https
 ## License
 
 MIT License<br/>
+Copyright (c) 2019 Jagdeep Sidhu<br/>
 Copyright (c) 2018 Coinfabrik & Oscar Guindzberg<br/>
 [License](LICENSE)
