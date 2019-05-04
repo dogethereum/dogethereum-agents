@@ -24,7 +24,7 @@ If you are new to the Syscoin <-> Ethereum bridge, please check the [docs](https
 
 ### Run syscoin
 -  Start the syscoin node in testnet mode
-> syscoind --testmet -datadir=DATADIR
+> syscoind --testnet -datadir=DATADIR
 - Mine 1 syscoin block to "wake up" the syscoin node in regtest mode
 - To verify it is working 
 > syscoin-cli --testnet -datadir=DATADIR getblockchaininfo
