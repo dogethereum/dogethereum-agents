@@ -1,11 +1,9 @@
 package org.sysethereum.agents.constants;
 
 import com.google.common.collect.Lists;
-import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Sha256Hash;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.sysethereum.agents.core.syscoin.Superblock;
-import org.sysethereum.agents.core.syscoin.SuperblockUtils;
 import org.libdohj.params.SyscoinMainNetParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +47,7 @@ public class IntegrationAgentConstants extends AgentConstants {
 
         ethToSyscoinTimerTaskPeriod = 30 * 1000;
         unlockConfirmations = 4;
-        ethInitialCheckpoint = 4073515;
+        ethInitialCheckpoint = 4321005;
         networkId = "4"; // eth rinkeby
 
     }
