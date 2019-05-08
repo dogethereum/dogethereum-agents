@@ -20,7 +20,7 @@ import java.util.*;
  * @author Ismael Bejarano
  */
 
-@Slf4j(topic = "SuperblockDefenderClient")
+@Slf4j(topic = "SuperblockBaseClient")
 public abstract class SuperblockBaseClient extends PersistentFileStore {
     private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
     @Autowired
