@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2017 RSK Labs Ltd.
  * Copyright (C) 2018 Coinfabrik and Oscar Guindzberg.
+ * Copyright (C) 2019 Jagdeep Sidhu
  */
 package org.sysethereum.agents.core.syscoin;
 
