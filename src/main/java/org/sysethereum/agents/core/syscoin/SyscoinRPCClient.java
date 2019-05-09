@@ -21,7 +21,6 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 import org.sysethereum.agents.constants.SystemProperties;
 
-@Component
 @Slf4j(topic = "SyscoinRPCClient")
 public class SyscoinRPCClient {
 

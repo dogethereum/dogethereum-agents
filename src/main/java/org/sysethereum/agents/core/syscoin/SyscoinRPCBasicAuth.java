@@ -17,7 +17,6 @@ import java.util.Base64;
 
 
 
-@Component
 @Slf4j(topic = "SyscoinRPCBasicAuth")
 public class SyscoinRPCBasicAuth implements ConnectionConfigurator {
     private String username;
