@@ -30,7 +30,7 @@ public class SyscoinRPCClient {
     public SyscoinRPCClient() throws MalformedURLException {
         SystemProperties config = SystemProperties.CONFIG;
         rpcSession = new JSONRPC2Session(new URL(config.syscoinRPCURL()));
-        rpcSession.getOptions().ignoresVersion();
+        rpcSession.getOptions().ignoreVersion(true);
         rpcSession.setConnectionConfigurator(new SyscoinRPCBasicAuth(config.syscoinRPCUser(),config.syscoinRPCPassword()));
     }
 
