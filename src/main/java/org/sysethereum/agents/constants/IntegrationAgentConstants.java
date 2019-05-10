@@ -48,7 +48,7 @@ public class IntegrationAgentConstants extends AgentConstants {
         ethToSyscoinTimerTaskPeriod = 30 * 1000;
         unlockConfirmations = 4;
         ethInitialCheckpoint = 4321005;
-        networkId = "4"; // eth rinkeby
+        networkId = "32000"; // eth mainnet
 
     }
 }

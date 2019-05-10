@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2017 RSK Labs Ltd.
- * Copyright (C) 2018 Coinfabrik and Oscar Guindzberg.
+ * Copyright (C) 2019 Jagdeep Sidhu
  */
 package org.sysethereum.agents.core;
 
@@ -12,6 +11,7 @@ import com.sun.net.httpserver.HttpServer;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.Sha256Hash;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
+import org.sysethereum.agents.core.syscoin.SyscoinRPCClient;
 import org.sysethereum.agents.util.RestError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,8 +25,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 
 /**
  * Manages REST requests for SPV Proofs
@@ -48,13 +48,22 @@ public class RestServer {
         server.createContext("/spvproof", new GetSPVHandler());
         server.createContext("/superblockbysyscoinblock", new GetSuperblockBySyscoinHandler());
         server.createContext("/superblock", new GetSuperblockHandler());
+        server.createContext("/syscoinrpc", new GetSyscoinRPCHandler());
         server.setExecutor(null); // creates a default executor
         server.start();
     }
     // http://localhost:8000/info
     static class InfoHandler implements HttpHandler {
         public void handle(HttpExchange httpExchange) throws IOException {
-            String response = "Valid calls: /spvproof?hash=<blockhash>, /spvproof?height=<blockheight>, /superblockbysyscoinblock?hash=<blockhash>, /superblockbysyscoinblock?height=<blockheight>,  /superblock?hash=<superblockid>, /superblock?height=<superblockheight>";
+            String response = "Valid Superblock calls: " + System.lineSeparator() +
+                    "\t/spvproof?hash=<blockhash>" + System.lineSeparator() +
+                    "\t/spvproof?height=<blockheight>" + System.lineSeparator() +
+                    "\t/superblockbysyscoinblock?hash=<blockhash>" + System.lineSeparator() +
+                    "\t/superblockbysyscoinblock?height=<blockheight>" + System.lineSeparator() +
+                    "\t/superblock?hash=<superblockid>" + System.lineSeparator() +
+                    "\t/superblock?height=<superblockheight>" + System.lineSeparator() + System.lineSeparator() +
+                    "Valid Syscoin RPC calls: " + System.lineSeparator() +
+                    "\t/syscoinrpc?method=<methodname>&param1name=<param1value>&paramNname=<paramNvalue>...";
             RestServer.writeResponse(httpExchange, response.toString());
         }
     }
@@ -69,7 +78,7 @@ public class RestServer {
                 return;
             }
             StringBuilder response = new StringBuilder();
-            Map<String,String> parms = RestServer.queryToMap(httpExchange.getRequestURI().getQuery());
+            LinkedHashMap<String,String> parms = RestServer.queryToMap(httpExchange.getRequestURI().getQuery());
 
             try {
                 String hash = parms.get("hash");
@@ -98,7 +107,7 @@ public class RestServer {
                 return;
             }
             StringBuilder response = new StringBuilder();
-            Map<String,String> parms = RestServer.queryToMap(httpExchange.getRequestURI().getQuery());
+            LinkedHashMap<String,String> parms = RestServer.queryToMap(httpExchange.getRequestURI().getQuery());
 
             try {
                 String hash = parms.get("hash");
@@ -127,7 +136,7 @@ public class RestServer {
                 return;
             }
             StringBuilder response = new StringBuilder();
-            Map<String,String> parms = RestServer.queryToMap(httpExchange.getRequestURI().getQuery());
+            LinkedHashMap<String,String> parms = RestServer.queryToMap(httpExchange.getRequestURI().getQuery());
 
             try {
                 String hash = parms.get("hash");
@@ -146,13 +155,41 @@ public class RestServer {
         }
     }
 
+
+    public class GetSyscoinRPCHandler implements HttpHandler {
+        public void handle(HttpExchange httpExchange) throws IOException {
+            httpExchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+
+            if (httpExchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) {
+                httpExchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, OPTIONS");
+                httpExchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type,Authorization");
+                httpExchange.sendResponseHeaders(204, -1);
+                return;
+            }
+            StringBuilder response = new StringBuilder();
+            LinkedHashMap<String,String> params = RestServer.queryToMap(httpExchange.getRequestURI().getQuery());
+            try {
+                String method = params.get("method");
+                params.remove("method");
+                ArrayList<Object> paramList = new ArrayList<Object>(params.values());
+                SyscoinRPCClient sc = new SyscoinRPCClient();
+                response.append(sc.makeCoreCall(method, paramList));
+            } catch (Exception e) {
+                RestError error = new RestError(e.toString());
+                Gson g = new Gson();
+                response.append(g.toJson(error));
+            }
+            RestServer.writeResponse(httpExchange, response.toString());
+        }
+    }
+
     /**
-     * returns the url parameters in a map
+     * returns the url parameters in a map preserving order of insertion
      * @param query
      * @return map
      */
-    public static Map<String, String> queryToMap(String query){
-        Map<String, String> result = new HashMap<String, String>();
+    public static LinkedHashMap<String, String> queryToMap(String query){
+        LinkedHashMap<String, String> result = new LinkedHashMap<String, String>();
         for (String param : query.split("&")) {
             String pair[] = param.split("=");
             if (pair.length>1) {

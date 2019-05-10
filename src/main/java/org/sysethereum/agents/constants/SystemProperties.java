@@ -189,8 +189,15 @@ public class SystemProperties {
     public String dataDirectory() {
         return getStringProperty("data.directory", null);
     }
-
-
+    public String syscoinRPCUser() {
+        return getStringProperty("syscoinrpc.user", "u");
+    }
+    public String syscoinRPCPassword() {
+        return getStringProperty("syscoinrpc.password", "p");
+    }
+    public String syscoinRPCURL() {
+        return getStringProperty("syscoinrpc.url_and_port", "http://localhost:8370/");
+    }
     public long gasPriceMinimum() {
         return getLongProperty("gas.price.min", 0);
     }
