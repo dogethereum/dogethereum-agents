@@ -45,8 +45,6 @@ public class EthGanacheSyscoinMainAgentConstants extends AgentConstants {
         defenderConfirmations = 1;
         challengerConfirmations = 1;
 
-        ethToSyscoinTimerTaskPeriod = 15 * 1000;
-        unlockConfirmations = 2;
         ethInitialCheckpoint = 0;
         networkId = "32000"; // eth mainnet
 

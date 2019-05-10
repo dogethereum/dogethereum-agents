@@ -45,8 +45,6 @@ public class IntegrationAgentConstants extends AgentConstants {
         defenderConfirmations = 2;
         challengerConfirmations = 2;
 
-        ethToSyscoinTimerTaskPeriod = 30 * 1000;
-        unlockConfirmations = 4;
         ethInitialCheckpoint = 4321005;
         networkId = "32000"; // eth mainnet
 
