@@ -23,8 +23,6 @@ public class AgentConstants {
     protected long defenderConfirmations;
     protected long challengerConfirmations;
 
-    protected long ethToSyscoinTimerTaskPeriod;
-    protected int unlockConfirmations;
     protected int ethInitialCheckpoint;
     protected String networkId;
 
@@ -51,10 +49,6 @@ public class AgentConstants {
         return challengerConfirmations;
     }
 
-    public long getEthToSyscoinTimerTaskPeriod() { return ethToSyscoinTimerTaskPeriod; }
-    public int getUnlockConfirmations() {
-        return unlockConfirmations;
-    }
     public String getNetworkId() {
         return networkId;
     }
