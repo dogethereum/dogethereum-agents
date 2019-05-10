@@ -26,9 +26,7 @@ import java.io.OutputStream;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.LinkedHashMap;
 
 /**
  * Manages REST requests for SPV Proofs
@@ -80,7 +78,7 @@ public class RestServer {
                 return;
             }
             StringBuilder response = new StringBuilder();
-            Map<String,String> parms = RestServer.queryToMap(httpExchange.getRequestURI().getQuery());
+            LinkedHashMap<String,String> parms = RestServer.queryToMap(httpExchange.getRequestURI().getQuery());
 
             try {
                 String hash = parms.get("hash");
@@ -109,7 +107,7 @@ public class RestServer {
                 return;
             }
             StringBuilder response = new StringBuilder();
-            Map<String,String> parms = RestServer.queryToMap(httpExchange.getRequestURI().getQuery());
+            LinkedHashMap<String,String> parms = RestServer.queryToMap(httpExchange.getRequestURI().getQuery());
 
             try {
                 String hash = parms.get("hash");
@@ -138,7 +136,7 @@ public class RestServer {
                 return;
             }
             StringBuilder response = new StringBuilder();
-            Map<String,String> parms = RestServer.queryToMap(httpExchange.getRequestURI().getQuery());
+            LinkedHashMap<String,String> parms = RestServer.queryToMap(httpExchange.getRequestURI().getQuery());
 
             try {
                 String hash = parms.get("hash");
@@ -169,11 +167,11 @@ public class RestServer {
                 return;
             }
             StringBuilder response = new StringBuilder();
-            Map<String,String> params = RestServer.queryToMap(httpExchange.getRequestURI().getQuery());
+            LinkedHashMap<String,String> params = RestServer.queryToMap(httpExchange.getRequestURI().getQuery());
             try {
                 String method = params.get("method");
                 params.remove("method");
-                List<Object> paramList = new ArrayList<Object>(params.values());
+                ArrayList<Object> paramList = new ArrayList<Object>(params.values());
                 SyscoinRPCClient sc = new SyscoinRPCClient();
                 response.append(sc.makeCoreCall(method, paramList));
             } catch (Exception e) {
@@ -186,12 +184,12 @@ public class RestServer {
     }
 
     /**
-     * returns the url parameters in a map
+     * returns the url parameters in a map preserving order of insertion
      * @param query
      * @return map
      */
-    public static Map<String, String> queryToMap(String query){
-        Map<String, String> result = new HashMap<String, String>();
+    public static LinkedHashMap<String, String> queryToMap(String query){
+        LinkedHashMap<String, String> result = new LinkedHashMap<String, String>();
         for (String param : query.split("&")) {
             String pair[] = param.split("=");
             if (pair.length>1) {
