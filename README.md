@@ -23,11 +23,11 @@ If you are new to the Syscoin <-> Ethereum bridge, please check the [docs](https
 
 
 ### Run syscoin
--  Start the syscoin node in testnet mode
-> syscoind --testnet -datadir=DATADIR
+-  Start the syscoin node in mainnet mode
+> syscoind -datadir=DATADIR
 - Mine 1 syscoin block to "wake up" the syscoin node in regtest mode
 - To verify it is working 
-> syscoin-cli --testnet -datadir=DATADIR getblockchaininfo
+> syscoin-cli -datadir=DATADIR getblockchaininfo
 
 
 ### Java project setup
@@ -35,18 +35,18 @@ If you are new to the Syscoin <-> Ethereum bridge, please check the [docs](https
 - Open IntelliJ IDEA
 - Import project as Maven
 - Configuration file
-  - Create a custom configuration file by making a copy of the sample configuration file sysethereum-agents/src/main/resources/sysethereum-agents.sample.conf and place it anywhere you want, e.g. /home/yourUser/sysethereum-agents.conf
-  - Edit these entries to point to your computer paths
-    - truffle.build.contracts.directory
-    - data.directory
-  - Note: On windows paths have to be between "" and with a double backslash \\ as separator. E.g. data.directory = "D:\\sysethereum-agents\\storage\\data"  
+- Create a custom configuration file by making a copy of the sample configuration file sysethereum-agents/src/main/resources/sysethereum-agents.sample.conf and place it anywhere you want, e.g. /home/yourUser/sysethereum-agents.conf
+- Edit these entries to point to your computer paths
+- truffle.build.contracts.directory
+- data.directory
+- Note: On windows paths have to be between "" and with a double backslash \\ as separator. E.g. data.directory = "D:\\sysethereum-agents\\storage\\data"  
 - Create Run configuration
-  - In Run/Edit Configurations... add a new "Application" configuration
-  - Set parameters like this
-    - Name: Main local
-    - Main class: "org.sysethereum.agents.Main"
-    - VM options: -Dsysethereum.agents.conf.file=path_to_configuration_file_copy
-  - Note: On windows paths have to use the double backslash as separator.
+- In Run/Edit Configurations... add a new "Application" configuration
+- Set parameters like this
+- Name: Main local
+- Main class: "org.sysethereum.agents.Main"
+- VM options: -Dsysethereum.agents.conf.file=path_to_configuration_file_copy
+- Note: On windows paths have to use the double backslash as separator.
 
 
 
