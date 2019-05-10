@@ -82,7 +82,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     @Autowired
     public EthWrapper() throws Exception {
         config = SystemProperties.CONFIG;
-        String path = config.dataDirectory() + "/geth/geth.ipc";
+        String path = config.dataDirectory() + "/testnet3/geth/geth.ipc";
         web3 = Web3j.build(new UnixIpcService(path));
 
         String claimManagerContractAddress;
