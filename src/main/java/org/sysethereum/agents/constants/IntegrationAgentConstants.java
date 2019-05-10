@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import org.bitcoinj.core.Sha256Hash;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.sysethereum.agents.core.syscoin.Superblock;
-import org.libdohj.params.SyscoinMainNetParams;
+import org.libdohj.params.SyscoinTestNet3Params;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +27,7 @@ public class IntegrationAgentConstants extends AgentConstants {
     }
 
     IntegrationAgentConstants() {
-        syscoinParams = SyscoinMainNetParams.get();
+        syscoinParams = SyscoinTestNet3Params.get();
 
         syscoinToEthTimerTaskPeriod = 15 * 1000;
 
@@ -48,7 +48,7 @@ public class IntegrationAgentConstants extends AgentConstants {
         ethToSyscoinTimerTaskPeriod = 30 * 1000;
         unlockConfirmations = 4;
         ethInitialCheckpoint = 4321005;
-        networkId = "32000"; // eth mainnet
+        networkId = "4"; // eth rinkeby
 
     }
 }
