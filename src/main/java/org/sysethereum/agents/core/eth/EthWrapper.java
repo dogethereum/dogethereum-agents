@@ -491,7 +491,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     public List<SuperblockEvent> getNewSuperblocks(long startBlock, long endBlock) throws IOException {
         List<SuperblockEvent> result = new ArrayList<>();
         List<SyscoinSuperblocks.NewSuperblockEventResponse> newSuperblockEvents =
-                superblocks.getNewSuperblockEvents(
+                superblocksGetter.getNewSuperblockEvents(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
@@ -517,7 +517,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             throws IOException {
         List<SuperblockEvent> result = new ArrayList<>();
         List<SyscoinSuperblocks.ApprovedSuperblockEventResponse> approvedSuperblockEvents =
-                superblocks.getApprovedSuperblockEvents(
+                superblocksGetter.getApprovedSuperblockEvents(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
@@ -543,7 +543,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             throws IOException {
         List<SuperblockEvent> result = new ArrayList<>();
         List<SyscoinSuperblocks.SemiApprovedSuperblockEventResponse> semiApprovedSuperblockEvents =
-                superblocks.getSemiApprovedSuperblockEvents(
+                superblocksGetter.getSemiApprovedSuperblockEvents(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
@@ -569,7 +569,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             throws IOException {
         List<SuperblockEvent> result = new ArrayList<>();
         List<SyscoinSuperblocks.InvalidSuperblockEventResponse> invalidSuperblockEvents =
-                superblocks.getInvalidSuperblockEvents(
+                superblocksGetter.getInvalidSuperblockEvents(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
