@@ -52,13 +52,18 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class EthWrapper implements SuperblockConstantProvider {
     private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
     private Web3j web3;
+    private Web3j web3Infura;
 
     // Extensions of contracts generated automatically by web3j
     private SyscoinClaimManagerExtended claimManager;
+    private SyscoinClaimManagerExtended claimManagerGetter;
     private SyscoinClaimManagerExtended claimManagerForChallenges;
     private SyscoinBattleManagerExtended battleManager;
     private SyscoinBattleManagerExtended battleManagerForChallenges;
+    private SyscoinBattleManagerExtended battleManagerGetter;
+    private SyscoinBattleManagerExtended battleManagerForChallengesGetter;
     private SyscoinSuperblocksExtended superblocks;
+    private SyscoinSuperblocksExtended superblocksGetter;
 
     private SystemProperties config;
     private BigInteger gasPriceMinimum;
@@ -82,9 +87,9 @@ public class EthWrapper implements SuperblockConstantProvider {
     @Autowired
     public EthWrapper() throws Exception {
         config = SystemProperties.CONFIG;
-        String path = config.dataDirectory() + "/testnet3/geth/geth.ipc";
+        String path = config.dataDirectory() + "/geth/geth.ipc";
         web3 = Web3j.build(new UnixIpcService(path));
-
+        web3Infura = Web3j.build(new HttpService("https://rinkeby.infura.io/v3/d178aecf49154b12be98e68e998cfb8d"));
         String claimManagerContractAddress;
         String battleManagerContractAddress;
         String superblocksContractAddress;
@@ -113,6 +118,10 @@ public class EthWrapper implements SuperblockConstantProvider {
                 new ClientTransactionManager(web3, generalPurposeAndSendSuperblocksAddress),
                 gasPriceMinimum, gasLimit);
         assert claimManager.isValid();
+        claimManagerGetter = SyscoinClaimManagerExtended.load(claimManagerContractAddress, web3Infura,
+                new ClientTransactionManager(web3Infura, generalPurposeAndSendSuperblocksAddress),
+                gasPriceMinimum, gasLimit);
+        assert claimManagerGetter.isValid();
         claimManagerForChallenges = SyscoinClaimManagerExtended.load(claimManagerContractAddress, web3,
                 new ClientTransactionManager(web3, syscoinSuperblockChallengerAddress),
                 gasPriceMinimum, gasLimit);
@@ -125,19 +134,31 @@ public class EthWrapper implements SuperblockConstantProvider {
                 new ClientTransactionManager(web3, syscoinSuperblockChallengerAddress),
                 gasPriceMinimum, gasLimit);
         assert battleManagerForChallenges.isValid();
+        battleManagerGetter = SyscoinBattleManagerExtended.load(battleManagerContractAddress, web3Infura,
+                new ClientTransactionManager(web3Infura, generalPurposeAndSendSuperblocksAddress),
+                gasPriceMinimum, gasLimit);
+        assert battleManagerGetter.isValid();
+        battleManagerForChallengesGetter = SyscoinBattleManagerExtended.load(battleManagerContractAddress, web3Infura,
+                new ClientTransactionManager(web3Infura, syscoinSuperblockChallengerAddress),
+                gasPriceMinimum, gasLimit);
+        assert battleManagerForChallengesGetter.isValid();
         superblocks = SyscoinSuperblocksExtended.load(superblocksContractAddress, web3,
                 new ClientTransactionManager(web3, generalPurposeAndSendSuperblocksAddress),
                 gasPriceMinimum, gasLimit);
         assert superblocks.isValid();
 
+        superblocksGetter = SyscoinSuperblocksExtended.load(superblocksContractAddress, web3Infura,
+                new ClientTransactionManager(web3Infura, generalPurposeAndSendSuperblocksAddress),
+                gasPriceMinimum, gasLimit);
+        assert superblocksGetter.isValid();
 
-        minProposalDeposit = claimManager.minProposalDeposit().send().getValue();
-        minChallengeDeposit = claimManager.minChallengeDeposit().send().getValue();
-        queryMerkleRootHashesCost = claimManager.queryMerkleRootHashesCost().send().getValue();
-        queryBlockHeaderCost = claimManager.queryBlockHeaderCost().send().getValue();
-        respondMerkleRootHashesCost = claimManager.respondMerkleRootHashesCost().send().getValue();
-        respondBlockHeaderCost = claimManager.respondBlockHeaderCost().send().getValue();
-        verifySuperblockCost = claimManager.verifySuperblockCost().send().getValue();
+        minProposalDeposit = claimManagerGetter.minProposalDeposit().send().getValue();
+        minChallengeDeposit = claimManagerGetter.minChallengeDeposit().send().getValue();
+        queryMerkleRootHashesCost = claimManagerGetter.queryMerkleRootHashesCost().send().getValue();
+        queryBlockHeaderCost = claimManagerGetter.queryBlockHeaderCost().send().getValue();
+        respondMerkleRootHashesCost = claimManagerGetter.respondMerkleRootHashesCost().send().getValue();
+        respondBlockHeaderCost = claimManagerGetter.respondBlockHeaderCost().send().getValue();
+        verifySuperblockCost = claimManagerGetter.verifySuperblockCost().send().getValue();
     }
 
 
@@ -147,7 +168,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @throws IOException
      */
     public long getEthBlockCount() throws IOException {
-        return web3.ethBlockNumber().send().getBlockNumber().longValue();
+        return web3Infura.ethBlockNumber().send().getBlockNumber().longValue();
     }
 
     public boolean isEthNodeSyncing() throws IOException {
@@ -169,8 +190,8 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @throws IOException
      */
     private boolean arePendingTransactionsFor(String address) throws IOException {
-        BigInteger latest = web3.ethGetTransactionCount(address, DefaultBlockParameterName.LATEST).send().getTransactionCount();
-        BigInteger pending = web3.ethGetTransactionCount(address, DefaultBlockParameterName.PENDING).send().getTransactionCount();
+        BigInteger latest = web3Infura.ethGetTransactionCount(address, DefaultBlockParameterName.LATEST).send().getTransactionCount();
+        BigInteger pending = web3Infura.ethGetTransactionCount(address, DefaultBlockParameterName.PENDING).send().getTransactionCount();
         return pending.compareTo(latest) > 0;
     }
 
@@ -180,7 +201,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @throws IOException
      */
     public void updateContractFacadesGasPrice() throws IOException {
-        BigInteger gasPriceSuggestedByEthNode = web3.ethGasPrice().send().getGasPrice();
+        BigInteger gasPriceSuggestedByEthNode = web3Infura.ethGasPrice().send().getGasPrice();
         BigInteger gasPrice;
         if (gasPriceSuggestedByEthNode.compareTo(gasPriceMinimum) > 0) {
             gasPrice = gasPriceSuggestedByEthNode;
@@ -233,7 +254,13 @@ public class EthWrapper implements SuperblockConstantProvider {
         return battleManagerForChallenges;
     }
 
+    public SyscoinBattleManagerExtended getBattleManagerGetter() {
+        return battleManagerGetter;
+    }
 
+    public SyscoinBattleManagerExtended getBattleManagerForChallengesGetter() {
+        return battleManagerForChallengesGetter;
+    }
     /* ---------------------------------- */
     /* - Relay Syscoin superblocks section - */
     /* ---------------------------------- */
@@ -334,10 +361,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         return result.add(queryMerkleRootHashesCost);
     }
 
-    private BigInteger getBondedDeposit(Keccak256Hash claimId) throws Exception {
-        return claimManager.getBondedDeposit(new Bytes32(claimId.getBytes()), new org.web3j.abi.datatypes.Address(generalPurposeAndSendSuperblocksAddress)).send().getValue();
-    }
-
     private BigInteger getDeposit(String account, SyscoinClaimManager myClaimManager) throws Exception {
         return myClaimManager.getDeposit(new org.web3j.abi.datatypes.Address(account)).send().getValue();
     }
@@ -374,7 +397,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @param myClaimManager this.claimManager if proposing/defending, this.claimManagerForChallenges if challenging.
      * @throws Exception
      */
-    private void withdrawAllFundsExceptLimit(String account, SyscoinClaimManager myClaimManager) throws Exception {
+    private void withdrawAllFundsExceptLimit(String account, SyscoinClaimManagerExtended myClaimManager) throws Exception {
         BigInteger currentDeposit = getDeposit(account, myClaimManager);
         BigInteger limit = BigInteger.valueOf(config.depositedFundsLimit());
         if (currentDeposit.compareTo(limit) > 0) {
@@ -418,7 +441,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* ---- SUPERBLOCK STATUS CHECKS ---- */
 
     private BigInteger getSuperblockStatus(Keccak256Hash superblockId) throws Exception {
-        return superblocks.getSuperblockStatus(new Bytes32(superblockId.getBytes())).send().getValue();
+        return superblocksGetter.getSuperblockStatus(new Bytes32(superblockId.getBytes())).send().getValue();
     }
 
     public boolean isSuperblockApproved(Keccak256Hash superblockId) throws Exception {
@@ -450,11 +473,11 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     public BigInteger getSuperblockHeight(Keccak256Hash superblockId) throws Exception {
-        return superblocks.getSuperblockHeight(new Bytes32(superblockId.getBytes())).send().getValue();
+        return superblocksGetter.getSuperblockHeight(new Bytes32(superblockId.getBytes())).send().getValue();
     }
 
     public BigInteger getChainHeight() throws Exception {
-        return superblocks.getChainHeight().send().getValue();
+        return superblocksGetter.getChainHeight().send().getValue();
     }
 
     /**
@@ -572,7 +595,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     public BigInteger getEthTimestampRaw(Log eventLog) throws InterruptedException, ExecutionException {
         String ethBlockHash = eventLog.getBlockHash();
         CompletableFuture<EthBlock> ethBlockCompletableFuture =
-                web3.ethGetBlockByHash(ethBlockHash, true).sendAsync();
+                web3Infura.ethGetBlockByHash(ethBlockHash, true).sendAsync();
         checkNotNull(ethBlockCompletableFuture, "Error retrieving completable future");
         EthBlock ethBlock = ethBlockCompletableFuture.get();
         return ethBlock.getBlock().getTimestamp();
@@ -587,23 +610,23 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* ---- GETTERS ---- */
 
     public BigInteger getSuperblockDuration() throws Exception {
-        return battleManager.superblockDuration().send().getValue();
+        return battleManagerGetter.superblockDuration().send().getValue();
     }
 
     public BigInteger getSuperblockDelay() throws Exception {
-        return claimManager.superblockDelay().send().getValue();
+        return claimManagerGetter.superblockDelay().send().getValue();
     }
 
     public BigInteger getSuperblockTimeout() throws Exception {
-        return claimManager.superblockTimeout().send().getValue();
+        return claimManagerGetter.superblockTimeout().send().getValue();
     }
 
     public BigInteger getBattleReward() throws Exception {
-        return claimManager.battleReward().send().getValue();
+        return claimManagerGetter.battleReward().send().getValue();
     }
 
     public Keccak256Hash getBestSuperblockId() throws Exception {
-        return Keccak256Hash.wrap(superblocks.getBestSuperblock().send().getValue());
+        return Keccak256Hash.wrap(superblocksGetter.getBestSuperblock().send().getValue());
     }
 
     /**
@@ -613,7 +636,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @throws Exception
      */
     public BigInteger getNewEventTimestampBigInteger(Keccak256Hash superblockId) throws Exception {
-        return claimManager.getNewSuperblockEventTimestamp(new Bytes32(superblockId.getBytes())).send().getValue();
+        return claimManagerGetter.getNewSuperblockEventTimestamp(new Bytes32(superblockId.getBytes())).send().getValue();
     }
 
     /**
@@ -648,7 +671,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         if (isChallenger) {
             myClaimManager = claimManagerForChallenges;
         } else {
-            myClaimManager = claimManager;
+            myClaimManager = claimManagerGetter;
         }
 
         CompletableFuture<TransactionReceipt> futureReceipt =
@@ -704,7 +727,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     public List<NewBattleEvent> getNewBattleEvents(long startBlock, long endBlock) throws IOException {
         List<NewBattleEvent> result = new ArrayList<>();
         List<SyscoinBattleManager.NewBattleEventResponse> newBattleEvents =
-                battleManagerForChallenges.getNewBattleEventResponses(
+                battleManagerForChallengesGetter.getNewBattleEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
@@ -811,7 +834,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             throws IOException {
         List<QueryBlockHeaderEvent> result = new ArrayList<>();
         List<SyscoinBattleManager.QueryBlockHeaderEventResponse> queryBlockHeaderEvents =
-                battleManager.getQueryBlockHeaderEventResponses(
+                battleManagerGetter.getQueryBlockHeaderEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
@@ -839,7 +862,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             throws IOException {
         List<QueryMerkleRootHashesEvent> result = new ArrayList<>();
         List<SyscoinBattleManager.QueryMerkleRootHashesEventResponse> queryMerkleRootHashesEvents =
-                battleManager.getQueryMerkleRootHashesEventResponses(
+                battleManagerGetter.getQueryMerkleRootHashesEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
@@ -881,7 +904,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             throws IOException {
         List<RespondMerkleRootHashesEvent> result = new ArrayList<>();
         List<SyscoinBattleManager.RespondMerkleRootHashesEventResponse> respondMerkleRootHashesEvents =
-                battleManagerForChallenges.getRespondMerkleRootHashesEventResponses(
+                battleManagerForChallengesGetter.getRespondMerkleRootHashesEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
@@ -912,7 +935,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             throws IOException {
         List<RespondBlockHeaderEvent> result = new ArrayList<>();
         List<SyscoinBattleManager.RespondBlockHeaderEventResponse> respondBlockHeaderEvents =
-                battleManagerForChallenges.getRespondBlockHeaderEventResponses(
+                battleManagerForChallengesGetter.getRespondBlockHeaderEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
@@ -955,7 +978,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     public List<ErrorBattleEvent> getErrorBattleEvents(long startBlock, long endBlock) throws IOException {
         List<ErrorBattleEvent> result = new ArrayList<>();
         List<SyscoinBattleManager.ErrorBattleEventResponse> errorBattleEvents =
-                battleManager.getErrorBattleEventResponses(
+                battleManagerGetter.getErrorBattleEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
@@ -981,7 +1004,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* ---- GETTERS ---- */
 
     public long getSuperblockConfirmations() throws Exception {
-        return claimManager.superblockConfirmations().send().getValue().longValue();
+        return claimManagerGetter.superblockConfirmations().send().getValue().longValue();
     }
 
     // TODO: see if this is necessary later
@@ -1135,27 +1158,27 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* ---- GETTERS ---- */
 
     public boolean getClaimExists(Keccak256Hash superblockId) throws Exception {
-        return claimManager.getClaimExists(new Bytes32(superblockId.getBytes())).send().getValue();
+        return claimManagerGetter.getClaimExists(new Bytes32(superblockId.getBytes())).send().getValue();
     }
 
     public String getClaimSubmitter(Keccak256Hash superblockId) throws Exception {
-        return claimManager.getClaimSubmitter(new Bytes32(superblockId.getBytes())).send().getValue();
+        return claimManagerGetter.getClaimSubmitter(new Bytes32(superblockId.getBytes())).send().getValue();
     }
 
     public boolean getClaimDecided(Keccak256Hash superblockId) throws Exception {
-        return claimManager.getClaimDecided(new Bytes32(superblockId.getBytes())).send().getValue();
+        return claimManagerGetter.getClaimDecided(new Bytes32(superblockId.getBytes())).send().getValue();
     }
 
     public boolean getClaimInvalid(Keccak256Hash superblockId) throws Exception {
-        return claimManager.getClaimInvalid(new Bytes32(superblockId.getBytes())).send().getValue();
+        return claimManagerGetter.getClaimInvalid(new Bytes32(superblockId.getBytes())).send().getValue();
     }
 
     public boolean getClaimVerificationOngoing(Keccak256Hash superblockId) throws Exception {
-        return claimManager.getClaimVerificationOngoing(new Bytes32(superblockId.getBytes())).send().getValue();
+        return claimManagerGetter.getClaimVerificationOngoing(new Bytes32(superblockId.getBytes())).send().getValue();
     }
 
     public BigInteger getClaimChallengeTimeoutBigInteger(Keccak256Hash superblockId) throws Exception {
-        return claimManager.getClaimChallengeTimeout(new Bytes32(superblockId.getBytes())).send().getValue();
+        return claimManagerGetter.getClaimChallengeTimeout(new Bytes32(superblockId.getBytes())).send().getValue();
     }
 
     public Date getClaimChallengeTimeoutDate(Keccak256Hash superblockId) throws Exception {
@@ -1163,28 +1186,28 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     public int getClaimRemainingChallengers(Keccak256Hash superblockId) throws Exception {
-        return claimManager.getClaimRemainingChallengers(new Bytes32(superblockId.getBytes())).send().getValue().intValue();
+        return claimManagerGetter.getClaimRemainingChallengers(new Bytes32(superblockId.getBytes())).send().getValue().intValue();
     }
 
     public boolean getInBattleAndSemiApprovable(Keccak256Hash superblockId) throws Exception {
-        return claimManager.getInBattleAndSemiApprovable(new Bytes32(superblockId.getBytes())).send().getValue();
+        return claimManagerGetter.getInBattleAndSemiApprovable(new Bytes32(superblockId.getBytes())).send().getValue();
     }
 
     public List<org.web3j.abi.datatypes.Address> getClaimChallengers(Keccak256Hash superblockId) throws Exception {
-        return claimManager.getClaimChallengers(new Bytes32(superblockId.getBytes())).send().getValue();
+        return claimManagerGetter.getClaimChallengers(new Bytes32(superblockId.getBytes())).send().getValue();
     }
 
     public boolean getChallengerHitTimeout(Keccak256Hash sessionId) throws Exception {
-        return battleManager.getChallengerHitTimeout(new Bytes32(sessionId.getBytes())).send().getValue();
+        return battleManagerGetter.getChallengerHitTimeout(new Bytes32(sessionId.getBytes())).send().getValue();
     }
 
     public boolean getSubmitterHitTimeout(Keccak256Hash sessionId) throws Exception {
-        return battleManagerForChallenges.getSubmitterHitTimeout(new Bytes32(sessionId.getBytes())).send().getValue();
+        return battleManagerForChallengesGetter.getSubmitterHitTimeout(new Bytes32(sessionId.getBytes())).send().getValue();
     }
 
     public List<Sha256Hash> getSyscoinBlockHashes(Keccak256Hash sessionId) throws Exception {
         List<Sha256Hash> result = new ArrayList<>();
-        List<Bytes32> rawHashes = battleManager.getSyscoinBlockHashes(new Bytes32(sessionId.getBytes())).send().getValue();
+        List<Bytes32> rawHashes = battleManagerGetter.getSyscoinBlockHashes(new Bytes32(sessionId.getBytes())).send().getValue();
         for (Bytes32 rawHash : rawHashes)
             result.add(Sha256Hash.wrap(rawHash.getValue())); // TODO: check endianness
         return result;
