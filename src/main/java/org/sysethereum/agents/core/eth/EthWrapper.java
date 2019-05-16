@@ -168,7 +168,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @throws IOException
      */
     public long getEthBlockCount() throws IOException {
-        return web3Infura.ethBlockNumber().send().getBlockNumber().longValue();
+        return web3.ethBlockNumber().send().getBlockNumber().longValue();
     }
 
     public boolean isEthNodeSyncing() throws IOException {
