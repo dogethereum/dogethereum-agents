@@ -36,8 +36,13 @@ If you are new to the Syscoin <-> Ethereum bridge, please check the [docs](https
 - Import project as Maven
 - Configuration file
   - Create a custom configuration file by making a copy of the sample configuration file sysethereum-agents/src/main/resources/sysethereum-agents.sample.conf and place it anywhere you want, e.g. /home/yourUser/sysethereum-agents.conf
-  - Edit these entries to point to your computer paths
-    - truffle.build.contracts.directory
+  - Edit these entries related to your accounts and credentials for sending/defending Superblocks
+    - general.purpose.and.send.superblocks.address
+    - general.purpose.and.send.superblocks.unlockpw
+  - Edit these entries related to your accounts and credentials for challenging invalid Superblocks
+    - syscoin.superblock.challenger.address 
+    - syscoin.superblock.challenger.unlockpw
+  - Edit these entries to point to your syscoin data directory path
     - data.directory
   - Note: On windows paths have to be between "" and with a double backslash \\ as separator. E.g. data.directory = "D:\\sysethereum-agents\\storage\\data"  
 - Create Run configuration

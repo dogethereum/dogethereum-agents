@@ -10,19 +10,18 @@ import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.sysethereum.agents.core.syscoin.Superblock;
 import org.sysethereum.agents.core.syscoin.SuperblockConstantProvider;
 import org.sysethereum.agents.core.syscoin.SuperblockUtils;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.web3j.abi.datatypes.Bool;
 import org.web3j.abi.datatypes.DynamicArray;
 import org.web3j.abi.datatypes.DynamicBytes;
 import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.abi.datatypes.generated.Uint32;
 import org.web3j.protocol.Web3j;
+import org.web3j.protocol.admin.Admin;
+import org.web3j.protocol.admin.methods.response.PersonalUnlockAccount;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.response.EthBlock;
@@ -32,7 +31,6 @@ import org.web3j.protocol.http.HttpService;
 import org.web3j.protocol.ipc.UnixIpcService;
 import org.web3j.tx.ClientTransactionManager;
 
-import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -88,8 +86,30 @@ public class EthWrapper implements SuperblockConstantProvider {
     public EthWrapper() throws Exception {
         config = SystemProperties.CONFIG;
         String path = config.dataDirectory() + "/geth/geth.ipc";
+        String infuraURL = config.infuraURL();
         web3 = Web3j.build(new UnixIpcService(path));
-        web3Infura = Web3j.build(new HttpService("https://rinkeby.infura.io/v3/d178aecf49154b12be98e68e998cfb8d"));
+        web3Infura = Web3j.build(new HttpService(infuraURL));
+        Admin admin = Admin.build(new UnixIpcService(path));
+        String generalAddress = config.generalPurposeAndSendSuperblocksAddress();
+        if(generalAddress.length() > 0){
+            PersonalUnlockAccount personalUnlockAccount = admin.personalUnlockAccount(generalAddress, config.generalPurposeAndSendSuperblocksUnlockPW()).send();
+            if (personalUnlockAccount.accountUnlocked()) {
+                log.info("general.purpose.and.send.superblocks.address is unlocked and ready to use!");
+            }
+            else{
+                log.warn("general.purpose.and.send.superblocks.address could not be unlocked, please check the password you set in the configuration file");
+            }
+        }
+        String challengerAddress = config.syscoinSuperblockChallengerAddress();
+        if(challengerAddress.length() > 0){
+            PersonalUnlockAccount personalUnlockAccount = admin.personalUnlockAccount(challengerAddress, config.syscoinSuperblockChallengerUnlockPW()).send();
+            if (personalUnlockAccount.accountUnlocked()) {
+                log.info("syscoin.superblock.challenger.address is unlocked and ready to use!");
+            }
+            else{
+                log.warn("syscoin.superblock.challenger.address could not be unlocked, please check the password you set in the configuration file");
+            }
+        }
         String claimManagerContractAddress;
         String battleManagerContractAddress;
         String superblocksContractAddress;
