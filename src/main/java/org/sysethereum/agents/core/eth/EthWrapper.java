@@ -87,7 +87,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         config = SystemProperties.CONFIG;
         String path = config.dataDirectory() + "/geth/geth.ipc";
         String infuraURL = config.infuraURL();
-        web3 = Web3j.build(new UnixIpcService(path));
+        
         web3Infura = Web3j.build(new HttpService(infuraURL));
         Admin admin = Admin.build(new UnixIpcService(path));
         String generalAddress = config.generalPurposeAndSendSuperblocksAddress();
@@ -101,7 +101,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             }
         }
         String challengerAddress = config.syscoinSuperblockChallengerAddress();
-        if(challengerAddress.length() > 0){
+        if(challengerAddress.length() > 0 && generalAddress != challengerAddress){
             PersonalUnlockAccount personalUnlockAccount = admin.personalUnlockAccount(challengerAddress, config.syscoinSuperblockChallengerUnlockPW()).send();
             if (personalUnlockAccount.accountUnlocked()) {
                 log.info("syscoin.superblock.challenger.address is unlocked and ready to use!");
@@ -110,6 +110,8 @@ public class EthWrapper implements SuperblockConstantProvider {
                 log.warn("syscoin.superblock.challenger.address could not be unlocked, please check the password you set in the configuration file");
             }
         }
+        admin.shutdown();
+        web3 = Web3j.build(new UnixIpcService(path));
         String claimManagerContractAddress;
         String battleManagerContractAddress;
         String superblocksContractAddress;
