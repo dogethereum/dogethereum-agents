@@ -30,13 +30,13 @@ public class Superblock {
     // Timestamp of last mined Syscoin block in the superblock. 32 bytes to comply with Solidity version.
     private long lastSyscoinBlockTime;
 
-    // Timestamp of previous to last mined Syscoin block in the superblock. 32 bytes to comply with Solidity version.
+    // Timestamp of of the block where the last difficulty adjustment occured. 32 bytes to comply with Solidity version.
     private long previousSyscoinBlockTime;
 
     // SHA-256 hash of last mined Syscoin block in the superblock. 32 bytes.
     private Sha256Hash lastSyscoinBlockHash;
 
-    // Bits (difficulty) of last mined Syscoin block in the superblock. 32 bytes.
+    // Bits (difficulty) of last difficulty adjustment. 32 bytes.
     private long previousSyscoinBlockBits;
 
     // SHA3-256 hash of previous superblock. 32 bytes.
@@ -83,7 +83,7 @@ public class Superblock {
      * @param chainWork Last Syscoin block's accumulated chainwork.
      * @param lastSyscoinBlockTime Last Syscoin block's timestamp.
      * @param previousSyscoinBlockTime Syscoin block's timestamp of when last difficulty adjustment occured.
-     * @param previousSyscoinBlockBits Last Syscoin block's difficulty.
+     * @param previousSyscoinBlockBits The previous difficulty bits
      * @param parentId Previous superblock's SHA-256 hash.
      * @param superblockHeight Height of this superblock within superblock chain.
      * @param blockHeight Height of the last block in the superblock.
@@ -116,8 +116,8 @@ public class Superblock {
      * @param merkleRoot Merkle root, already calculated from a list of Syscoin block hashes.
      * @param chainWork Last Syscoin block's accumulated chainwork.
      * @param lastSyscoinBlockTime Last Syscoin block's timestamp.
-     * @param previousSyscoinBlockTime Previous to last Syscoin block's timestamp.
-     * @param previousSyscoinBlockBits Last Syscoin block's difficulty.
+     * @param previousSyscoinBlockTime Block time when last difficulty adjustment occured.
+     * @param previousSyscoinBlockBits Previous difficulty bits.
      * @param parentId Previous superblock's SHA-256 hash.
      * @param superblockHeight Height of this superblock within superblock chain.
      * @param blockHeight Height of the last block in the superblock.
@@ -205,7 +205,7 @@ public class Superblock {
     }
 
     /**
-     * Accesses previous to last Syscoin block time attribute.
+     * Accesses time when difficulty adjustment last occured
      * @return Superblock previous to last Syscoin block time.
      */
     public long getpreviousSyscoinBlockTime() {
@@ -221,7 +221,7 @@ public class Superblock {
     }
 
     /**
-     * Accesses last Syscoin block bits attribute.
+     * Accesses last previous difficulty bits (the previous adjustment).
      * @return Superblock last Syscoin block bits.
      */
     public long getpreviousSyscoinBlockBits() {
