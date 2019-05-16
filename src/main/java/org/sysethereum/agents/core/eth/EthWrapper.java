@@ -390,7 +390,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @param myClaimManager this.claimManager if proposing/defending, this.claimManagerForChallenges if challenging.
      * @throws Exception
      */
-    private void withdrawAllFundsExceptLimit(String account, SyscoinClaimManagerExtended myClaimManager) throws Exception {
+    private void withdrawAllFundsExceptLimit(String account, SyscoinClaimManager myClaimManager) throws Exception {
         BigInteger currentDeposit = getDeposit(account, myClaimManager);
         BigInteger limit = BigInteger.valueOf(config.depositedFundsLimit());
         if (currentDeposit.compareTo(limit) > 0) {
