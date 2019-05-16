@@ -92,7 +92,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         Admin admin = Admin.build(new UnixIpcService(path));
         String generalAddress = config.generalPurposeAndSendSuperblocksAddress();
         if(generalAddress.length() > 0){
-            PersonalUnlockAccount personalUnlockAccount = admin.personalUnlockAccount(generalAddress, config.generalPurposeAndSendSuperblocksUnlockPW(), BigInteger.ZERO).send();
+            PersonalUnlockAccount personalUnlockAccount = admin.personalUnlockAccount(generalAddress, config.generalPurposeAndSendSuperblocksUnlockPW(), BigInteger0).send();
             if (personalUnlockAccount.accountUnlocked()) {
                 log.info("general.purpose.and.send.superblocks.address is unlocked and ready to use!");
             }
@@ -102,7 +102,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         }
         String challengerAddress = config.syscoinSuperblockChallengerAddress();
         if(challengerAddress.length() > 0 && !generalAddress.equals(challengerAddress)){
-            PersonalUnlockAccount personalUnlockAccount = admin.personalUnlockAccount(challengerAddress, config.syscoinSuperblockChallengerUnlockPW(), BigInteger.ZERO).send();
+            PersonalUnlockAccount personalUnlockAccount = admin.personalUnlockAccount(challengerAddress, config.syscoinSuperblockChallengerUnlockPW(), 0).send();
             if (personalUnlockAccount.accountUnlocked()) {
                 log.info("syscoin.superblock.challenger.address is unlocked and ready to use!");
             }
@@ -213,7 +213,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     private boolean arePendingTransactionsFor(String address) throws IOException {
         BigInteger latest = web3Infura.ethGetTransactionCount(address, DefaultBlockParameterName.LATEST).send().getTransactionCount();
-        BigInteger pending = web3Infura.ethGetTransactionCount(address, DefaultBlockParameterName.PENDING).send().getTransactionCount();
+        BigInteger pending = web3.ethGetTransactionCount(address, DefaultBlockParameterName.PENDING).send().getTransactionCount();
         return pending.compareTo(latest) > 0;
     }
 
