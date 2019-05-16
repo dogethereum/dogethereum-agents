@@ -322,11 +322,11 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @throws Exception
      */
     public List<Bytes32> getSuperblockLocator() throws Exception {
-        return superblocks.getSuperblockLocator().send().getValue();
+        return superblocksGetter.getSuperblockLocator().send().getValue();
     }
 
     public boolean wasSuperblockAlreadySubmitted(Keccak256Hash superblockId) throws Exception {
-        return !superblocks.getSuperblockIndex(new Bytes32(superblockId.getBytes())).send().equals(new Uint32(BigInteger.ZERO));
+        return !superblocksGetter.getSuperblockIndex(new Bytes32(superblockId.getBytes())).send().equals(new Uint32(BigInteger.ZERO));
     }
 
     /**
