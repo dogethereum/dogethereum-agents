@@ -190,8 +190,8 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @throws IOException
      */
     private boolean arePendingTransactionsFor(String address) throws IOException {
-        BigInteger latest = web3Infura.ethGetTransactionCount(address, DefaultBlockParameterName.LATEST).send().getTransactionCount();
-        BigInteger pending = web3Infura.ethGetTransactionCount(address, DefaultBlockParameterName.PENDING).send().getTransactionCount();
+        BigInteger latest = web3.ethGetTransactionCount(address, DefaultBlockParameterName.LATEST).send().getTransactionCount();
+        BigInteger pending = web3.ethGetTransactionCount(address, DefaultBlockParameterName.PENDING).send().getTransactionCount();
         return pending.compareTo(latest) > 0;
     }
 
