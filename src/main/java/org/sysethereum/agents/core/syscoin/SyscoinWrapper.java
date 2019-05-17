@@ -107,8 +107,10 @@ public class SyscoinWrapper {
         return kit.store().get(hash);
     }
     public StoredBlock getBlockByHeight(Sha256Hash hash, int height) throws BlockStoreException {
+        if(height < 0)
+            height = 0;
         StoredBlock currentBlock = kit.store().get(hash);
-        if(currentBlock == null || height < 0)
+        if(currentBlock == null)
             return null;
         while(true){
             currentBlock = kit.store().get(currentBlock.getHeader().getPrevBlockHash());

@@ -98,10 +98,10 @@ public class SuperblockChain {
                     nextSuperblockSyscoinHashes.get(nextSuperblockSyscoinHashes.size() - 1));
 
             // get the last adjustment block and target/timestamp to pass in for diff adjustment calculations in smart contract
-            int lastAdjustmentHeightMod = nextSuperblockLastBlock.getHeight() % this.params.getInterval();
-            int lastDiffHeight = nextSuperblockLastBlock.getHeight() - lastAdjustmentHeightMod;
+            int lastDiffHeight = nextSuperblockLastBlock.getHeight() - (nextSuperblockLastBlock.getHeight() % this.params.getInterval());
             // walk back diff blocks to get the height of the last difficulty adjustment
-            StoredBlock lastDiffBlock = syscoinWrapper.getBlockByHeight(nextSuperblockLastBlock.getHeader().getHash(), lastDiffHeight);
+            // we need to get the data from the block before the diff change at the target period, so minus 1 to get the one before. ie on testnet: @ 360 we want 359 timestamp and bits
+            StoredBlock lastDiffBlock = syscoinWrapper.getBlockByHeight(nextSuperblockLastBlock.getHeader().getHash(), lastDiffHeight-1);
 
             if(lastDiffBlock == null || lastDiffBlock.getHeight() != lastDiffHeight)
                 throw new Exception("storeSuperblocks: last difficulty adjustment block does not fall on top of a difficulty adjustment block height");
