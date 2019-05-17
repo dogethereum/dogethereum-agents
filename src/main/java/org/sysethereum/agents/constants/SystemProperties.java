@@ -181,13 +181,21 @@ public class SystemProperties {
     public String generalPurposeAndSendSuperblocksAddress() {
         return getStringProperty("general.purpose.and.send.superblocks.address", null);
     }
+    public String generalPurposeAndSendSuperblocksUnlockPW(){
+        return getStringProperty("general.purpose.and.send.superblocks.unlockpw", null);
+    }
 
     public String syscoinSuperblockChallengerAddress() {
         return getStringProperty("syscoin.superblock.challenger.address", null);
     }
-
+    public String syscoinSuperblockChallengerUnlockPW(){
+        return getStringProperty("syscoin.superblock.challenger.unlockpw", null);
+    }
     public String dataDirectory() {
         return getStringProperty("data.directory", null);
+    }
+    public String infuraURL() {
+        return getStringProperty("infura.url", "https://mainnet.infura.io/v3") + "/" + getStringProperty("infura.projectid", "d178aecf49154b12be98e68e998cfb8d");
     }
     public String syscoinRPCUser() {
         return getStringProperty("syscoinrpc.user", "u");
