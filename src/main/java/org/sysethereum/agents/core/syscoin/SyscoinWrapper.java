@@ -113,11 +113,11 @@ public class SyscoinWrapper {
         if(currentBlock == null)
             return null;
         while(true){
+            if(currentBlock.getHeight() <= height)
+                break;
             currentBlock = kit.store().get(currentBlock.getHeader().getPrevBlockHash());
             if(currentBlock == null)
                 return null;
-            if(currentBlock.getHeight() <= height)
-                break;
         }
         return currentBlock;
     }

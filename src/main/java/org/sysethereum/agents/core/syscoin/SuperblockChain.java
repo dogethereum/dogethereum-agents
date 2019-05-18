@@ -103,6 +103,8 @@ public class SuperblockChain {
             // walk back diff blocks to get the height of the last difficulty adjustment
             // we need to get the data from the block before the diff change at the target period, so minus 1 to get the one before. ie on testnet: @ 360 we want 359 timestamp and bits
             lastDiffHeight -= 1;
+            if(lastDiffHeight < 0)
+                lastDiffHeight = 0;
             StoredBlock lastDiffBlock = syscoinWrapper.getBlockByHeight(nextSuperblockLastBlock.getHeader().getHash(), lastDiffHeight);
 
             if(lastDiffBlock == null || lastDiffBlock.getHeight() != lastDiffHeight)
