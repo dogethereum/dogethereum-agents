@@ -46,7 +46,7 @@ public class IntegrationAgentConstants extends AgentConstants {
         challengerConfirmations = 2;
 
         ethInitialCheckpoint = 4400275;
-        networkId = "32000"; // eth mainnet
+        networkId = "4"; // eth rinkeby 4; eth mainnet 32000
 
     }
 }
