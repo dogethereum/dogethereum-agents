@@ -135,6 +135,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
         BigInteger gasLimit = BigInteger.valueOf(config.gasLimit());
+        updateContractFacadesGasPrice();
 
         claimManager = SyscoinClaimManagerExtended.load(claimManagerContractAddress, web3,
                 new ClientTransactionManager(web3, generalPurposeAndSendSuperblocksAddress),
@@ -217,23 +218,24 @@ public class EthWrapper implements SuperblockConstantProvider {
         return pending.compareTo(latest) > 0;
     }
 
-    // TODO: see if this should also set the price for SyscoinBattleManager
     /**
-     * Sets gas prices for all SyscoinToken, SyscoinClaimManager and SyscoinSuperblocks contract instances.
+     * Sets gas prices for all contract instances.
      * @throws IOException
      */
     public void updateContractFacadesGasPrice() throws IOException {
         BigInteger gasPriceSuggestedByEthNode = web3Infura.ethGasPrice().send().getGasPrice();
-        BigInteger gasPrice;
         if (gasPriceSuggestedByEthNode.compareTo(gasPriceMinimum) > 0) {
-            gasPrice = gasPriceSuggestedByEthNode;
-        } else {
-            gasPrice = gasPriceMinimum;
+            gasPriceMinimum = gasPriceSuggestedByEthNode;
+            log.info("setting new min gas price to " + gasPriceMinimum);
+            if(claimManager != null)
+                claimManager.setGasPrice(gasPriceMinimum);
+            if(claimManagerForChallenges != null)
+                claimManagerForChallenges.setGasPrice(gasPriceMinimum);
+            if(superblocks != null)
+                superblocks.setGasPrice(gasPriceMinimum);
+            if(battleManager != null)
+                battleManager.setGasPrice(gasPriceMinimum);
         }
-
-        claimManager.setGasPrice(gasPrice);
-        claimManagerForChallenges.setGasPrice(gasPrice);
-        superblocks.setGasPrice(gasPrice);
     }
 
     public String getGeneralPurposeAndSendSuperblocksAddress() {
