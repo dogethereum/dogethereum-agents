@@ -125,7 +125,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                     toChallenge.add(newSuperblock.superblockId);
                 }
             } else {
-                log.info("... superblock present in our superblock chain");
+                log.info("Superblock height: {}... superblock present in our superblock chain", superblock.getSuperblockHeight());
             }
         }
 
@@ -370,20 +370,23 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     @Override
     protected void removeSuperblocks(long fromBlock, long toBlock, List<EthWrapper.SuperblockEvent> superblockEvents)
             throws Exception {
+        boolean withdrawFlag = false;
         for (EthWrapper.SuperblockEvent superblockEvent : superblockEvents) {
             Keccak256Hash superblockId = superblockEvent.superblockId;
 
             if (superblockToSessionsMap.containsKey(superblockId)) {
                 superblockToSessionsMap.remove(superblockId);
+                withdrawFlag = true;
             }
 
             if (semiApprovedSet.contains(superblockId)) {
                 semiApprovedSet.remove(superblockId);
+                withdrawFlag = true;
             }
 
-            if (config.isWithdrawFundsEnabled()) {
-                ethWrapper.withdrawAllFundsExceptLimit(myAddress, true);
-            }
+        }
+        if (withdrawFlag && config.isWithdrawFundsEnabled()) {
+            ethWrapper.withdrawAllFundsExceptLimit(myAddress, true);
         }
     }
 

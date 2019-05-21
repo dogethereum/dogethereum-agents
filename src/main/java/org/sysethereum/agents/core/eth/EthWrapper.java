@@ -431,7 +431,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @throws Exception
      */
     public void withdrawAllFundsExceptLimit(String account, boolean isChallenger) throws Exception {
-        SyscoinClaimManagerExtended myClaimManager;
+        SyscoinClaimManager myClaimManager;
         if (isChallenger) {
             myClaimManager = claimManagerForChallenges;
         } else {
