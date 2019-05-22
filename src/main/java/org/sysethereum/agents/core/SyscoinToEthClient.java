@@ -165,7 +165,7 @@ public class SyscoinToEthClient {
             Superblock bestRelaySuperblockInLocalChain =
                     superblockChain.getSuperblockByHeight(bridgeSuperblock.getSuperblockHeight());
 
-            if (bridgeSuperblock.getSuperblockId().equals(bestRelaySuperblockInLocalChain.getSuperblockId())) {
+            if (bestRelaySuperblockInLocalChain != null && bridgeSuperblock.getSuperblockId().equals(bestRelaySuperblockInLocalChain.getSuperblockId())) {
                 matchedSuperblock = bestRelaySuperblockInLocalChain;
                 break;
             }

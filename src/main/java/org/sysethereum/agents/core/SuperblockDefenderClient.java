@@ -158,6 +158,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                         queryMerkleRootHashes.sessionId, queryMerkleRootHashes.superblockId);
 
                 Superblock superblock = superblockChain.getSuperblock(queryMerkleRootHashes.superblockId);
+                if(superblock == null)
+                    continue;
                 ethWrapper.respondMerkleRootHashes(queryMerkleRootHashes.superblockId, queryMerkleRootHashes.sessionId,
                         superblock.getSyscoinBlockHashes(), myAddress);
             }
