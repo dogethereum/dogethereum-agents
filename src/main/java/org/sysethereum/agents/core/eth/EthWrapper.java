@@ -1135,11 +1135,11 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @param account Caller's address.
      * @throws InterruptedException
      */
-    public void challengeSuperblock(Keccak256Hash superblockId, String account)
+    public boolean challengeSuperblock(Keccak256Hash superblockId, String account)
             throws InterruptedException, Exception {
         if(getClaimDecided(superblockId)) {
             log.info("superblock has already been decided upon, skipping...{}", superblockId.toString());
-            return;
+            return false;
         }
 
         // Make necessary deposit to cover reward
@@ -1149,6 +1149,7 @@ public class EthWrapper implements SuperblockConstantProvider {
                 claimManagerForChallenges.challengeSuperblock(new Bytes32(superblockId.getBytes())).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("challengeSuperblock receipt {}", receipt.toString()));
+        return true;
     }
 
     /**
