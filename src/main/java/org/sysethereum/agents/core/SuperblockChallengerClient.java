@@ -88,7 +88,12 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
             if (ethWrapper.getClaimInvalid(superblockId)) {
                 log.info("Superblock {} lost a battle. Invalidating.", superblockId);
+
                 ethWrapper.checkClaimFinished(superblockId, myAddress, true);
+                // once decided we can safely remove this superblock from checking again
+                if(ethWrapper.getClaimDecided(superblockId)){
+                    superblockToSessionsMap.remove(superblockId);
+                }
             }
         }
     }
