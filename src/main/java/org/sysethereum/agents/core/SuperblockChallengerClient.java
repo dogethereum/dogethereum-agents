@@ -148,7 +148,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
 
         for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
-            if (isMine(newBattleEvent)) {
+            if (isMine(newBattleEvent) && !ethWrapper.getClaimDecided(newBattleEvent.superblockId)) {
                 ethWrapper.queryMerkleRootHashes(newBattleEvent.superblockId, newBattleEvent.sessionId, myAddress);
                 sessionToSuperblockMap.put(newBattleEvent.sessionId, newBattleEvent.superblockId);
                 addToSuperblockToSessionsMap(newBattleEvent.sessionId, newBattleEvent.superblockId);
@@ -167,7 +167,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 ethWrapper.getRespondMerkleRootHashesEvents(fromBlock, toBlock);
 
         for (EthWrapper.RespondMerkleRootHashesEvent defenderResponse : defenderResponses) {
-            if (isMine(defenderResponse)) {
+            if (isMine(defenderResponse) && !ethWrapper.getClaimDecided(defenderResponse.superblockId)) {
                 startBlockHeaderQueries(defenderResponse);
             }
         }
@@ -185,7 +185,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 ethWrapper.getRespondBlockHeaderEvents(fromBlock, toBlock);
 
         for (EthWrapper.RespondBlockHeaderEvent defenderResponse : defenderResponses) {
-            if (isMine(defenderResponse)) {
+            if (isMine(defenderResponse) && !ethWrapper.getClaimDecided(defenderResponse.superblockId)) {
                 reactToBlockHeaderResponse(defenderResponse);
             }
         }
