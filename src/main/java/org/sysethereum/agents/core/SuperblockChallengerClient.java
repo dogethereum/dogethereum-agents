@@ -87,7 +87,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     private void invalidateLoserSuperblocks() throws Exception {
         for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
             // decided is set to true inside of checkclaimfinished and thus only allows it to call oncex
-            if (ethWrapper.getClaimInvalid(superblockId) && !ethWrapper.getClaimDecided(superblockId)) {
+            if (ethWrapper.getClaimInvalid(superblockId) && ethWrapper.getClaimExists(superblockId) && !ethWrapper.getClaimDecided(superblockId)) {
                 log.info("Superblock {} lost a battle. Invalidating.", superblockId);
                 ethWrapper.checkClaimFinished(superblockId, myAddress, true);
                 sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(superblockId));
@@ -148,7 +148,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
 
         for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
-            if (isMine(newBattleEvent) && !ethWrapper.getClaimDecided(newBattleEvent.superblockId)) {
+            if (isMine(newBattleEvent) && ethWrapper.getClaimExists(newBattleEvent.superblockId) && !ethWrapper.getClaimDecided(newBattleEvent.superblockId)) {
                 ethWrapper.queryMerkleRootHashes(newBattleEvent.superblockId, newBattleEvent.sessionId, myAddress);
                 sessionToSuperblockMap.put(newBattleEvent.sessionId, newBattleEvent.superblockId);
                 addToSuperblockToSessionsMap(newBattleEvent.sessionId, newBattleEvent.superblockId);
@@ -167,7 +167,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 ethWrapper.getRespondMerkleRootHashesEvents(fromBlock, toBlock);
 
         for (EthWrapper.RespondMerkleRootHashesEvent defenderResponse : defenderResponses) {
-            if (isMine(defenderResponse) && !ethWrapper.getClaimDecided(defenderResponse.superblockId)) {
+            if (isMine(defenderResponse) && ethWrapper.getClaimExists(defenderResponse.superblockId) && !ethWrapper.getClaimDecided(defenderResponse.superblockId)) {
                 startBlockHeaderQueries(defenderResponse);
             }
         }
@@ -185,7 +185,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 ethWrapper.getRespondBlockHeaderEvents(fromBlock, toBlock);
 
         for (EthWrapper.RespondBlockHeaderEvent defenderResponse : defenderResponses) {
-            if (isMine(defenderResponse) && !ethWrapper.getClaimDecided(defenderResponse.superblockId)) {
+            if (isMine(defenderResponse) && ethWrapper.getClaimExists(defenderResponse.superblockId) && !ethWrapper.getClaimDecided(defenderResponse.superblockId)) {
                 reactToBlockHeaderResponse(defenderResponse);
             }
         }

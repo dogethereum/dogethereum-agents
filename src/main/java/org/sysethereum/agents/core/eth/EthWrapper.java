@@ -1137,8 +1137,8 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     public boolean challengeSuperblock(Keccak256Hash superblockId, String account)
             throws InterruptedException, Exception {
-        if(getClaimDecided(superblockId)) {
-            log.info("superblock has already been decided upon, skipping...{}", superblockId.toString());
+        if(!getClaimExists(superblockId) || getClaimDecided(superblockId)) {
+            log.info("superblock has already been decided upon or claim doesn't exist, skipping...{}", superblockId.toString());
             return false;
         }
 
