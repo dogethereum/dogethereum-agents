@@ -86,14 +86,13 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     private void invalidateLoserSuperblocks() throws Exception {
         for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
-            if (ethWrapper.getClaimInvalid(superblockId)) {
+            // decided is set to true inside of checkclaimfinished and thus only allows it to call oncex
+            if (ethWrapper.getClaimInvalid(superblockId) && !ethWrapper.getClaimDecided(superblockId)) {
                 log.info("Superblock {} lost a battle. Invalidating.", superblockId);
                 ethWrapper.checkClaimFinished(superblockId, myAddress, true);
-                // once decided we can safely remove this superblock from checking again
-                if(ethWrapper.getClaimDecided(superblockId)){
-                    sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(superblockId));
-                    superblockToSessionsMap.remove(superblockId);
-                }
+                sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(superblockId));
+                superblockToSessionsMap.remove(superblockId);
+
             }
         }
     }
