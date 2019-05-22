@@ -56,6 +56,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     private SyscoinClaimManagerExtended claimManager;
     private SyscoinClaimManagerExtended claimManagerGetter;
     private SyscoinClaimManagerExtended claimManagerForChallenges;
+    private SyscoinClaimManagerExtended claimManagerForChallengesGetter;
     private SyscoinBattleManagerExtended battleManager;
     private SyscoinBattleManagerExtended battleManagerForChallenges;
     private SyscoinBattleManagerExtended battleManagerGetter;
@@ -149,6 +150,10 @@ public class EthWrapper implements SuperblockConstantProvider {
                 new ClientTransactionManager(web3, syscoinSuperblockChallengerAddress),
                 gasPriceMinimum, gasLimit);
         assert claimManagerForChallenges.isValid();
+        claimManagerForChallengesGetter = SyscoinClaimManagerExtended.load(claimManagerContractAddress, web3Infura,
+                new ClientTransactionManager(web3Infura, syscoinSuperblockChallengerAddress),
+                gasPriceMinimum, gasLimit);
+        assert claimManagerForChallengesGetter.isValid();
         battleManager = SyscoinBattleManagerExtended.load(battleManagerContractAddress, web3,
                 new ClientTransactionManager(web3, generalPurposeAndSendSuperblocksAddress),
                 gasPriceMinimum, gasLimit);
@@ -305,7 +310,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         }
 
         // Make any necessary deposits for sending the superblock
-        makeDepositIfNeeded(account, claimManager, getSuperblockDeposit(superblock.getSyscoinBlockHashes().size()));
+        makeDepositIfNeeded(account, claimManager, claimManagerGetter, getSuperblockDeposit(superblock.getSyscoinBlockHashes().size()));
 
         // The parent is either approved or semi approved. We can send the superblock.
         CompletableFuture<TransactionReceipt> futureReceipt = proposeSuperblock(superblock);
@@ -378,7 +383,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         return result.add(queryMerkleRootHashesCost);
     }
 
-    private BigInteger getDeposit(String account, SyscoinClaimManager myClaimManager) throws Exception {
+    private BigInteger getDeposit(String account, SyscoinClaimManagerExtended myClaimManager) throws Exception {
         return myClaimManager.getDeposit(new org.web3j.abi.datatypes.Address(account)).send().getValue();
     }
 
@@ -389,9 +394,9 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @param weiValue Deposit to be reached. This should be the caller's total deposit in the end.
      * @throws Exception
      */
-    private void makeDepositIfNeeded(String account, SyscoinClaimManager myClaimManager, BigInteger weiValue)
+    private void makeDepositIfNeeded(String account, SyscoinClaimManager myClaimManager, SyscoinClaimManagerExtended myClaimManagerGetter, BigInteger weiValue)
             throws Exception {
-        BigInteger currentDeposit = getDeposit(account, myClaimManager);
+        BigInteger currentDeposit = getDeposit(account, myClaimManagerGetter);
         if (currentDeposit.compareTo(weiValue) < 0) {
             BigInteger diff = weiValue.subtract(currentDeposit);
             makeDeposit(myClaimManager, diff);
@@ -414,8 +419,8 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @param myClaimManager this.claimManager if proposing/defending, this.claimManagerForChallenges if challenging.
      * @throws Exception
      */
-    private void withdrawAllFundsExceptLimit(String account, SyscoinClaimManager myClaimManager) throws Exception {
-        BigInteger currentDeposit = getDeposit(account, myClaimManager);
+    private void withdrawAllFundsExceptLimit(String account, SyscoinClaimManager myClaimManager, SyscoinClaimManagerExtended myClaimManagerGetter) throws Exception {
+        BigInteger currentDeposit = getDeposit(account, myClaimManagerGetter);
         BigInteger limit = BigInteger.valueOf(config.depositedFundsLimit());
         if (currentDeposit.compareTo(limit) > 0) {
             withdrawDeposit(myClaimManager, currentDeposit.subtract(limit));
@@ -432,13 +437,16 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     public void withdrawAllFundsExceptLimit(String account, boolean isChallenger) throws Exception {
         SyscoinClaimManager myClaimManager;
+        SyscoinClaimManagerExtended myClaimManagerGetter;
         if (isChallenger) {
             myClaimManager = claimManagerForChallenges;
+            myClaimManagerGetter = claimManagerForChallengesGetter;
         } else {
             myClaimManager = claimManager;
+            myClaimManagerGetter = claimManagerGetter;
         }
 
-        withdrawAllFundsExceptLimit(account, myClaimManager);
+        withdrawAllFundsExceptLimit(account, myClaimManager, myClaimManagerGetter);
     }
 
     /**
@@ -930,7 +938,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             respondMerkleRootHashesEvent.superblockId = Keccak256Hash.wrap(response.superblockHash.getValue());
             respondMerkleRootHashesEvent.sessionId = Keccak256Hash.wrap(response.sessionId.getValue());
             respondMerkleRootHashesEvent.challenger = response.challenger.getValue();
-            respondMerkleRootHashesEvent.blockHashes = new ArrayList<>();
+            respondMerkleRootHashesEvent.blockHashes = new ArrayList<Sha256Hash>();
             for (Bytes32 rawSyscoinBlockHash : response.blockHashes.getValue()) {
                 respondMerkleRootHashesEvent.blockHashes.add(Sha256Hash.wrap(rawSyscoinBlockHash.getValue()));
             }
@@ -1043,7 +1051,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     public void respondBlockHeader(Keccak256Hash superblockId, Keccak256Hash sessionId,
                                    AltcoinBlock syscoinBlock, String account) throws Exception {
-        makeDepositIfNeeded(account, claimManager, verifySuperblockCost);
+        makeDepositIfNeeded(account, claimManagerGetter, claimManagerGetter, verifySuperblockCost);
         byte[] blockHeaderBytes = syscoinBlock.bitcoinSerialize();
         CompletableFuture<TransactionReceipt> futureReceipt = battleManager.respondBlockHeader(
                 new Bytes32(superblockId.getBytes()), new Bytes32(sessionId.getBytes()), new DynamicBytes(blockHeaderBytes)).sendAsync();
@@ -1064,11 +1072,11 @@ public class EthWrapper implements SuperblockConstantProvider {
                                         List<Sha256Hash> syscoinBlockHashes, String account)
             throws Exception {
         List<Bytes32> rawHashes = new ArrayList<>();
-        makeDepositIfNeeded(account, claimManager, verifySuperblockCost);
+        makeDepositIfNeeded(account, claimManager, claimManagerGetter, verifySuperblockCost);
         for (Sha256Hash syscoinBlockHash : syscoinBlockHashes)
             rawHashes.add(new Bytes32(syscoinBlockHash.getBytes()));
         CompletableFuture<TransactionReceipt> futureReceipt =
-                battleManager.respondMerkleRootHashes(new Bytes32(superblockId.getBytes()), new Bytes32(sessionId.getBytes()), new DynamicArray<>(rawHashes)).sendAsync();
+                battleManager.respondMerkleRootHashes(new Bytes32(superblockId.getBytes()), new Bytes32(sessionId.getBytes()), new DynamicArray<Bytes32>(rawHashes)).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("Responded to Merkle root hashes query for session {}, superblock {}. Receipt: {}",
                         sessionId, superblockId, receipt.toString()));
@@ -1083,7 +1091,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * */
     public void queryBlockHeader(Keccak256Hash superblockId, Keccak256Hash sessionId,
                                  Sha256Hash syscoinBlockHash, String account) throws Exception {
-        makeDepositIfNeeded(account, claimManagerForChallenges, respondBlockHeaderCost);
+        makeDepositIfNeeded(account, claimManagerForChallenges, claimManagerForChallengesGetter, respondBlockHeaderCost);
         CompletableFuture<TransactionReceipt> futureReceipt =
                 battleManagerForChallenges.queryBlockHeader(new Bytes32(superblockId.getBytes()),
                 new Bytes32(sessionId.getBytes()), new Bytes32(syscoinBlockHash.getBytes())).sendAsync();
@@ -1130,7 +1138,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     public void challengeSuperblock(Keccak256Hash superblockId, String account)
             throws InterruptedException, Exception {
         // Make necessary deposit to cover reward
-        makeDepositIfNeeded(account, claimManagerForChallenges, minChallengeDeposit);
+        makeDepositIfNeeded(account, claimManagerForChallenges, claimManagerForChallengesGetter, minChallengeDeposit);
 
         CompletableFuture<TransactionReceipt> futureReceipt =
                 claimManagerForChallenges.challengeSuperblock(new Bytes32(superblockId.getBytes())).sendAsync();
@@ -1164,7 +1172,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     public void queryMerkleRootHashes(Keccak256Hash superblockId, Keccak256Hash sessionId, String account)
             throws InterruptedException, Exception {
         log.info("Querying Merkle root hashes for superblock {}", superblockId);
-        makeDepositIfNeeded(account, claimManagerForChallenges, respondMerkleRootHashesCost);
+        makeDepositIfNeeded(account, claimManagerForChallenges, claimManagerForChallengesGetter, respondMerkleRootHashesCost);
         CompletableFuture<TransactionReceipt> futureReceipt = battleManagerForChallenges.queryMerkleRootHashes(
                 new Bytes32(superblockId.getBytes()), new Bytes32(sessionId.getBytes())).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->

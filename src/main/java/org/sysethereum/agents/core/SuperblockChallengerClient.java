@@ -39,7 +39,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     @Override
     public long reactToEvents(long fromBlock, long toBlock) {
         try {
-//            challengeEverything(fromBlock, toBlock);
             validateNewSuperblocks(fromBlock, toBlock);
             respondToNewBattles(fromBlock, toBlock);
             respondToMerkleRootHashesEventResponses(fromBlock, toBlock);
@@ -49,7 +48,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             getSemiApproved(fromBlock, toBlock);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-            return latestEthBlockProcessed;
+            return fromBlock - 1;
         }
         return toBlock;
     }
@@ -134,13 +133,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
-    // For testing only. To be eventually deleted.
-    private void challengeEverything(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> newSuperblockEvents = ethWrapper.getNewSuperblocks(fromBlock, toBlock);
-        for (EthWrapper.SuperblockEvent superblockEvent : newSuperblockEvents) {
-            ethWrapper.challengeSuperblock(superblockEvent.superblockId, myAddress);
-        }
-    }
 
     /**
      * Queries Merkle root hashes for all new battle events that the challenger is taking part in.

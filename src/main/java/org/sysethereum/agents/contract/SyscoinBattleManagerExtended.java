@@ -203,11 +203,7 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
             newRespondMerkleRootHashesEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
             newRespondMerkleRootHashesEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
             newRespondMerkleRootHashesEventResponse.challenger = new Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
-            newRespondMerkleRootHashesEventResponse.blockHashes = new DynamicArray<>();
-            List<Bytes32> rawBytes32Hashes = (List<Bytes32>) eventValues.getNonIndexedValues().get(3).getValue();
-            for (Bytes32 rawBytes32Hash : rawBytes32Hashes) {
-                newRespondMerkleRootHashesEventResponse.blockHashes.getValue().add(rawBytes32Hash);
-            }
+            newRespondMerkleRootHashesEventResponse.blockHashes = (DynamicArray<Bytes32>) eventValues.getNonIndexedValues().get(3);
             result.add(newRespondMerkleRootHashesEventResponse);
         }
 

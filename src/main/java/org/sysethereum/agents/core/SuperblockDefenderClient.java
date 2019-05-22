@@ -46,7 +46,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             removeSemiApprovedDescendants(fromBlock, toBlock);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
-            return latestEthBlockProcessed;
+            return fromBlock - 1;
         }
         return toBlock;
     }
