@@ -1137,6 +1137,11 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     public void challengeSuperblock(Keccak256Hash superblockId, String account)
             throws InterruptedException, Exception {
+        if(getClaimDecided(superblockId)) {
+            log.info("superblock has already been decided upon, skipping...{}", superblockId.toString());
+            return;
+        }
+
         // Make necessary deposit to cover reward
         makeDepositIfNeeded(account, claimManagerForChallenges, claimManagerForChallengesGetter, minChallengeDeposit);
 
