@@ -347,6 +347,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         boolean withdrawFlag = false;
         for (EthWrapper.SuperblockEvent superblockEvent : superblockEvents) {
             if (superblockToSessionsMap.containsKey(superblockEvent.superblockId)) {
+                sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(superblockEvent.superblockId));
                 superblockToSessionsMap.remove(superblockEvent.superblockId);
                 withdrawFlag = true;
             }
@@ -377,6 +378,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
         for (EthWrapper.SuperblockEvent semiApprovedSuperblockEvent : semiApprovedSuperblockEvents) {
             if (superblockToSessionsMap.containsKey(semiApprovedSuperblockEvent.superblockId)) {
+                sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(semiApprovedSuperblockEvent.superblockId));
                 superblockToSessionsMap.remove(semiApprovedSuperblockEvent.superblockId);
             }
         }
@@ -410,6 +412,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
         for (EthWrapper.SuperblockEvent semiApprovedSuperblockEvent : semiApprovedSuperblockEvents) {
             if (superblockToSessionsMap.containsKey(semiApprovedSuperblockEvent.superblockId)) {
+                sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(semiApprovedSuperblockEvent.superblockId));
                 superblockToSessionsMap.remove(semiApprovedSuperblockEvent.superblockId);
             }
         }

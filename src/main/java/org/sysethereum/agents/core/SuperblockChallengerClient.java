@@ -89,6 +89,11 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             if (ethWrapper.getClaimInvalid(superblockId)) {
                 log.info("Superblock {} lost a battle. Invalidating.", superblockId);
                 ethWrapper.checkClaimFinished(superblockId, myAddress, true);
+                // once decided we can safely remove this superblock from checking again
+                if(ethWrapper.getClaimDecided(superblockId)){
+                    sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(superblockId));
+                    superblockToSessionsMap.remove(superblockId);
+                }
             }
         }
     }
@@ -367,6 +372,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             Keccak256Hash superblockId = superblockEvent.superblockId;
 
             if (superblockToSessionsMap.containsKey(superblockId)) {
+                sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(superblockId));
                 superblockToSessionsMap.remove(superblockId);
                 withdrawFlag = true;
             }
