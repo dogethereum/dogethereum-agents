@@ -434,6 +434,9 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 log.info("Submitter convicted on session {}, superblock {}. Battle lost!",
                         submitterConvictedEvent.sessionId, submitterConvictedEvent.superblockId);
                 sessionToSuperblockMap.remove(submitterConvictedEvent.sessionId);
+                if (superblockToSessionsMap.containsKey(submitterConvictedEvent.superblockId)) {
+                    superblockToSessionsMap.get(submitterConvictedEvent.superblockId).remove(submitterConvictedEvent.sessionId);
+                }
             }
         }
     }
@@ -455,6 +458,9 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 log.info("Challenger convicted on session {}, superblock {}. Battle won!",
                         challengerConvictedEvent.sessionId, challengerConvictedEvent.superblockId);
                 sessionToSuperblockMap.remove(challengerConvictedEvent.sessionId);
+            }
+            if (superblockToSessionsMap.containsKey(challengerConvictedEvent.superblockId)) {
+                superblockToSessionsMap.get(challengerConvictedEvent.superblockId).remove(challengerConvictedEvent.sessionId);
             }
         }
     }

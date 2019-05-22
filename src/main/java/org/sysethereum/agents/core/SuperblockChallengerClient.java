@@ -88,12 +88,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
             if (ethWrapper.getClaimInvalid(superblockId)) {
                 log.info("Superblock {} lost a battle. Invalidating.", superblockId);
-
                 ethWrapper.checkClaimFinished(superblockId, myAddress, true);
-                // once decided we can safely remove this superblock from checking again
-                if(ethWrapper.getClaimDecided(superblockId)){
-                    superblockToSessionsMap.remove(superblockId);
-                }
             }
         }
     }
@@ -411,6 +406,9 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                         submitterConvictedEvent.sessionId, submitterConvictedEvent.superblockId);
                 sessionToSuperblockMap.remove(submitterConvictedEvent.sessionId);
             }
+            if (superblockToSessionsMap.containsKey(submitterConvictedEvent.superblockId)) {
+                superblockToSessionsMap.get(submitterConvictedEvent.superblockId).remove(submitterConvictedEvent.sessionId);
+            }
         }
     }
 
@@ -433,6 +431,9 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 log.info("Challenger convicted on session {}, superblock {}. Battle lost!",
                         challengerConvictedEvent.sessionId, challengerConvictedEvent.superblockId);
                 sessionToSuperblockMap.remove(challengerConvictedEvent.sessionId);
+                if (superblockToSessionsMap.containsKey(challengerConvictedEvent.superblockId)) {
+                    superblockToSessionsMap.get(challengerConvictedEvent.superblockId).remove(challengerConvictedEvent.sessionId);
+                }
             }
         }
     }
