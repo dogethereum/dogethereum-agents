@@ -35,19 +35,16 @@ public class SyscoinClaimManagerExtended extends SyscoinClaimManager {
     public List<SuperblockBattleDecidedEventResponse> getSuperblockBattleDecidedEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("SuperblockBattleDecided",
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {},
-                        new TypeReference<Address>() {}));
 
         List<SuperblockBattleDecidedEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(event));
+        filter.addSingleTopic(EventEncoder.encode(SUPERBLOCKBATTLEDECIDED_EVENT));
         EthLog ethLog = web3j.ethGetLogs(filter).send();
         List<EthLog.LogResult> logResults = ethLog.getLogs();
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(SUPERBLOCKBATTLEDECIDED_EVENT, log);
 
             SuperblockBattleDecidedEventResponse newSuperblockBattleDecidedEventResponse =
                     new SuperblockBattleDecidedEventResponse();

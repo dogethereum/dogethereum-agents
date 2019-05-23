@@ -44,20 +44,16 @@ public class SyscoinSuperblocksExtended extends SyscoinSuperblocks {
 
     public List<NewSuperblockEventResponse> getNewSuperblockEvents(DefaultBlockParameter startBlock,
                                                                    DefaultBlockParameter endBlock) throws IOException {
-        final Event event = new Event("NewSuperblock",
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {
-                }, new TypeReference<Address>() {
-                }));
 
         List<NewSuperblockEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(event));
+        filter.addSingleTopic(EventEncoder.encode(NEWSUPERBLOCK_EVENT));
         EthLog ethLog = web3j.ethGetLogs(filter).send();
         List<EthLog.LogResult> logResults = ethLog.getLogs();
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(NEWSUPERBLOCK_EVENT, log);
 
             NewSuperblockEventResponse newSuperblockResponse = new NewSuperblockEventResponse();
             newSuperblockResponse.log = eventValues.getLog();
@@ -72,20 +68,16 @@ public class SyscoinSuperblocksExtended extends SyscoinSuperblocks {
     public List<ApprovedSuperblockEventResponse> getApprovedSuperblockEvents(DefaultBlockParameter startBlock,
                                                                              DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("ApprovedSuperblock",
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {
-                }, new TypeReference<Address>() {
-                }));
 
         List<ApprovedSuperblockEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(event));
+        filter.addSingleTopic(EventEncoder.encode(APPROVEDSUPERBLOCK_EVENT));
         EthLog ethLog = web3j.ethGetLogs(filter).send();
         List<EthLog.LogResult> logResults = ethLog.getLogs();
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(APPROVEDSUPERBLOCK_EVENT, log);
 
             ApprovedSuperblockEventResponse approvedSuperblockResponse = new ApprovedSuperblockEventResponse();
             approvedSuperblockResponse.log = eventValues.getLog();
@@ -101,20 +93,16 @@ public class SyscoinSuperblocksExtended extends SyscoinSuperblocks {
     public List<ChallengeSuperblockEventResponse> getChallengeSuperblockEvents(DefaultBlockParameter startBlock,
                                                                                DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("ChallengeSuperblock",
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {
-                }, new TypeReference<Address>() {
-                }));
 
         List<ChallengeSuperblockEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(event));
+        filter.addSingleTopic(EventEncoder.encode(CHALLENGESUPERBLOCK_EVENT));
         EthLog ethLog = web3j.ethGetLogs(filter).send();
         List<EthLog.LogResult> logResults = ethLog.getLogs();
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(CHALLENGESUPERBLOCK_EVENT, log);
 
             ChallengeSuperblockEventResponse challengeSuperblockResponse = new ChallengeSuperblockEventResponse();
             challengeSuperblockResponse.log = eventValues.getLog();
@@ -129,20 +117,17 @@ public class SyscoinSuperblocksExtended extends SyscoinSuperblocks {
     public List<SemiApprovedSuperblockEventResponse> getSemiApprovedSuperblockEvents(DefaultBlockParameter startBlock,
                                                                                DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("SemiApprovedSuperblock",
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {
-                }, new TypeReference<Address>() {
-                }));
+
 
         List<SemiApprovedSuperblockEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(event));
+        filter.addSingleTopic(EventEncoder.encode(SEMIAPPROVEDSUPERBLOCK_EVENT));
         EthLog ethLog = web3j.ethGetLogs(filter).send();
         List<EthLog.LogResult> logResults = ethLog.getLogs();
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(SEMIAPPROVEDSUPERBLOCK_EVENT, log);
 
             SemiApprovedSuperblockEventResponse semiApprovedSuperblockResponse = new SemiApprovedSuperblockEventResponse();
             semiApprovedSuperblockResponse.log = eventValues.getLog();
@@ -157,20 +142,16 @@ public class SyscoinSuperblocksExtended extends SyscoinSuperblocks {
     public List<InvalidSuperblockEventResponse> getInvalidSuperblockEvents(DefaultBlockParameter startBlock,
                                                                                DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("InvalidSuperblock",
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {
-                }, new TypeReference<Address>() {
-                }));
 
         List<InvalidSuperblockEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(event));
+        filter.addSingleTopic(EventEncoder.encode(INVALIDSUPERBLOCK_EVENT));
         EthLog ethLog = web3j.ethGetLogs(filter).send();
         List<EthLog.LogResult> logResults = ethLog.getLogs();
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(INVALIDSUPERBLOCK_EVENT, log);
 
             InvalidSuperblockEventResponse invalidSuperblockEventResponse = new InvalidSuperblockEventResponse();
             invalidSuperblockEventResponse.log = eventValues.getLog();

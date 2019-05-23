@@ -37,19 +37,15 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
     public List<QueryBlockHeaderEventResponse> getQueryBlockHeaderEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("QueryBlockHeader",
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
-                        new TypeReference<Address>() {}, new TypeReference<Bytes32>() {}));
-
         List<QueryBlockHeaderEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(event));
+        filter.addSingleTopic(EventEncoder.encode(QUERYBLOCKHEADER_EVENT));
         EthLog ethLog = web3j.ethGetLogs(filter).send();
         List<EthLog.LogResult> logResults = ethLog.getLogs();
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(QUERYBLOCKHEADER_EVENT, log);
 
             QueryBlockHeaderEventResponse queryBlockHeaderEventResponse = new QueryBlockHeaderEventResponse();
             queryBlockHeaderEventResponse.log = eventValues.getLog();
@@ -66,19 +62,15 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
     public List<QueryMerkleRootHashesEventResponse> getQueryMerkleRootHashesEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("QueryMerkleRootHashes",
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
-                        new TypeReference<Address>() {}));
-
         List<QueryMerkleRootHashesEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(event));
+        filter.addSingleTopic(EventEncoder.encode(QUERYMERKLEROOTHASHES_EVENT));
         EthLog ethLog = web3j.ethGetLogs(filter).send();
         List<EthLog.LogResult> logResults = ethLog.getLogs();
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(QUERYMERKLEROOTHASHES_EVENT, log);
 
             QueryMerkleRootHashesEventResponse queryMerkleRootHashesEventResponse =
                     new QueryMerkleRootHashesEventResponse();
@@ -95,19 +87,15 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
     public List<NewBattleEventResponse> getNewBattleEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("NewBattle",
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32> () {},
-                        new TypeReference<Address>() {}, new TypeReference<Address>() {}));
-
         List<NewBattleEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(event));
+        filter.addSingleTopic(EventEncoder.encode(NEWBATTLE_EVENT));
         EthLog ethLog = web3j.ethGetLogs(filter).send();
         List<EthLog.LogResult> logResults = ethLog.getLogs();
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(NEWBATTLE_EVENT, log);
 
             NewBattleEventResponse newBattleEventResponse =
                     new NewBattleEventResponse();
@@ -125,19 +113,15 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
     public List<ChallengerConvictedEventResponse> getChallengerConvictedEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("ChallengerConvicted",
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
-                        new TypeReference<Address>() {}));
-
         List<ChallengerConvictedEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(event));
+        filter.addSingleTopic(EventEncoder.encode(CHALLENGERCONVICTED_EVENT));
         EthLog ethLog = web3j.ethGetLogs(filter).send();
         List<EthLog.LogResult> logResults = ethLog.getLogs();
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(CHALLENGERCONVICTED_EVENT, log);
 
             ChallengerConvictedEventResponse newChallengerConvictedEventResponse =
                     new ChallengerConvictedEventResponse();
@@ -154,19 +138,15 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
     public List<SubmitterConvictedEventResponse> getSubmitterConvictedEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("SubmitterConvicted",
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
-                        new TypeReference<Address>() {}));
-
         List<SubmitterConvictedEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(event));
+        filter.addSingleTopic(EventEncoder.encode(SUBMITTERCONVICTED_EVENT));
         EthLog ethLog = web3j.ethGetLogs(filter).send();
         List<EthLog.LogResult> logResults = ethLog.getLogs();
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(SUBMITTERCONVICTED_EVENT, log);
 
             SubmitterConvictedEventResponse newSubmitterConvictedEventResponse =
                     new SubmitterConvictedEventResponse();
@@ -183,19 +163,16 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
     public List<RespondMerkleRootHashesEventResponse> getRespondMerkleRootHashesEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("RespondMerkleRootHashes",
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
-                        new TypeReference<Address>() {}, new TypeReference<DynamicArray<Bytes32>>() {}));
 
         List<RespondMerkleRootHashesEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(event));
+        filter.addSingleTopic(EventEncoder.encode(RESPONDMERKLEROOTHASHES_EVENT));
         EthLog ethLog = web3j.ethGetLogs(filter).send();
         List<EthLog.LogResult> logResults = ethLog.getLogs();
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(RESPONDMERKLEROOTHASHES_EVENT, log);
 
             RespondMerkleRootHashesEventResponse newRespondMerkleRootHashesEventResponse =
                     new RespondMerkleRootHashesEventResponse();
@@ -213,20 +190,15 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
     public List<RespondBlockHeaderEventResponse> getRespondBlockHeaderEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("RespondBlockHeader",
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
-                        new TypeReference<Address>() {}, new TypeReference<Bytes32>() {},
-                        new TypeReference<DynamicBytes>() {}, new TypeReference<DynamicBytes>() {}));
-
         List<RespondBlockHeaderEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(event));
+        filter.addSingleTopic(EventEncoder.encode(RESPONDBLOCKHEADER_EVENT));
         EthLog ethLog = web3j.ethGetLogs(filter).send();
         List<EthLog.LogResult> logResults = ethLog.getLogs();
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(RESPONDBLOCKHEADER_EVENT, log);
 
             RespondBlockHeaderEventResponse newRespondBlockHeaderEventResponse =
                     new RespondBlockHeaderEventResponse();
@@ -245,18 +217,16 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
     public List<ErrorBattleEventResponse> getErrorBattleEventResponses(DefaultBlockParameter startBlock,
                                                                        DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("ErrorBattle",
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Uint256>() {}));
 
         List<ErrorBattleEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(event));
+        filter.addSingleTopic(EventEncoder.encode(ERRORBATTLE_EVENT));
         EthLog ethLog = web3j.ethGetLogs(filter).send();
         List<EthLog.LogResult> logResults = ethLog.getLogs();
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            EventValuesWithLog eventValues = extractEventParametersWithLog(event, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(ERRORBATTLE_EVENT, log);
 
             ErrorBattleEventResponse newErrorBattleEventResponse =
                     new ErrorBattleEventResponse();
