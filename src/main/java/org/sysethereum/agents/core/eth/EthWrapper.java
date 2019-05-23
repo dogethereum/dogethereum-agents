@@ -1135,7 +1135,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             log.info("superblock has already been decided upon or claim doesn't exist, skipping...{}", superblockId.toString());
             return false;
         }
-        if(getClaimSubmitter(superblockId).equals(getSyscoinSuperblockChallengerAddress()){
+        if(getClaimSubmitter(superblockId).equals(getSyscoinSuperblockChallengerAddress())){
             log.info("You cannot challenge a superblock you have submitted yourself, skipping...{}", superblockId.toString());
             return false;
         }
