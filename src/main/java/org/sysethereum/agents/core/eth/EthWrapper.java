@@ -72,8 +72,6 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     private BigInteger minProposalDeposit;
     private BigInteger minChallengeDeposit;
-    private BigInteger queryMerkleRootHashesCost;
-    private BigInteger queryBlockHeaderCost;
     private BigInteger respondMerkleRootHashesCost;
     private BigInteger respondBlockHeaderCost;
     private BigInteger verifySuperblockCost;
@@ -182,8 +180,6 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         minProposalDeposit = claimManagerGetter.minProposalDeposit().send().getValue();
         minChallengeDeposit = claimManagerGetter.minChallengeDeposit().send().getValue();
-        queryMerkleRootHashesCost = claimManagerGetter.queryMerkleRootHashesCost().send().getValue();
-        queryBlockHeaderCost = claimManagerGetter.queryBlockHeaderCost().send().getValue();
         respondMerkleRootHashesCost = claimManagerGetter.respondMerkleRootHashesCost().send().getValue();
         respondBlockHeaderCost = claimManagerGetter.respondBlockHeaderCost().send().getValue();
         verifySuperblockCost = claimManagerGetter.verifySuperblockCost().send().getValue();
@@ -310,7 +306,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         }
 
         // Make any necessary deposits for sending the superblock
-        makeDepositIfNeeded(account, claimManager, claimManagerGetter, getSuperblockDeposit(superblock.getSyscoinBlockHashes().size()));
+        makeDepositIfNeeded(account, claimManager, claimManagerGetter, minProposalDeposit);
 
         // The parent is either approved or semi approved. We can send the superblock.
         CompletableFuture<TransactionReceipt> futureReceipt = proposeSuperblock(superblock);
@@ -365,22 +361,6 @@ public class EthWrapper implements SuperblockConstantProvider {
                 log.info("makeClaimDeposit receipt {}", receipt.toString())
         );
         Thread.sleep(200); // in case the transaction takes some time to complete
-    }
-
-    /**
-     * Returns the initial deposit for proposing a superblock, i.e. enough to cover the challenge,
-     * all battle steps and a reward for the opponent in case the battle is lost.
-     * This deposit only covers one battle and it's meant to optimise the number of transactions performed
-     * by the submitter - it's still necessary to make a deposit for each step if another battle is carried out
-     * over the same superblock.
-     * @param nHashes Number of hashes in the superblock.
-     * @return Initial deposit for covering a reward and a single battle.
-     * @throws Exception
-     */
-    private BigInteger getSuperblockDeposit(int nHashes) throws Exception {
-        BigInteger result = minProposalDeposit;
-        result = result.add(BigInteger.valueOf(nHashes+1).multiply(queryBlockHeaderCost));
-        return result.add(queryMerkleRootHashesCost);
     }
 
     private BigInteger getDeposit(String account, SyscoinClaimManagerExtended myClaimManager) throws Exception {
@@ -1051,7 +1031,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     public void respondBlockHeader(Keccak256Hash superblockId, Keccak256Hash sessionId,
                                    AltcoinBlock syscoinBlock, String account) throws Exception {
-        makeDepositIfNeeded(account, claimManagerGetter, claimManagerGetter, verifySuperblockCost);
+        makeDepositIfNeeded(account, claimManager, claimManagerGetter, respondBlockHeaderCost);
         byte[] blockHeaderBytes = syscoinBlock.bitcoinSerialize();
         CompletableFuture<TransactionReceipt> futureReceipt = battleManager.respondBlockHeader(
                 new Bytes32(superblockId.getBytes()), new Bytes32(sessionId.getBytes()), new DynamicBytes(blockHeaderBytes)).sendAsync();
