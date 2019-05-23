@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.contract.*;
+import org.sysethereum.agents.core.SuperblockChallengerClient;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.sysethereum.agents.core.syscoin.Superblock;
 import org.sysethereum.agents.core.syscoin.SuperblockConstantProvider;
@@ -1132,6 +1133,10 @@ public class EthWrapper implements SuperblockConstantProvider {
             throws InterruptedException, Exception {
         if(!getClaimExists(superblockId) || getClaimDecided(superblockId)) {
             log.info("superblock has already been decided upon or claim doesn't exist, skipping...{}", superblockId.toString());
+            return false;
+        }
+        if(getClaimSubmitter(superblockId).equals(getSyscoinSuperblockChallengerAddress()){
+            log.info("You cannot challenge a superblock you have submitted yourself, skipping...{}", superblockId.toString());
             return false;
         }
 
