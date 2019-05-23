@@ -172,7 +172,7 @@ public class SyscoinClaimManager extends Contract {
 
     static {
         _addresses = new HashMap<String, String>();
-        _addresses.put("4", "0xaa31ad60009079c1ce9e478ad176ac53f44887da");
+        _addresses.put("4", "0x784221029ba399baf042dbe4c66e0f320edbc7fe");
     }
 
     @Deprecated
