@@ -403,7 +403,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     @Override
     protected void deleteSubmitterConvictedBattles(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SubmitterConvictedEvent> submitterConvictedEvents =
-                ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock, ethWrapper.getBattleManagerForChallenges());
+                ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock, ethWrapper.getBattleManagerForChallengesGetter());
 
         for (EthWrapper.SubmitterConvictedEvent submitterConvictedEvent : submitterConvictedEvents) {
             if (sessionToSuperblockMap.containsKey(submitterConvictedEvent.sessionId)) {
@@ -429,7 +429,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     @Override
     protected void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.ChallengerConvictedEvent> challengerConvictedEvents =
-                ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock, ethWrapper.getBattleManagerForChallenges());
+                ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock, ethWrapper.getBattleManagerForChallengesGetter());
 
         for (EthWrapper.ChallengerConvictedEvent challengerConvictedEvent : challengerConvictedEvents) {
             if (challengerConvictedEvent.challenger.equals(myAddress)) {

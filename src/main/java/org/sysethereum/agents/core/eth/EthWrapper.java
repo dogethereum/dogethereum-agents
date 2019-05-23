@@ -215,7 +215,13 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     private boolean arePendingTransactionsFor(String address) throws IOException {
         BigInteger latest = web3Infura.ethGetTransactionCount(address, DefaultBlockParameterName.LATEST).send().getTransactionCount();
-        BigInteger pending = web3.ethGetTransactionCount(address, DefaultBlockParameterName.PENDING).send().getTransactionCount();
+        BigInteger pending = BigInteger.ZERO;
+        try{
+            pending = web3.ethGetTransactionCount(address, DefaultBlockParameterName.PENDING).send().getTransactionCount();
+        }
+        catch(IOException exception){
+            pending = web3Infura.ethGetTransactionCount(address, DefaultBlockParameterName.PENDING).send().getTransactionCount();
+        }
         return pending.compareTo(latest) > 0;
     }
 
@@ -278,7 +284,13 @@ public class EthWrapper implements SuperblockConstantProvider {
     public SyscoinBattleManagerExtended getBattleManagerForChallenges() {
         return battleManagerForChallenges;
     }
+    public SyscoinBattleManagerExtended getBattleManagerGetter() {
+        return battleManagerGetter;
+    }
 
+    public SyscoinBattleManagerExtended getBattleManagerForChallengesGetter() {
+        return battleManagerForChallengesGetter;
+    }
     /* ---------------------------------- */
     /* - Relay Syscoin superblocks section - */
     /* ---------------------------------- */
@@ -496,7 +508,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     public List<SuperblockEvent> getNewSuperblocks(long startBlock, long endBlock) throws IOException {
         List<SuperblockEvent> result = new ArrayList<>();
         List<SyscoinSuperblocks.NewSuperblockEventResponse> newSuperblockEvents =
-                superblocks.getNewSuperblockEvents(
+                superblocksGetter.getNewSuperblockEvents(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
@@ -522,7 +534,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             throws IOException {
         List<SuperblockEvent> result = new ArrayList<>();
         List<SyscoinSuperblocks.ApprovedSuperblockEventResponse> approvedSuperblockEvents =
-                superblocks.getApprovedSuperblockEvents(
+                superblocksGetter.getApprovedSuperblockEvents(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
@@ -548,7 +560,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             throws IOException {
         List<SuperblockEvent> result = new ArrayList<>();
         List<SyscoinSuperblocks.SemiApprovedSuperblockEventResponse> semiApprovedSuperblockEvents =
-                superblocks.getSemiApprovedSuperblockEvents(
+                superblocksGetter.getSemiApprovedSuperblockEvents(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
@@ -574,7 +586,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             throws IOException {
         List<SuperblockEvent> result = new ArrayList<>();
         List<SyscoinSuperblocks.InvalidSuperblockEventResponse> invalidSuperblockEvents =
-                superblocks.getInvalidSuperblockEvents(
+                superblocksGetter.getInvalidSuperblockEvents(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
@@ -732,7 +744,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     public List<NewBattleEvent> getNewBattleEvents(long startBlock, long endBlock) throws IOException {
         List<NewBattleEvent> result = new ArrayList<>();
         List<SyscoinBattleManager.NewBattleEventResponse> newBattleEvents =
-                battleManagerForChallenges.getNewBattleEventResponses(
+                battleManagerForChallengesGetter.getNewBattleEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
@@ -839,7 +851,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             throws IOException {
         List<QueryBlockHeaderEvent> result = new ArrayList<>();
         List<SyscoinBattleManager.QueryBlockHeaderEventResponse> queryBlockHeaderEvents =
-                battleManager.getQueryBlockHeaderEventResponses(
+                battleManagerGetter.getQueryBlockHeaderEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
@@ -867,7 +879,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             throws IOException {
         List<QueryMerkleRootHashesEvent> result = new ArrayList<>();
         List<SyscoinBattleManager.QueryMerkleRootHashesEventResponse> queryMerkleRootHashesEvents =
-                battleManager.getQueryMerkleRootHashesEventResponses(
+                battleManagerGetter.getQueryMerkleRootHashesEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
@@ -909,7 +921,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             throws IOException {
         List<RespondMerkleRootHashesEvent> result = new ArrayList<>();
         List<SyscoinBattleManager.RespondMerkleRootHashesEventResponse> respondMerkleRootHashesEvents =
-                battleManagerForChallenges.getRespondMerkleRootHashesEventResponses(
+                battleManagerForChallengesGetter.getRespondMerkleRootHashesEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
@@ -940,7 +952,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             throws IOException {
         List<RespondBlockHeaderEvent> result = new ArrayList<>();
         List<SyscoinBattleManager.RespondBlockHeaderEventResponse> respondBlockHeaderEvents =
-                battleManagerForChallenges.getRespondBlockHeaderEventResponses(
+                battleManagerForChallengesGetter.getRespondBlockHeaderEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
@@ -983,7 +995,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     public List<ErrorBattleEvent> getErrorBattleEvents(long startBlock, long endBlock) throws IOException {
         List<ErrorBattleEvent> result = new ArrayList<>();
         List<SyscoinBattleManager.ErrorBattleEventResponse> errorBattleEvents =
-                battleManager.getErrorBattleEventResponses(
+                battleManagerGetter.getErrorBattleEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
