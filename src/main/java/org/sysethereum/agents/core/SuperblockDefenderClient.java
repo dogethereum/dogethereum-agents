@@ -137,7 +137,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 ethWrapper.getBlockHeaderQueries(fromBlock, toBlock);
 
         for (EthWrapper.QueryBlockHeaderEvent queryBlockHeader : queryBlockHeaderEvents) {
-            if (isMine(queryBlockHeader)) {
+            if (isMine(queryBlockHeader) && ethWrapper.getClaimExists(queryBlockHeader.superblockId) && !ethWrapper.getClaimDecided(queryBlockHeader.superblockId)) {
                 log.info("Header requested for Syscoin block {}, session {}. Responding now.",
                         queryBlockHeader.syscoinBlockHash, queryBlockHeader.sessionId);
 
@@ -153,7 +153,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 ethWrapper.getMerkleRootHashesQueries(fromBlock, toBlock);
 
         for (EthWrapper.QueryMerkleRootHashesEvent queryMerkleRootHashes : queryMerkleRootHashesEvents) {
-            if (isMine(queryMerkleRootHashes)) {
+            if (isMine(queryMerkleRootHashes) && ethWrapper.getClaimExists(queryMerkleRootHashes.superblockId) && !ethWrapper.getClaimDecided(queryMerkleRootHashes.superblockId)) {
                 Superblock superblock = superblockChain.getSuperblock(queryMerkleRootHashes.superblockId);
                 if(superblock == null)
                     continue;
