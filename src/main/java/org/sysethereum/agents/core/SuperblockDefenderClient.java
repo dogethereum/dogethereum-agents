@@ -92,7 +92,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         } else {
             Keccak256Hash toConfirmId = toConfirm.getSuperblockId();
 
-            if (!isMine(toConfirmId)) return;
+            // deal with your own new superblock claims or if it has become unresponsive we allow someone else to call checkClaimFinished to keep chain moving
+            if (!isMine(toConfirmId) && !newAndUnresponsiveTimeoutPassed(toConfirm)) return;
 
             if (newAndTimeoutPassed(toConfirm) || inBattleAndSemiApprovable(toConfirm)) {
                 // Either the superblock is unchallenged or it won all the battles;
@@ -213,12 +214,17 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     private boolean submittedTimeoutPassed(Keccak256Hash superblockId) throws Exception {
         return ethWrapper.getNewEventTimestampDate(superblockId).before(getTimeoutDate());
     }
-
+    private boolean submittedUnresponsiveTimeoutPassed(Keccak256Hash superblockId) throws Exception {
+        return ethWrapper.getNewEventTimestampDate(superblockId).before(getUnresponsiveTimeoutDate());
+    }
     private Date getTimeoutDate() throws Exception {
         int superblockTimeout = ethWrapper.getSuperblockTimeout().intValue();
         return SuperblockUtils.getNSecondsAgo(superblockTimeout);
     }
-
+    private Date getUnresponsiveTimeoutDate() throws Exception {
+        int superblockTimeout = ethWrapper.getSuperblockTimeout().intValue() * 2;
+        return SuperblockUtils.getNSecondsAgo(superblockTimeout);
+    }
     private boolean challengeTimeoutPassed(Keccak256Hash superblockId) throws Exception {
         return ethWrapper.getClaimChallengeTimeoutDate(superblockId).before(getTimeoutDate());
     }
@@ -227,7 +233,10 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         Keccak256Hash superblockId = superblock.getSuperblockId();
         return (ethWrapper.isSuperblockNew(superblockId) && submittedTimeoutPassed(superblockId));
     }
-
+    private boolean newAndUnresponsiveTimeoutPassed(Superblock superblock) throws Exception {
+        Keccak256Hash superblockId = superblock.getSuperblockId();
+        return (ethWrapper.isSuperblockNew(superblockId) && submittedUnresponsiveTimeoutPassed(superblockId));
+    }
     /**
      * Checks if a given superblock is in battle and meets the necessary and sufficient conditions
      * for being semi-approved when calling checkClaimFinished.
