@@ -128,8 +128,15 @@ public class SyscoinToEthClient {
             return 0;
         }
 
+        if (ethWrapper.wasSuperblockAlreadySubmitted(toSend.getSuperblockId())) {
+            log.debug("The contract already knows about the superblock, it won't be sent again: {}.",
+                      toSend.getSuperblockId());
+            return 0;
+        }
 
+        log.debug("First superblock missing in the bridge: {}.", toSend.getSuperblockId());
         ethWrapper.sendStoreSuperblock(toSend, ethWrapper.getGeneralPurposeAndSendSuperblocksAddress());
+        log.debug("Invoked sendStoreSuperblocks with superblock {}.", toSend.getSuperblockId());
 
         return toSend.getSuperblockHeight();
     }
