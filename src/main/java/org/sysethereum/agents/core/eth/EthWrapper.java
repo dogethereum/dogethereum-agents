@@ -304,7 +304,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @throws Exception If superblock hash cannot be calculated.
      */
     public void sendStoreSuperblock(Superblock superblock, String account) throws Exception {
-        log.info("About to send superblock {} to the bridge.", superblock.getSuperblockId());
+
 
         // Check if the parent has been approved before sending this superblock.
         Keccak256Hash parentId = superblock.getParentId();
@@ -313,11 +313,11 @@ public class EthWrapper implements SuperblockConstantProvider {
                     superblock.getSuperblockId());
             return;
         }
-
-        if (getClaimExists(superblock.getSuperblockId())) {
+        if (getClaimExists(superblock.getSuperblockId()) && (!getClaimInvalid(superblock.getSuperblockId()) || !getClaimDecided(superblock.getSuperblockId()) || getClaimSubmitter(superblock.getSuperblockId()) == account)) {
             log.info("Superblock {} has already been sent. Returning.", superblock.getSuperblockId());
             return;
         }
+        log.info("About to send superblock {} to the bridge.", superblock.getSuperblockId());
 
         // Make any necessary deposits for sending the superblock
         makeDepositIfNeeded(account, claimManager, claimManagerGetter, getSuperblockDeposit(superblock.getSyscoinBlockHashes().size()));
