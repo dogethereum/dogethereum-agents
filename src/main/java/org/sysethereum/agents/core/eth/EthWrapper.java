@@ -313,9 +313,12 @@ public class EthWrapper implements SuperblockConstantProvider {
                     superblock.getSuperblockId());
             return;
         }
-        if (getClaimExists(superblock.getSuperblockId()) && (!getClaimInvalid(superblock.getSuperblockId()) || !getClaimDecided(superblock.getSuperblockId()) || getClaimSubmitter(superblock.getSuperblockId()) == account)) {
-            log.info("Superblock {} has already been sent. Returning.", superblock.getSuperblockId());
-            return;
+        // but we want to ensure its not the same submitter submitting the same thing
+        if (getClaimExists(superblock.getSuperblockId())){
+           if(!getClaimInvalid(superblock.getSuperblockId()) || !getClaimDecided(superblock.getSuperblockId()) || getClaimSubmitter(superblock.getSuperblockId()) == account || getBestSuperblockId() != parentId || !isSuperblockApproved(parentId)){
+               log.info("Superblock {} has already been sent. Returning.", superblock.getSuperblockId());
+               return;
+            }
         }
         log.info("About to send superblock {} to the bridge.", superblock.getSuperblockId());
 
