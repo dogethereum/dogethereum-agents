@@ -313,15 +313,18 @@ public class EthWrapper implements SuperblockConstantProvider {
                     superblock.getSuperblockId());
             return;
         }
-        // but we want to ensure its not the same submitter submitting the same thing
+        // if claim exists we check to ensure the superblock chain isn't "stuck" and can be re-approved to be built even if it exists
         if (getClaimExists(superblock.getSuperblockId())){
             boolean allowed = getClaimInvalid(superblock.getSuperblockId()) && getClaimDecided(superblock.getSuperblockId()) && getClaimSubmitter(superblock.getSuperblockId()) != account;
             if(allowed){
                 if(isSuperblockApproved(parentId)){
                     allowed = getBestSuperblockId() == parentId;
                 }
-               else if(isSuperblockSemiApproved(parentId)){
+                else if(isSuperblockSemiApproved(parentId)){
                     allowed = true;
+                }
+                else{
+                    allowed = false;
                 }
             }
            if(!allowed){
