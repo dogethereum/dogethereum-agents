@@ -83,6 +83,25 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             // Contract and local db best superblocks are the same, do nothing.
             return;
         }
+        Keccak256Hash latestNewSuperblockId = ethWrapper.getLatestSuperblockNotConfirmed();
+        if(latestNewSuperblockId != null){
+            Superblock latestSuperblock = superblockChain.getSuperblock(latestNewSuperblockId);
+            if(latestSuperblock != null){
+                Keccak256Hash blockId = latestSuperblock.getSuperblockId();
+                if(!isMine(blockId)){
+                    if(newAndUnresponsiveTimeoutPassed(latestSuperblock)) {
+                        ethWrapper.checkClaimFinished(blockId, false);
+                        log.info("Timeout on a superblock proposal that is not mine, {}, We will approve it as courtesy.", blockId);
+                    }
+                }
+                else if(newAndTimeoutPassed(latestSuperblock)){
+                    ethWrapper.checkClaimFinished(blockId, false);
+                    log.info("Timeout on my superblock proposal, {}, Time to approve.", blockId);
+                }
+                return;
+            }
+        }
+
 
         Superblock toConfirm = superblockChain.getFirstDescendant(bestSuperblockId);
 
@@ -122,7 +141,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     private void confirmAllSemiApprovable() throws Exception {
         for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
             Superblock superblock = superblockChain.getSuperblock(superblockId);
-            if (superblock != null && isMine(superblockId) && (inBattleAndSemiApprovable(superblock) || newAndTimeoutPassed(superblock))) {
+            if (superblock != null && (isMine(superblockId) || newAndUnresponsiveTimeoutPassed(superblock)) && (inBattleAndSemiApprovable(superblock) || newAndTimeoutPassed(superblock))) {
                 log.info("Confirming semi-approvable superblock {}", superblockId);
                 ethWrapper.checkClaimFinished(superblockId, false);
             }

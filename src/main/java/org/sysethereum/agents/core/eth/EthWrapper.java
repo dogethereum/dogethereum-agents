@@ -7,10 +7,7 @@ import org.bitcoinj.core.*;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.contract.*;
 import org.sysethereum.agents.core.SuperblockChallengerClient;
-import org.sysethereum.agents.core.syscoin.Keccak256Hash;
-import org.sysethereum.agents.core.syscoin.Superblock;
-import org.sysethereum.agents.core.syscoin.SuperblockConstantProvider;
-import org.sysethereum.agents.core.syscoin.SuperblockUtils;
+import org.sysethereum.agents.core.syscoin.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,7 +73,8 @@ public class EthWrapper implements SuperblockConstantProvider {
     private BigInteger respondMerkleRootHashesCost;
     private BigInteger respondBlockHeaderCost;
     private BigInteger verifySuperblockCost;
-
+    @Autowired
+    private SuperblockChain superblockChain;
 
     /* ---------------------------------- */
     /* ------ General code section ------ */
@@ -296,7 +294,16 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* ---------------------------------- */
     /* - Relay Syscoin superblocks section - */
     /* ---------------------------------- */
-
+    public Keccak256Hash getLatestSuperblockNotConfirmed() throws Exception{
+        BigInteger superblockIndex = this.getIndexNextSuperblock();
+        Superblock latestSuperblock = superblockChain.getSuperblockByHeight(superblockIndex.longValue()-1);
+        if(latestSuperblock == null)
+            return null;
+        Keccak256Hash latestSuperblockId = latestSuperblock.getSuperblockId();
+        if(isSuperblockNew(latestSuperblockId))
+            return latestSuperblockId;
+        return null;
+    }
     /**
      * Proposes a superblock to SyscoinClaimManager in order to keep the Sysethereum contracts updated.
      * @param superblock Oldest superblock that is already stored in the local database,
@@ -535,11 +542,15 @@ public class EthWrapper implements SuperblockConstantProvider {
     public boolean statusAllowsConfirmation(Keccak256Hash superblockId) throws Exception {
         return isSuperblockSemiApproved(superblockId) || isSuperblockNew(superblockId);
     }
-
+    private BigInteger getIndexNextSuperblock() throws Exception {
+        return superblocksGetter.getIndexNextSuperblock().send().getValue();
+    }
     public BigInteger getSuperblockHeight(Keccak256Hash superblockId) throws Exception {
         return superblocksGetter.getSuperblockHeight(new Bytes32(superblockId.getBytes())).send().getValue();
     }
-
+    public byte[] getSuperblockAt(Uint256 height) throws Exception {
+        return superblocksGetter.getSuperblockAt(height).send().getValue();
+    }
     public BigInteger getChainHeight() throws Exception {
         return superblocksGetter.getChainHeight().send().getValue();
     }
