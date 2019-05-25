@@ -241,7 +241,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         return SuperblockUtils.getNSecondsAgo(superblockTimeout);
     }
     private Date getUnresponsiveTimeoutDate() throws Exception {
-        float delay = ethWrapper.getSuperblockTimeout().floatValue()*(ethWrapper.getRandomizationCounter()/100);
+        float delay = ethWrapper.getSuperblockTimeout().floatValue()*(ethWrapper.getRandomizationCounter()/100.0f);
         int superblockTimeout = ethWrapper.getSuperblockTimeout().intValue() + (int)delay;
         return SuperblockUtils.getNSecondsAgo(superblockTimeout);
     }
