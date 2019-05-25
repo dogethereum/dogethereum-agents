@@ -48,7 +48,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class EthWrapper implements SuperblockConstantProvider {
     private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
     private Web3j web3;
-    private Web3j web3Infura;
+    private Web3j web3Secondary;
 
     // Extensions of contracts generated automatically by web3j
     private SyscoinClaimManagerExtended claimManager;
@@ -87,9 +87,9 @@ public class EthWrapper implements SuperblockConstantProvider {
         setRandomizationCounter();
         config = SystemProperties.CONFIG;
         String path = config.dataDirectory() + "/geth/geth.ipc";
-        String infuraURL = config.infuraURL();
+        String secondaryURL = config.secondaryURL();
         
-        web3Infura = Web3j.build(new HttpService(infuraURL));
+        web3Secondary = Web3j.build(new HttpService(secondaryURL));
         Admin admin = Admin.build(new UnixIpcService(path));
         String generalAddress = config.generalPurposeAndSendSuperblocksAddress();
         if(generalAddress.length() > 0){
@@ -142,16 +142,16 @@ public class EthWrapper implements SuperblockConstantProvider {
                 new ClientTransactionManager(web3, generalPurposeAndSendSuperblocksAddress),
                 gasPriceMinimum, gasLimit);
         assert claimManager.isValid();
-        claimManagerGetter = SyscoinClaimManagerExtended.load(claimManagerContractAddress, web3Infura,
-                new ClientTransactionManager(web3Infura, generalPurposeAndSendSuperblocksAddress),
+        claimManagerGetter = SyscoinClaimManagerExtended.load(claimManagerContractAddress, web3Secondary,
+                new ClientTransactionManager(web3Secondary, generalPurposeAndSendSuperblocksAddress),
                 gasPriceMinimum, gasLimit);
         assert claimManagerGetter.isValid();
         claimManagerForChallenges = SyscoinClaimManagerExtended.load(claimManagerContractAddress, web3,
                 new ClientTransactionManager(web3, syscoinSuperblockChallengerAddress),
                 gasPriceMinimum, gasLimit);
         assert claimManagerForChallenges.isValid();
-        claimManagerForChallengesGetter = SyscoinClaimManagerExtended.load(claimManagerContractAddress, web3Infura,
-                new ClientTransactionManager(web3Infura, syscoinSuperblockChallengerAddress),
+        claimManagerForChallengesGetter = SyscoinClaimManagerExtended.load(claimManagerContractAddress, web3Secondary,
+                new ClientTransactionManager(web3Secondary, syscoinSuperblockChallengerAddress),
                 gasPriceMinimum, gasLimit);
         assert claimManagerForChallengesGetter.isValid();
         battleManager = SyscoinBattleManagerExtended.load(battleManagerContractAddress, web3,
@@ -162,12 +162,12 @@ public class EthWrapper implements SuperblockConstantProvider {
                 new ClientTransactionManager(web3, syscoinSuperblockChallengerAddress),
                 gasPriceMinimum, gasLimit);
         assert battleManagerForChallenges.isValid();
-        battleManagerGetter = SyscoinBattleManagerExtended.load(battleManagerContractAddress, web3Infura,
-                new ClientTransactionManager(web3Infura, generalPurposeAndSendSuperblocksAddress),
+        battleManagerGetter = SyscoinBattleManagerExtended.load(battleManagerContractAddress, web3Secondary,
+                new ClientTransactionManager(web3Secondary, generalPurposeAndSendSuperblocksAddress),
                 gasPriceMinimum, gasLimit);
         assert battleManagerGetter.isValid();
-        battleManagerForChallengesGetter = SyscoinBattleManagerExtended.load(battleManagerContractAddress, web3Infura,
-                new ClientTransactionManager(web3Infura, syscoinSuperblockChallengerAddress),
+        battleManagerForChallengesGetter = SyscoinBattleManagerExtended.load(battleManagerContractAddress, web3Secondary,
+                new ClientTransactionManager(web3Secondary, syscoinSuperblockChallengerAddress),
                 gasPriceMinimum, gasLimit);
         assert battleManagerForChallengesGetter.isValid();
         superblocks = SyscoinSuperblocksExtended.load(superblocksContractAddress, web3,
@@ -175,8 +175,8 @@ public class EthWrapper implements SuperblockConstantProvider {
                 gasPriceMinimum, gasLimit);
         assert superblocks.isValid();
 
-        superblocksGetter = SyscoinSuperblocksExtended.load(superblocksContractAddress, web3Infura,
-                new ClientTransactionManager(web3Infura, generalPurposeAndSendSuperblocksAddress),
+        superblocksGetter = SyscoinSuperblocksExtended.load(superblocksContractAddress, web3Secondary,
+                new ClientTransactionManager(web3Secondary, generalPurposeAndSendSuperblocksAddress),
                 gasPriceMinimum, gasLimit);
         assert superblocksGetter.isValid();
 
@@ -216,7 +216,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @throws IOException
      */
     private boolean arePendingTransactionsFor(String address) throws IOException {
-        BigInteger latest = web3Infura.ethGetTransactionCount(address, DefaultBlockParameterName.LATEST).send().getTransactionCount();
+        BigInteger latest = web3Secondary.ethGetTransactionCount(address, DefaultBlockParameterName.LATEST).send().getTransactionCount();
         BigInteger pending = BigInteger.ZERO;
         try{
             pending = web3.ethGetTransactionCount(address, DefaultBlockParameterName.PENDING).send().getTransactionCount();
@@ -233,7 +233,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @throws IOException
      */
     public void updateContractFacadesGasPrice() throws IOException {
-        BigInteger gasPriceSuggestedByEthNode = web3Infura.ethGasPrice().send().getGasPrice();
+        BigInteger gasPriceSuggestedByEthNode = web3Secondary.ethGasPrice().send().getGasPrice();
         if (gasPriceSuggestedByEthNode.compareTo(gasPriceMinimum) > 0) {
             gasPriceMinimum = gasPriceSuggestedByEthNode;
             log.info("setting new min gas price to " + gasPriceMinimum);
@@ -674,7 +674,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     public BigInteger getEthTimestampRaw(Log eventLog) throws InterruptedException, ExecutionException {
         String ethBlockHash = eventLog.getBlockHash();
         CompletableFuture<EthBlock> ethBlockCompletableFuture =
-                web3Infura.ethGetBlockByHash(ethBlockHash, true).sendAsync();
+                web3Secondary.ethGetBlockByHash(ethBlockHash, true).sendAsync();
         checkNotNull(ethBlockCompletableFuture, "Error retrieving completable future");
         EthBlock ethBlock = ethBlockCompletableFuture.get();
         return ethBlock.getBlock().getTimestamp();

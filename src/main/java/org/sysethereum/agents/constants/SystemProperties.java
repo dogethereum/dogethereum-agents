@@ -194,8 +194,8 @@ public class SystemProperties {
     public String dataDirectory() {
         return getStringProperty("data.directory", null);
     }
-    public String infuraURL() {
-        return getStringProperty("infura.url", "https://mainnet.infura.io/v3") + "/" + getStringProperty("infura.projectid", "d178aecf49154b12be98e68e998cfb8d");
+    public String secondaryURL() {
+        return getStringProperty("secondary.url", "https://mainnet.infura.io/v3/d178aecf49154b12be98e68e998cfb8d");
     }
     public String syscoinRPCUser() {
         return getStringProperty("syscoinrpc.user", "u");
