@@ -202,8 +202,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             if (isMine(semiApprovedSuperblockEvent) && descendant != null) {
                 log.info("Found superblock {}, descendant of semi-approved {}. Sending it now.",
                         descendant.getSuperblockId(), semiApprovedSuperblockEvent.superblockId);
-                ethWrapper.sendStoreSuperblock(descendant, myAddress);
-                superblockToSessionsMap.put(descendant.getSuperblockId(), new HashSet<>());
+                if(ethWrapper.sendStoreSuperblock(descendant, myAddress))
+                    superblockToSessionsMap.put(descendant.getSuperblockId(), new HashSet<>());
             }
         }
     }
@@ -241,7 +241,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         return SuperblockUtils.getNSecondsAgo(superblockTimeout);
     }
     private Date getUnresponsiveTimeoutDate() throws Exception {
-        int superblockTimeout = ethWrapper.getSuperblockTimeout().intValue() * 2;
+        float delay = ethWrapper.getSuperblockTimeout().floatValue()*(ethWrapper.getRandomizationCounter()/100);
+        int superblockTimeout = ethWrapper.getSuperblockTimeout().intValue() + (int)delay;
         return SuperblockUtils.getNSecondsAgo(superblockTimeout);
     }
     private boolean challengeTimeoutPassed(Keccak256Hash superblockId) throws Exception {

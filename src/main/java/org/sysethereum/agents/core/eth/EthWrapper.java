@@ -76,12 +76,15 @@ public class EthWrapper implements SuperblockConstantProvider {
     @Autowired
     private SuperblockChain superblockChain;
 
+    private int randomizationCounter;
+
     /* ---------------------------------- */
     /* ------ General code section ------ */
     /* ---------------------------------- */
 
     @Autowired
     public EthWrapper() throws Exception {
+        setRandomizationCounter();
         config = SystemProperties.CONFIG;
         String path = config.dataDirectory() + "/geth/geth.ipc";
         String infuraURL = config.infuraURL();
@@ -310,7 +313,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      *                   but still hasn't been submitted to Sysethereum Contracts.
      * @throws Exception If superblock hash cannot be calculated.
      */
-    public void sendStoreSuperblock(Superblock superblock, String account) throws Exception {
+    public boolean  sendStoreSuperblock(Superblock superblock, String account) throws Exception {
 
 
         // Check if the parent has been approved before sending this superblock.
@@ -318,7 +321,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         if (!(isSuperblockApproved(parentId) || isSuperblockSemiApproved(parentId))) {
             log.info("Superblock {} not sent because its parent was neither approved nor semi approved.",
                     superblock.getSuperblockId());
-            return;
+            return false;
         }
         // if claim exists we check to ensure the superblock chain isn't "stuck" and can be re-approved to be built even if it exists
         if (getClaimExists(superblock.getSuperblockId())){
@@ -336,7 +339,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             }
            if(!allowed){
                log.info("Superblock {} has already been sent. Returning.", superblock.getSuperblockId());
-               return;
+               return false;
             }
         }
 
@@ -354,6 +357,7 @@ public class EthWrapper implements SuperblockConstantProvider {
                 log.info("proposeSuperblock receipt {}", receipt.toString())
         );
         Thread.sleep(200);
+        return true;
     }
 
     /**
@@ -736,7 +740,6 @@ public class EthWrapper implements SuperblockConstantProvider {
      * Approves, semi-approves or invalidates a superblock depending on its situation.
      * See SyscoinClaimManager source code for further reference.
      * @param superblockId Superblock to be approved, semi-approved or invalidated.
-     * @param account Caller's address.
      * @param isChallenger Whether the caller is challenging. Used to determine
      *                     which SyscoinClaimManager should be used for withdrawing funds.
      */
@@ -1289,7 +1292,16 @@ public class EthWrapper implements SuperblockConstantProvider {
     public boolean getSubmitterHitTimeout(Keccak256Hash sessionId) throws Exception {
         return battleManagerForChallengesGetter.getSubmitterHitTimeout(new Bytes32(sessionId.getBytes())).send().getValue();
     }
-
+    public int getRandomizationCounter(){
+        return randomizationCounter;
+    }
+    public void setRandomizationCounter(){
+        double randomDouble = Math.random();
+        randomDouble = randomDouble * 100 + 1;
+        if(randomDouble < 10)
+            randomDouble = 10;
+        randomizationCounter = (int)randomDouble;
+    }
     public List<Sha256Hash> getSyscoinBlockHashes(Keccak256Hash sessionId) throws Exception {
         List<Sha256Hash> result = new ArrayList<>();
         List<Bytes32> rawHashes = battleManagerGetter.getSyscoinBlockHashes(new Bytes32(sessionId.getBytes())).send().getValue();

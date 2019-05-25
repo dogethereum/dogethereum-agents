@@ -108,7 +108,9 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      */
     private void validateNewSuperblocks(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SuperblockEvent> newSuperblockEvents = ethWrapper.getNewSuperblocks(fromBlock, toBlock);
-
+        if(newSuperblockEvents.size() > 0){
+            ethWrapper.setRandomizationCounter();
+        }
         List<Keccak256Hash> toChallenge = new ArrayList<>();
         for (EthWrapper.SuperblockEvent newSuperblock : newSuperblockEvents) {
             log.info("NewSuperblock {}. Validating...", newSuperblock.superblockId);
