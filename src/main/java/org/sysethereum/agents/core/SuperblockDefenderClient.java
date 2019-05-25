@@ -100,7 +100,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 // it will get approved or semi-approved depending on the situation
                 // (look at SyscoinClaimManager contract source code for more details)
                 log.info("Confirming superblock {}", toConfirmId);
-                ethWrapper.checkClaimFinished(toConfirmId, myAddress, false);
+                ethWrapper.checkClaimFinished(toConfirmId, false);
             } else if (ethWrapper.isSuperblockSemiApproved(toConfirmId)) {
                 Superblock descendant = getHighestSemiApprovedDescendant(toConfirmId);
                 if (descendant != null && semiApprovedAndApprovable(toConfirm, descendant)) {
@@ -122,9 +122,9 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     private void confirmAllSemiApprovable() throws Exception {
         for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
             Superblock superblock = superblockChain.getSuperblock(superblockId);
-            if (superblock != null && (inBattleAndSemiApprovable(superblock) || newAndTimeoutPassed(superblock))) {
+            if (superblock != null && isMine(superblockId) && (inBattleAndSemiApprovable(superblock) || newAndTimeoutPassed(superblock))) {
                 log.info("Confirming semi-approvable superblock {}", superblockId);
-                ethWrapper.checkClaimFinished(superblockId, myAddress, false);
+                ethWrapper.checkClaimFinished(superblockId, false);
             }
         }
     }
@@ -180,7 +180,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
         for (EthWrapper.SuperblockEvent semiApprovedSuperblockEvent : semiApprovedSuperblockEvents) {
             Superblock descendant = superblockChain.getFirstDescendant(semiApprovedSuperblockEvent.superblockId);
-            if (descendant != null) {
+            if (isMine(semiApprovedSuperblockEvent) && descendant != null) {
                 log.info("Found superblock {}, descendant of semi-approved {}. Sending it now.",
                         descendant.getSuperblockId(), semiApprovedSuperblockEvent.superblockId);
                 ethWrapper.sendStoreSuperblock(descendant, myAddress);

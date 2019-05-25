@@ -89,7 +89,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             // decided is set to true inside of checkclaimfinished and thus only allows it to call oncex
             if (ethWrapper.getClaimInvalid(superblockId) && ethWrapper.getClaimExists(superblockId) && !ethWrapper.getClaimDecided(superblockId)) {
                 log.info("Superblock {} lost a battle. Invalidating.", superblockId);
-                ethWrapper.checkClaimFinished(superblockId, myAddress, true);
+                ethWrapper.checkClaimFinished(superblockId, true);
                 sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(superblockId));
                 superblockToSessionsMap.remove(superblockId);
 

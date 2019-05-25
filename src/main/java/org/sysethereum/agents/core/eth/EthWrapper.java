@@ -729,7 +729,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @param isChallenger Whether the caller is challenging. Used to determine
      *                     which SyscoinClaimManager should be used for withdrawing funds.
      */
-    public void checkClaimFinished(Keccak256Hash superblockId, String account, boolean isChallenger)
+    public void checkClaimFinished(Keccak256Hash superblockId, boolean isChallenger)
             throws Exception {
         SyscoinClaimManagerExtended myClaimManager;
         if (isChallenger) {
