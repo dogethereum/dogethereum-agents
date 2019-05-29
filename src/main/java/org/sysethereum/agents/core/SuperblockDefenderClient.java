@@ -40,7 +40,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         try {
             respondToMerkleRootHashesQueries(fromBlock, toBlock);
             respondToBlockHeaderQueries(fromBlock, toBlock);
-            sendDescendantsOfSemiApproved(fromBlock, toBlock);
+
 
             // Maintain data structures
             removeSemiApprovedDescendants(fromBlock, toBlock);
@@ -83,7 +83,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             // Contract and local db best superblocks are the same, do nothing.
             return;
         }
-        Keccak256Hash latestNewSuperblockId = ethWrapper.getLatestSuperblockNotConfirmed();
+        Keccak256Hash latestNewSuperblockId = ethWrapper.getLatestSuperblock(false);
         if(latestNewSuperblockId != null){
             Superblock latestSuperblock = superblockChain.getSuperblock(latestNewSuperblockId);
             if(latestSuperblock != null){
@@ -186,27 +186,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         }
     }
 
-    /**
-     * Listens to SemiApprovedSuperblock events and proposes their direct descendants to the contracts
-     * if the semi-approved superblock was proposed by this defender.
-     * @param fromBlock
-     * @param toBlock
-     * @throws Exception
-     */
-    private void sendDescendantsOfSemiApproved(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
-                ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
-
-        for (EthWrapper.SuperblockEvent semiApprovedSuperblockEvent : semiApprovedSuperblockEvents) {
-            Superblock descendant = superblockChain.getFirstDescendant(semiApprovedSuperblockEvent.superblockId);
-            if (isMine(semiApprovedSuperblockEvent) && descendant != null) {
-                log.info("Found superblock {}, descendant of semi-approved {}. Sending it now.",
-                        descendant.getSuperblockId(), semiApprovedSuperblockEvent.superblockId);
-                if(ethWrapper.sendStoreSuperblock(descendant, myAddress))
-                    superblockToSessionsMap.put(descendant.getSuperblockId(), new HashSet<>());
-            }
-        }
-    }
 
     private void logErrorBattleEvents(long fromBlock, long toBlock) throws IOException {
         List<EthWrapper.ErrorBattleEvent> errorBattleEvents = ethWrapper.getErrorBattleEvents(fromBlock, toBlock);

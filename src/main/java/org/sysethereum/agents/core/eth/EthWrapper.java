@@ -297,15 +297,24 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* ---------------------------------- */
     /* - Relay Syscoin superblocks section - */
     /* ---------------------------------- */
-    public Keccak256Hash getLatestSuperblockNotConfirmed() throws Exception{
+    public Keccak256Hash getLatestSuperblock(boolean bAllowSemiApprovedOrConfirmed) throws Exception{
         BigInteger superblockIndex = this.getIndexNextSuperblock();
         Superblock latestSuperblock = superblockChain.getSuperblockByHeight(superblockIndex.longValue()-1);
         if(latestSuperblock == null)
             return null;
         Keccak256Hash latestSuperblockId = latestSuperblock.getSuperblockId();
-        if(isSuperblockNew(latestSuperblockId))
+        // we are about semi approved in some cases where a semi approver goes offline and we have a similar chain so we can keep building on it instead of waiting
+        if(isSuperblockNew(latestSuperblockId) || (bAllowSemiApprovedOrConfirmed && (isSuperblockSemiApproved(latestSuperblockId) || isSuperblockApproved(latestSuperblockId))))
             return latestSuperblockId;
         return null;
+    }
+    public Keccak256Hash getSuperblockParentId(Keccak256Hash superBlockId) {
+        try {
+            return Keccak256Hash.wrap(superblocksGetter.getSuperblockParentId(new Bytes32(superBlockId.getBytes())).send().getValue());
+        }
+        catch(Exception e){
+            return null;
+        }
     }
     /**
      * Proposes a superblock to SyscoinClaimManager in order to keep the Sysethereum contracts updated.
@@ -376,15 +385,6 @@ public class EthWrapper implements SuperblockConstantProvider {
                 new Uint32(superblock.getBlockHeight())).sendAsync();
     }
 
-    /**
-     * Get 9 ancestors of the contracts' top superblock:
-     * ancestor -1 (parent), ancestor -5, ancestor -25, ancestor -125, ...
-     * @return List of 9 ancestors where result[i] = ancestor -(5**i).
-     * @throws Exception
-     */
-    public List<Bytes32> getSuperblockLocator() throws Exception {
-        return superblocksGetter.getSuperblockLocator().send().getValue();
-    }
 
     public boolean wasSuperblockAlreadySubmitted(Keccak256Hash superblockId) throws Exception {
         return !superblocksGetter.getSuperblockIndex(new Bytes32(superblockId.getBytes())).send().equals(new Uint32(BigInteger.ZERO));

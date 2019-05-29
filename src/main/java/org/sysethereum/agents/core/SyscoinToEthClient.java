@@ -105,10 +105,8 @@ public class SyscoinToEthClient {
             log.debug("Skipping sending superblocks, there are pending transaction for the sender address.");
             return 0;
         }
-
         // Get the best superblock from the relay that is also in the main chain.
-        List<Bytes32> superblockLocator = ethWrapper.getSuperblockLocator();
-        Superblock matchedSuperblock = getEarliestMatchingSuperblock(superblockLocator);
+        Superblock matchedSuperblock = getLatestMatchingSuperblock();
 
         checkNotNull(matchedSuperblock, "No best chain superblock found");
         log.debug("Matched superblock {}.", matchedSuperblock.getSuperblockId());
@@ -136,35 +134,35 @@ public class SyscoinToEthClient {
 
     /**
      * Helper method for updateBridgeSuperblockChain().
-     * Gets the earliest superblock from the bridge's superblock locator
-     * that was also found in the agent's main chain.
-     * @param superblockLocator List of ancestors provided by the bridge.
-     * @return Earliest matched block if it is found,
+     * Gets the latest superblock from the bridge
+     * that was also found in the agent's local chain.
+     * @return Latest matched block if it is found,
      *         null otherwise.
      * @throws BlockStoreException
      * @throws IOException
      */
-    private Superblock getEarliestMatchingSuperblock(List<Bytes32> superblockLocator)
-            throws BlockStoreException, IOException {
-        Superblock matchedSuperblock = null;
-
-        for (int i = 0; i < superblockLocator.size(); i++) {
-            Keccak256Hash superblockBridgeHash = Keccak256Hash.wrap(superblockLocator.get(i).getValue());
-            Superblock bridgeSuperblock = superblockChain.getSuperblock(superblockBridgeHash);
-
-            if (bridgeSuperblock == null)
-                continue;
-
-            Superblock bestRelaySuperblockInLocalChain =
-                    superblockChain.getSuperblockByHeight(bridgeSuperblock.getSuperblockHeight());
-
-            if (bestRelaySuperblockInLocalChain != null && bridgeSuperblock.getSuperblockId().equals(bestRelaySuperblockInLocalChain.getSuperblockId())) {
-                matchedSuperblock = bestRelaySuperblockInLocalChain;
+    private Superblock getLatestMatchingSuperblock()
+            throws Exception {
+        Keccak256Hash latestSuperblockId = ethWrapper.getLatestSuperblock(true);
+        Superblock commonSuperblock = null;
+        // scan through all superblocks locally starting from the latest superblock stored in the contract
+        // walk backwards until we find a common superblock
+        while(true){
+            Superblock localSuperblock = superblockChain.getSuperblock(latestSuperblockId);
+            if(localSuperblock == null){
+                latestSuperblockId = ethWrapper.getSuperblockParentId(latestSuperblockId);
+                if(latestSuperblockId == null)
+                    break;
+            }
+            else {
+                commonSuperblock = localSuperblock;
                 break;
             }
         }
-
-        return matchedSuperblock;
+        // just for sanity make sure the parent superblock hash matches between the contract and our local chain
+        if(!ethWrapper.getSuperblockParentId(latestSuperblockId).equals(commonSuperblock.getParentId()))
+            commonSuperblock = null;
+        return commonSuperblock;
     }
     /**
      * Relays all unprocessed transactions to Ethereum contracts by calling sendRelayTx.
