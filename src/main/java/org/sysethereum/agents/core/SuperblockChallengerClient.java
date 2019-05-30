@@ -133,7 +133,10 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 log.info("Superblock height: {}... superblock present in our superblock chain", superblock.getSuperblockHeight());
             }
         }
-
+        Thread.sleep(500); // in case the transaction takes some time to complete
+        if (ethWrapper.arePendingTransactionsForChallengerAddress()) {
+            throw new Exception("Skipping challenging superblocks, there are pending transaction for the challenger address.");
+        }
         for (Keccak256Hash superblockId : toChallenge) {
             ethWrapper.challengeSuperblock(superblockId, myAddress);
         }

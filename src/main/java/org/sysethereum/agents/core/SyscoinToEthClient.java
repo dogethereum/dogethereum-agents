@@ -129,7 +129,9 @@ public class SyscoinToEthClient {
         }
 
 
-        ethWrapper.sendStoreSuperblock(toSend, ethWrapper.getGeneralPurposeAndSendSuperblocksAddress());
+        if(!ethWrapper.sendStoreSuperblock(toSend, ethWrapper.getGeneralPurposeAndSendSuperblocksAddress())){
+            return 0;
+        }
 
         return toSend.getSuperblockHeight();
     }

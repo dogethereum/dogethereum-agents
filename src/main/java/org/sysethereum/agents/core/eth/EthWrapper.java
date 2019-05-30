@@ -313,7 +313,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      *                   but still hasn't been submitted to Sysethereum Contracts.
      * @throws Exception If superblock hash cannot be calculated.
      */
-    public boolean  sendStoreSuperblock(Superblock superblock, String account) throws Exception {
+    public boolean sendStoreSuperblock(Superblock superblock, String account) throws Exception {
 
 
         // Check if the parent has been approved before sending this superblock.
@@ -345,6 +345,11 @@ public class EthWrapper implements SuperblockConstantProvider {
 
 
         log.info("About to send superblock {} to the bridge.", superblock.getSuperblockId());
+        Thread.sleep(500);
+        if (arePendingTransactionsForSendSuperblocksAddress()) {
+            log.debug("Skipping sending superblocks, there are pending transaction for the sender address.");
+            return false;
+        }
 
         // Make any necessary deposits for sending the superblock
         makeDepositIfNeeded(account, claimManager, claimManagerGetter, getSuperblockDeposit(superblock.getSyscoinBlockHashes().size()));
@@ -1104,6 +1109,10 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     public void respondBlockHeader(Keccak256Hash superblockId, Keccak256Hash sessionId,
                                    AltcoinBlock syscoinBlock, String account) throws Exception {
+        Thread.sleep(500); // in case the transaction takes some time to complete
+        if (arePendingTransactionsForSendSuperblocksAddress()) {
+            throw new Exception("Skipping respondBlockHeader, there are pending transaction for the sender address.");
+        }
         makeDepositIfNeeded(account, claimManager, claimManagerGetter, respondBlockHeaderCost);
         byte[] blockHeaderBytes = syscoinBlock.bitcoinSerialize();
         CompletableFuture<TransactionReceipt> futureReceipt = battleManager.respondBlockHeader(
@@ -1124,6 +1133,10 @@ public class EthWrapper implements SuperblockConstantProvider {
     public void respondMerkleRootHashes(Keccak256Hash superblockId, Keccak256Hash sessionId,
                                         List<Sha256Hash> syscoinBlockHashes, String account)
             throws Exception {
+        Thread.sleep(500); // in case the transaction takes some time to complete
+        if (arePendingTransactionsForSendSuperblocksAddress()) {
+            throw new Exception("Skipping respondMerkleRootHashes, there are pending transaction for the sender address.");
+        }
         List<Bytes32> rawHashes = new ArrayList<>();
         makeDepositIfNeeded(account, claimManager, claimManagerGetter, verifySuperblockCost.add(respondBlockHeaderCost.multiply(BigInteger.valueOf(syscoinBlockHashes.size()+1))));
         for (Sha256Hash syscoinBlockHash : syscoinBlockHashes)
@@ -1144,6 +1157,10 @@ public class EthWrapper implements SuperblockConstantProvider {
      * */
     public void queryBlockHeader(Keccak256Hash superblockId, Keccak256Hash sessionId,
                                  Sha256Hash syscoinBlockHash, String account) throws Exception {
+        Thread.sleep(500); // in case the transaction takes some time to complete
+        if (arePendingTransactionsForChallengerAddress()) {
+            throw new Exception("Skipping queryBlockHeader, there are pending transaction for the challenger address.");
+        }
         makeDepositIfNeeded(account, claimManagerForChallenges, claimManagerForChallengesGetter, respondBlockHeaderCost);
         CompletableFuture<TransactionReceipt> futureReceipt =
                 battleManagerForChallenges.queryBlockHeader(new Bytes32(superblockId.getBytes()),
@@ -1235,6 +1252,10 @@ public class EthWrapper implements SuperblockConstantProvider {
     public void queryMerkleRootHashes(Keccak256Hash superblockId, Keccak256Hash sessionId, String account)
             throws InterruptedException, Exception {
         log.info("Querying Merkle root hashes for superblock {}", superblockId);
+        Thread.sleep(500); // in case the transaction takes some time to complete
+        if (arePendingTransactionsForChallengerAddress()) {
+            throw new Exception("Skipping queryMerkleRootHashes, there are pending transaction for the challenger address.");
+        }
         makeDepositIfNeeded(account, claimManagerForChallenges, claimManagerForChallengesGetter, respondMerkleRootHashesCost);
         CompletableFuture<TransactionReceipt> futureReceipt = battleManagerForChallenges.queryMerkleRootHashes(
                 new Bytes32(superblockId.getBytes()), new Bytes32(sessionId.getBytes())).sendAsync();
