@@ -4,6 +4,7 @@ package org.sysethereum.agents.core.eth;
 import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
+import org.bitcoinj.store.BlockStoreException;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.contract.*;
 import org.sysethereum.agents.core.SuperblockChallengerClient;
@@ -306,6 +307,58 @@ public class EthWrapper implements SuperblockConstantProvider {
         if(isSuperblockNew(latestSuperblockId))
             return latestSuperblockId;
         return null;
+    }
+    /**
+     * Helper method for confirming a semi-approved superblock.
+     * Finds the highest semi-approved or new superblock in the main chain that comes after a given semi-approved superblock.
+     * @param superblockId Superblock to be confirmed.
+     * @return Highest superblock in main chain that's newer than the given superblock
+     *         if such a superblock exists, null otherwise (i.e. given superblock isn't in main chain
+     *         or has no semi-approved descendants).
+     * @throws BlockStoreException
+     * @throws IOException
+     * @throws Exception
+     */
+    public Superblock getHighestSemiApprovedOrNewDescendant(Keccak256Hash superblockId)
+            throws BlockStoreException, IOException, Exception {
+        Superblock highest = superblockChain.getChainHead();
+
+        // Find highest semi-approved descendant
+        while (highest != null && !isSuperblockSemiApproved(highest.getSuperblockId()) && !isSuperblockNew(highest.getSuperblockId())) {
+            highest = superblockChain.getParent(highest);
+            if (highest.getSuperblockId().equals(superblockId)) {
+                // No semi-approved descendants found
+                return null;
+            }
+        }
+
+        return highest;
+    }
+    /**
+     * Helper method for confirming a semi-approved/approved superblock.
+     * Finds the highest semi-approved or approved in the main chain that comes after a given superblock.
+     * @param superblockId Superblock to be confirmed.
+     * @return Highest superblock in main chain that's newer than the given superblock
+     *         if such a superblock exists, null otherwise (i.e. given superblock isn't in main chain
+     *         or has no semi-approved/approved descendants).
+     * @throws BlockStoreException
+     * @throws IOException
+     * @throws Exception
+     */
+    public Superblock getHighestSemiApprovedOrApprovedDescendant(Keccak256Hash superblockId)
+            throws BlockStoreException, IOException, Exception {
+        Superblock highest = superblockChain.getChainHead();
+
+        // Find highest semi-approved descendant
+        while (highest != null && !isSuperblockSemiApproved(highest.getSuperblockId()) && !isSuperblockApproved(highest.getSuperblockId())) {
+            highest = superblockChain.getParent(highest);
+            if (highest.getSuperblockId().equals(superblockId)) {
+                // No semi-approved descendants found
+                return null;
+            }
+        }
+
+        return highest;
     }
     /**
      * Proposes a superblock to SyscoinClaimManager in order to keep the Sysethereum contracts updated.

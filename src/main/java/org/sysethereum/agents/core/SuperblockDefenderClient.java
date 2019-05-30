@@ -40,7 +40,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         try {
             respondToMerkleRootHashesQueries(fromBlock, toBlock);
             respondToBlockHeaderQueries(fromBlock, toBlock);
-            sendDescendantsOfSemiApproved(fromBlock, toBlock);
 
             // Maintain data structures
             removeSemiApprovedDescendants(fromBlock, toBlock);
@@ -90,7 +89,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             return;
         }
         Keccak256Hash toConfirmId = toConfirm.getSuperblockId();
-        Superblock highestDescendant = getHighestSemiApprovedOrNewDescendant(bestSuperblockId);
+        Superblock highestDescendant = ethWrapper.getHighestSemiApprovedOrNewDescendant(bestSuperblockId);
         Keccak256Hash highestDescendantId;
         if (highestDescendant == null)
             highestDescendantId = toConfirmId;
@@ -152,28 +151,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
                 ethWrapper.respondMerkleRootHashes(queryMerkleRootHashes.superblockId, queryMerkleRootHashes.sessionId,
                         superblock.getSyscoinBlockHashes(), myAddress);
-            }
-        }
-    }
-
-    /**
-     * Listens to SemiApprovedSuperblock events and proposes their direct descendants to the contracts
-     * if the semi-approved superblock was proposed by this defender.
-     * @param fromBlock
-     * @param toBlock
-     * @throws Exception
-     */
-    private void sendDescendantsOfSemiApproved(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
-                ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
-
-        for (EthWrapper.SuperblockEvent semiApprovedSuperblockEvent : semiApprovedSuperblockEvents) {
-            Superblock descendant = superblockChain.getFirstDescendant(semiApprovedSuperblockEvent.superblockId);
-            if (isMine(semiApprovedSuperblockEvent) && descendant != null) {
-                log.info("Found superblock {}, descendant of semi-approved {}. Sending it now.",
-                        descendant.getSuperblockId(), semiApprovedSuperblockEvent.superblockId);
-                if(ethWrapper.sendStoreSuperblock(descendant, myAddress))
-                    superblockToSessionsMap.put(descendant.getSuperblockId(), new HashSet<>());
             }
         }
     }
@@ -257,32 +234,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             ethWrapper.isSuperblockSemiApproved(superblockId));
     }
 
-    /**
-     * Helper method for confirming a semi-approved superblock.
-     * Finds the highest semi-approved or new superblock in the main chain that comes after a given semi-approved superblock.
-     * @param superblockId Superblock to be confirmed.
-     * @return Highest superblock in main chain that's newer than the given superblock
-     *         if such a superblock exists, null otherwise (i.e. given superblock isn't in main chain
-     *         or has no semi-approved descendants).
-     * @throws BlockStoreException
-     * @throws IOException
-     * @throws Exception
-     */
-    private Superblock getHighestSemiApprovedOrNewDescendant(Keccak256Hash superblockId)
-            throws BlockStoreException, IOException, Exception {
-        Superblock highest = superblockChain.getChainHead();
-
-        // Find highest semi-approved descendant
-        while (highest != null && !ethWrapper.isSuperblockSemiApproved(highest.getSuperblockId()) && !ethWrapper.isSuperblockNew(highest.getSuperblockId())) {
-            highest = superblockChain.getParent(highest);
-            if (highest.getSuperblockId().equals(superblockId)) {
-                // No semi-approved descendants found
-                return null;
-            }
-        }
-
-        return highest;
-    }
 
 
     /* ---- OVERRIDE ABSTRACT METHODS ---- */

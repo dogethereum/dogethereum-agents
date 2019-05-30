@@ -105,35 +105,37 @@ public class SyscoinToEthClient {
             log.debug("Skipping sending superblocks, there are pending transaction for the sender address.");
             return 0;
         }
+        Keccak256Hash bestSuperblockId = ethWrapper.getBestSuperblockId();
+        checkNotNull(bestSuperblockId, "No best chain superblock found");
+        log.debug("Best superblock {}.", bestSuperblockId);
 
-        // Get the best superblock from the relay that is also in the main chain.
-        List<Bytes32> superblockLocator = ethWrapper.getSuperblockLocator();
-        Superblock matchedSuperblock = getEarliestMatchingSuperblock(superblockLocator);
 
-        checkNotNull(matchedSuperblock, "No best chain superblock found");
-        log.debug("Matched superblock {}.", matchedSuperblock.getSuperblockId());
-
-        // We found the superblock in the agent's best chain. Send the earliest superblock that the relay is missing.
-        Superblock toSend = superblockChain.getFirstDescendant(matchedSuperblock.getSuperblockId());
-
-        if (toSend == null) {
-            log.debug("Bridge was just updated, no new superblocks to send. matchedSuperblock: {}.",
-                    matchedSuperblock.getSuperblockId());
+        Superblock highestDescendant = ethWrapper.getHighestSemiApprovedOrApprovedDescendant(bestSuperblockId);
+        if (highestDescendant == null) {
+            log.debug("Bridge was just updated, no new superblocks to send. bestSuperblockId: {}.",
+                    bestSuperblockId);
+            return 0;
+        }
+        Keccak256Hash highestDescendantId = highestDescendant.getSuperblockId();;
+        Superblock toConfirm = superblockChain.getFirstDescendant(highestDescendantId);
+        if (toConfirm == null) {
+            log.info("Best superblock from contracts, {}, not found in local database. Stopping.", highestDescendantId);
             return 0;
         }
 
-        if (!superblockChain.sendingTimePassed(toSend)) {
+
+        if (!superblockChain.sendingTimePassed(toConfirm)) {
             log.debug("Too early to send superblock {}, will try again in a few seconds.",
-                    toSend.getSuperblockId());
+                    toConfirm.getSuperblockId());
             return 0;
         }
 
 
-        if(!ethWrapper.sendStoreSuperblock(toSend, ethWrapper.getGeneralPurposeAndSendSuperblocksAddress())){
+        if(!ethWrapper.sendStoreSuperblock(toConfirm, ethWrapper.getGeneralPurposeAndSendSuperblocksAddress())){
             return 0;
         }
 
-        return toSend.getSuperblockHeight();
+        return toConfirm.getSuperblockHeight();
     }
 
     /**
