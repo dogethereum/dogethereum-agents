@@ -56,7 +56,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         try {
             confirmEarliestApprovableSuperblock();
             callBattleTimeouts();
-            confirmAllSemiApprovable();
         } catch (Exception e) {
             log.error(e.getMessage(), e);
         }
@@ -86,49 +85,37 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
 
         Superblock toConfirm = superblockChain.getFirstDescendant(bestSuperblockId);
-
         if (toConfirm == null) {
-            // TODO: see if this should raise an exception, because it's a pretty bad state
             log.info("Best superblock from contracts, {}, not found in local database. Stopping.", bestSuperblockId);
-        } else {
-            Keccak256Hash toConfirmId = toConfirm.getSuperblockId();
+            return;
+        }
+        Keccak256Hash toConfirmId = toConfirm.getSuperblockId();
+        Superblock highestDescendant = getHighestSemiApprovedOrNewDescendant(bestSuperblockId);
+        if (highestDescendant == null) {
+            log.info("No descendants of superblock {} found to approve. Skipping...", bestSuperblockId);
+            return;
+        }
+        Keccak256Hash highestDescendantId = highestDescendant.getSuperblockId();
 
-            // deal with your own superblock claims or if it has become unresponsive we allow someone else to check the claim or confirm it
-            if (!isMine(toConfirmId) && !unresponsiveTimeoutPassed(toConfirm)) return;
+        // deal with your own superblock claims or if it has become unresponsive we allow someone else to check the claim or confirm it
+        if (!isMine(highestDescendantId) && !unresponsiveTimeoutPassed(highestDescendant)) return;
 
-            if (newAndTimeoutPassed(toConfirm) || inBattleAndSemiApprovable(toConfirm)) {
-                // Either the superblock is unchallenged or it won all the battles;
-                // it will get approved or semi-approved depending on the situation
-                // (look at SyscoinClaimManager contract source code for more details)
-                log.info("Confirming superblock {}", toConfirmId);
-                ethWrapper.checkClaimFinished(toConfirmId, false);
-            } else if (ethWrapper.isSuperblockSemiApproved(toConfirmId)) {
-                Superblock descendant = getHighestSemiApprovedDescendant(toConfirmId);
-                if (descendant != null && semiApprovedAndApprovable(toConfirm, descendant)) {
-                    // The superblock is semi approved and it can be approved if it has enough confirmations
-                    // TODO: see if this should be done by polling semi approved superblocks with enough confirmations
-                    Keccak256Hash descendantId = descendant.getSuperblockId();
-                    log.info("Confirming semi-approved superblock {} with descendant {}", toConfirmId, descendantId);
-                    ethWrapper.confirmClaim(toConfirmId, descendantId, myAddress);
-                }
+        if (newAndTimeoutPassed(highestDescendant) || inBattleAndSemiApprovable(highestDescendant)) {
+            // Either the superblock is unchallenged or it won all the battles;
+            // it will get approved or semi-approved depending on the situation
+            // (look at SyscoinClaimManager contract source code for more details)
+            log.info("Confirming superblock {}", highestDescendantId);
+            ethWrapper.checkClaimFinished(highestDescendantId, false);
+        } else if (ethWrapper.isSuperblockSemiApproved(highestDescendantId)) {
+            if (semiApprovedAndApprovable(toConfirm, highestDescendant)) {
+                // The superblock is semi approved and it can be approved if it has enough confirmations
+                log.info("Confirming semi-approved superblock {} with descendant {}", toConfirmId, highestDescendantId);
+                ethWrapper.confirmClaim(toConfirmId, highestDescendantId, myAddress);
             }
         }
+
     }
 
-    /**
-     * Confirms superblocks which weren't challenged or for which the defender has won all the battles,
-     * but whose parent might not be approved.
-     * @throws Exception
-     */
-    private void confirmAllSemiApprovable() throws Exception {
-        for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
-            Superblock superblock = superblockChain.getSuperblock(superblockId);
-            if (superblock != null && (inBattleAndSemiApprovable(superblock) || newAndTimeoutPassed(superblock))) {
-                log.info("Confirming semi-approvable superblock {}", superblockId);
-                ethWrapper.checkClaimFinished(superblockId, false);
-            }
-        }
-    }
 
 
     /* - Reacting to events - */
@@ -257,7 +244,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     /**
      * Checks if a superblock is semi-approved and has enough confirmations, i.e. semi-approved descendants.
-     * To be used after finding a descendant with getHighestSemiApprovedDescendant.
+     * To be used after finding a descendant with getHighestSemiApprovedOrNewDescendant.
      * @param superblock Superblock to be confirmed.
      * @param descendant Highest semi-approved descendant of superblock to be confirmed.
      * @return True if the superblock can be safely approved, false otherwise.
@@ -274,7 +261,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     /**
      * Helper method for confirming a semi-approved superblock.
-     * Finds the highest semi-approved superblock in the main chain that comes after a given superblock.
+     * Finds the highest semi-approved or new superblock in the main chain that comes after a given semi-approved superblock.
      * @param superblockId Superblock to be confirmed.
      * @return Highest superblock in main chain that's newer than the given superblock
      *         if such a superblock exists, null otherwise (i.e. given superblock isn't in main chain
@@ -283,12 +270,12 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      * @throws IOException
      * @throws Exception
      */
-    private Superblock getHighestSemiApprovedDescendant(Keccak256Hash superblockId)
+    private Superblock getHighestSemiApprovedOrNewDescendant(Keccak256Hash superblockId)
             throws BlockStoreException, IOException, Exception {
         Superblock highest = superblockChain.getChainHead();
 
         // Find highest semi-approved descendant
-        while (highest != null && !ethWrapper.isSuperblockSemiApproved(highest.getSuperblockId())) {
+        while (highest != null && !ethWrapper.isSuperblockSemiApproved(highest.getSuperblockId()) && !ethWrapper.isSuperblockNew(highest.getSuperblockId())) {
             highest = superblockChain.getParent(highest);
             if (highest.getSuperblockId().equals(superblockId)) {
                 // No semi-approved descendants found
