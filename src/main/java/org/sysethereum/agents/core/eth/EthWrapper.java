@@ -321,7 +321,10 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     public Superblock getHighestSemiApprovedOrNewDescendant(Keccak256Hash superblockId)
             throws BlockStoreException, IOException, Exception {
-        Superblock highest = superblockChain.getChainHead();
+        long lookupHeight = getSuperblockHeight(superblockId).longValue() + 10;
+        if(superblockChain.getChainHeight() < lookupHeight )
+            lookupHeight = superblockChain.getChainHeight();
+        Superblock highest = superblockChain.getSuperblockByHeight(lookupHeight);
 
         // Find highest semi-approved descendant
         while (highest != null && !isSuperblockSemiApproved(highest.getSuperblockId()) && !isSuperblockNew(highest.getSuperblockId())) {
@@ -347,13 +350,17 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     public Superblock getHighestSemiApprovedOrApprovedDescendant(Keccak256Hash superblockId)
             throws BlockStoreException, IOException, Exception {
-        Superblock highest = superblockChain.getChainHead();
+        long lookupHeight = getSuperblockHeight(superblockId).longValue() + 10;
+        if(superblockChain.getChainHeight() < lookupHeight )
+            lookupHeight = superblockChain.getChainHeight();
+        Superblock highest = superblockChain.getSuperblockByHeight(lookupHeight);
 
-        // Find highest semi-approved descendant
         while (highest != null && !isSuperblockSemiApproved(highest.getSuperblockId()) && !isSuperblockApproved(highest.getSuperblockId())) {
             highest = superblockChain.getParent(highest);
+            if(highest == null)
+                return null;
             if (highest.getSuperblockId().equals(superblockId)) {
-                // No semi-approved descendants found
+                // No semi-approved/approved descendants found
                 return null;
             }
         }

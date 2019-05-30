@@ -109,14 +109,14 @@ public class SyscoinToEthClient {
         checkNotNull(bestSuperblockId, "No best chain superblock found");
         log.debug("Best superblock {}.", bestSuperblockId);
 
-
+        Keccak256Hash highestDescendantId ;
         Superblock highestDescendant = ethWrapper.getHighestSemiApprovedOrApprovedDescendant(bestSuperblockId);
         if (highestDescendant == null) {
-            log.debug("Bridge was just updated, no new superblocks to send. bestSuperblockId: {}.",
-                    bestSuperblockId);
-            return 0;
+            highestDescendantId = bestSuperblockId;
         }
-        Keccak256Hash highestDescendantId = highestDescendant.getSuperblockId();;
+        else
+            highestDescendantId = highestDescendant.getSuperblockId();
+
         Superblock toConfirm = superblockChain.getFirstDescendant(highestDescendantId);
         if (toConfirm == null) {
             log.info("Best superblock from contracts, {}, not found in local database. Stopping.", highestDescendantId);
