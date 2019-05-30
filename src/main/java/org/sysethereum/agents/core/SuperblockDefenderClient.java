@@ -100,18 +100,18 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         // deal with your own superblock claims or if it has become unresponsive we allow someone else to check the claim or confirm it
         if (!isMine(highestDescendantId) && !unresponsiveTimeoutPassed(highestDescendant)) return;
 
-        if (newAndTimeoutPassed(highestDescendant) || inBattleAndSemiApprovable(highestDescendant)) {
+        if (ethWrapper.isSuperblockSemiApproved(highestDescendantId) && semiApprovedAndApprovable(toConfirm, highestDescendant)) {
+            // The superblock is semi approved and it can be approved if it has enough confirmations
+            log.info("Confirming semi-approved superblock {} with descendant {}", toConfirmId, highestDescendantId);
+            ethWrapper.confirmClaim(toConfirmId, highestDescendantId, myAddress);
+        }
+        else if (newAndTimeoutPassed(highestDescendant) || inBattleAndSemiApprovable(highestDescendant)) {
             // Either the superblock is unchallenged or it won all the battles;
             // it will get approved or semi-approved depending on the situation
             // (look at SyscoinClaimManager contract source code for more details)
             log.info("Confirming superblock {}", highestDescendantId);
             ethWrapper.checkClaimFinished(highestDescendantId, false);
-        } else if (ethWrapper.isSuperblockSemiApproved(highestDescendantId)) {
-            if (semiApprovedAndApprovable(toConfirm, highestDescendant)) {
-                // The superblock is semi approved and it can be approved if it has enough confirmations
-                log.info("Confirming semi-approved superblock {} with descendant {}", toConfirmId, highestDescendantId);
-                ethWrapper.confirmClaim(toConfirmId, highestDescendantId, myAddress);
-            }
+
         }
 
     }
