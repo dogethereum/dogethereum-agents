@@ -83,24 +83,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             // Contract and local db best superblocks are the same, do nothing.
             return;
         }
-        Keccak256Hash latestNewSuperblockId = ethWrapper.getLatestSuperblockNotConfirmed();
-        if(latestNewSuperblockId != null){
-            Superblock latestSuperblock = superblockChain.getSuperblock(latestNewSuperblockId);
-            if(latestSuperblock != null){
-                Keccak256Hash blockId = latestSuperblock.getSuperblockId();
-                if(!isMine(blockId)){
-                    if(newAndUnresponsiveTimeoutPassed(latestSuperblock)) {
-                        ethWrapper.checkClaimFinished(blockId, false);
-                        log.info("Timeout on a superblock proposal that is not mine, {}, We will approve it as courtesy.", blockId);
-                    }
-                }
-                else if(newAndTimeoutPassed(latestSuperblock)){
-                    ethWrapper.checkClaimFinished(blockId, false);
-                    log.info("Timeout on my superblock proposal, {}, Time to approve.", blockId);
-                }
-                return;
-            }
-        }
 
 
         Superblock toConfirm = superblockChain.getFirstDescendant(bestSuperblockId);
@@ -111,8 +93,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         } else {
             Keccak256Hash toConfirmId = toConfirm.getSuperblockId();
 
-            // deal with your own new superblock claims or if it has become unresponsive we allow someone else to call checkClaimFinished to keep chain moving
-            if (!isMine(toConfirmId) && !newAndUnresponsiveTimeoutPassed(toConfirm)) return;
+            // deal with your own superblock claims or if it has become unresponsive we allow someone else to check the claim or confirm it
+            if (!isMine(toConfirmId) && !unresponsiveTimeoutPassed(toConfirm)) return;
 
             if (newAndTimeoutPassed(toConfirm) || inBattleAndSemiApprovable(toConfirm)) {
                 // Either the superblock is unchallenged or it won all the battles;
@@ -141,7 +123,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     private void confirmAllSemiApprovable() throws Exception {
         for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
             Superblock superblock = superblockChain.getSuperblock(superblockId);
-            if (superblock != null && (isMine(superblockId) || newAndUnresponsiveTimeoutPassed(superblock)) && (inBattleAndSemiApprovable(superblock) || newAndTimeoutPassed(superblock))) {
+            if (superblock != null && (inBattleAndSemiApprovable(superblock) || newAndTimeoutPassed(superblock))) {
                 log.info("Confirming semi-approvable superblock {}", superblockId);
                 ethWrapper.checkClaimFinished(superblockId, false);
             }
@@ -256,6 +238,10 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     private boolean newAndUnresponsiveTimeoutPassed(Superblock superblock) throws Exception {
         Keccak256Hash superblockId = superblock.getSuperblockId();
         return (ethWrapper.isSuperblockNew(superblockId) && submittedUnresponsiveTimeoutPassed(superblockId));
+    }
+    private boolean unresponsiveTimeoutPassed(Superblock superblock) throws Exception {
+        Keccak256Hash superblockId = superblock.getSuperblockId();
+        return submittedUnresponsiveTimeoutPassed(superblockId);
     }
     /**
      * Checks if a given superblock is in battle and meets the necessary and sufficient conditions
