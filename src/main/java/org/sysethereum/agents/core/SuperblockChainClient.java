@@ -73,7 +73,7 @@ public class SuperblockChainClient {
         Stack<Sha256Hash> hashes = new Stack<>();
         StoredBlock currentStoredBlock = syscoinWrapper.getChainHead();
 
-        while (!currentStoredBlock.getHeader().getHash().equals(blockHash)) {
+        while (currentStoredBlock != null && !currentStoredBlock.getHeader().getHash().equals(blockHash)) {
             hashes.push(currentStoredBlock.getHeader().getHash());
             currentStoredBlock = syscoinWrapper.getBlock(currentStoredBlock.getHeader().getPrevBlockHash());
         }
