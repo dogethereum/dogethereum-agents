@@ -45,8 +45,8 @@ public class IntegrationAgentConstants extends AgentConstants {
         defenderConfirmations = 2;
         challengerConfirmations = 2;
 
-        ethInitialCheckpoint = 4400275;
-        networkId = "4"; // eth rinkeby 4; eth mainnet 32000
+        ethInitialCheckpoint = 7894981;
+        networkId = "1"; // eth rinkeby 4; eth mainnet 1
         try {
             logger.info("genesisSuperblock Hash " + genesisSuperblock.getSuperblockId().toString());
         }

@@ -127,7 +127,7 @@ public class SyscoinBattleManager extends Contract {
 
     static {
         _addresses = new HashMap<String, String>();
-        _addresses.put("4", "0x92f6fe1f00d17e53b5f414a2f4d841c72cf601cb");
+        _addresses.put("1", "0x1c810404dfe563c952c84cea99a18a1eba2e39ef");
     }
 
     @Deprecated
