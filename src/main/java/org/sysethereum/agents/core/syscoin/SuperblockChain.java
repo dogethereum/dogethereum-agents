@@ -229,6 +229,10 @@ public class SuperblockChain {
             // There's nothing above the tip of the chain.
             return null;
         }
+        SystemProperties config = SystemProperties.CONFIG;
+        AgentConstants agentConstants = config.getAgentConstants();
+        if(agentConstants.getGenesisSuperblock().getSuperblockId().equals(superblockId))
+            return agentConstants.getGenesisSuperblock();
 
         Superblock currentSuperblock = getChainHead();
 
