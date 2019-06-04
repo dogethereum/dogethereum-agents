@@ -213,30 +213,25 @@ public class SuperblockChain {
 
     /**
      * Finds a superblock with a given parentId.
-     * @param superblockId parentId of desired superblock.
+     * @param parentId parentId of desired superblock.
      * @return Best superblock in main chain with superblockId as its parentId if said superblock exists,
      *         null otherwise.
      * @throws BlockStoreException
      */
-    public Superblock getFirstDescendant(Keccak256Hash superblockId) throws BlockStoreException, IOException {
-        if (getSuperblock(superblockId) == null) {
+    public Superblock getFirstDescendant(Keccak256Hash parentId) throws BlockStoreException, IOException {
+        if (getSuperblock(parentId) == null) {
             // The superblock isn't in the main chain.
-            log.info("Superblock {} is not in the main chain. Returning from getFirstDescendant.", superblockId);
+            log.info("Superblock {} is not in the main chain. Returning from getFirstDescendant.", parentId);
             return null;
         }
 
-        if (getSuperblock(superblockId).getSuperblockHeight() == getChainHeight()) {
+        if (getSuperblock(parentId).getSuperblockHeight() == getChainHeight()) {
             // There's nothing above the tip of the chain.
             return null;
         }
-        SystemProperties config = SystemProperties.CONFIG;
-        AgentConstants agentConstants = config.getAgentConstants();
-        if(agentConstants.getGenesisSuperblock().getSuperblockId().equals(superblockId))
-            return agentConstants.getGenesisSuperblock();
-
         Superblock currentSuperblock = getChainHead();
 
-        while (currentSuperblock != null && !currentSuperblock.getParentId().equals(superblockId)) {
+        while (currentSuperblock != null && !currentSuperblock.getParentId().equals(parentId)) {
             currentSuperblock = getSuperblock(currentSuperblock.getParentId());
         }
 
