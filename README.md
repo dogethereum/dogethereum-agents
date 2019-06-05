@@ -15,7 +15,7 @@ If you are new to the Syscoin <-> Ethereum bridge, please check the [docs](https
 - Ganache
 - Truffle
 
-### Run ganache
+### Run ganache (For testing only)
 > ganache -l GAS_LIMIT -p 8545
 - Replace GAS_LIMIT with the value used in the configuration file
 - deploy https://github.com/syscoin/sysethereum-contracts contracts to ganache
