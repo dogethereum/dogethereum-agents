@@ -246,6 +246,14 @@ public class EthWrapper implements SuperblockConstantProvider {
                 superblocks.setGasPrice(gasPriceMinimum);
             if(battleManager != null)
                 battleManager.setGasPrice(gasPriceMinimum);
+            if(claimManagerGetter != null)
+                claimManagerGetter.setGasPrice(gasPriceMinimum);
+            if(claimManagerForChallengesGetter != null)
+                claimManagerForChallengesGetter.setGasPrice(gasPriceMinimum);
+            if(superblocksGetter != null)
+                superblocksGetter.setGasPrice(gasPriceMinimum);
+            if(battleManagerGetter != null)
+                battleManagerGetter.setGasPrice(gasPriceMinimum);
         }
     }
 
