@@ -95,7 +95,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         String generalAddress = config.generalPurposeAndSendSuperblocksAddress();
         if(generalAddress.length() > 0){
             PersonalUnlockAccount personalUnlockAccount = admin.personalUnlockAccount(generalAddress, config.generalPurposeAndSendSuperblocksUnlockPW(), BigInteger.ZERO).send();
-            if (personalUnlockAccount.accountUnlocked()) {
+            if (personalUnlockAccount != null && personalUnlockAccount.accountUnlocked()) {
                 log.info("general.purpose.and.send.superblocks.address is unlocked and ready to use!");
             }
             else{
@@ -105,7 +105,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         String challengerAddress = config.syscoinSuperblockChallengerAddress();
         if(challengerAddress.length() > 0 && !generalAddress.equals(challengerAddress)){
             PersonalUnlockAccount personalUnlockAccount = admin.personalUnlockAccount(challengerAddress, config.syscoinSuperblockChallengerUnlockPW(), BigInteger.ZERO).send();
-            if (personalUnlockAccount.accountUnlocked()) {
+            if (personalUnlockAccount != null && personalUnlockAccount.accountUnlocked()) {
                 log.info("syscoin.superblock.challenger.address is unlocked and ready to use!");
             }
             else{
