@@ -89,34 +89,40 @@ public class SuperblockChain {
         List<Sha256Hash> nextSuperblockSyscoinHashes = new ArrayList<>();
         Keccak256Hash nextSuperblockPrevHash = initialPreviousSuperblockHash;
         long nextSuperblockHeight = getChainHeight() + 1;
-
         // build and store all superblocks whose last block was mined three hours ago or more
         while (!allSyscoinHashesToHash.empty() && nextSuperblockEndTime.before(getStoringStopTime())) {
             // Modify allSyscoinHashesToHash and get hashes for next superblock.
             nextSuperblockSyscoinHashes = popBlocksBeforeTime(allSyscoinHashesToHash, nextSuperblockEndTime);
             StoredBlock nextSuperblockLastBlock = syscoinWrapper.getBlock(
                     nextSuperblockSyscoinHashes.get(nextSuperblockSyscoinHashes.size() - 1));
+            Superblock prevSuperblock = getSuperblock(nextSuperblockPrevHash);
+            List<Sha256Hash> prevSuperblockHashes =  prevSuperblock.getSyscoinBlockHashes();
+            StoredBlock prevSuperblockLastBlock = syscoinWrapper.getBlock(
+                    prevSuperblockHashes.get(prevSuperblockHashes.size() - 1));
             // get the last adjustment block and target/timestamp to pass in for diff adjustment calculations in smart contract
             long lastDiffHeight;
-            if(nextSuperblockHeight >= 146)
-                lastDiffHeight = getChainHead().getBlockHeight() - (getChainHead().getBlockHeight() % this.params.getInterval());
-            else
-                lastDiffHeight = nextSuperblockLastBlock.getHeight() - (nextSuperblockLastBlock.getHeight() % this.params.getInterval());
-            
-            // walk back diff blocks to get the height of the last difficulty adjustment
-            // we need to get the data from the block before the diff change at the target period, so minus 1 to get the one before. ie on testnet: @ 360 we want 359 timestamp and bits
-            lastDiffHeight -= 1;
+            long prevDiffTarget = 0;
+            if(nextSuperblockHeight >= 147) {
+                lastDiffHeight = prevSuperblock.getBlockHeight() - (prevSuperblock.getBlockHeight() % this.params.getInterval());
+                prevDiffTarget = prevSuperblockLastBlock.getHeader().getDifficultyTarget();
+            }
+            else {
+                lastDiffHeight = nextSuperblockLastBlock.getHeight() - (nextSuperblockLastBlock.getHeight() % this.params.getInterval()) - 1;
+            }
+
             if(lastDiffHeight < 0)
                 lastDiffHeight = 0;
             StoredBlock lastDiffBlock = syscoinWrapper.getBlockByHeight(nextSuperblockLastBlock.getHeader().getHash(), (int)lastDiffHeight);
 
             if(lastDiffBlock == null || lastDiffBlock.getHeight() != lastDiffHeight)
                 throw new Exception("storeSuperblocks: last difficulty adjustment block does not fall on top of a difficulty adjustment block height");
-
+            if(nextSuperblockHeight < 147) {
+                prevDiffTarget = lastDiffBlock.getHeader().getDifficultyTarget();
+            }
             Superblock newSuperblock = new Superblock(this.params, nextSuperblockSyscoinHashes,
                     nextSuperblockLastBlock.getChainWork(), nextSuperblockLastBlock.getHeader().getTimeSeconds(),
                     lastDiffBlock.getHeader().getTimeSeconds(),
-                    lastDiffBlock.getHeader().getDifficultyTarget(),
+                    prevDiffTarget,
                     nextSuperblockPrevHash, nextSuperblockHeight, nextSuperblockLastBlock.getHeight());
             superblockStorage.put(newSuperblock);
             if (newSuperblock.getChainWork().compareTo(superblockStorage.getChainHeadWork()) > 0) {
