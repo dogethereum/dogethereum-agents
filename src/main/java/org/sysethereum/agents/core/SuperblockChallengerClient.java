@@ -452,14 +452,14 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     @Override
-    protected void restoreFiles() throws ClassNotFoundException, IOException {
-        restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
-        restore(sessionToSuperblockMap, sessionToSuperblockMapFile);
-        restore(semiApprovedSet, semiApprovedSetFile);
+    protected void restoreFiles() throws IOException {
+        latestEthBlockProcessed = restore(Long.class, latestEthBlockProcessedFile);
+        sessionToSuperblockMap = restore(HashMap.class, sessionToSuperblockMapFile);
+        semiApprovedSet = restore(HashSet.class, semiApprovedSetFile);
     }
 
     @Override
-    protected void flushFiles() throws ClassNotFoundException, IOException {
+    protected void flushFiles() throws IOException {
         flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
         flush(sessionToSuperblockMap, sessionToSuperblockMapFile);
         flush(semiApprovedSet, semiApprovedSetFile);
