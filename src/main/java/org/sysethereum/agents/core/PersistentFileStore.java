@@ -11,17 +11,22 @@ public abstract class PersistentFileStore {
 
     abstract void setupFiles() throws IOException;
 
-    void restore(Serializable obj, File file) throws ClassNotFoundException, IOException {
+    <T> T restore(Class<T> clazz, File file) throws IOException {
         if (file.exists()) {
             synchronized (this) {
                 try(
                     FileInputStream fileInputStream = new FileInputStream(file);
                     ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
                 ) {
-                    obj = obj.getClass().cast(objectInputStream.readObject());
+                    try {
+                        return clazz.cast(objectInputStream.readObject());
+                    } catch (ClassNotFoundException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
         }
+        return null;
     }
 
     void flush(Serializable obj, File file) throws IOException {
