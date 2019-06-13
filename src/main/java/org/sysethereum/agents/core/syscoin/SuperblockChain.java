@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.io.*;
 
 import java.util.*;
@@ -64,6 +65,15 @@ public class SuperblockChain {
         this.SUPERBLOCK_DURATION = provider.getSuperblockDuration().intValue();
         this.SUPERBLOCK_DELAY = provider.getSuperblockDelay().intValue();
         this.SUPERBLOCK_STORING_WINDOW = 60; // store superblocks one minute before they should be sent
+    }
+
+    /**
+     * Closes the block storage underlying this blockchain.
+     * @throws BlockStoreException if an exception is thrown during closing.
+     */
+    @PreDestroy
+    private void close() throws BlockStoreException {
+        this.superblockStorage.close();
     }
 
     /**
