@@ -20,13 +20,13 @@ public class LocalAgentConstants extends AgentConstants {
 
     private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
 
-    private static final LocalAgentConstants instance = new LocalAgentConstants();
+    private static LocalAgentConstants instance = new LocalAgentConstants();
 
     public static LocalAgentConstants getInstance() {
         return instance;
     }
 
-    private LocalAgentConstants() {
+    LocalAgentConstants() {
         syscoinParams = SyscoinRegTestParams.get();
 
         syscoinToEthTimerTaskPeriod = 10 * 1000;
