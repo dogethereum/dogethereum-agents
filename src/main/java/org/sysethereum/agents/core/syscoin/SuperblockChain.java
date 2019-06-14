@@ -110,15 +110,9 @@ public class SuperblockChain {
             StoredBlock prevSuperblockLastBlock = syscoinWrapper.getBlock(
                     prevSuperblockHashes.get(prevSuperblockHashes.size() - 1));
             // get the last adjustment block and target/timestamp to pass in for diff adjustment calculations in smart contract
-            long lastDiffHeight;
-            long prevDiffTarget = 0;
-            if(nextSuperblockHeight >= 147) {
-                lastDiffHeight = prevSuperblock.getBlockHeight() - (prevSuperblock.getBlockHeight() % this.params.getInterval());
-                prevDiffTarget = prevSuperblockLastBlock.getHeader().getDifficultyTarget();
-            }
-            else {
-                lastDiffHeight = nextSuperblockLastBlock.getHeight() - (nextSuperblockLastBlock.getHeight() % this.params.getInterval()) - 1;
-            }
+            long lastDiffHeight = prevSuperblock.getBlockHeight() - (prevSuperblock.getBlockHeight() % this.params.getInterval());
+            long prevDiffTarget = prevSuperblockLastBlock.getHeader().getDifficultyTarget();
+
 
             if(lastDiffHeight < 0)
                 lastDiffHeight = 0;
@@ -126,9 +120,7 @@ public class SuperblockChain {
 
             if(lastDiffBlock == null || lastDiffBlock.getHeight() != lastDiffHeight)
                 throw new Exception("storeSuperblocks: last difficulty adjustment block does not fall on top of a difficulty adjustment block height");
-            if(nextSuperblockHeight < 147) {
-                prevDiffTarget = lastDiffBlock.getHeader().getDifficultyTarget();
-            }
+
             Superblock newSuperblock = new Superblock(this.params, nextSuperblockSyscoinHashes,
                     nextSuperblockLastBlock.getChainWork(), nextSuperblockLastBlock.getHeader().getTimeSeconds(),
                     lastDiffBlock.getHeader().getTimeSeconds(),
