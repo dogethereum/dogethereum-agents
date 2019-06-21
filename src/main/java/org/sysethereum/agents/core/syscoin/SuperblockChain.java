@@ -96,8 +96,7 @@ public class SuperblockChain {
                 getStartTime(syscoinWrapper.getBlock(allSyscoinHashesToHash.peek()).getHeader().getTime());
         Date nextSuperblockEndTime = getEndTime(nextSuperblockStartTime);
 
-        List<Sha256Hash> nextSuperblockSyscoinHashes = new ArrayList<>();
-        Keccak256Hash nextSuperblockPrevHash = initialPreviousSuperblockHash;
+        List<Sha256Hash> nextSuperblockSyscoinHashes;
         long nextSuperblockHeight = getChainHeight() + 1;
         // build and store all superblocks whose last block was mined three hours ago or more
         while (!allSyscoinHashesToHash.empty() && nextSuperblockEndTime.before(getStoringStopTime())) {
@@ -105,10 +104,9 @@ public class SuperblockChain {
             nextSuperblockSyscoinHashes = popBlocksBeforeTime(allSyscoinHashesToHash, nextSuperblockEndTime);
             StoredBlock nextSuperblockLastBlock = syscoinWrapper.getBlock(
                     nextSuperblockSyscoinHashes.get(nextSuperblockSyscoinHashes.size() - 1));
-            Superblock prevSuperblock = getSuperblock(nextSuperblockPrevHash);
-            List<Sha256Hash> prevSuperblockHashes =  prevSuperblock.getSyscoinBlockHashes();
-            StoredBlock prevSuperblockLastBlock = syscoinWrapper.getBlock(
-                    prevSuperblockHashes.get(prevSuperblockHashes.size() - 1));
+            Superblock prevSuperblock = getSuperblock(initialPreviousSuperblockHash);
+            StoredBlock prevSuperblockLastBlock =  syscoinWrapper.getBlock(
+                    prevSuperblock.getLastSyscoinBlockHash());
             // get the last adjustment block and target/timestamp to pass in for diff adjustment calculations in smart contract
             long lastDiffHeight = prevSuperblock.getBlockHeight() - (prevSuperblock.getBlockHeight() % this.params.getInterval());
             long prevDiffTarget = prevSuperblockLastBlock.getHeader().getDifficultyTarget();
@@ -125,7 +123,7 @@ public class SuperblockChain {
                     nextSuperblockLastBlock.getChainWork(), nextSuperblockLastBlock.getHeader().getTimeSeconds(),
                     lastDiffBlock.getHeader().getTimeSeconds(),
                     prevDiffTarget,
-                    nextSuperblockPrevHash, nextSuperblockHeight, nextSuperblockLastBlock.getHeight());
+                    initialPreviousSuperblockHash, nextSuperblockHeight, nextSuperblockLastBlock.getHeight());
             superblockStorage.put(newSuperblock);
             if (newSuperblock.getChainWork().compareTo(superblockStorage.getChainHeadWork()) > 0) {
                 superblockStorage.setChainHead(newSuperblock);
@@ -134,7 +132,6 @@ public class SuperblockChain {
 
             // set prev hash and end time for next superblock
             if (!allSyscoinHashesToHash.empty()) {
-                nextSuperblockPrevHash = newSuperblock.getSuperblockId();
                 nextSuperblockStartTime =
                         getStartTime(syscoinWrapper.getBlock(allSyscoinHashesToHash.peek()).getHeader().getTime());
                 nextSuperblockEndTime = getEndTime(nextSuperblockStartTime);
