@@ -65,6 +65,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     private SystemProperties config;
     private BigInteger gasPriceMinimum;
+    private BigInteger gasPriceMaximum;
 
     private String generalPurposeAndSendSuperblocksAddress;
     private String syscoinSuperblockChallengerAddress;
@@ -136,6 +137,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         }
 
         gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
+        gasPriceMaximum = BigInteger.valueOf(config.gasPriceMaximum());
         BigInteger gasLimit = BigInteger.valueOf(config.gasLimit());
         updateContractFacadesGasPrice();
 
@@ -235,24 +237,29 @@ public class EthWrapper implements SuperblockConstantProvider {
     public void updateContractFacadesGasPrice() throws IOException {
         BigInteger gasPriceSuggestedByEthNode = web3Secondary.ethGasPrice().send().getGasPrice();
         if (gasPriceSuggestedByEthNode.compareTo(gasPriceMinimum) > 0) {
-            gasPriceMinimum = gasPriceSuggestedByEthNode;
-            log.info("setting new min gas price to " + gasPriceMinimum);
-            if(claimManager != null)
-                claimManager.setGasPrice(gasPriceMinimum);
-            if(claimManagerForChallenges != null)
-                claimManagerForChallenges.setGasPrice(gasPriceMinimum);
-            if(superblocks != null)
-                superblocks.setGasPrice(gasPriceMinimum);
-            if(battleManager != null)
-                battleManager.setGasPrice(gasPriceMinimum);
-            if(claimManagerGetter != null)
-                claimManagerGetter.setGasPrice(gasPriceMinimum);
-            if(claimManagerForChallengesGetter != null)
-                claimManagerForChallengesGetter.setGasPrice(gasPriceMinimum);
-            if(superblocksGetter != null)
-                superblocksGetter.setGasPrice(gasPriceMinimum);
-            if(battleManagerGetter != null)
-                battleManagerGetter.setGasPrice(gasPriceMinimum);
+            if (gasPriceSuggestedByEthNode.compareTo(gasPriceMaximum) > 0) {
+                gasPriceSuggestedByEthNode = gasPriceMaximum;
+            }
+            if(gasPriceMinimum != gasPriceSuggestedByEthNode) {
+                gasPriceMinimum = gasPriceSuggestedByEthNode;
+                log.info("setting new min gas price to " + gasPriceMinimum);
+                if (claimManager != null)
+                    claimManager.setGasPrice(gasPriceMinimum);
+                if (claimManagerForChallenges != null)
+                    claimManagerForChallenges.setGasPrice(gasPriceMinimum);
+                if (superblocks != null)
+                    superblocks.setGasPrice(gasPriceMinimum);
+                if (battleManager != null)
+                    battleManager.setGasPrice(gasPriceMinimum);
+                if (claimManagerGetter != null)
+                    claimManagerGetter.setGasPrice(gasPriceMinimum);
+                if (claimManagerForChallengesGetter != null)
+                    claimManagerForChallengesGetter.setGasPrice(gasPriceMinimum);
+                if (superblocksGetter != null)
+                    superblocksGetter.setGasPrice(gasPriceMinimum);
+                if (battleManagerGetter != null)
+                    battleManagerGetter.setGasPrice(gasPriceMinimum);
+            }
         }
     }
 

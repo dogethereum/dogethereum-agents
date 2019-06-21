@@ -209,7 +209,9 @@ public class SystemProperties {
     public long gasPriceMinimum() {
         return getLongProperty("gas.price.min", 0);
     }
-
+    public long gasPriceMaximum() {
+        return getLongProperty("gas.price.max",  0);
+    }
     public long gasLimit() {
         return getLongProperty("gas.limit", 0);
     }
