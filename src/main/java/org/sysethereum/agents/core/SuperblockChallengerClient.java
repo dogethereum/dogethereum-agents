@@ -8,6 +8,7 @@ import org.sysethereum.agents.core.syscoin.Superblock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.sysethereum.agents.core.syscoin.SuperblockUtils;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -227,7 +228,10 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @throws Exception
      */
     private void reactToBlockHeaderResponse(EthWrapper.RespondBlockHeaderEvent defenderResponse) throws Exception {
-        Sha256Hash syscoinBlockHash = Sha256Hash.wrapReversed(Sha256Hash.hashTwice(defenderResponse.blockHeader));
+        // get the first 80 bytes of the header and hash, only first 80 bytes because auxpow makes the header larger yet the txid is still based on
+        // first 80 bytes.
+        Sha256Hash syscoinBlockHash = Sha256Hash.wrapReversed(Sha256Hash.hashTwice(SuperblockUtils.readBytes(
+                defenderResponse.blockHeader, 0, 80)));
         queryNextBlockHeaderOrVerifySuperblock(defenderResponse.sessionId, defenderResponse.superblockId,
                 syscoinBlockHash);
 
