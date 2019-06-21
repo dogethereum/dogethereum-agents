@@ -228,12 +228,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @throws Exception
      */
     private void reactToBlockHeaderResponse(EthWrapper.RespondBlockHeaderEvent defenderResponse) throws Exception {
-        // get the first 80 bytes of the header and hash, only first 80 bytes because auxpow makes the header larger yet the txid is still based on
-        // first 80 bytes.
-        Sha256Hash syscoinBlockHash = Sha256Hash.wrapReversed(Sha256Hash.hashTwice(SuperblockUtils.readBytes(
-                defenderResponse.blockHeader, 0, 80)));
         queryNextBlockHeaderOrVerifySuperblock(defenderResponse.sessionId, defenderResponse.superblockId,
-                syscoinBlockHash);
+                defenderResponse.blockSha256Hash);
 
     }
 

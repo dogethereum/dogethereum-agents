@@ -206,8 +206,7 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
             newRespondBlockHeaderEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
             newRespondBlockHeaderEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
             newRespondBlockHeaderEventResponse.challenger = new Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
-            newRespondBlockHeaderEventResponse.blockHeader = new DynamicBytes ((byte[])eventValues.getNonIndexedValues().get(3).getValue());
-            newRespondBlockHeaderEventResponse.powBlockHeader = new DynamicBytes ((byte[])eventValues.getNonIndexedValues().get(4).getValue());
+            newRespondBlockHeaderEventResponse.blockSha256Hash = new Bytes32((byte[])eventValues.getNonIndexedValues().get(3).getValue());
             result.add(newRespondBlockHeaderEventResponse);
         }
 

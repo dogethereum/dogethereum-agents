@@ -1094,8 +1094,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             respondBlockHeaderEvent.superblockId = Keccak256Hash.wrap(response.superblockHash.getValue());
             respondBlockHeaderEvent.sessionId = Keccak256Hash.wrap(response.sessionId.getValue());
             respondBlockHeaderEvent.challenger = response.challenger.getValue();
-            respondBlockHeaderEvent.blockHeader = response.blockHeader.getValue();
-            respondBlockHeaderEvent.powBlockHeader = response.powBlockHeader.getValue();
+            respondBlockHeaderEvent.blockSha256Hash = Sha256Hash.wrap(response.blockSha256Hash.getValue());
             result.add(respondBlockHeaderEvent);
         }
 
@@ -1115,8 +1114,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         public Keccak256Hash superblockId;
         public Keccak256Hash sessionId;
         public String challenger;
-        public byte[] blockHeader;
-        public byte[] powBlockHeader;
+        public Sha256Hash blockSha256Hash;
     }
 
     public static class SuperblockBattleDecidedEvent {
