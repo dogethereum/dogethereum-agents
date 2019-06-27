@@ -76,7 +76,8 @@ public class EthWrapper implements SuperblockConstantProvider {
     private BigInteger verifySuperblockCost;
     @Autowired
     private SuperblockChain superblockChain;
-
+    @Autowired
+    private SyscoinWrapper syscoinWrapper;
     private int randomizationCounter;
 
     /* ---------------------------------- */
@@ -1188,9 +1189,10 @@ public class EthWrapper implements SuperblockConstantProvider {
                 blockSiblingsMap.add(new Uint256(sha256Hash.toBigInteger()));
         }
 
-
+        AltcoinBlock lastBlock = (AltcoinBlock)syscoinWrapper.getBlock(superblock.getLastSyscoinBlockHash()).getHeader();
+        byte[] blockHeaderBytes = lastBlock.bitcoinSerialize();
         CompletableFuture<TransactionReceipt> futureReceipt = battleManager.respondBlockHeaderProof(
-                new Bytes32(sessionId.getBytes()),new DynamicArray<Uint256>(blockSiblingsMap),new Uint256(0), new Uint256(blockHashes.size()), null).sendAsync();
+                new Bytes32(sessionId.getBytes()),new DynamicArray<Uint256>(blockSiblingsMap),new Uint256(0), new Uint256(blockHashes.size()), new DynamicBytes(blockHeaderBytes)).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("Responded to block header proof query for Syscoin session {}, Receipt: {}",
                          sessionId, receipt)
