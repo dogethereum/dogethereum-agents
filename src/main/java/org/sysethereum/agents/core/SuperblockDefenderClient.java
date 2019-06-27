@@ -39,7 +39,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     public long reactToEvents(long fromBlock, long toBlock) {
         try {
             respondToMerkleRootHashesQueries(fromBlock, toBlock);
-            respondToBlockHeaderQueries(fromBlock, toBlock);
+            respondToBlockHeaderProofQueries(fromBlock, toBlock);
 
             // Maintain data structures
             removeSemiApprovedDescendants(fromBlock, toBlock);
@@ -120,19 +120,17 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     /* - Reacting to events - */
 
-    private void respondToBlockHeaderQueries(long fromBlock, long toBlock)
+    private void respondToBlockHeaderProofQueries(long fromBlock, long toBlock)
             throws IOException, BlockStoreException, Exception {
-        List<EthWrapper.QueryBlockHeaderEvent> queryBlockHeaderEvents =
-                ethWrapper.getBlockHeaderQueries(fromBlock, toBlock);
+        List<EthWrapper.QueryBlockHeaderProofEvent> queryBlockHeaderEvents =
+                ethWrapper.getBlockHeaderProofQueries(fromBlock, toBlock);
 
-        for (EthWrapper.QueryBlockHeaderEvent queryBlockHeader : queryBlockHeaderEvents) {
-            if (isMine(queryBlockHeader) && ethWrapper.getClaimExists(queryBlockHeader.superblockId) && !ethWrapper.getClaimDecided(queryBlockHeader.superblockId)) {
-                log.info("Header requested for Syscoin block {}, session {}. Responding now.",
-                        queryBlockHeader.syscoinBlockHash, queryBlockHeader.sessionId);
+        for (EthWrapper.QueryBlockHeaderProofEvent queryBlockHeader : queryBlockHeaderEvents) {
+            if (isMine(queryBlockHeader) /*&& ethWrapper.getClaimExists(queryBlockHeader.superblockId) && !ethWrapper.getClaimDecided(queryBlockHeader.superblockId)*/) {
+                log.info("Header proof requested for session {}. Responding now.", queryBlockHeader.sessionId);
 
-                StoredBlock syscoinBlock = syscoinWrapper.getBlock(queryBlockHeader.syscoinBlockHash);
-                ethWrapper.respondBlockHeader(queryBlockHeader.superblockId, queryBlockHeader.sessionId,
-                        (AltcoinBlock) syscoinBlock.getHeader(), myAddress);
+                //StoredBlock syscoinBlock = syscoinWrapper.getBlock(queryBlockHeader.syscoinBlockHash);
+                ethWrapper.respondBlockHeaderProof(queryBlockHeader.sessionId, myAddress);
             }
         }
     }
@@ -168,7 +166,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     /* ---- HELPER METHODS ---- */
 
-    private boolean isMine(EthWrapper.QueryBlockHeaderEvent queryBlockHeader) {
+    private boolean isMine(EthWrapper.QueryBlockHeaderProofEvent queryBlockHeader) {
         return queryBlockHeader.submitter.equals(myAddress);
     }
 

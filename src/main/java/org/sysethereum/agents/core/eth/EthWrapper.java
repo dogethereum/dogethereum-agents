@@ -1091,7 +1091,6 @@ public class EthWrapper implements SuperblockConstantProvider {
     public List<RespondBlockHeaderEvent> getRespondBlockHeaderEvents(long startBlock, long endBlock)
             throws IOException {
         List<RespondBlockHeaderEvent> result = new ArrayList<>();
-        List<SyscoinBattleManager.RespondBlockHeaderEventResponse> respondBlockHeaderEvents =
                 battleManagerForChallengesGetter.getRespondBlockHeaderEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
@@ -1099,14 +1098,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         for (SyscoinBattleManager.RespondBlockHeaderEventResponse response : respondBlockHeaderEvents) {
             RespondBlockHeaderEvent respondBlockHeaderEvent = new RespondBlockHeaderEvent();
             respondBlockHeaderEvent.superblockId = Keccak256Hash.wrap(response.superblockHash.getValue());
-            respondBlockHeaderEvent.sessionId = Keccak256Hash.wrap(response.sessionId.getValue());
-            respondBlockHeaderEvent.challenger = response.challenger.getValue();
-            respondBlockHeaderEvent.blockSha256Hash = Sha256Hash.wrap(response.blockSha256Hash.getValue());
-            result.add(respondBlockHeaderEvent);
-        }
-
-        return result;
-    }
 
     // Event wrapper classes
 
@@ -1118,6 +1109,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     public static class RespondBlockHeaderEvent {
+    public static class RespondBlockHeaderProofEvent {
         public Keccak256Hash superblockId;
         public Keccak256Hash sessionId;
         public String challenger;
