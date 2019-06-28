@@ -49,7 +49,21 @@ public class EthWrapper implements SuperblockConstantProvider {
     private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
     private Web3j web3;
     private Web3j web3Secondary;
-
+    public enum ChallengeState {
+        Unchallenged,             // Unchallenged submission
+        Challenged,               // Claims was challenged
+        QueryMerkleRootHashes,    // Challenger expecting block hashes
+        RespondMerkleRootHashes,  // Block hashes were received and verified
+        QueryBlockHeaderProof,     // Challenger is requesting block hash proof
+        PendingVerification,      // All block hashes were received and verified by merkle commitment to superblock merkle root set to pending superblock verification
+        SuperblockVerified,       // Superblock verified
+        SuperblockFailed          // Superblock not valid
+    }
+    public enum BlockInfoStatus {
+        Uninitialized,
+        Requested,
+        Verified
+    }
     // Extensions of contracts generated automatically by web3j
     private SyscoinClaimManagerExtended claimManager;
     private SyscoinClaimManagerExtended claimManagerGetter;
@@ -998,7 +1012,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         for (SyscoinBattleManager.QueryBlockHeaderProofEventResponse response : queryBlockHeaderEvents) {
             QueryBlockHeaderProofEvent queryBlockHeaderEvent = new QueryBlockHeaderProofEvent();
             queryBlockHeaderEvent.sessionId = Keccak256Hash.wrap(response.sessionId.getValue());
-            queryBlockHeaderEvent.submitter = response.submitter.getValue();
             result.add(queryBlockHeaderEvent);
         }
 
@@ -1173,30 +1186,42 @@ public class EthWrapper implements SuperblockConstantProvider {
         }
         makeDepositIfNeeded(account, claimManager, claimManagerGetter, respondBlockHeaderProofCost);
         Superblock superblock = getSuperblockBySession(sessionId);
-        List<Sha256Hash> blockHashes = superblock.getSyscoinBlockHashes();
+        List<Sha256Hash> syscoinBlockHashes = superblock.getSyscoinBlockHashes();
 
         List<Uint256> blockSiblingsMap = new ArrayList<Uint256>();
-        for(int i = 0;i<blockHashes.size();i++) {
-            int syscoinBlockIndex = i;
-            byte[] includeBits = new byte[(int) Math.ceil(blockHashes.size() / 8.0)];
-            Utils.setBitLE(includeBits, syscoinBlockIndex);
-            SuperblockPartialMerkleTree superblockPMT = SuperblockPartialMerkleTree.buildFromLeaves(config.getAgentConstants().getSyscoinParams(),
-                    includeBits, blockHashes);
-            List<Sha256Hash> matchedHashes = new ArrayList<Sha256Hash>();
-            Sha256Hash merkleRoot = superblockPMT.getTxnHashAndMerkleRoot(matchedHashes);
-            List<Sha256Hash> syscoinBlockSiblingsSha256Hash = superblockPMT.getTransactionPath(blockHashes.get(i));
+        // hash all the block syscoinBlockHashes into a Merkle tree
+        byte[] includeBits = new byte[(int) Math.ceil(syscoinBlockHashes.size() / 8.0)];
+        for (int i = 0; i < syscoinBlockHashes.size(); i++)
+            Utils.setBitLE(includeBits, i);
+        SuperblockPartialMerkleTree syscoinBlockHashesFullMerkleTree = SuperblockPartialMerkleTree.buildFromLeaves(
+                config.getAgentConstants().getSyscoinParams(), includeBits, syscoinBlockHashes);
+
+        Sha256Hash merkleRoot = syscoinBlockHashesFullMerkleTree.getTxnHashAndMerkleRoot(syscoinBlockHashes);
+
+
+        for(int i = 0;i<syscoinBlockHashes.size();i++) {
+            List<Sha256Hash> syscoinBlockSiblingsSha256Hash = syscoinBlockHashesFullMerkleTree.getTransactionPath(syscoinBlockHashes.get(i));
             for (Sha256Hash sha256Hash : syscoinBlockSiblingsSha256Hash)
                 blockSiblingsMap.add(new Uint256(sha256Hash.toBigInteger()));
         }
-
-        AltcoinBlock lastBlock = (AltcoinBlock)syscoinWrapper.getBlock(superblock.getLastSyscoinBlockHash()).getHeader();
-        byte[] blockHeaderBytes = lastBlock.bitcoinSerialize();
-        CompletableFuture<TransactionReceipt> futureReceipt = battleManager.respondBlockHeaderProof(
-                new Bytes32(sessionId.getBytes()),new DynamicArray<Uint256>(blockSiblingsMap),new Uint256(0), new Uint256(blockHashes.size()), new DynamicBytes(blockHeaderBytes)).sendAsync();
-        futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("Responded to block header proof query for Syscoin session {}, Receipt: {}",
-                         sessionId, receipt)
-        );
+        if(getSessionStatus(sessionId) == EthWrapper.BlockInfoStatus.Uninitialized){
+            AltcoinBlock lastBlock = (AltcoinBlock) syscoinWrapper.getBlock(superblock.getLastSyscoinBlockHash()).getHeader();
+            byte[] blockHeaderBytes = lastBlock.bitcoinSerialize();
+            CompletableFuture<TransactionReceipt> futureReceipt = battleManager.respondLastBlockHeader(
+                    new Bytes32(sessionId.getBytes()), new DynamicBytes(blockHeaderBytes)).sendAsync();
+            futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
+                    log.info("Responded to last block header query for Syscoin session {}, Receipt: {}",
+                            sessionId, receipt)
+            );
+        }
+        if(getSessionChallengeState(sessionId) == EthWrapper.ChallengeState.QueryBlockHeaderProof) {
+            CompletableFuture<TransactionReceipt> futureReceipt1 = battleManager.respondBlockHeaderProof(
+                    new Bytes32(sessionId.getBytes()), new DynamicArray<Uint256>(blockSiblingsMap)).sendAsync();
+            futureReceipt1.thenAcceptAsync((TransactionReceipt receipt) ->
+                    log.info("Responded to block header proof query for Syscoin session {}, Receipt: {}",
+                            sessionId, receipt)
+            );
+        }
     }
 
     /**
@@ -1391,7 +1416,15 @@ public class EthWrapper implements SuperblockConstantProvider {
         byte[] ret = battleManagerGetter.getSuperblockBySession(new Bytes32(sessionId.getBytes())).send().getValue();
         return superblockChain.getSuperblock(Keccak256Hash.wrap(ret));
     }
+    public ChallengeState getSessionChallengeState(Keccak256Hash sessionId) throws Exception {
+        BigInteger ret = battleManagerGetter.getSessionChallengeState(new Bytes32(sessionId.getBytes())).send().getValue();
+        return ChallengeState.values()[ret.intValue()];
+    }
 
+    public BlockInfoStatus getSessionStatus(Keccak256Hash sessionId) throws Exception {
+        BigInteger ret = battleManagerGetter.getSessionStatus(new Bytes32(sessionId.getBytes())).send().getValue();
+        return BlockInfoStatus.values()[ret.intValue()];
+    }
     public int getRandomizationCounter(){
         return randomizationCounter;
     }

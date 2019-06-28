@@ -50,7 +50,6 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
             QueryBlockHeaderProofEventResponse queryBlockHeaderEventResponse = new QueryBlockHeaderProofEventResponse();
             queryBlockHeaderEventResponse.log = eventValues.getLog();
             queryBlockHeaderEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            queryBlockHeaderEventResponse.submitter = new Address((String)eventValues.getNonIndexedValues().get(1).getValue());
             result.add(queryBlockHeaderEventResponse);
         }
 

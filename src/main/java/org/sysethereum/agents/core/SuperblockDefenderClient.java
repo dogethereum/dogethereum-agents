@@ -5,6 +5,7 @@ import org.bitcoinj.core.AltcoinBlock;
 import org.bitcoinj.core.StoredBlock;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.core.Sha256Hash;
+import org.sysethereum.agents.contract.SyscoinBattleManager;
 import org.sysethereum.agents.core.syscoin.*;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.slf4j.Logger;
@@ -126,10 +127,9 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 ethWrapper.getBlockHeaderProofQueries(fromBlock, toBlock);
 
         for (EthWrapper.QueryBlockHeaderProofEvent queryBlockHeader : queryBlockHeaderEvents) {
-            if (isMine(queryBlockHeader) /*&& ethWrapper.getClaimExists(queryBlockHeader.superblockId) && !ethWrapper.getClaimDecided(queryBlockHeader.superblockId)*/) {
+            if (isMine(queryBlockHeader) && (ethWrapper.getSessionChallengeState(queryBlockHeader.sessionId) == EthWrapper.ChallengeState.QueryBlockHeaderProof)) {
                 log.info("Header proof requested for session {}. Responding now.", queryBlockHeader.sessionId);
 
-                //StoredBlock syscoinBlock = syscoinWrapper.getBlock(queryBlockHeader.syscoinBlockHash);
                 ethWrapper.respondBlockHeaderProof(queryBlockHeader.sessionId, myAddress);
             }
         }
@@ -140,7 +140,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 ethWrapper.getMerkleRootHashesQueries(fromBlock, toBlock);
 
         for (EthWrapper.QueryMerkleRootHashesEvent queryMerkleRootHashes : queryMerkleRootHashesEvents) {
-            if (isMine(queryMerkleRootHashes) && ethWrapper.getClaimExists(queryMerkleRootHashes.superblockId) && !ethWrapper.getClaimDecided(queryMerkleRootHashes.superblockId)) {
+            if (isMine(queryMerkleRootHashes) && ethWrapper.getSessionChallengeState(queryMerkleRootHashes.sessionId) == EthWrapper.ChallengeState.QueryMerkleRootHashes) {
                 Superblock superblock = superblockChain.getSuperblock(queryMerkleRootHashes.superblockId);
                 if(superblock == null)
                     continue;

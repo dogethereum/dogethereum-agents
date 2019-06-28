@@ -160,7 +160,7 @@ public class SyscoinSuperblocks extends Contract {
 
     static {
         _addresses = new HashMap<String, String>();
-        _addresses.put("4", "0xBd78F1C8c6d48f691818C2a9E0499b8Ab5C172A7");
+        _addresses.put("4", "0x1c83071e637a20FaED8a9E13EEE6Cd67c1dCF2E6");
     }
 
     @Deprecated

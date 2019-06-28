@@ -176,7 +176,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 ethWrapper.getRespondMerkleRootHashesEvents(fromBlock, toBlock);
 
         for (EthWrapper.RespondMerkleRootHashesEvent defenderResponse : defenderResponses) {
-            if (isMine(defenderResponse) && ethWrapper.getClaimExists(defenderResponse.superblockId) && !ethWrapper.getClaimDecided(defenderResponse.superblockId)) {
+            if (isMine(defenderResponse) && ethWrapper.getSessionChallengeState(defenderResponse.sessionId) == EthWrapper.ChallengeState.RespondMerkleRootHashes) {
                 startBlockHeaderProofQueries(defenderResponse);
             }
         }
@@ -184,7 +184,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     /**
      * For all block header event responses corresponding to battles that the challenger is taking part in,
-     * queries the next block header if there are more to go; otherwise, end the battle.
+     * end the battle if challenge state is PendingVerification and last block status is verified
      * @param fromBlock
      * @param toBlock
      * @throws Exception
@@ -194,42 +194,26 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 ethWrapper.getRespondBlockHeaderProofEvents(fromBlock, toBlock);
 
         for (EthWrapper.RespondBlockHeaderProofEvent defenderResponse : defenderResponses) {
-            if (isMine(defenderResponse) && ethWrapper.getClaimExists(defenderResponse.superblockId) && !ethWrapper.getClaimDecided(defenderResponse.superblockId)) {
-                reactToBlockHeaderProofResponse(defenderResponse);
+            if (isMine(defenderResponse)){
+                if(ethWrapper.getSessionChallengeState(defenderResponse.sessionId) == EthWrapper.ChallengeState.PendingVerification) {
+                    ethWrapper.verifySuperblock(defenderResponse.sessionId, ethWrapper.getBattleManagerForChallenges());
+                }
             }
         }
     }
 
     /**
-     * Queries header of the first Syscoin block hash in a certain superblock that the challenger is battling.
+     * Queries header proof for the session that the challenger is battling.
      * If it was empty, just verifies it.
      * @param defenderResponse Merkle root hashes response from the defender.
      * @throws Exception
      */
     private void startBlockHeaderProofQueries(EthWrapper.RespondMerkleRootHashesEvent defenderResponse) throws Exception {
         Keccak256Hash superblockId = defenderResponse.superblockId;
-        List<Sha256Hash> syscoinBlockHashes = defenderResponse.blockHashes;
-        log.info("Starting block header queries for superblock {}", superblockId);
+        log.info("Starting block header query proof for superblock {}", superblockId);
 
-        if (!syscoinBlockHashes.isEmpty()) {
-            log.info("Querying first block header for superblock {}", superblockId);
-            ethWrapper.queryBlockHeaderProof(defenderResponse.sessionId,
-                    myAddress);
-        } else {
-            log.info("Merkle root hashes response for superblock {} is empty. Verifying it now.", superblockId);
-            ethWrapper.verifySuperblock(defenderResponse.sessionId, ethWrapper.getBattleManagerForChallenges());
-        }
-    }
-
-    /**
-     * Queries the header for the next hash in the superblock's list of Syscoin hashes if there is one,
-     * ends the battle by verifying the superblock if Syscoin block hash was the last one.
-     * @param defenderResponse Syscoin block hash response from defender.
-     * @throws Exception
-     */
-    private void reactToBlockHeaderProofResponse(EthWrapper.RespondBlockHeaderProofEvent defenderResponse) throws Exception {
-       // queryNextBlockHeaderOrVerifySuperblock(defenderResponse.sessionId, defenderResponse.superblockId,
-               // defenderResponse.blockSha256Hash);
+        ethWrapper.queryBlockHeaderProof(defenderResponse.sessionId,
+                myAddress);
 
     }
 
