@@ -333,23 +333,20 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     @Override
     protected void removeSuperblocks(long fromBlock, long toBlock, List<EthWrapper.SuperblockEvent> superblockEvents)
             throws Exception {
-        boolean withdrawFlag = false;
         for (EthWrapper.SuperblockEvent superblockEvent : superblockEvents) {
             Keccak256Hash superblockId = superblockEvent.superblockId;
 
             if (superblockToSessionsMap.containsKey(superblockId)) {
                 sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(superblockId));
                 superblockToSessionsMap.remove(superblockId);
-                withdrawFlag = true;
             }
 
             if (semiApprovedSet.contains(superblockId)) {
                 semiApprovedSet.remove(superblockId);
-                withdrawFlag = true;
             }
 
         }
-        if (withdrawFlag && config.isWithdrawFundsEnabled()) {
+        if (config.isWithdrawFundsEnabled()) {
             ethWrapper.withdrawAllFundsExceptLimit(myAddress, true);
         }
     }
