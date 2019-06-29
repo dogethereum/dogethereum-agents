@@ -34,20 +34,20 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
     public static String getAddress(String networkId) {
         return getPreviouslyDeployedAddress(networkId);
     }
-    public List<QueryBlockHeaderProofEventResponse> getQueryBlockHeaderProofEventResponses(
+    public List<QueryLastBlockHeaderEventResponse> getQueryLastBlockHeaderEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        List<QueryBlockHeaderProofEventResponse> result = new ArrayList<>();
+        List<QueryLastBlockHeaderEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(QUERYBLOCKHEADERPROOF_EVENT));
+        filter.addSingleTopic(EventEncoder.encode(QUERYLASTBLOCKHEADER_EVENT));
         EthLog ethLog = web3j.ethGetLogs(filter).send();
         List<EthLog.LogResult> logResults = ethLog.getLogs();
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            EventValuesWithLog eventValues = extractEventParametersWithLog(QUERYBLOCKHEADERPROOF_EVENT, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(QUERYLASTBLOCKHEADER_EVENT, log);
 
-            QueryBlockHeaderProofEventResponse queryBlockHeaderEventResponse = new QueryBlockHeaderProofEventResponse();
+            QueryLastBlockHeaderEventResponse queryBlockHeaderEventResponse = new QueryLastBlockHeaderEventResponse();
             queryBlockHeaderEventResponse.log = eventValues.getLog();
             queryBlockHeaderEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
             result.add(queryBlockHeaderEventResponse);
@@ -183,21 +183,21 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
         return result;
     }
 
-    public List<RespondBlockHeaderProofEventResponse> getRespondBlockHeaderProofEventResponses(
+    public List<RespondLastBlockHeaderEventResponse> getRespondLastBlockHeaderEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        List<RespondBlockHeaderProofEventResponse> result = new ArrayList<>();
+        List<RespondLastBlockHeaderEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(RESPONDBLOCKHEADERPROOF_EVENT));
+        filter.addSingleTopic(EventEncoder.encode(RESPONDLASTBLOCKHEADER_EVENT));
         EthLog ethLog = web3j.ethGetLogs(filter).send();
         List<EthLog.LogResult> logResults = ethLog.getLogs();
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            EventValuesWithLog eventValues = extractEventParametersWithLog(RESPONDBLOCKHEADERPROOF_EVENT, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(RESPONDLASTBLOCKHEADER_EVENT, log);
 
-            RespondBlockHeaderProofEventResponse newRespondBlockHeaderEventResponse =
-                    new RespondBlockHeaderProofEventResponse();
+            RespondLastBlockHeaderEventResponse newRespondBlockHeaderEventResponse =
+                    new RespondLastBlockHeaderEventResponse();
             newRespondBlockHeaderEventResponse.log = eventValues.getLog();
             newRespondBlockHeaderEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
             newRespondBlockHeaderEventResponse.challenger = new Address ((String)eventValues.getNonIndexedValues().get(1).getValue());

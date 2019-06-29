@@ -216,8 +216,6 @@ public class SyscoinToEthClient {
         public String merkleRoot;
         public long lastSyscoinBlockTime;
         public String lastSyscoinBlockHash;
-        public long previousSyscoinBlockTime;
-        public long previousSyscoinBlockBits;
         public String parentId;
         public String superblockId;
         public long superblockHeight;
@@ -227,8 +225,6 @@ public class SyscoinToEthClient {
             this.merkleRoot = sbIn.getMerkleRoot().toString();
             this.lastSyscoinBlockTime = sbIn.getLastSyscoinBlockTime();
             this.lastSyscoinBlockHash = sbIn.getLastSyscoinBlockHash().toString();
-            this.previousSyscoinBlockTime = sbIn.getpreviousSyscoinBlockTime();
-            this.previousSyscoinBlockBits = sbIn.getpreviousSyscoinBlockBits();
             this.parentId = sbIn.getParentId().toString();
             this.superblockId = sbIn.getSuperblockId().toString();
             this.superblockHeight = sbIn.getSuperblockHeight();

@@ -59,14 +59,11 @@ public class GenesisSuperblockGeneratorMain {
         List<Sha256Hash> syscoinBlockHashes = parseBlockHashes(reader);
         Keccak256Hash genesisParentHash = Keccak256Hash.wrap(new byte[32]); // initialised with 0s
         StoredBlock lastSyscoinBlock = syscoinWrapper.getBlock(syscoinBlockHashes.get(syscoinBlockHashes.size() - 1));
-        StoredBlock previousToLastSyscoinBlock = syscoinWrapper.getBlock(lastSyscoinBlock.getHeader().getPrevBlockHash());
 
         return new Superblock(params,
                 syscoinBlockHashes,
                 lastSyscoinBlock.getChainWork(),
                 lastSyscoinBlock.getHeader().getTimeSeconds(),
-                previousToLastSyscoinBlock.getHeader().getTimeSeconds(),
-                lastSyscoinBlock.getHeader().getDifficultyTarget(),
                 genesisParentHash,
                 0, lastSyscoinBlock.getHeight());
     }

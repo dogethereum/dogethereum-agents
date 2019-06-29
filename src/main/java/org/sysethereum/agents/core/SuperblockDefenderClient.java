@@ -40,7 +40,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     public long reactToEvents(long fromBlock, long toBlock) {
         try {
             respondToMerkleRootHashesQueries(fromBlock, toBlock);
-            respondToBlockHeaderProofQueries(fromBlock, toBlock);
+            respondToLastBlockHeaderQueries(fromBlock, toBlock);
 
             // Maintain data structures
             removeSemiApprovedDescendants(fromBlock, toBlock);
@@ -121,16 +121,16 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     /* - Reacting to events - */
 
-    private void respondToBlockHeaderProofQueries(long fromBlock, long toBlock)
+    private void respondToLastBlockHeaderQueries(long fromBlock, long toBlock)
             throws IOException, BlockStoreException, Exception {
-        List<EthWrapper.QueryBlockHeaderProofEvent> queryBlockHeaderEvents =
-                ethWrapper.getBlockHeaderProofQueries(fromBlock, toBlock);
+        List<EthWrapper.QueryLastBlockHeaderEvent> queryBlockHeaderEvents =
+                ethWrapper.getLastBlockHeaderQueries(fromBlock, toBlock);
 
-        for (EthWrapper.QueryBlockHeaderProofEvent queryBlockHeader : queryBlockHeaderEvents) {
-            if (isMine(queryBlockHeader) && (ethWrapper.getSessionChallengeState(queryBlockHeader.sessionId) == EthWrapper.ChallengeState.QueryBlockHeaderProof)) {
-                log.info("Header proof requested for session {}. Responding now.", queryBlockHeader.sessionId);
+        for (EthWrapper.QueryLastBlockHeaderEvent queryBlockHeader : queryBlockHeaderEvents) {
+            if (isMine(queryBlockHeader) && (ethWrapper.getSessionChallengeState(queryBlockHeader.sessionId) == EthWrapper.ChallengeState.QueryLastBlockHeader)) {
+                log.info("Last header requested for session {}. Responding now.", queryBlockHeader.sessionId);
 
-                ethWrapper.respondBlockHeaderProof(queryBlockHeader.sessionId, myAddress);
+                ethWrapper.respondLastBlockHeader(queryBlockHeader.sessionId, myAddress);
             }
         }
     }
@@ -166,7 +166,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     /* ---- HELPER METHODS ---- */
 
-    private boolean isMine(EthWrapper.QueryBlockHeaderProofEvent queryBlockHeader) {
+    private boolean isMine(EthWrapper.QueryLastBlockHeaderEvent queryBlockHeader) {
         return queryBlockHeader.submitter.equals(myAddress);
     }
 

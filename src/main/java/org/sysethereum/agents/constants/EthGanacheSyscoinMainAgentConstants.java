@@ -36,8 +36,8 @@ public class EthGanacheSyscoinMainAgentConstants extends AgentConstants {
         long lastBlockHeight = 0;
         genesisSuperblock = new Superblock(
                 syscoinParams, genesisSuperblockBlockList,
-                BigInteger.valueOf(0x100001), syscoinParams.getGenesisBlock().getTimeSeconds(), 0,
-                syscoinParams.getGenesisBlock().getDifficultyTarget(), genesisSuperblockParentId, 0, lastBlockHeight);
+                BigInteger.valueOf(0x100001), syscoinParams.getGenesisBlock().getTimeSeconds(),
+              genesisSuperblockParentId, 0, lastBlockHeight);
 
 
         defenderTimerTaskPeriod = 15 * 1000;

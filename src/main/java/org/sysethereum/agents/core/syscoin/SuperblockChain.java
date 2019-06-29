@@ -38,7 +38,7 @@ public class SuperblockChain {
     private NetworkParameters params;
     private SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
 
-    int SUPERBLOCK_DURATION; // time window for a superblock (in seconds)
+    int SUPERBLOCK_DURATION; // num blocks in a superblock
     private int SUPERBLOCK_DELAY; // time to wait before building a superblock
     private int SUPERBLOCK_STORING_WINDOW; // small time window between storing and sending to avoid losing sync
     private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
@@ -103,27 +103,15 @@ public class SuperblockChain {
         while (!allSyscoinHashesToHash.empty() && nextSuperblockEndTime.before(getStoringStopTime())) {
             // Modify allSyscoinHashesToHash and get hashes for next superblock.
             nextSuperblockSyscoinHashes = popBlocksBeforeTime(allSyscoinHashesToHash, nextSuperblockEndTime);
+            // if we don't have a collection of 60 blocks that are atleast 3 hours old we exit
+            if(nextSuperblockSyscoinHashes.isEmpty()){
+                break;
+            }
             StoredBlock nextSuperblockLastBlock = syscoinWrapper.getBlock(
                     nextSuperblockSyscoinHashes.get(nextSuperblockSyscoinHashes.size() - 1));
-            Superblock prevSuperblock = getSuperblock(nextSuperblockPrevHash);
-            StoredBlock prevSuperblockLastBlock =  syscoinWrapper.getBlock(
-                    prevSuperblock.getLastSyscoinBlockHash());
-            // get the last adjustment block and target/timestamp to pass in for diff adjustment calculations in smart contract
-            long lastDiffHeight = prevSuperblock.getBlockHeight() - (prevSuperblock.getBlockHeight() % this.params.getInterval());
-            long prevDiffTarget = prevSuperblockLastBlock.getHeader().getDifficultyTarget();
-
-
-            if(lastDiffHeight < 0)
-                lastDiffHeight = 0;
-            StoredBlock lastDiffBlock = syscoinWrapper.getBlockByHeight(nextSuperblockLastBlock.getHeader().getHash(), (int)lastDiffHeight);
-
-            if(lastDiffBlock == null || lastDiffBlock.getHeight() != lastDiffHeight)
-                throw new Exception("storeSuperblocks: last difficulty adjustment block does not fall on top of a difficulty adjustment block height");
 
             Superblock newSuperblock = new Superblock(this.params, nextSuperblockSyscoinHashes,
                     nextSuperblockLastBlock.getChainWork(), nextSuperblockLastBlock.getHeader().getTimeSeconds(),
-                    lastDiffBlock.getHeader().getTimeSeconds(),
-                    prevDiffTarget,
                     nextSuperblockPrevHash, nextSuperblockHeight, nextSuperblockLastBlock.getHeight());
             superblockStorage.put(newSuperblock);
             if (newSuperblock.getChainWork().compareTo(superblockStorage.getChainHeadWork()) > 0) {
@@ -146,12 +134,12 @@ public class SuperblockChain {
 
     /**
      * Given a stack of blocks sorted from least to most recently mined,
-     * returns a list of hashes belonging to those which were mined before a certain time.
+     * returns a list of 60 hashes belonging to those which were mined before a certain time.
      * These blocks can be used for constructing a superblock mined before a certain time.
      * @param hashStack All the Syscoin blocks that come after the last block of the last stored superblock.
      *                  Must not be empty.
      *                  Modified by function: all the blocks up to and not including the first ('highest') one
-     *                  that was mined after endTime are popped.
+     *                  that was mined after endTime are popped requiring atleast 60 blocks or nothing is popped.
      * @param endTime Time limit of the superblock that this method is being used to construct.
      * @return List of superblocks mined before endTime, sorted from least to most recently mined.
      * @throws Exception if list is empty.
@@ -162,11 +150,19 @@ public class SuperblockChain {
         }
 
         List<Sha256Hash> poppedBlocks = new ArrayList<>();
-
-        while (!hashStack.empty() && syscoinWrapper.getBlock(hashStack.peek()).getHeader().getTime().before(endTime)) {
-            poppedBlocks.add(hashStack.pop());
+        boolean haveEnoughForDuration = false;
+        if(haveEnoughForDuration){
+            while (!hashStack.empty() && syscoinWrapper.getBlock(hashStack.peek()).getHeader().getTime().before(endTime)) {
+                poppedBlocks.add(hashStack.pop());
+                if(poppedBlocks.size() >= SUPERBLOCK_DURATION) {
+                    haveEnoughForDuration = true;
+                    break;
+                }
+            }
         }
-
+        // if we don't have SUPERBLOCK_DURATION amount then just clear, we don't have enough to create a superblock yet
+        if(!haveEnoughForDuration)
+            poppedBlocks.clear();
         return poppedBlocks;
     }
 

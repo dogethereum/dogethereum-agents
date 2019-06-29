@@ -54,7 +54,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         Challenged,               // Claims was challenged
         QueryMerkleRootHashes,    // Challenger expecting block hashes
         RespondMerkleRootHashes,  // Block hashes were received and verified
-        QueryBlockHeaderProof,     // Challenger is requesting block hash proof
+        QueryLastBlockHeader,     // Challenger is requesting last block header
         PendingVerification,      // All block hashes were received and verified by merkle commitment to superblock merkle root set to pending superblock verification
         SuperblockVerified,       // Superblock verified
         SuperblockFailed          // Superblock not valid
@@ -86,7 +86,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     private BigInteger minProposalDeposit;
     private BigInteger minChallengeDeposit;
     private BigInteger respondMerkleRootHashesCost;
-    private BigInteger respondBlockHeaderProofCost;
+    private BigInteger respondLastBlockHeaderCost;
     private BigInteger verifySuperblockCost;
     @Autowired
     private SuperblockChain superblockChain;
@@ -200,7 +200,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         minProposalDeposit = claimManagerGetter.minProposalDeposit().send().getValue();
         minChallengeDeposit = claimManagerGetter.minChallengeDeposit().send().getValue();
         respondMerkleRootHashesCost = claimManagerGetter.respondMerkleRootHashesCost().send().getValue();
-        respondBlockHeaderProofCost = claimManagerGetter.respondBlockHeaderProofCost().send().getValue();
+        respondLastBlockHeaderCost = claimManagerGetter.respondLastBlockHeaderCost().send().getValue();
         verifySuperblockCost = claimManagerGetter.verifySuperblockCost().send().getValue();
     }
 
@@ -462,9 +462,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         return claimManager.proposeSuperblock(new Bytes32(superblock.getMerkleRoot().getBytes()),
                 new Uint256(superblock.getChainWork()),
                 new Uint256(superblock.getLastSyscoinBlockTime()),
-                new Uint256(superblock.getpreviousSyscoinBlockTime()),
                 new Bytes32(superblock.getLastSyscoinBlockHash().getBytes()),
-                new Uint32(superblock.getpreviousSyscoinBlockBits()),
                 new Bytes32(superblock.getParentId().getBytes()),
                 new Uint32(superblock.getBlockHeight())).sendAsync();
     }
@@ -511,7 +509,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     private BigInteger getSuperblockDeposit(int nHashes) throws Exception {
         BigInteger result = minProposalDeposit;
-        result = result.add(BigInteger.valueOf(nHashes+1).multiply(respondBlockHeaderProofCost));
+        result = result.add(BigInteger.valueOf(nHashes+1).multiply(respondLastBlockHeaderCost));
         return result.add(respondMerkleRootHashesCost);
     }
 
@@ -994,23 +992,23 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     /**
-     * Listens to QueryBlockHeader events from SyscoinBattleManager contract within a given block window
+     * Listens to QueryLastBlockHeader events from SyscoinBattleManager contract within a given block window
      * and parses web3j-generated instances into easier to manage QueryBlockHeaderEvent objects.
      * @param startBlock First Ethereum block to poll.
      * @param endBlock Last Ethereum block to poll.
      * @return All QueryBlockHeader events from SyscoinBattleManager as QueryBlockHeaderEvent objects.
      * @throws IOException
      */
-    public List<QueryBlockHeaderProofEvent> getBlockHeaderProofQueries(long startBlock, long endBlock)
+    public List<QueryLastBlockHeaderEvent> getLastBlockHeaderQueries(long startBlock, long endBlock)
             throws IOException {
-        List<QueryBlockHeaderProofEvent> result = new ArrayList<>();
-        List<SyscoinBattleManager.QueryBlockHeaderProofEventResponse> queryBlockHeaderEvents =
-                battleManagerGetter.getQueryBlockHeaderProofEventResponses(
+        List<QueryLastBlockHeaderEvent> result = new ArrayList<>();
+        List<SyscoinBattleManager.QueryLastBlockHeaderEventResponse> queryBlockHeaderEvents =
+                battleManagerGetter.getQueryLastBlockHeaderEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
-        for (SyscoinBattleManager.QueryBlockHeaderProofEventResponse response : queryBlockHeaderEvents) {
-            QueryBlockHeaderProofEvent queryBlockHeaderEvent = new QueryBlockHeaderProofEvent();
+        for (SyscoinBattleManager.QueryLastBlockHeaderEventResponse response : queryBlockHeaderEvents) {
+            QueryLastBlockHeaderEvent queryBlockHeaderEvent = new QueryLastBlockHeaderEvent();
             queryBlockHeaderEvent.sessionId = Keccak256Hash.wrap(response.sessionId.getValue());
             result.add(queryBlockHeaderEvent);
         }
@@ -1047,7 +1045,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     // Event wrapper classes
 
-    public static class QueryBlockHeaderProofEvent {
+    public static class QueryLastBlockHeaderEvent {
         public Keccak256Hash sessionId;
         public String submitter;
     }
@@ -1095,7 +1093,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         public List<Sha256Hash> blockHashes;
     }
 
-    public static class RespondBlockHeaderProofEvent {
+    public static class RespondLastBlockHeaderEvent {
         public Keccak256Hash superblockId;
         public Keccak256Hash sessionId;
         public String challenger;
@@ -1156,16 +1154,16 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @return All RespondBlockHeader events from SyscoinBattleManager as RespondBlockHeaderEvent objects.
      * @throws IOException
      */
-    public List<RespondBlockHeaderProofEvent> getRespondBlockHeaderProofEvents(long startBlock, long endBlock)
+    public List<RespondLastBlockHeaderEvent> getRespondLastBlockHeaderEvents(long startBlock, long endBlock)
             throws IOException {
-        List<RespondBlockHeaderProofEvent> result = new ArrayList<>();
-        List<SyscoinBattleManager.RespondBlockHeaderProofEventResponse> respondBlockHeaderEvents =
-                battleManagerForChallengesGetter.getRespondBlockHeaderProofEventResponses(
+        List<RespondLastBlockHeaderEvent> result = new ArrayList<>();
+        List<SyscoinBattleManager.RespondLastBlockHeaderEventResponse> respondBlockHeaderEvents =
+                battleManagerForChallengesGetter.getRespondLastBlockHeaderEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
-        for (SyscoinBattleManager.RespondBlockHeaderProofEventResponse response : respondBlockHeaderEvents) {
-            RespondBlockHeaderProofEvent respondBlockHeaderEvent = new RespondBlockHeaderProofEvent();
+        for (SyscoinBattleManager.RespondLastBlockHeaderEventResponse response : respondBlockHeaderEvents) {
+            RespondLastBlockHeaderEvent respondBlockHeaderEvent = new RespondLastBlockHeaderEvent();
             respondBlockHeaderEvent.sessionId = Keccak256Hash.wrap(response.sessionId.getValue());
             respondBlockHeaderEvent.challenger = response.challenger.getValue();
             result.add(respondBlockHeaderEvent);
@@ -1174,36 +1172,18 @@ public class EthWrapper implements SuperblockConstantProvider {
         return result;
     }
     /**
-     * Responds to a Syscoin block header query.
+     * Responds to a Syscoin last block header query.
      * @param sessionId Battle session ID.
      * @param account Caller's address.
      */
-    public void respondBlockHeaderProof(Keccak256Hash sessionId,
+    public void respondLastBlockHeader(Keccak256Hash sessionId,
                                     String account) throws Exception {
         Thread.sleep(500); // in case the transaction takes some time to complete
         if (arePendingTransactionsForSendSuperblocksAddress()) {
             throw new Exception("Skipping respondBlockHeader, there are pending transaction for the sender address.");
         }
-        makeDepositIfNeeded(account, claimManager, claimManagerGetter, respondBlockHeaderProofCost);
+        makeDepositIfNeeded(account, claimManager, claimManagerGetter, respondLastBlockHeaderCost);
         Superblock superblock = getSuperblockBySession(sessionId);
-        List<Sha256Hash> syscoinBlockHashes = superblock.getSyscoinBlockHashes();
-
-        List<Uint256> blockSiblingsMap = new ArrayList<Uint256>();
-        // hash all the block syscoinBlockHashes into a Merkle tree
-        byte[] includeBits = new byte[(int) Math.ceil(syscoinBlockHashes.size() / 8.0)];
-        for (int i = 0; i < syscoinBlockHashes.size(); i++)
-            Utils.setBitLE(includeBits, i);
-        SuperblockPartialMerkleTree syscoinBlockHashesFullMerkleTree = SuperblockPartialMerkleTree.buildFromLeaves(
-                config.getAgentConstants().getSyscoinParams(), includeBits, syscoinBlockHashes);
-
-        Sha256Hash merkleRoot = syscoinBlockHashesFullMerkleTree.getTxnHashAndMerkleRoot(syscoinBlockHashes);
-
-
-        for(int i = 0;i<syscoinBlockHashes.size();i++) {
-            List<Sha256Hash> syscoinBlockSiblingsSha256Hash = syscoinBlockHashesFullMerkleTree.getTransactionPath(syscoinBlockHashes.get(i));
-            for (Sha256Hash sha256Hash : syscoinBlockSiblingsSha256Hash)
-                blockSiblingsMap.add(new Uint256(sha256Hash.toBigInteger()));
-        }
         if(getSessionStatus(sessionId) == EthWrapper.BlockInfoStatus.Uninitialized){
             AltcoinBlock lastBlock = (AltcoinBlock) syscoinWrapper.getBlock(superblock.getLastSyscoinBlockHash()).getHeader();
             byte[] blockHeaderBytes = lastBlock.bitcoinSerialize();
@@ -1214,14 +1194,7 @@ public class EthWrapper implements SuperblockConstantProvider {
                             sessionId, receipt)
             );
         }
-        if(getSessionChallengeState(sessionId) == EthWrapper.ChallengeState.QueryBlockHeaderProof) {
-            CompletableFuture<TransactionReceipt> futureReceipt1 = battleManager.respondBlockHeaderProof(
-                    new Bytes32(sessionId.getBytes()), new DynamicArray<Uint256>(blockSiblingsMap)).sendAsync();
-            futureReceipt1.thenAcceptAsync((TransactionReceipt receipt) ->
-                    log.info("Responded to block header proof query for Syscoin session {}, Receipt: {}",
-                            sessionId, receipt)
-            );
-        }
+
     }
 
     /**
@@ -1239,7 +1212,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             throw new Exception("Skipping respondMerkleRootHashes, there are pending transaction for the sender address.");
         }
         List<Bytes32> rawHashes = new ArrayList<>();
-        makeDepositIfNeeded(account, claimManager, claimManagerGetter, verifySuperblockCost.add(respondBlockHeaderProofCost.multiply(BigInteger.valueOf(syscoinBlockHashes.size()+1))));
+        makeDepositIfNeeded(account, claimManager, claimManagerGetter, verifySuperblockCost.add(respondLastBlockHeaderCost.multiply(BigInteger.valueOf(syscoinBlockHashes.size()+1))));
         for (Sha256Hash syscoinBlockHash : syscoinBlockHashes)
             rawHashes.add(new Bytes32(syscoinBlockHash.getBytes()));
         CompletableFuture<TransactionReceipt> futureReceipt =
@@ -1254,17 +1227,17 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @param sessionId Battle session ID.
      * @param account Caller's address.
      * */
-    public void queryBlockHeaderProof(Keccak256Hash sessionId,
+    public void queryLastBlockHeader(Keccak256Hash sessionId,
                                   String account) throws Exception {
         Thread.sleep(500); // in case the transaction takes some time to complete
         if (arePendingTransactionsForChallengerAddress()) {
             throw new Exception("Skipping queryBlockHeader, there are pending transaction for the challenger address.");
         }
-        makeDepositIfNeeded(account, claimManagerForChallenges, claimManagerForChallengesGetter, respondBlockHeaderProofCost);
+        makeDepositIfNeeded(account, claimManagerForChallenges, claimManagerForChallengesGetter, respondLastBlockHeaderCost);
         CompletableFuture<TransactionReceipt> futureReceipt =
-                battleManagerForChallenges.queryBlockHeaderProof(new Bytes32(sessionId.getBytes())).sendAsync();
+                battleManagerForChallenges.queryLastBlockHeader(new Bytes32(sessionId.getBytes())).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("Requested Syscoin block header proof for session {}", sessionId));
+                log.info("Requested Syscoin last block header for session {}", sessionId));
     }
 
     // TODO: see if the challenger should know which superblock this is

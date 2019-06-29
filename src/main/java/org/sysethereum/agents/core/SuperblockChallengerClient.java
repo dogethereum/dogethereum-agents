@@ -43,7 +43,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             validateNewSuperblocks(fromBlock, toBlock);
             respondToNewBattles(fromBlock, toBlock);
             respondToMerkleRootHashesEventResponses(fromBlock, toBlock);
-            respondToBlockHeaderProofEventResponses(fromBlock, toBlock);
+            respondToLastBlockHeaderEventResponses(fromBlock, toBlock);
 
             // Maintain data structures
             getSemiApproved(fromBlock, toBlock);
@@ -177,7 +177,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
         for (EthWrapper.RespondMerkleRootHashesEvent defenderResponse : defenderResponses) {
             if (isMine(defenderResponse) && ethWrapper.getSessionChallengeState(defenderResponse.sessionId) == EthWrapper.ChallengeState.RespondMerkleRootHashes) {
-                startBlockHeaderProofQueries(defenderResponse);
+                startLastBlockHeaderQueries(defenderResponse);
             }
         }
     }
@@ -189,11 +189,11 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @param toBlock
      * @throws Exception
      */
-    private void respondToBlockHeaderProofEventResponses(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.RespondBlockHeaderProofEvent> defenderResponses =
-                ethWrapper.getRespondBlockHeaderProofEvents(fromBlock, toBlock);
+    private void respondToLastBlockHeaderEventResponses(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.RespondLastBlockHeaderEvent> defenderResponses =
+                ethWrapper.getRespondLastBlockHeaderEvents(fromBlock, toBlock);
 
-        for (EthWrapper.RespondBlockHeaderProofEvent defenderResponse : defenderResponses) {
+        for (EthWrapper.RespondLastBlockHeaderEvent defenderResponse : defenderResponses) {
             if (isMine(defenderResponse)){
                 if(ethWrapper.getSessionChallengeState(defenderResponse.sessionId) == EthWrapper.ChallengeState.PendingVerification) {
                     ethWrapper.verifySuperblock(defenderResponse.sessionId, ethWrapper.getBattleManagerForChallenges());
@@ -203,16 +203,16 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     /**
-     * Queries header proof for the session that the challenger is battling.
+     * Queries last header for the session that the challenger is battling.
      * If it was empty, just verifies it.
      * @param defenderResponse Merkle root hashes response from the defender.
      * @throws Exception
      */
-    private void startBlockHeaderProofQueries(EthWrapper.RespondMerkleRootHashesEvent defenderResponse) throws Exception {
+    private void startLastBlockHeaderQueries(EthWrapper.RespondMerkleRootHashesEvent defenderResponse) throws Exception {
         Keccak256Hash superblockId = defenderResponse.superblockId;
-        log.info("Starting block header query proof for superblock {}", superblockId);
+        log.info("Starting last block header query for superblock {}", superblockId);
 
-        ethWrapper.queryBlockHeaderProof(defenderResponse.sessionId,
+        ethWrapper.queryLastBlockHeader(defenderResponse.sessionId,
                 myAddress);
 
     }
@@ -241,7 +241,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         return respondMerkleRootHashesEvent.challenger.equals(myAddress);
     }
 
-    private boolean isMine(EthWrapper.RespondBlockHeaderProofEvent respondBlockHeaderEvent) {
+    private boolean isMine(EthWrapper.RespondLastBlockHeaderEvent respondBlockHeaderEvent) {
         return respondBlockHeaderEvent.challenger.equals(myAddress);
     }
 

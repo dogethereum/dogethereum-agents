@@ -30,14 +30,9 @@ public class Superblock {
     // Timestamp of last mined Syscoin block in the superblock. 32 bytes to comply with Solidity version.
     private long lastSyscoinBlockTime;
 
-    // Timestamp of of the block where the last difficulty adjustment occured. 32 bytes to comply with Solidity version.
-    private long previousSyscoinBlockTime;
 
     // SHA-256 hash of last mined Syscoin block in the superblock. 32 bytes.
     private Sha256Hash lastSyscoinBlockHash;
-
-    // Bits (difficulty) of last difficulty adjustment. 32 bytes.
-    private long previousSyscoinBlockBits;
 
     // SHA3-256 hash of previous superblock. 32 bytes.
     private Keccak256Hash parentId;
@@ -60,12 +55,9 @@ public class Superblock {
     private static final int MERKLE_ROOT_PAYLOAD_OFFSET = 0;
     private static final int CHAIN_WORK_PAYLOAD_OFFSET = MERKLE_ROOT_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
     private static final int LAST_BLOCK_TIME_PAYLOAD_OFFSET = CHAIN_WORK_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
-    private static final int PREVIOUS_TO_LAST_BLOCK_TIME_PAYLOAD_OFFSET =
-            LAST_BLOCK_TIME_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
     private static final int LAST_BLOCK_HASH_PAYLOAD_OFFSET =
-            PREVIOUS_TO_LAST_BLOCK_TIME_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
-    private static final int LAST_BLOCK_BITS_PAYLOAD_OFFSET = LAST_BLOCK_HASH_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
-    private static final int PARENT_ID_PAYLOAD_OFFSET = LAST_BLOCK_BITS_PAYLOAD_OFFSET + UINT32_LENGTH;
+            LAST_BLOCK_TIME_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
+    private static final int PARENT_ID_PAYLOAD_OFFSET = LAST_BLOCK_HASH_PAYLOAD_OFFSET + UINT32_LENGTH;
     private static final int BLOCK_HEIGHT_PAYLOAD_OFFSET = PARENT_ID_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
 
     private static final int SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET = BLOCK_HEIGHT_PAYLOAD_OFFSET + UINT32_LENGTH;
@@ -82,14 +74,12 @@ public class Superblock {
      *                        mined within the one hour lapse corresponding to this superblock.
      * @param chainWork Last Syscoin block's accumulated chainwork.
      * @param lastSyscoinBlockTime Last Syscoin block's timestamp.
-     * @param previousSyscoinBlockTime Syscoin block's timestamp of when last difficulty adjustment occured.
-     * @param previousSyscoinBlockBits The previous difficulty bits
      * @param parentId Previous superblock's SHA-256 hash.
      * @param superblockHeight Height of this superblock within superblock chain.
      * @param blockHeight Height of the last block in the superblock.
      */
     public Superblock(NetworkParameters params, List<Sha256Hash> syscoinBlockHashes, BigInteger chainWork,
-                      long lastSyscoinBlockTime, long previousSyscoinBlockTime, long previousSyscoinBlockBits,
+                      long lastSyscoinBlockTime,
                       Keccak256Hash parentId, long superblockHeight, long blockHeight) {
         // hash all the block syscoinBlockHashes into a Merkle tree
         byte[] includeBits = new byte[(int) Math.ceil(syscoinBlockHashes.size() / 8.0)];
@@ -101,9 +91,7 @@ public class Superblock {
         this.merkleRoot = syscoinBlockHashesFullMerkleTree.getTxnHashAndMerkleRoot(syscoinBlockHashes);
         this.chainWork = chainWork;
         this.lastSyscoinBlockTime = lastSyscoinBlockTime;
-        this.previousSyscoinBlockTime = previousSyscoinBlockTime;
         this.lastSyscoinBlockHash = syscoinBlockHashes.get(syscoinBlockHashes.size() - 1);
-        this.previousSyscoinBlockBits = previousSyscoinBlockBits;
         this.parentId = parentId;
         this.blockHeight = blockHeight;
         // set helper fields
@@ -128,9 +116,7 @@ public class Superblock {
         this.merkleRoot = merkleRoot;
         this.chainWork = chainWork;
         this.lastSyscoinBlockTime = lastSyscoinBlockTime;
-        this.previousSyscoinBlockTime = previousSyscoinBlockTime;
         this.lastSyscoinBlockHash = lastSyscoinBlockHash;
-        this.previousSyscoinBlockBits = previousSyscoinBlockBits;
         this.parentId = parentId;
         this.blockHeight = blockHeight;
 
@@ -151,10 +137,8 @@ public class Superblock {
         this.chainWork = new BigInteger(Utils.reverseBytes(SuperblockUtils.readBytes(
                 payload, CHAIN_WORK_PAYLOAD_OFFSET, BIG_INTEGER_LENGTH)));
         this.lastSyscoinBlockTime = Utils.readUint32(payload, LAST_BLOCK_TIME_PAYLOAD_OFFSET);
-        this.previousSyscoinBlockTime = Utils.readUint32(payload, PREVIOUS_TO_LAST_BLOCK_TIME_PAYLOAD_OFFSET);
         this.lastSyscoinBlockHash = Sha256Hash.wrapReversed(SuperblockUtils.readBytes(
                 payload, LAST_BLOCK_HASH_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
-        this.previousSyscoinBlockBits = Utils.readUint32(payload, LAST_BLOCK_BITS_PAYLOAD_OFFSET);
         this.parentId = Keccak256Hash.wrapReversed(
                 SuperblockUtils.readBytes(payload, PARENT_ID_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
         this.blockHeight = Utils.readUint32(payload, BLOCK_HEIGHT_PAYLOAD_OFFSET);
@@ -204,13 +188,6 @@ public class Superblock {
         return lastSyscoinBlockTime;
     }
 
-    /**
-     * Accesses time when difficulty adjustment last occured
-     * @return Superblock previous to last Syscoin block time.
-     */
-    public long getpreviousSyscoinBlockTime() {
-        return previousSyscoinBlockTime;
-    }
 
     /**
      * Accesses last Syscoin block hash attribute.
@@ -220,13 +197,6 @@ public class Superblock {
         return lastSyscoinBlockHash;
     }
 
-    /**
-     * Accesses last previous difficulty bits (the previous adjustment).
-     * @return Superblock last Syscoin block bits.
-     */
-    public long getpreviousSyscoinBlockBits() {
-        return previousSyscoinBlockBits;
-    }
 
     /**
      * Accesses parent hash attribute.
@@ -285,9 +255,7 @@ public class Superblock {
         stream.write(merkleRoot.getReversedBytes()); // 32
         stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(chainWork))); // 32
         stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(lastSyscoinBlockTime))); // 32
-        stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(previousSyscoinBlockTime))); // 32
         stream.write(lastSyscoinBlockHash.getReversedBytes()); // 32
-        stream.write(Utils.reverseBytes(SuperblockUtils.toUint32(previousSyscoinBlockBits))); // 4
         stream.write(parentId.getReversedBytes()); // 32
         stream.write(Utils.reverseBytes(SuperblockUtils.toUint32(blockHeight))); // 4
     }
@@ -302,9 +270,7 @@ public class Superblock {
         stream.write(merkleRoot.getBytes());
         stream.write(SuperblockUtils.toBytes32(chainWork));
         stream.write(SuperblockUtils.toBytes32(lastSyscoinBlockTime));
-        stream.write(SuperblockUtils.toBytes32(previousSyscoinBlockTime));
         stream.write(lastSyscoinBlockHash.getBytes());
-        stream.write(SuperblockUtils.toUint32(previousSyscoinBlockBits));
         stream.write(parentId.getBytes());
         stream.write(SuperblockUtils.toUint32(blockHeight));
     }
@@ -396,8 +362,6 @@ public class Superblock {
                 ", chainWork=" + chainWork +
                 ", lastSyscoinBlockTime=" + lastSyscoinBlockTime +
                 ", lastSyscoinBlockHash=" + lastSyscoinBlockHash +
-                ", previousSyscoinBlockTime=" + previousSyscoinBlockTime +
-                ", previousSyscoinBlockBits=" + previousSyscoinBlockBits +
                 ", parentId=" + parentId +
                 ", superblockId=" + superblockId +
                 ", superblockHeight=" + superblockHeight +
