@@ -92,17 +92,13 @@ public class SuperblockChain {
         if (allSyscoinHashesToHash.empty())
             return;
 
-        Date nextSuperblockStartTime =
-                getStartTime(syscoinWrapper.getBlock(allSyscoinHashesToHash.peek()).getHeader().getTime());
-        Date nextSuperblockEndTime = getEndTime(nextSuperblockStartTime);
-
         List<Sha256Hash> nextSuperblockSyscoinHashes;
         Keccak256Hash nextSuperblockPrevHash = initialPreviousSuperblockHash;
         long nextSuperblockHeight = getChainHeight() + 1;
         // build and store all superblocks whose last block was mined three hours ago or more
-        while (!allSyscoinHashesToHash.empty() && nextSuperblockEndTime.before(getStoringStopTime())) {
+        while (!allSyscoinHashesToHash.empty()) {
             // Modify allSyscoinHashesToHash and get hashes for next superblock.
-            nextSuperblockSyscoinHashes = popBlocksBeforeTime(allSyscoinHashesToHash, nextSuperblockEndTime);
+            nextSuperblockSyscoinHashes = popBlocksBeforeTime(allSyscoinHashesToHash, getStoringStopTime());
             // if we don't have a collection of 60 blocks that are atleast 3 hours old we exit
             if(nextSuperblockSyscoinHashes.isEmpty()){
                 break;
@@ -122,9 +118,6 @@ public class SuperblockChain {
             // set prev hash and end time for next superblock
             if (!allSyscoinHashesToHash.empty()) {
                 nextSuperblockPrevHash = newSuperblock.getSuperblockId();
-                nextSuperblockStartTime =
-                        getStartTime(syscoinWrapper.getBlock(allSyscoinHashesToHash.peek()).getHeader().getTime());
-                nextSuperblockEndTime = getEndTime(nextSuperblockStartTime);
                 nextSuperblockHeight++;
             }
 
@@ -151,15 +144,14 @@ public class SuperblockChain {
 
         List<Sha256Hash> poppedBlocks = new ArrayList<>();
         boolean haveEnoughForDuration = false;
-        if(haveEnoughForDuration){
-            while (!hashStack.empty() && syscoinWrapper.getBlock(hashStack.peek()).getHeader().getTime().before(endTime)) {
-                poppedBlocks.add(hashStack.pop());
-                if(poppedBlocks.size() >= SUPERBLOCK_DURATION) {
-                    haveEnoughForDuration = true;
-                    break;
-                }
+        while (!hashStack.empty() && syscoinWrapper.getBlock(hashStack.peek()).getHeader().getTime().before(endTime)) {
+            poppedBlocks.add(hashStack.pop());
+            if(poppedBlocks.size() >= SUPERBLOCK_DURATION) {
+                haveEnoughForDuration = true;
+                break;
             }
         }
+
         // if we don't have SUPERBLOCK_DURATION amount then just clear, we don't have enough to create a superblock yet
         if(!haveEnoughForDuration)
             poppedBlocks.clear();
@@ -247,49 +239,8 @@ public class SuperblockChain {
 
     /* ---- HELPER METHODS AND CLASSES ---- */
 
-    /**
-     * Returns the beginning of the latest superblock interval that starts before the time of a certain block,
-     * i.e. the superblock that the block should be part of.
-     * @param firstBlockTimestamp Timestamp of the first block in a superblock.
-     * @return Superblock start time.
-     */
-    Date getStartTime(Date firstBlockTimestamp) {
-        Calendar startTime = Calendar.getInstance();
-        startTime.setTime(firstBlockTimestamp);
-        startTime.set(Calendar.HOUR, 0);
-        startTime.set(Calendar.MINUTE, 0);
-        startTime.set(Calendar.SECOND, 0);
-        startTime.set(Calendar.MILLISECOND, 0);
-        Calendar nextStartTime = (Calendar) startTime.clone();
-        nextStartTime.add(Calendar.SECOND, SUPERBLOCK_DURATION);
-        while (!nextStartTime.getTime().after(firstBlockTimestamp)) {
-            startTime.add(Calendar.SECOND, SUPERBLOCK_DURATION);
-            nextStartTime.add(Calendar.SECOND, SUPERBLOCK_DURATION);
-        }
-        return startTime.getTime();
-    }
 
-    /**
-     * Returns the end time for building a superblock.
-     * @param startTime Superblock start time.
-     * @return Superblock end time.
-     */
-    Date getEndTime(Date startTime) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(startTime);
-        calendar.add(Calendar.SECOND, SUPERBLOCK_DURATION);
-        return calendar.getTime();
-    }
 
-    /**
-     * Returns the end time for an already built superblock.
-     * This is useful for knowing if a superblock
-     * @param superblock Already created superblock.
-     * @return Superblock end time.
-     */
-    public Date getEndTime(Superblock superblock) {
-        return getEndTime(getStartTime(new Date(superblock.getLastSyscoinBlockTime())));
-    }
 
     /**
      * To be used when building a superblock.
@@ -319,7 +270,7 @@ public class SuperblockChain {
      * @return True if superblock can be sent to the bridge, false otherwise.
      */
     public boolean sendingTimePassed(Superblock superblock) {
-        return getEndTime(superblock).before(getSendingStopTime());
+        return new Date(superblock.getLastSyscoinBlockTime()).before(getSendingStopTime());
     }
 
     /**

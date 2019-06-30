@@ -57,7 +57,7 @@ public class Superblock {
     private static final int LAST_BLOCK_TIME_PAYLOAD_OFFSET = CHAIN_WORK_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
     private static final int LAST_BLOCK_HASH_PAYLOAD_OFFSET =
             LAST_BLOCK_TIME_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
-    private static final int PARENT_ID_PAYLOAD_OFFSET = LAST_BLOCK_HASH_PAYLOAD_OFFSET + UINT32_LENGTH;
+    private static final int PARENT_ID_PAYLOAD_OFFSET = LAST_BLOCK_HASH_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
     private static final int BLOCK_HEIGHT_PAYLOAD_OFFSET = PARENT_ID_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
 
     private static final int SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET = BLOCK_HEIGHT_PAYLOAD_OFFSET + UINT32_LENGTH;
@@ -104,14 +104,12 @@ public class Superblock {
      * @param merkleRoot Merkle root, already calculated from a list of Syscoin block hashes.
      * @param chainWork Last Syscoin block's accumulated chainwork.
      * @param lastSyscoinBlockTime Last Syscoin block's timestamp.
-     * @param previousSyscoinBlockTime Block time when last difficulty adjustment occured.
-     * @param previousSyscoinBlockBits Previous difficulty bits.
      * @param parentId Previous superblock's SHA-256 hash.
      * @param superblockHeight Height of this superblock within superblock chain.
      * @param blockHeight Height of the last block in the superblock.
      */
     public Superblock(Sha256Hash merkleRoot, BigInteger chainWork, long lastSyscoinBlockTime,
-                      long previousSyscoinBlockTime, Sha256Hash lastSyscoinBlockHash, long previousSyscoinBlockBits,
+                       Sha256Hash lastSyscoinBlockHash,
                       Keccak256Hash parentId, long superblockHeight, long blockHeight) {
         this.merkleRoot = merkleRoot;
         this.chainWork = chainWork;
@@ -136,7 +134,8 @@ public class Superblock {
                 payload, MERKLE_ROOT_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
         this.chainWork = new BigInteger(Utils.reverseBytes(SuperblockUtils.readBytes(
                 payload, CHAIN_WORK_PAYLOAD_OFFSET, BIG_INTEGER_LENGTH)));
-        this.lastSyscoinBlockTime = Utils.readUint32(payload, LAST_BLOCK_TIME_PAYLOAD_OFFSET);
+        this.lastSyscoinBlockTime = new BigInteger(Utils.reverseBytes(SuperblockUtils.readBytes(
+                payload, LAST_BLOCK_TIME_PAYLOAD_OFFSET, BIG_INTEGER_LENGTH))).longValue();
         this.lastSyscoinBlockHash = Sha256Hash.wrapReversed(SuperblockUtils.readBytes(
                 payload, LAST_BLOCK_HASH_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
         this.parentId = Keccak256Hash.wrapReversed(
