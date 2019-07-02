@@ -1010,6 +1010,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         for (SyscoinBattleManager.QueryLastBlockHeaderEventResponse response : queryBlockHeaderEvents) {
             QueryLastBlockHeaderEvent queryBlockHeaderEvent = new QueryLastBlockHeaderEvent();
             queryBlockHeaderEvent.sessionId = Keccak256Hash.wrap(response.sessionId.getValue());
+            queryBlockHeaderEvent.submitter = response.submitter.getValue();
             result.add(queryBlockHeaderEvent);
         }
 
@@ -1042,7 +1043,6 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         return result;
     }
-
     // Event wrapper classes
 
     public static class QueryLastBlockHeaderEvent {
@@ -1090,11 +1090,9 @@ public class EthWrapper implements SuperblockConstantProvider {
         public Keccak256Hash superblockId;
         public Keccak256Hash sessionId;
         public String challenger;
-        public List<Sha256Hash> blockHashes;
     }
 
     public static class RespondLastBlockHeaderEvent {
-        public Keccak256Hash superblockId;
         public Keccak256Hash sessionId;
         public String challenger;
     }
