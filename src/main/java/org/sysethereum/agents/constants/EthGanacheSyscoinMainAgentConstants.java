@@ -35,7 +35,7 @@ public class EthGanacheSyscoinMainAgentConstants extends AgentConstants {
         Keccak256Hash genesisSuperblockParentId = Keccak256Hash.wrap(new byte[32]); // initialised with 0s
         genesisSuperblock = new Superblock(
                 syscoinParams, genesisSuperblockBlockList,
-                new BigInteger("0x0000000000000000000000000000000000000000000b5aea51981d092e7d9739"), 1562016306,
+                new BigInteger("0x0000000000000000000000000000000000000000000b5aea51981d092e7d9739"), 1562016306, 0,
               genesisSuperblockParentId, 0);
 
 

@@ -34,6 +34,9 @@ public class Superblock {
     // SHA-256 hash of last mined Syscoin block in the superblock. 32 bytes.
     private Sha256Hash lastSyscoinBlockHash;
 
+    // Bits (difficulty) of last difficulty adjustment. 32 bytes.
+    private long lastSyscoinBlockBits;
+
     // SHA3-256 hash of previous superblock. 32 bytes.
     private Keccak256Hash parentId;
 
@@ -56,7 +59,11 @@ public class Superblock {
     private static final int LAST_BLOCK_TIME_PAYLOAD_OFFSET = CHAIN_WORK_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
     private static final int LAST_BLOCK_HASH_PAYLOAD_OFFSET =
             LAST_BLOCK_TIME_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
-    private static final int PARENT_ID_PAYLOAD_OFFSET = LAST_BLOCK_HASH_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
+
+    private static final int LAST_BLOCK_BITS_PAYLOAD_OFFSET = LAST_BLOCK_HASH_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
+
+
+    private static final int PARENT_ID_PAYLOAD_OFFSET = LAST_BLOCK_BITS_PAYLOAD_OFFSET + UINT32_LENGTH;
 
     private static final int SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET = PARENT_ID_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
     private static final int NUMBER_OF_HASHES_PAYLOAD_OFFSET = SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET + UINT32_LENGTH;
@@ -72,11 +79,12 @@ public class Superblock {
      *                        mined within the one hour lapse corresponding to this superblock.
      * @param chainWork Last Syscoin block's accumulated chainwork.
      * @param lastSyscoinBlockTime Last Syscoin block's timestamp.
+     * @param lastSyscoinBlockBits The previous difficulty bits
      * @param parentId Previous superblock's SHA-256 hash.
      * @param superblockHeight Height of this superblock within superblock chain.
      */
     public Superblock(NetworkParameters params, List<Sha256Hash> syscoinBlockHashes, BigInteger chainWork,
-                      long lastSyscoinBlockTime,
+                      long lastSyscoinBlockTime, long lastSyscoinBlockBits,
                       Keccak256Hash parentId, long superblockHeight) {
         // hash all the block syscoinBlockHashes into a Merkle tree
         byte[] includeBits = new byte[(int) Math.ceil(syscoinBlockHashes.size() / 8.0)];
@@ -90,6 +98,7 @@ public class Superblock {
         this.lastSyscoinBlockTime = lastSyscoinBlockTime;
         this.lastSyscoinBlockHash = syscoinBlockHashes.get(syscoinBlockHashes.size() - 1);
         this.parentId = parentId;
+        this.lastSyscoinBlockBits = lastSyscoinBlockBits;
         // set helper fields
         this.superblockHeight = superblockHeight;
         this.syscoinBlockHashes = new ArrayList<>(syscoinBlockHashes);
@@ -100,19 +109,19 @@ public class Superblock {
      * @param merkleRoot Merkle root, already calculated from a list of Syscoin block hashes.
      * @param chainWork Last Syscoin block's accumulated chainwork.
      * @param lastSyscoinBlockTime Last Syscoin block's timestamp.
+     * @param lastSyscoinBlockBits The previous difficulty bits
      * @param parentId Previous superblock's SHA-256 hash.
      * @param superblockHeight Height of this superblock within superblock chain.
-     * @param blockHeight Height of the last block in the superblock.
      */
     public Superblock(Sha256Hash merkleRoot, BigInteger chainWork, long lastSyscoinBlockTime,
-                       Sha256Hash lastSyscoinBlockHash,
-                      Keccak256Hash parentId, long superblockHeight, long blockHeight) {
+                       Sha256Hash lastSyscoinBlockHash, long lastSyscoinBlockBits,
+                      Keccak256Hash parentId, long superblockHeight) {
         this.merkleRoot = merkleRoot;
         this.chainWork = chainWork;
         this.lastSyscoinBlockTime = lastSyscoinBlockTime;
         this.lastSyscoinBlockHash = lastSyscoinBlockHash;
         this.parentId = parentId;
-
+        this.lastSyscoinBlockBits = lastSyscoinBlockBits;
         // set helper fields
         this.superblockHeight = superblockHeight;
         this.syscoinBlockHashes = new ArrayList<>();
@@ -133,6 +142,7 @@ public class Superblock {
                 payload, LAST_BLOCK_TIME_PAYLOAD_OFFSET, BIG_INTEGER_LENGTH))).longValue();
         this.lastSyscoinBlockHash = Sha256Hash.wrapReversed(SuperblockUtils.readBytes(
                 payload, LAST_BLOCK_HASH_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
+        this.lastSyscoinBlockBits = Utils.readUint32(payload, LAST_BLOCK_BITS_PAYLOAD_OFFSET);
         this.parentId = Keccak256Hash.wrapReversed(
                 SuperblockUtils.readBytes(payload, PARENT_ID_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
 
@@ -190,6 +200,13 @@ public class Superblock {
         return lastSyscoinBlockHash;
     }
 
+    /**
+     * Accesses last block difficulty bits
+     * @return Superblock last Syscoin block bits.
+     */
+    public long getlastSyscoinBlockBits() {
+        return lastSyscoinBlockBits;
+    }
 
     /**
      * Accesses parent hash attribute.
@@ -242,6 +259,7 @@ public class Superblock {
         stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(chainWork))); // 32
         stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(lastSyscoinBlockTime))); // 32
         stream.write(lastSyscoinBlockHash.getReversedBytes()); // 32
+        stream.write(Utils.reverseBytes(SuperblockUtils.toUint32(lastSyscoinBlockBits))); // 4
         stream.write(parentId.getReversedBytes()); // 32
     }
 
@@ -256,6 +274,7 @@ public class Superblock {
         stream.write(SuperblockUtils.toBytes32(chainWork));
         stream.write(SuperblockUtils.toBytes32(lastSyscoinBlockTime));
         stream.write(lastSyscoinBlockHash.getBytes());
+        stream.write(SuperblockUtils.toUint32(lastSyscoinBlockBits));
         stream.write(parentId.getBytes());
     }
 
@@ -346,6 +365,7 @@ public class Superblock {
                 ", chainWork=" + chainWork +
                 ", lastSyscoinBlockTime=" + lastSyscoinBlockTime +
                 ", lastSyscoinBlockHash=" + lastSyscoinBlockHash +
+                ", lastSyscoinBlockBits=" + lastSyscoinBlockBits +
                 ", parentId=" + parentId +
                 ", superblockId=" + superblockId +
                 ", superblockHeight=" + superblockHeight +

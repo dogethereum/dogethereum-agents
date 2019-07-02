@@ -63,7 +63,7 @@ public class GenesisSuperblockGeneratorMain {
         return new Superblock(params,
                 syscoinBlockHashes,
                 lastSyscoinBlock.getChainWork(),
-                lastSyscoinBlock.getHeader().getTimeSeconds(),
+                lastSyscoinBlock.getHeader().getTimeSeconds(),0,
                 genesisParentHash,
                 0);
     }

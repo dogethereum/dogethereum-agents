@@ -463,6 +463,7 @@ public class EthWrapper implements SuperblockConstantProvider {
                 new Uint256(superblock.getChainWork()),
                 new Uint256(superblock.getLastSyscoinBlockTime()),
                 new Bytes32(superblock.getLastSyscoinBlockHash().getBytes()),
+                new Uint32(superblock.getlastSyscoinBlockBits()),
                 new Bytes32(superblock.getParentId().getBytes())).sendAsync();
     }
 

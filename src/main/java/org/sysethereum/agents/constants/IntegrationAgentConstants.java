@@ -38,7 +38,7 @@ public class IntegrationAgentConstants extends AgentConstants {
 
         genesisSuperblock = new Superblock(
                 syscoinParams, genesisSuperblockBlockList,
-                new BigInteger("13727519416813675830155065"), 1562016306,
+                new BigInteger("13727519416813675830155065"), 1562016306,403358244,
                 genesisSuperblockParentId, 0);
 
 

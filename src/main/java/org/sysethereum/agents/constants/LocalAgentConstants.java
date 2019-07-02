@@ -36,7 +36,7 @@ public class LocalAgentConstants extends AgentConstants {
 
         genesisSuperblock = new Superblock(
                 syscoinParams, genesisSuperblockBlockList,
-                BigInteger.valueOf(0), syscoinParams.getGenesisBlock().getTimeSeconds(),
+                BigInteger.valueOf(0), syscoinParams.getGenesisBlock().getTimeSeconds(),0,
                 genesisSuperblockParentId, 0);
         defenderTimerTaskPeriod = 15 * 1000;
         challengerTimerTaskPeriod = 15 * 1000;

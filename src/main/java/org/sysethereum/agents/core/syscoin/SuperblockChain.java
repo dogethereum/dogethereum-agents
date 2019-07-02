@@ -105,9 +105,10 @@ public class SuperblockChain {
             }
             StoredBlock nextSuperblockLastBlock = syscoinWrapper.getBlock(
                     nextSuperblockSyscoinHashes.get(nextSuperblockSyscoinHashes.size() - 1));
-
+            Superblock prevSuperblock = getSuperblock(nextSuperblockPrevHash);
+            StoredBlock prevSuperblockLastblock = syscoinWrapper.getBlock(prevSuperblock.getLastSyscoinBlockHash());
             Superblock newSuperblock = new Superblock(this.params, nextSuperblockSyscoinHashes,
-                    nextSuperblockLastBlock.getChainWork(), nextSuperblockLastBlock.getHeader().getTimeSeconds(),
+                    nextSuperblockLastBlock.getChainWork(), nextSuperblockLastBlock.getHeader().getTimeSeconds(),prevSuperblockLastblock.getHeader().getDifficultyTarget(),
                     nextSuperblockPrevHash, nextSuperblockHeight);
             superblockStorage.put(newSuperblock);
             if (newSuperblock.getChainWork().compareTo(superblockStorage.getChainHeadWork()) > 0) {
