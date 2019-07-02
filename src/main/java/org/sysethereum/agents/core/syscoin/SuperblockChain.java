@@ -108,7 +108,7 @@ public class SuperblockChain {
 
             Superblock newSuperblock = new Superblock(this.params, nextSuperblockSyscoinHashes,
                     nextSuperblockLastBlock.getChainWork(), nextSuperblockLastBlock.getHeader().getTimeSeconds(),
-                    nextSuperblockPrevHash, nextSuperblockHeight, nextSuperblockLastBlock.getHeight());
+                    nextSuperblockPrevHash, nextSuperblockHeight);
             superblockStorage.put(newSuperblock);
             if (newSuperblock.getChainWork().compareTo(superblockStorage.getChainHeadWork()) > 0) {
                 superblockStorage.setChainHead(newSuperblock);

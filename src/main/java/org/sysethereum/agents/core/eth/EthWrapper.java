@@ -108,7 +108,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         web3Secondary = Web3j.build(new HttpService(secondaryURL));
         Admin admin = Admin.build(new UnixIpcService(path));
         String generalAddress = config.generalPurposeAndSendSuperblocksAddress();
-        if(generalAddress.length() > 0){
+       /* if(generalAddress.length() > 0){
             PersonalUnlockAccount personalUnlockAccount = admin.personalUnlockAccount(generalAddress, config.generalPurposeAndSendSuperblocksUnlockPW(), BigInteger.ZERO).send();
             if (personalUnlockAccount != null && personalUnlockAccount.accountUnlocked()) {
                 log.info("general.purpose.and.send.superblocks.address is unlocked and ready to use!");
@@ -126,7 +126,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             else{
                 log.warn("syscoin.superblock.challenger.address could not be unlocked, please check the password you set in the configuration file");
             }
-        }
+        }*/
         admin.shutdown();
         web3 = Web3j.build(new UnixIpcService(path));
         String claimManagerContractAddress;
@@ -463,8 +463,7 @@ public class EthWrapper implements SuperblockConstantProvider {
                 new Uint256(superblock.getChainWork()),
                 new Uint256(superblock.getLastSyscoinBlockTime()),
                 new Bytes32(superblock.getLastSyscoinBlockHash().getBytes()),
-                new Bytes32(superblock.getParentId().getBytes()),
-                new Uint32(superblock.getBlockHeight())).sendAsync();
+                new Bytes32(superblock.getParentId().getBytes())).sendAsync();
     }
 
     /**

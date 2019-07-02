@@ -33,11 +33,11 @@ public class LocalAgentConstants extends AgentConstants {
 
         List<Sha256Hash> genesisSuperblockBlockList = Lists.newArrayList(syscoinParams.getGenesisBlock().getHash());
         Keccak256Hash genesisSuperblockParentId = Keccak256Hash.wrap(new byte[32]); // initialised with 0s
-        long lastBlockHeight = 0;
+
         genesisSuperblock = new Superblock(
                 syscoinParams, genesisSuperblockBlockList,
                 BigInteger.valueOf(0), syscoinParams.getGenesisBlock().getTimeSeconds(),
-                genesisSuperblockParentId, 0, lastBlockHeight);
+                genesisSuperblockParentId, 0);
         defenderTimerTaskPeriod = 15 * 1000;
         challengerTimerTaskPeriod = 15 * 1000;
         defenderConfirmations = 1;

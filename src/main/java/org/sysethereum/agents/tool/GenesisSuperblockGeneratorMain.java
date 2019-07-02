@@ -65,7 +65,7 @@ public class GenesisSuperblockGeneratorMain {
                 lastSyscoinBlock.getChainWork(),
                 lastSyscoinBlock.getHeader().getTimeSeconds(),
                 genesisParentHash,
-                0, lastSyscoinBlock.getHeight());
+                0);
     }
 
     private static List<Sha256Hash> parseBlockHashes(BufferedReader reader) throws IOException {

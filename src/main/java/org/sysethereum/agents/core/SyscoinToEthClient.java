@@ -219,7 +219,6 @@ public class SyscoinToEthClient {
         public String parentId;
         public String superblockId;
         public long superblockHeight;
-        public long blockHeight;
         public boolean approved;
         public SuperBlockResponse(Superblock sbIn, boolean approvedIn) throws IOException {
             this.merkleRoot = sbIn.getMerkleRoot().toString();
@@ -228,7 +227,6 @@ public class SyscoinToEthClient {
             this.parentId = sbIn.getParentId().toString();
             this.superblockId = sbIn.getSuperblockId().toString();
             this.superblockHeight = sbIn.getSuperblockHeight();
-            this.blockHeight = sbIn.getBlockHeight();
             this.approved = approvedIn;
         }
     }

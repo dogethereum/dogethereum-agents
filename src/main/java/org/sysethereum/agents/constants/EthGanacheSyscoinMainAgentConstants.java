@@ -33,11 +33,10 @@ public class EthGanacheSyscoinMainAgentConstants extends AgentConstants {
 
         List<Sha256Hash> genesisSuperblockBlockList = Lists.newArrayList(syscoinParams.getGenesisBlock().getHash());
         Keccak256Hash genesisSuperblockParentId = Keccak256Hash.wrap(new byte[32]); // initialised with 0s
-        long lastBlockHeight = 0;
         genesisSuperblock = new Superblock(
                 syscoinParams, genesisSuperblockBlockList,
-                BigInteger.valueOf(0x100001), syscoinParams.getGenesisBlock().getTimeSeconds(),
-              genesisSuperblockParentId, 0, lastBlockHeight);
+                new BigInteger("0x0000000000000000000000000000000000000000000b5aea51981d092e7d9739"), 1562016306,
+              genesisSuperblockParentId, 0);
 
 
         defenderTimerTaskPeriod = 15 * 1000;

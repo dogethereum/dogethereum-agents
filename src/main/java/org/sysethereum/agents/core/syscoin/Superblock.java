@@ -37,7 +37,6 @@ public class Superblock {
     // SHA3-256 hash of previous superblock. 32 bytes.
     private Keccak256Hash parentId;
 
-    private long blockHeight;
     /* ---- EXTRA FIELDS ---- */
 
     private Keccak256Hash superblockId; // SHA3-256 hash of superblock data
@@ -58,9 +57,8 @@ public class Superblock {
     private static final int LAST_BLOCK_HASH_PAYLOAD_OFFSET =
             LAST_BLOCK_TIME_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
     private static final int PARENT_ID_PAYLOAD_OFFSET = LAST_BLOCK_HASH_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
-    private static final int BLOCK_HEIGHT_PAYLOAD_OFFSET = PARENT_ID_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
 
-    private static final int SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET = BLOCK_HEIGHT_PAYLOAD_OFFSET + UINT32_LENGTH;
+    private static final int SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET = PARENT_ID_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
     private static final int NUMBER_OF_HASHES_PAYLOAD_OFFSET = SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET + UINT32_LENGTH;
     private static final int SYSCOIN_BLOCK_HASHES_PAYLOAD_OFFSET = NUMBER_OF_HASHES_PAYLOAD_OFFSET + UINT32_LENGTH;
 
@@ -76,11 +74,10 @@ public class Superblock {
      * @param lastSyscoinBlockTime Last Syscoin block's timestamp.
      * @param parentId Previous superblock's SHA-256 hash.
      * @param superblockHeight Height of this superblock within superblock chain.
-     * @param blockHeight Height of the last block in the superblock.
      */
     public Superblock(NetworkParameters params, List<Sha256Hash> syscoinBlockHashes, BigInteger chainWork,
                       long lastSyscoinBlockTime,
-                      Keccak256Hash parentId, long superblockHeight, long blockHeight) {
+                      Keccak256Hash parentId, long superblockHeight) {
         // hash all the block syscoinBlockHashes into a Merkle tree
         byte[] includeBits = new byte[(int) Math.ceil(syscoinBlockHashes.size() / 8.0)];
         for (int i = 0; i < syscoinBlockHashes.size(); i++)
@@ -93,7 +90,6 @@ public class Superblock {
         this.lastSyscoinBlockTime = lastSyscoinBlockTime;
         this.lastSyscoinBlockHash = syscoinBlockHashes.get(syscoinBlockHashes.size() - 1);
         this.parentId = parentId;
-        this.blockHeight = blockHeight;
         // set helper fields
         this.superblockHeight = superblockHeight;
         this.syscoinBlockHashes = new ArrayList<>(syscoinBlockHashes);
@@ -116,7 +112,6 @@ public class Superblock {
         this.lastSyscoinBlockTime = lastSyscoinBlockTime;
         this.lastSyscoinBlockHash = lastSyscoinBlockHash;
         this.parentId = parentId;
-        this.blockHeight = blockHeight;
 
         // set helper fields
         this.superblockHeight = superblockHeight;
@@ -140,7 +135,6 @@ public class Superblock {
                 payload, LAST_BLOCK_HASH_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
         this.parentId = Keccak256Hash.wrapReversed(
                 SuperblockUtils.readBytes(payload, PARENT_ID_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
-        this.blockHeight = Utils.readUint32(payload, BLOCK_HEIGHT_PAYLOAD_OFFSET);
 
         // helper fields
         this.superblockHeight = Utils.readUint32(payload, SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET);
@@ -205,13 +199,6 @@ public class Superblock {
         return parentId;
     }
 
-    /**
-     * Accesses last block height.
-     * @return Superblock block height.
-     */
-    public long getBlockHeight() {
-        return blockHeight;
-    }
 
     /**
      * Accesses superblock hash attribute if already calculated, calculates it otherwise.
@@ -256,7 +243,6 @@ public class Superblock {
         stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(lastSyscoinBlockTime))); // 32
         stream.write(lastSyscoinBlockHash.getReversedBytes()); // 32
         stream.write(parentId.getReversedBytes()); // 32
-        stream.write(Utils.reverseBytes(SuperblockUtils.toUint32(blockHeight))); // 4
     }
 
     /**
@@ -271,7 +257,6 @@ public class Superblock {
         stream.write(SuperblockUtils.toBytes32(lastSyscoinBlockTime));
         stream.write(lastSyscoinBlockHash.getBytes());
         stream.write(parentId.getBytes());
-        stream.write(SuperblockUtils.toUint32(blockHeight));
     }
 
     /**
@@ -364,7 +349,6 @@ public class Superblock {
                 ", parentId=" + parentId +
                 ", superblockId=" + superblockId +
                 ", superblockHeight=" + superblockHeight +
-                ", blockHeight=" + blockHeight +
                 '}';
     }
 }

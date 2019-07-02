@@ -8,7 +8,9 @@ import org.libdohj.params.SyscoinMainNetParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -31,13 +33,13 @@ public class IntegrationAgentConstants extends AgentConstants {
 
         syscoinToEthTimerTaskPeriod = 15 * 1000;
 
-        List<Sha256Hash> genesisSuperblockBlockList = Lists.newArrayList(syscoinParams.getGenesisBlock().getHash());
+        List<Sha256Hash> genesisSuperblockBlockList = Lists.newArrayList(Sha256Hash.wrap("a395b884dea0c77d3eff856838ebba4e74a6e633c7516784a7f21705d3d58f45"));
         Keccak256Hash genesisSuperblockParentId = Keccak256Hash.wrap(new byte[32]); // initialised with 0s
-        long lastBlockHeight = 0;
+
         genesisSuperblock = new Superblock(
                 syscoinParams, genesisSuperblockBlockList,
-                BigInteger.valueOf(0x100001), syscoinParams.getGenesisBlock().getTimeSeconds(),
-                genesisSuperblockParentId, 0, lastBlockHeight);
+                new BigInteger("13727519416813675830155065"), 1562016306,
+                genesisSuperblockParentId, 0);
 
 
         defenderTimerTaskPeriod = 15 * 1000;
@@ -45,7 +47,7 @@ public class IntegrationAgentConstants extends AgentConstants {
         defenderConfirmations = 2;
         challengerConfirmations = 2;
 
-        ethInitialCheckpoint = 7894981;
+        ethInitialCheckpoint = 4659516;
         networkId = "4"; // eth rinkeby 4; eth mainnet 1
         try {
             logger.info("genesisSuperblock Hash " + genesisSuperblock.getSuperblockId().toString());
