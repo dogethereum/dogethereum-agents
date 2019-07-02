@@ -10,7 +10,6 @@ src/main/resources/sysethereum-agents-bkp.conf
 src/main/resources/sysethereum-agents.ethganachesyscoinmain.conf
 src/main/resources/operator0.key
 
-src/main/java/test/SuperblockChainTest.java
 
 *.iml
 *.log
