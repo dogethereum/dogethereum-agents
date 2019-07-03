@@ -108,7 +108,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         web3Secondary = Web3j.build(new HttpService(secondaryURL));
         Admin admin = Admin.build(new UnixIpcService(path));
         String generalAddress = config.generalPurposeAndSendSuperblocksAddress();
-       /* if(generalAddress.length() > 0){
+        if(generalAddress.length() > 0){
             PersonalUnlockAccount personalUnlockAccount = admin.personalUnlockAccount(generalAddress, config.generalPurposeAndSendSuperblocksUnlockPW(), BigInteger.ZERO).send();
             if (personalUnlockAccount != null && personalUnlockAccount.accountUnlocked()) {
                 log.info("general.purpose.and.send.superblocks.address is unlocked and ready to use!");
@@ -126,7 +126,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             else{
                 log.warn("syscoin.superblock.challenger.address could not be unlocked, please check the password you set in the configuration file");
             }
-        }*/
+        }
         admin.shutdown();
         web3 = Web3j.build(new UnixIpcService(path));
         String claimManagerContractAddress;
@@ -340,7 +340,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     /**
      * Helper method for confirming a semi-approved superblock.
      * Finds the highest semi-approved or new superblock in the main chain that comes after a given semi-approved superblock.
-     * @param superblockId Superblock to be confirmed.
+     * @param superblockId Superblsock to be confirmed.
      * @return Highest superblock in main chain that's newer than the given superblock
      *         if such a superblock exists, null otherwise (i.e. given superblock isn't in main chain
      *         or has no semi-approved descendants).
@@ -383,7 +383,10 @@ public class EthWrapper implements SuperblockConstantProvider {
         if(superblockChain.getChainHeight() < lookupHeight )
             lookupHeight = superblockChain.getChainHeight();
         Superblock highest = superblockChain.getSuperblockByHeight(lookupHeight);
-
+        if(highest == null){
+            log.info("getHighestSemiApprovedOrApprovedDescendant: Superblock at height {} was not found. Current chain height: {}",lookupHeight, String.valueOf(superblockChain.getChainHeight()));
+            throw new Exception("Superblock height out of range");
+        }
         while (highest != null && !isSuperblockSemiApproved(highest.getSuperblockId()) && !isSuperblockApproved(highest.getSuperblockId())) {
             highest = superblockChain.getParent(highest);
             if(highest == null)
