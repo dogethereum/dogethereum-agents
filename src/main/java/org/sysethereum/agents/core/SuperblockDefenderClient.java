@@ -90,23 +90,23 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             return;
         }
         Keccak256Hash toConfirmId = toConfirm.getSuperblockId();
-        Superblock highestDescendant = ethWrapper.getHighestSemiApprovedOrNewDescendant(bestSuperblockId);
-        Keccak256Hash highestDescendantId;
-        if (highestDescendant == null)
-            highestDescendantId = toConfirmId;
-        else
-            highestDescendantId = highestDescendant.getSuperblockId();
+        Superblock highestDescendant = ethWrapper.getHighestApprovableOrNewDescendant(toConfirm, bestSuperblockId);
+        if (highestDescendant == null) {
+            log.info("Highest descendent from contracts, {}, not found in local database. Stopping.", bestSuperblockId);
+            return;
+        }
+        Keccak256Hash highestDescendantId = highestDescendant.getSuperblockId();
 
 
         // deal with your own superblock claims or if it has become unresponsive we allow someone else to check the claim or confirm it
         if (!isMine(highestDescendantId) && !unresponsiveTimeoutPassed(highestDescendantId)) return;
 
-        if (semiApprovedAndApprovable(toConfirm, highestDescendant)) {
+        if (ethWrapper.semiApprovedAndApprovable(toConfirm, highestDescendant)) {
             // The superblock is semi approved and it can be approved if it has enough confirmations
             log.info("Confirming semi-approved superblock {} with descendant {}", toConfirmId, highestDescendantId);
             ethWrapper.confirmClaim(toConfirmId, highestDescendantId, myAddress);
         }
-        else if (newAndTimeoutPassed(highestDescendantId) || inBattleAndSemiApprovable(highestDescendantId)) {
+        else if (ethWrapper.newAndTimeoutPassed(highestDescendantId) || ethWrapper.getInBattleAndSemiApprovable(highestDescendantId)) {
             // Either the superblock is unchallenged or it won all the battles;
             // it will get approved or semi-approved depending on the situation
             // (look at SyscoinClaimManager contract source code for more details)
@@ -175,62 +175,20 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
 
-    private boolean submittedTimeoutPassed(Keccak256Hash superblockId) throws Exception {
-        return ethWrapper.getNewEventTimestampDate(superblockId).before(getTimeoutDate());
-    }
     private boolean submittedUnresponsiveTimeoutPassed(Keccak256Hash superblockId) throws Exception {
         return ethWrapper.getNewEventTimestampDate(superblockId).before(getUnresponsiveTimeoutDate());
     }
-    private Date getTimeoutDate() throws Exception {
-        int superblockTimeout = ethWrapper.getSuperblockTimeout().intValue();
-        return SuperblockUtils.getNSecondsAgo(superblockTimeout);
-    }
+
     private Date getUnresponsiveTimeoutDate() throws Exception {
         float delay = ethWrapper.getSuperblockTimeout().floatValue()*(ethWrapper.getRandomizationCounter()/100.0f);
         int superblockTimeout = ethWrapper.getSuperblockTimeout().intValue() + (int)delay;
         return SuperblockUtils.getNSecondsAgo(superblockTimeout);
     }
-    private boolean challengeTimeoutPassed(Keccak256Hash superblockId) throws Exception {
-        return ethWrapper.getClaimChallengeTimeoutDate(superblockId).before(getTimeoutDate());
-    }
 
-    private boolean newAndTimeoutPassed(Keccak256Hash superblockId) throws Exception {
-        return (ethWrapper.isSuperblockNew(superblockId) && submittedTimeoutPassed(superblockId));
-    }
-    private boolean newAndUnresponsiveTimeoutPassed(Superblock superblock) throws Exception {
-        Keccak256Hash superblockId = superblock.getSuperblockId();
-        return (ethWrapper.isSuperblockNew(superblockId) && submittedUnresponsiveTimeoutPassed(superblockId));
-    }
     private boolean unresponsiveTimeoutPassed(Keccak256Hash superblockId) throws Exception {
         return submittedUnresponsiveTimeoutPassed(superblockId);
     }
-    /**
-     * Checks if a given superblock is in battle and meets the necessary and sufficient conditions
-     * for being semi-approved when calling checkClaimFinished.
-     * @param superblockId Superblock to be confirmed.
-     * @return True if the superblock can be safely semi-approved, false otherwise.
-     * @throws Exception
-     */
-    private boolean inBattleAndSemiApprovable(Keccak256Hash superblockId) throws Exception {
-        return ethWrapper.getInBattleAndSemiApprovable(superblockId);
-    }
 
-    /**
-     * Checks if a superblock is semi-approved and has enough confirmations, i.e. semi-approved descendants.
-     * To be used after finding a descendant with getHighestSemiApprovedOrNewDescendant.
-     * @param superblock Superblock to be confirmed.
-     * @param descendant Highest semi-approved descendant of superblock to be confirmed.
-     * @return True if the superblock can be safely approved, false otherwise.
-     * @throws Exception
-     */
-    private boolean semiApprovedAndApprovable(Superblock superblock, Superblock descendant) throws Exception {
-        Keccak256Hash superblockId = superblock.getSuperblockId();
-        Keccak256Hash descendantId = descendant.getSuperblockId();
-        return (descendant.getSuperblockHeight() - superblock.getSuperblockHeight() >=
-                ethWrapper.getSuperblockConfirmations() &&
-                ethWrapper.isSuperblockSemiApproved(descendantId) &&
-                ethWrapper.isSuperblockSemiApproved(superblockId));
-    }
 
 
     /* ---- OVERRIDE ABSTRACT METHODS ---- */

@@ -348,21 +348,25 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @throws IOException
      * @throws Exception
      */
-    public Superblock getHighestSemiApprovedOrNewDescendant(Keccak256Hash superblockId)
+    public Superblock getHighestApprovableOrNewDescendant(Superblock toConfirm, Keccak256Hash superblockId)
             throws BlockStoreException, IOException, Exception {
         if (superblockChain.getSuperblock(superblockId) == null) {
             // The superblock isn't in the main chain.
-            log.info("Superblock {} is not in the main chain. Returning from getHighestSemiApprovedOrNewDescendant.", superblockId);
+            log.info("Superblock {} is not in the main chain. Returning from getHighestApprovableOrNewDescendant.", superblockId);
             return null;
         }
 
         if (superblockChain.getSuperblock(superblockId).getSuperblockHeight() == superblockChain.getChainHeight()) {
             // There's nothing above the tip of the chain.
-            log.info("Superblock {} is above the tip of the chain. Returning from getHighestSemiApprovedOrNewDescendant.", superblockId);
+            log.info("Superblock {} is above the tip of the chain. Returning from getHighestApprovableOrNewDescendant.", superblockId);
             return null;
         }
         Superblock currentSuperblock = superblockChain.getChainHead();
-        while (currentSuperblock != null && !currentSuperblock.getSuperblockId().equals(superblockId) && !isSuperblockSemiApproved(currentSuperblock.getSuperblockId()) && !isSuperblockNew(currentSuperblock.getSuperblockId())) {
+        while (currentSuperblock != null &&
+                !currentSuperblock.getSuperblockId().equals(superblockId) &&
+                !newAndTimeoutPassed(currentSuperblock.getSuperblockId()) &&
+                !getInBattleAndSemiApprovable(currentSuperblock.getSuperblockId()) &&
+                !semiApprovedAndApprovable(toConfirm, currentSuperblock)) {
             currentSuperblock = superblockChain.getSuperblock(currentSuperblock.getParentId());
         }
         return currentSuperblock;
@@ -1372,7 +1376,32 @@ public class EthWrapper implements SuperblockConstantProvider {
     public boolean getInBattleAndSemiApprovable(Keccak256Hash superblockId) throws Exception {
         return claimManagerGetter.getInBattleAndSemiApprovable(new Bytes32(superblockId.getBytes())).send().getValue();
     }
-
+    /**
+     * Checks if a superblock is semi-approved and has enough confirmations, i.e. semi-approved descendants.
+     * To be used after finding a descendant with getHighestApprovableOrNewDescendant.
+     * @param superblock Superblock to be confirmed.
+     * @param descendant Highest semi-approved descendant of superblock to be confirmed.
+     * @return True if the superblock can be safely approved, false otherwise.
+     * @throws Exception
+     */
+    public boolean semiApprovedAndApprovable(Superblock superblock, Superblock descendant) throws Exception {
+        Keccak256Hash superblockId = superblock.getSuperblockId();
+        Keccak256Hash descendantId = descendant.getSuperblockId();
+        return (descendant.getSuperblockHeight() - superblock.getSuperblockHeight() >=
+                getSuperblockConfirmations() &&
+                isSuperblockSemiApproved(descendantId) &&
+                isSuperblockSemiApproved(superblockId));
+    }
+    private Date getTimeoutDate() throws Exception {
+        int superblockTimeout = getSuperblockTimeout().intValue();
+        return SuperblockUtils.getNSecondsAgo(superblockTimeout);
+    }
+    private boolean submittedTimeoutPassed(Keccak256Hash superblockId) throws Exception {
+        return getNewEventTimestampDate(superblockId).before(getTimeoutDate());
+    }
+    public boolean newAndTimeoutPassed(Keccak256Hash superblockId) throws Exception {
+        return (isSuperblockNew(superblockId) && submittedTimeoutPassed(superblockId));
+    }
     public List<org.web3j.abi.datatypes.Address> getClaimChallengers(Keccak256Hash superblockId) throws Exception {
         return claimManagerGetter.getClaimChallengers(new Bytes32(superblockId.getBytes())).send().getValue();
     }
