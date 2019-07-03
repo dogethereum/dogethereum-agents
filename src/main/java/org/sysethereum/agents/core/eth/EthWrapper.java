@@ -350,21 +350,22 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     public Superblock getHighestSemiApprovedOrNewDescendant(Keccak256Hash superblockId)
             throws BlockStoreException, IOException, Exception {
-        long lookupHeight = getSuperblockHeight(superblockId).longValue() + 10;
-        if(superblockChain.getChainHeight() < lookupHeight )
-            lookupHeight = superblockChain.getChainHeight();
-        Superblock highest = superblockChain.getSuperblockByHeight(lookupHeight);
-
-        // Find highest semi-approved descendant
-        while (highest != null && !isSuperblockSemiApproved(highest.getSuperblockId()) && !isSuperblockNew(highest.getSuperblockId())) {
-            highest = superblockChain.getParent(highest);
-            if (highest.getSuperblockId().equals(superblockId)) {
-                // No semi-approved descendants found
-                return null;
-            }
+        if (superblockChain.getSuperblock(superblockId) == null) {
+            // The superblock isn't in the main chain.
+            log.info("Superblock {} is not in the main chain. Returning from getHighestSemiApprovedOrNewDescendant.", superblockId);
+            return null;
         }
 
-        return highest;
+        if (superblockChain.getSuperblock(superblockId).getSuperblockHeight() == superblockChain.getChainHeight()) {
+            // There's nothing above the tip of the chain.
+            log.info("Superblock {} is above the tip of the chain. Returning from getHighestSemiApprovedOrNewDescendant.", superblockId);
+            return null;
+        }
+        Superblock currentSuperblock = superblockChain.getChainHead();
+        while (currentSuperblock != null && !currentSuperblock.getSuperblockId().equals(superblockId) && !isSuperblockSemiApproved(currentSuperblock.getSuperblockId()) && !isSuperblockNew(currentSuperblock.getSuperblockId())) {
+            currentSuperblock = superblockChain.getSuperblock(currentSuperblock.getParentId());
+        }
+        return currentSuperblock;
     }
     /**
      * Helper method for confirming a semi-approved/approved superblock.
@@ -379,25 +380,23 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     public Superblock getHighestSemiApprovedOrApprovedDescendant(Keccak256Hash superblockId)
             throws BlockStoreException, IOException, Exception {
-        long lookupHeight = getSuperblockHeight(superblockId).longValue() + 10;
-        if(superblockChain.getChainHeight() < lookupHeight )
-            lookupHeight = superblockChain.getChainHeight();
-        Superblock highest = superblockChain.getSuperblockByHeight(lookupHeight);
-        if(highest == null){
-            log.info("getHighestSemiApprovedOrApprovedDescendant: Superblock at height {} was not found. Current chain height: {}",lookupHeight, String.valueOf(superblockChain.getChainHeight()));
-            throw new Exception("Superblock height out of range");
-        }
-        while (highest != null && !isSuperblockSemiApproved(highest.getSuperblockId()) && !isSuperblockApproved(highest.getSuperblockId())) {
-            highest = superblockChain.getParent(highest);
-            if(highest == null)
-                return null;
-            if (highest.getSuperblockId().equals(superblockId)) {
-                // No semi-approved/approved descendants found
-                return null;
-            }
+        if (superblockChain.getSuperblock(superblockId) == null) {
+            // The superblock isn't in the main chain.
+            log.info("Superblock {} is not in the main chain. Returning from getHighestSemiApprovedOrApprovedDescendant.", superblockId);
+            return null;
         }
 
-        return highest;
+        if (superblockChain.getSuperblock(superblockId).getSuperblockHeight() == superblockChain.getChainHeight()) {
+            // There's nothing above the tip of the chain.
+            log.info("Superblock {} is above the tip of the chain. Returning from getHighestSemiApprovedOrApprovedDescendant.", superblockId);
+            return null;
+        }
+        Superblock currentSuperblock = superblockChain.getChainHead();
+        while (currentSuperblock != null && !currentSuperblock.getSuperblockId().equals(superblockId) && !isSuperblockSemiApproved(currentSuperblock.getSuperblockId()) && !isSuperblockApproved(currentSuperblock.getSuperblockId())) {
+            currentSuperblock = superblockChain.getSuperblock(currentSuperblock.getParentId());
+        }
+
+        return currentSuperblock;
     }
     /**
      * Proposes a superblock to SyscoinClaimManager in order to keep the Sysethereum contracts updated.
