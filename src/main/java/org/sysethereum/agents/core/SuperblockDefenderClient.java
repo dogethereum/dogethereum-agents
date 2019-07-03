@@ -295,14 +295,16 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     @Override
     protected void removeSuperblocks(long fromBlock, long toBlock, List<EthWrapper.SuperblockEvent> superblockEvents)
             throws Exception {
+        boolean removeFromContract = false;
         for (EthWrapper.SuperblockEvent superblockEvent : superblockEvents) {
             if (superblockToSessionsMap.containsKey(superblockEvent.superblockId)) {
                 sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(superblockEvent.superblockId));
                 superblockToSessionsMap.remove(superblockEvent.superblockId);
+                removeFromContract = true;
             }
 
         }
-        if (config.isWithdrawFundsEnabled()) {
+        if (removeFromContract && config.isWithdrawFundsEnabled()) {
             ethWrapper.withdrawAllFundsExceptLimit(myAddress, false);
         }
     }

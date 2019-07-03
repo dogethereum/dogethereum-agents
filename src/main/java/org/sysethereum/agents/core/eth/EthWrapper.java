@@ -239,7 +239,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             pending = web3.ethGetTransactionCount(address, DefaultBlockParameterName.PENDING).send().getTransactionCount();
         }
         catch(Exception e){
-            Thread.sleep(5000);
+            Thread.sleep(500);
             pending = web3Secondary.ethGetTransactionCount(address, DefaultBlockParameterName.PENDING).send().getTransactionCount();
         }
         return pending.compareTo(latest) > 0;
