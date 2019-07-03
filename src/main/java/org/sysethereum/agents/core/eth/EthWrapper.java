@@ -404,7 +404,6 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     public boolean sendStoreSuperblock(Superblock superblock, String account) throws Exception {
 
-
         // Check if the parent has been approved before sending this superblock.
         Keccak256Hash parentId = superblock.getParentId();
         if (!(isSuperblockApproved(parentId) || isSuperblockSemiApproved(parentId))) {
@@ -1183,7 +1182,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         }
         makeDepositIfNeeded(account, claimManager, claimManagerGetter, respondLastBlockHeaderCost);
         Superblock superblock = getSuperblockBySession(sessionId);
-        if(getSessionStatus(sessionId) == EthWrapper.BlockInfoStatus.Uninitialized){
+        if(getSessionStatus(sessionId) == EthWrapper.BlockInfoStatus.Requested){
             AltcoinBlock lastBlock = (AltcoinBlock) syscoinWrapper.getBlock(superblock.getLastSyscoinBlockHash()).getHeader();
             byte[] blockHeaderBytes = lastBlock.bitcoinSerialize();
             CompletableFuture<TransactionReceipt> futureReceipt = battleManager.respondLastBlockHeader(
