@@ -278,7 +278,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     @Override
-    protected boolean arePendingTransactions() throws IOException {
+    protected boolean arePendingTransactions() throws InterruptedException, IOException {
         return ethWrapper.arePendingTransactionsForChallengerAddress();
     }
 

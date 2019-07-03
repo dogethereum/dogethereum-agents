@@ -218,11 +218,11 @@ public class EthWrapper implements SuperblockConstantProvider {
         return web3.ethSyncing().send().isSyncing();
     }
 
-    public boolean arePendingTransactionsForSendSuperblocksAddress() throws IOException {
+    public boolean arePendingTransactionsForSendSuperblocksAddress() throws InterruptedException,IOException {
         return arePendingTransactionsFor(generalPurposeAndSendSuperblocksAddress);
     }
 
-    public boolean arePendingTransactionsForChallengerAddress() throws IOException {
+    public boolean arePendingTransactionsForChallengerAddress() throws InterruptedException, IOException {
         return arePendingTransactionsFor(syscoinSuperblockChallengerAddress);
     }
 

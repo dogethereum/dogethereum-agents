@@ -163,7 +163,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
 
     /* ---- ABSTRACT METHODS ---- */
 
-    protected abstract boolean arePendingTransactions() throws IOException;
+    protected abstract boolean arePendingTransactions() throws InterruptedException, IOException;
 
     protected abstract long reactToEvents(long fromBlock, long toBlock);
 

@@ -242,7 +242,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     @Override
-    protected boolean arePendingTransactions() throws IOException {
+    protected boolean arePendingTransactions() throws InterruptedException, IOException {
         return ethWrapper.arePendingTransactionsForSendSuperblocksAddress();
     }
 
