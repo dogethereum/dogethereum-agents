@@ -232,13 +232,14 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @return
      * @throws IOException
      */
-    private boolean arePendingTransactionsFor(String address) throws IOException {
+    private boolean arePendingTransactionsFor(String address) throws InterruptedException, IOException {
         BigInteger latest = web3Secondary.ethGetTransactionCount(address, DefaultBlockParameterName.LATEST).send().getTransactionCount();
         BigInteger pending = BigInteger.ZERO;
         try{
             pending = web3.ethGetTransactionCount(address, DefaultBlockParameterName.PENDING).send().getTransactionCount();
         }
         catch(Exception e){
+            Thread.sleep(5000);
             pending = web3Secondary.ethGetTransactionCount(address, DefaultBlockParameterName.PENDING).send().getTransactionCount();
         }
         return pending.compareTo(latest) > 0;
