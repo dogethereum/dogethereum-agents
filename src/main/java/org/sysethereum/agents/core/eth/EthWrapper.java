@@ -84,10 +84,6 @@ public class EthWrapper implements SuperblockConstantProvider {
     private String syscoinSuperblockChallengerAddress;
 
     private BigInteger minProposalDeposit;
-    private BigInteger minChallengeDeposit;
-    private BigInteger respondMerkleRootHashesCost;
-    private BigInteger respondLastBlockHeaderCost;
-    private BigInteger verifySuperblockCost;
     @Autowired
     private SuperblockChain superblockChain;
     @Autowired
@@ -198,10 +194,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         assert superblocksGetter.isValid();
 
         minProposalDeposit = claimManagerGetter.minProposalDeposit().send().getValue();
-        minChallengeDeposit = claimManagerGetter.minChallengeDeposit().send().getValue();
-        respondMerkleRootHashesCost = claimManagerGetter.respondMerkleRootHashesCost().send().getValue();
-        respondLastBlockHeaderCost = claimManagerGetter.respondLastBlockHeaderCost().send().getValue();
-        verifySuperblockCost = claimManagerGetter.verifySuperblockCost().send().getValue();
     }
 
 
@@ -446,7 +438,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         }
 
         // Make any necessary deposits for sending the superblock
-        makeDepositIfNeeded(account, claimManager, claimManagerGetter, getSuperblockDeposit(superblock.getSyscoinBlockHashes().size()));
+        makeDepositIfNeeded(account, claimManager, claimManagerGetter, getSuperblockDeposit());
 
 
         // The parent is either approved or semi approved. We can send the superblock.
@@ -509,14 +501,11 @@ public class EthWrapper implements SuperblockConstantProvider {
      * This deposit only covers one battle and it's meant to optimise the number of transactions performed
      * by the submitter - it's still necessary to make a deposit for each step if another battle is carried out
      * over the same superblock.
-     * @param nHashes Number of hashes in the superblock.
      * @return Initial deposit for covering a reward and a single battle.
      * @throws Exception
      */
-    private BigInteger getSuperblockDeposit(int nHashes) throws Exception {
-        BigInteger result = minProposalDeposit;
-        result = result.add(BigInteger.valueOf(nHashes+1).multiply(respondLastBlockHeaderCost));
-        return result.add(respondMerkleRootHashesCost);
+    private BigInteger getSuperblockDeposit() throws Exception {
+        return minProposalDeposit;
     }
 
     /**
@@ -526,8 +515,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @throws Exception
      */
     private BigInteger getChallengeDesposit() throws Exception {
-        BigInteger result = minChallengeDeposit;
-        return result.add(respondMerkleRootHashesCost).add(verifySuperblockCost);
+        return minProposalDeposit;
     }
 
     private BigInteger getDeposit(String account, SyscoinClaimManagerExtended myClaimManager) throws Exception {
@@ -795,10 +783,6 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     public BigInteger getSuperblockTimeout() throws Exception {
         return claimManagerGetter.superblockTimeout().send().getValue();
-    }
-
-    public BigInteger getBattleReward() throws Exception {
-        return claimManagerGetter.battleReward().send().getValue();
     }
 
     public Keccak256Hash getBestSuperblockId() throws Exception {
@@ -1186,7 +1170,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         if (arePendingTransactionsForSendSuperblocksAddress()) {
             throw new Exception("Skipping respondBlockHeader, there are pending transaction for the sender address.");
         }
-        makeDepositIfNeeded(account, claimManager, claimManagerGetter, respondLastBlockHeaderCost);
         Superblock superblock = getSuperblockBySession(sessionId);
         if(getSessionStatus(sessionId) == EthWrapper.BlockInfoStatus.Requested){
             AltcoinBlock lastBlock = (AltcoinBlock) syscoinWrapper.getBlock(superblock.getLastSyscoinBlockHash()).getHeader();
@@ -1216,7 +1199,6 @@ public class EthWrapper implements SuperblockConstantProvider {
             throw new Exception("Skipping respondMerkleRootHashes, there are pending transaction for the sender address.");
         }
         List<Bytes32> rawHashes = new ArrayList<>();
-        makeDepositIfNeeded(account, claimManager, claimManagerGetter, verifySuperblockCost.add(respondLastBlockHeaderCost.multiply(BigInteger.valueOf(syscoinBlockHashes.size()+1))));
         for (Sha256Hash syscoinBlockHash : syscoinBlockHashes)
             rawHashes.add(new Bytes32(syscoinBlockHash.getBytes()));
         CompletableFuture<TransactionReceipt> futureReceipt =
@@ -1237,7 +1219,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         if (arePendingTransactionsForChallengerAddress()) {
             throw new Exception("Skipping queryBlockHeader, there are pending transaction for the challenger address.");
         }
-        makeDepositIfNeeded(account, claimManagerForChallenges, claimManagerForChallengesGetter, respondLastBlockHeaderCost);
         CompletableFuture<TransactionReceipt> futureReceipt =
                 battleManagerForChallenges.queryLastBlockHeader(new Bytes32(sessionId.getBytes())).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
@@ -1331,7 +1312,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         if (arePendingTransactionsForChallengerAddress()) {
             throw new Exception("Skipping queryMerkleRootHashes, there are pending transaction for the challenger address.");
         }
-        makeDepositIfNeeded(account, claimManagerForChallenges, claimManagerForChallengesGetter, respondMerkleRootHashesCost);
         CompletableFuture<TransactionReceipt> futureReceipt = battleManagerForChallenges.queryMerkleRootHashes(
                 new Bytes32(superblockId.getBytes()), new Bytes32(sessionId.getBytes())).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
