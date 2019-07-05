@@ -33,12 +33,12 @@ public class IntegrationAgentConstants extends AgentConstants {
 
         syscoinToEthTimerTaskPeriod = 15 * 1000;
 
-        List<Sha256Hash> genesisSuperblockBlockList = Lists.newArrayList(Sha256Hash.wrap("a395b884dea0c77d3eff856838ebba4e74a6e633c7516784a7f21705d3d58f45"));
+        List<Sha256Hash> genesisSuperblockBlockList = Lists.newArrayList(Sha256Hash.wrap("b106dd7496392e50b7c7e529240d6e62987db827ec2a7203120b0ca3c5a83c71"));
         Keccak256Hash genesisSuperblockParentId = Keccak256Hash.wrap(new byte[32]); // initialised with 0s
 
         genesisSuperblock = new Superblock(
                 syscoinParams, genesisSuperblockBlockList,
-                new BigInteger("13727519416813675830155065"), 1562016306,403358244,
+                new BigInteger("13727101720463504701228800"), 1562016284,403358244,
                 genesisSuperblockParentId, 0);
 
 
