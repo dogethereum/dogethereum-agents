@@ -39,7 +39,7 @@ public class IntegrationAgentConstants extends AgentConstants {
         genesisSuperblock = new Superblock(
                 syscoinParams, genesisSuperblockBlockList,
                 new BigInteger("13727101720463504701228800"), 1562016284,403358244,
-                genesisSuperblockParentId, 0);
+                genesisSuperblockParentId, 1);
 
 
         defenderTimerTaskPeriod = 15 * 1000;
