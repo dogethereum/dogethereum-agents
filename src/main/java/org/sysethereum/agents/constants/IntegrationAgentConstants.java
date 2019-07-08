@@ -33,12 +33,12 @@ public class IntegrationAgentConstants extends AgentConstants {
 
         syscoinToEthTimerTaskPeriod = 15 * 1000;
 
-        List<Sha256Hash> genesisSuperblockBlockList = Lists.newArrayList(Sha256Hash.wrap("b106dd7496392e50b7c7e529240d6e62987db827ec2a7203120b0ca3c5a83c71"));
+        List<Sha256Hash> genesisSuperblockBlockList = Lists.newArrayList(Sha256Hash.wrap("00000c8ce2dbffb1958260498de24e52c083dd0eaf2eec95baadff55b6d160da"));
         Keccak256Hash genesisSuperblockParentId = Keccak256Hash.wrap(new byte[32]); // initialised with 0s
 
         genesisSuperblock = new Superblock(
                 syscoinParams, genesisSuperblockBlockList,
-                new BigInteger("13727101720463504701228800"), 1562016284,403358244,
+                new BigInteger("377487720"), 1562016284,504365055,
                 genesisSuperblockParentId, 1);
 
 
@@ -47,7 +47,7 @@ public class IntegrationAgentConstants extends AgentConstants {
         defenderConfirmations = 2;
         challengerConfirmations = 2;
 
-        ethInitialCheckpoint = 4659516;
+        ethInitialCheckpoint = 4699805;
         networkId = "4"; // eth rinkeby 4; eth mainnet 1
         try {
             logger.info("genesisSuperblock Hash " + genesisSuperblock.getSuperblockId().toString());
