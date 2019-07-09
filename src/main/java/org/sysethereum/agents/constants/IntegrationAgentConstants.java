@@ -2,6 +2,7 @@ package org.sysethereum.agents.constants;
 
 import com.google.common.collect.Lists;
 import org.bitcoinj.core.Sha256Hash;
+import org.libdohj.params.SyscoinTestNet3Params;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.sysethereum.agents.core.syscoin.Superblock;
 import org.libdohj.params.SyscoinMainNetParams;
@@ -29,7 +30,7 @@ public class IntegrationAgentConstants extends AgentConstants {
     }
 
     IntegrationAgentConstants() {
-        syscoinParams = SyscoinMainNetParams.get();
+        syscoinParams = SyscoinTestNet3Params.get();
 
         syscoinToEthTimerTaskPeriod = 15 * 1000;
 
