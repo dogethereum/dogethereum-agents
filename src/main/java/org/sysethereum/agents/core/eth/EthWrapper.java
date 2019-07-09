@@ -273,7 +273,9 @@ public class EthWrapper implements SuperblockConstantProvider {
     public String getGeneralPurposeAndSendSuperblocksAddress() {
         return generalPurposeAndSendSuperblocksAddress;
     }
-
+    public boolean getAbilityToProposeNextSuperblock() throws Exception{
+        return claimManagerGetter.getAbilityToProposeNextSuperblock(new Uint256(System.currentTimeMillis()/1000)).send().getValue();
+    }
     public String getSyscoinSuperblockChallengerAddress() {
         return syscoinSuperblockChallengerAddress;
     }

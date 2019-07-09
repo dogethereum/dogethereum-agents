@@ -124,7 +124,7 @@ public class SyscoinToEthClient {
         }
 
 
-        if (!superblockChain.sendingTimePassed(toConfirm)) {
+        if (!superblockChain.sendingTimePassed(toConfirm) || !ethWrapper.getAbilityToProposeNextSuperblock()) {
             log.debug("Too early to send superblock {}, will try again in a few seconds.",
                     toConfirm.getSuperblockId());
             return 0;
