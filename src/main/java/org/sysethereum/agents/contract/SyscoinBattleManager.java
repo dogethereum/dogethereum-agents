@@ -509,12 +509,6 @@ public class SyscoinBattleManager extends Contract {
         return executeRemoteCallSingleValueReturn(function);
     }
 
-    public RemoteCall<DynamicArray<Bytes32>> getSyscoinBlockHashes(Bytes32 sessionId) {
-        final Function function = new Function(FUNC_GETSYSCOINBLOCKHASHES, 
-                Arrays.<Type>asList(sessionId), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<DynamicArray<Bytes32>>() {}));
-        return executeRemoteCallSingleValueReturn(function);
-    }
 
     public RemoteCall<Bytes32> getSuperblockBySession(Bytes32 sessionId) {
         final Function function = new Function(FUNC_GETSUPERBLOCKBYSESSION, 

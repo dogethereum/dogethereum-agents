@@ -1419,13 +1419,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             randomDouble = 10;
         randomizationCounter = (int)randomDouble;
     }
-    public List<Sha256Hash> getSyscoinBlockHashes(Keccak256Hash sessionId) throws Exception {
-        List<Sha256Hash> result = new ArrayList<>();
-        List<Bytes32> rawHashes = battleManagerGetter.getSyscoinBlockHashes(new Bytes32(sessionId.getBytes())).send().getValue();
-        for (Bytes32 rawHash : rawHashes)
-            result.add(Sha256Hash.wrap(rawHash.getValue())); // TODO: check endianness
-        return result;
-    }
+
 
 
     /* ---------------------------------- */
