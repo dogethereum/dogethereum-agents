@@ -23,7 +23,6 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PreDestroy;
 import java.io.*;
-import java.util.Arrays;
 
 @Component
 @Slf4j(topic = "SyscoinWrapper")
@@ -103,19 +102,7 @@ public class SyscoinWrapper {
     public StoredBlock getChainHead() {
         return kit.chain().getChainHead();
     }
-    /**
-     * Gets the median timestamp of the last 11 blocks
-     */
-    public long getMedianTimestamp(StoredBlock storedBlock) throws BlockStoreException {
-        long[] timestamps = new long[11];
-        int unused = 9;
-        timestamps[10] = storedBlock.getHeader().getTimeSeconds();
-        while (unused >= 0 && (storedBlock = storedBlock.getPrev(kit.store())) != null)
-            timestamps[unused--] = storedBlock.getHeader().getTimeSeconds();
 
-        Arrays.sort(timestamps, unused+1, 11);
-        return timestamps[unused + (11-unused)/2];
-    }
     public StoredBlock getBlock(Sha256Hash hash) throws BlockStoreException {
         return kit.store().get(hash);
     }

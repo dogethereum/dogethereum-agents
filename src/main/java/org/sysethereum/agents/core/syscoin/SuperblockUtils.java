@@ -83,7 +83,21 @@ public class SuperblockUtils {
         return b;
     }
 
+    // this is missing in java.Utils for some utterly incomprehensible reason
+    public static void uint32ToByteStreamBE(long val, OutputStream stream) throws IOException {
+        stream.write((int) (0xFF & (val >> 24)));
+        stream.write((int) (0xFF & (val >> 16)));
+        stream.write((int) (0xFF & (val >> 8)));
+        stream.write((int) (0xFF & val));
+    }
 
+    public static long readPaddedUint32(byte[] bytes, int offset) {
+        int realOffset = offset + 28; // read last 4 bytes
+        return (bytes[realOffset] & 0xffl) |
+                ((bytes[realOffset + 1] & 0xffl) << 8) |
+                ((bytes[realOffset + 2] & 0xffl) << 16) |
+                ((bytes[realOffset + 3] & 0xffl) << 24);
+    }
 
     /**
      * Get a timestamp from exactly n seconds before system time.
@@ -98,5 +112,21 @@ public class SuperblockUtils {
         return calendar.getTime();
     }
 
+    /**
+     * Copied from bitcoinj's Block.writeHeader().
+     * @param block Syscoin block.
+     * @return Serialized block header.
+     */
+    public static byte[] serializeBlockHeader(Block block) throws IOException {
+        ByteArrayOutputStream stream = new UnsafeByteArrayOutputStream(80);
 
+        Utils.uint32ToByteStreamLE(block.getVersion(), stream);
+        stream.write(block.getPrevBlockHash().getReversedBytes());
+        stream.write(block.getMerkleRoot().getReversedBytes());
+        Utils.uint32ToByteStreamLE(block.getTimeSeconds(), stream);
+        Utils.uint32ToByteStreamLE(block.getDifficultyTarget(), stream);
+        Utils.uint32ToByteStreamLE(block.getNonce(), stream);
+
+        return stream.toByteArray();
+    }
 }

@@ -78,7 +78,7 @@ public class Superblock {
      * @param syscoinBlockHashes List of hashes belonging to all Syscoin blocks
      *                        mined within the one hour lapse corresponding to this superblock.
      * @param chainWork Last Syscoin block's accumulated chainwork.
-     * @param lastSyscoinBlockTime Last Syscoin block's median timestamp.
+     * @param lastSyscoinBlockTime Last Syscoin block's timestamp.
      * @param lastSyscoinBlockBits Difficulty bits of the last block in the superblock bits used to verify accumulatedWork through difficulty calculation
      * @param parentId Previous superblock's SHA-256 hash.
      * @param superblockHeight Height of this superblock within superblock chain.
@@ -108,7 +108,7 @@ public class Superblock {
      * Constructs a Superblock object from an already calculated Merkle root.
      * @param merkleRoot Merkle root, already calculated from a list of Syscoin block hashes.
      * @param chainWork Last Syscoin block's accumulated chainwork.
-     * @param lastSyscoinBlockTime Last Syscoin block's median timestamp.
+     * @param lastSyscoinBlockTime Last Syscoin block's timestamp.
      * @param lastSyscoinBlockBits Difficulty bits of the last block in the superblock bits used to verify accumulatedWork through difficulty calculation
      * @param parentId Previous superblock's SHA-256 hash.
      * @param superblockHeight Height of this superblock within superblock chain.
