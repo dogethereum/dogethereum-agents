@@ -107,7 +107,7 @@ public class SuperblockChain {
                     nextSuperblockSyscoinHashes.get(nextSuperblockSyscoinHashes.size() - 1));
 
             Superblock newSuperblock = new Superblock(this.params, nextSuperblockSyscoinHashes,
-                    nextSuperblockLastBlock.getChainWork(), nextSuperblockLastBlock.getHeader().getTimeSeconds(),nextSuperblockLastBlock.getHeader().getDifficultyTarget(),
+                    nextSuperblockLastBlock.getChainWork(), syscoinWrapper.getMedianTimestamp(nextSuperblockLastBlock),nextSuperblockLastBlock.getHeader().getDifficultyTarget(),
                     nextSuperblockPrevHash, nextSuperblockHeight);
             superblockStorage.put(newSuperblock);
             if (newSuperblock.getChainWork().compareTo(superblockStorage.getChainHeadWork()) > 0) {
@@ -144,7 +144,7 @@ public class SuperblockChain {
 
         List<Sha256Hash> poppedBlocks = new ArrayList<>();
         boolean haveEnoughForDuration = false;
-        while (!hashStack.empty() && syscoinWrapper.getBlock(hashStack.peek()).getHeader().getTime().before(endTime)) {
+        while (!hashStack.empty() && new Date(syscoinWrapper.getMedianTimestamp(syscoinWrapper.getBlock(hashStack.peek()))*1000L).before(endTime)) {
             poppedBlocks.add(hashStack.pop());
             if(poppedBlocks.size() >= SUPERBLOCK_DURATION) {
                 haveEnoughForDuration = true;
