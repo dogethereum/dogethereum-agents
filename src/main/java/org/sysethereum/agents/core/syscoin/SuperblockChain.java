@@ -126,7 +126,7 @@ public class SuperblockChain {
     }
 
     /**
-     * Given a stack of blocks sorted from least to most recently mined,
+     * Given a stack of blocks sorted from least to most recently mined based on median timestamp,
      * returns a list of 60 hashes belonging to those which were mined before a certain time.
      * These blocks can be used for constructing a superblock mined before a certain time.
      * @param hashStack All the Syscoin blocks that come after the last block of the last stored superblock.
@@ -144,7 +144,7 @@ public class SuperblockChain {
 
         List<Sha256Hash> poppedBlocks = new ArrayList<>();
         boolean haveEnoughForDuration = false;
-        while (!hashStack.empty() && syscoinWrapper.getBlock(hashStack.peek()).getHeader().getTime().before(endTime)) {
+        while (!hashStack.empty() && new Date(syscoinWrapper.getMedianTimestamp(syscoinWrapper.getBlock(hashStack.peek()))*1000L).before(endTime)) {
             poppedBlocks.add(hashStack.pop());
             if(poppedBlocks.size() >= SUPERBLOCK_DURATION) {
                 haveEnoughForDuration = true;
