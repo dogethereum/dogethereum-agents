@@ -1127,10 +1127,19 @@ public class EthWrapper implements SuperblockConstantProvider {
         return claimManagerGetter.superblockConfirmations().send().getValue().longValue();
     }
 
-    // TODO: see if this is necessary later
-    public long getSuperblockConfirmationsForChallenges() throws Exception {
-        return claimManagerForChallenges.superblockConfirmations().send().getValue().longValue();
+    public List<Sha256Hash> getBlockHashesBySession(Keccak256Hash sessionId) throws Exception {
+
+        List<org.web3j.abi.datatypes.generated.Bytes32> hashes =  battleManagerGetter.getBlockHashesBySession(new Bytes32(sessionId.getBytes())).send().getValue();
+        List<Sha256Hash> hashSha = new ArrayList<>();
+        for (org.web3j.abi.datatypes.generated.Bytes32 hash : hashes) {
+            hashSha.add(Sha256Hash.wrap(hash.getValue()));
+        }
+        return hashSha;
     }
+    public int getInvalidatedBlockIndexBySession(Keccak256Hash sessionId) throws Exception {
+        return battleManagerGetter.getInvalidatedBlockIndexBySession(new Bytes32(sessionId.getBytes())).send().getValue().intValue();
+    }
+
 
 
     /* ---------------------------------- */
@@ -1162,7 +1171,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         return result;
     }
     /**
-     * Responds to a Syscoin last block header query.
+     * Responds to a Syscoin last block header query + interim block header if requested by challenger.
      * @param sessionId Battle session ID.
      * @param account Caller's address.
      */
@@ -1176,8 +1185,17 @@ public class EthWrapper implements SuperblockConstantProvider {
         if(getSessionStatus(sessionId) == EthWrapper.BlockInfoStatus.Requested){
             AltcoinBlock lastBlock = (AltcoinBlock) syscoinWrapper.getBlock(superblock.getLastSyscoinBlockHash()).getHeader();
             byte[] blockHeaderBytes = lastBlock.bitcoinSerialize();
+            byte[] blockHeaderBytesInterim = null;
+            int interimIndex = getInvalidatedBlockIndexBySession(sessionId);
+            List<Sha256Hash> listHashes = superblock.getSyscoinBlockHashes();
+            // if interimIndex isn't the last block, we must provide the interim header to the contract
+            if(interimIndex != listHashes.size() - 1) {
+                Sha256Hash interimHash = listHashes.get(interimIndex);
+                AltcoinBlock interimBlock = (AltcoinBlock) syscoinWrapper.getBlock(interimHash).getHeader();
+                blockHeaderBytesInterim = interimBlock.bitcoinSerialize();
+            }
             CompletableFuture<TransactionReceipt> futureReceipt = battleManager.respondLastBlockHeader(
-                    new Bytes32(sessionId.getBytes()), new DynamicBytes(blockHeaderBytes)).sendAsync();
+                    new Bytes32(sessionId.getBytes()), new DynamicBytes(blockHeaderBytes), blockHeaderBytesInterim == null? DynamicBytes.DEFAULT: new DynamicBytes(blockHeaderBytesInterim)).sendAsync();
             futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                     log.info("Responded to last block header query for Syscoin session {}, Receipt: {}",
                             sessionId, receipt)
@@ -1215,14 +1233,14 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @param sessionId Battle session ID.
      * @param account Caller's address.
      * */
-    public void queryLastBlockHeader(Keccak256Hash sessionId,
+    public void queryLastBlockHeader(Keccak256Hash sessionId, long index,
                                   String account) throws Exception {
         Thread.sleep(500); // in case the transaction takes some time to complete
         if (arePendingTransactionsForChallengerAddress()) {
             throw new Exception("Skipping queryBlockHeader, there are pending transaction for the challenger address.");
         }
         CompletableFuture<TransactionReceipt> futureReceipt =
-                battleManagerForChallenges.queryLastBlockHeader(new Bytes32(sessionId.getBytes())).sendAsync();
+                battleManagerForChallenges.queryLastBlockHeader(new Bytes32(sessionId.getBytes()), new Uint256(index)).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("Requested Syscoin last block header for session {}", sessionId));
     }

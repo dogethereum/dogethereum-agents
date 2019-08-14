@@ -8,6 +8,7 @@ import org.sysethereum.agents.core.syscoin.Superblock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.sysethereum.agents.core.syscoin.SuperblockChain;
 import org.sysethereum.agents.core.syscoin.SuperblockUtils;
 
 import java.io.*;
@@ -201,7 +202,24 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             }
         }
     }
-
+    int findInvalidInterimBlockIndex(Keccak256Hash superblockId) throws Exception{
+        List<Sha256Hash> hashesFromContract = ethWrapper.getBlockHashesBySession(superblockId);
+        Superblock superblock = superblockChain.getSuperblock(superblockId);
+        List<Sha256Hash> localHashes = superblock.getSyscoinBlockHashes();
+        if(localHashes.size() != 60)
+            throw new Exception("Local superblock must have 60 hashes, we found: " + localHashes.size());
+        if(hashesFromContract.size() != 60)
+            throw new Exception("Stored superblock must have 60 hashes, we found: " + hashesFromContract.size());
+        // start from position 58 and walk back to 0, checking to ensure if a hash is different then request the header of the proceeding index (i+1) to check the prevBlock field of the header matches the previous hash (i position)
+        for (int i = hashesFromContract.size()-2; i >= 0; i--) {
+            // we check hash in i position and if not matching want to request the i+1 header which will give prevBlock which should match hash in i position otherwise chain is broken
+            if(hashesFromContract.get(i) != localHashes.get(i)) {
+                return i+1;
+            }
+        }
+        // if all matches then just return last index meaning we don't have to check interim block for this challenge
+        return hashesFromContract.size()-1;
+    }
     /**
      * Queries last header for the session that the challenger is battling.
      * If it was empty, just verifies it.
@@ -211,8 +229,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     private void startLastBlockHeaderQueries(EthWrapper.RespondMerkleRootHashesEvent defenderResponse) throws Exception {
         Keccak256Hash superblockId = defenderResponse.superblockId;
         log.info("Starting last block header query for superblock {}", superblockId);
-
-        ethWrapper.queryLastBlockHeader(defenderResponse.sessionId,
+        ethWrapper.queryLastBlockHeader(defenderResponse.sessionId,findInvalidInterimBlockIndex(superblockId),
                 myAddress);
 
     }
