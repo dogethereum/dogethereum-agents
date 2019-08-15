@@ -1188,8 +1188,8 @@ public class EthWrapper implements SuperblockConstantProvider {
             byte[] blockHeaderBytesInterim = null;
             int interimIndex = getInvalidatedBlockIndexBySession(sessionId);
             List<Sha256Hash> listHashes = superblock.getSyscoinBlockHashes();
-            // if interimIndex isn't the last block, we must provide the interim header to the contract
-            if(interimIndex != listHashes.size() - 1) {
+            // if interimIndex isn't 0, we must provide the interim header to the contract
+            if(interimIndex != 0) {
                 Sha256Hash interimHash = listHashes.get(interimIndex);
                 AltcoinBlock interimBlock = (AltcoinBlock) syscoinWrapper.getBlock(interimHash).getHeader();
                 blockHeaderBytesInterim = interimBlock.bitcoinSerialize();
