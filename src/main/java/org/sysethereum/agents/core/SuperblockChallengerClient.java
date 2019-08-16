@@ -213,7 +213,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         // start from position 57 and walk back to 0, checking to ensure if a hash is different then request the header of the proceeding index (i+1) to check the prevBlock field of the header matches the previous hash (i position)
         for (int i = hashesFromContract.size()-3; i >= 0; i--) {
             // we check hash in i position and if not matching want to request the i+1 header which will give prevBlock which should match hash in i position otherwise chain is broken
-            if(hashesFromContract.get(i) != localHashes.get(i)) {
+            if(!hashesFromContract.get(i).equals(localHashes.get(i))) {
                 return i+1;
             }
         }
