@@ -89,7 +89,7 @@
         <dependency>
             <groupId>org.libdohj</groupId>
             <artifactId>libdohj-core</artifactId>
-            <version>0.15.18-R</version>
+            <version>0.15.19-R</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
