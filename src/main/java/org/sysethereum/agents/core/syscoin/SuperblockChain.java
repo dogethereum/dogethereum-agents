@@ -38,7 +38,7 @@ public class SuperblockChain {
     private NetworkParameters params;
     private SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
 
-    int SUPERBLOCK_DURATION; // num blocks in a superblock
+    public int SUPERBLOCK_DURATION; // num blocks in a superblock
     private int SUPERBLOCK_DELAY; // time to wait before building a superblock
     private int SUPERBLOCK_STORING_WINDOW; // small time window between storing and sending to avoid losing sync
     private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");

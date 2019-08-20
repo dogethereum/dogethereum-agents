@@ -206,9 +206,9 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         List<Sha256Hash> hashesFromContract = ethWrapper.getBlockHashesBySession(superblockId);
         Superblock superblock = superblockChain.getSuperblock(superblockId);
         List<Sha256Hash> localHashes = superblock.getSyscoinBlockHashes();
-        if(localHashes.size() != 60)
+        if(localHashes.size() != superblockChain.SUPERBLOCK_DURATION)
             throw new Exception("Local superblock must have 60 hashes, we found: " + localHashes.size());
-        if(hashesFromContract.size() != 60)
+        if(hashesFromContract.size() != superblockChain.SUPERBLOCK_DURATION)
             throw new Exception("Stored superblock must have 60 hashes, we found: " + hashesFromContract.size());
         // start from position 57 and walk back to 0, checking to ensure if a hash is different then request the header of the proceeding index (i+1) to check the prevBlock field of the header matches the previous hash (i position)
         for (int i = hashesFromContract.size()-3; i >= 0; i--) {
