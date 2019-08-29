@@ -924,7 +924,6 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (SyscoinBattleManager.ChallengerConvictedEventResponse response : challengerConvictedEvents) {
             ChallengerConvictedEvent challengerConvictedEvent = new ChallengerConvictedEvent();
-            challengerConvictedEvent.superblockId = Keccak256Hash.wrap(response.superblockHash.getValue());
             challengerConvictedEvent.sessionId = Keccak256Hash.wrap(response.sessionId.getValue());
             challengerConvictedEvent.challenger = response.challenger.getValue();
             result.add(challengerConvictedEvent);
@@ -953,7 +952,6 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (SyscoinBattleManager.SubmitterConvictedEventResponse response : submitterConvictedEvents) {
             SubmitterConvictedEvent submitterConvictedEvent = new SubmitterConvictedEvent();
-            submitterConvictedEvent.superblockId = Keccak256Hash.wrap(response.superblockHash.getValue());
             submitterConvictedEvent.sessionId = Keccak256Hash.wrap(response.sessionId.getValue());
             submitterConvictedEvent.submitter = response.submitter.getValue();
             result.add(submitterConvictedEvent);
@@ -972,13 +970,11 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     public static class ChallengerConvictedEvent {
-        public Keccak256Hash superblockId;
         public Keccak256Hash sessionId;
         public String challenger;
     }
 
     public static class SubmitterConvictedEvent {
-        public Keccak256Hash superblockId;
         public Keccak256Hash sessionId;
         public String submitter;
     }
@@ -1027,7 +1023,6 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (SyscoinBattleManager.QueryMerkleRootHashesEventResponse response : queryMerkleRootHashesEvents) {
             QueryMerkleRootHashesEvent queryMerkleRootHashesEvent = new QueryMerkleRootHashesEvent();
-            queryMerkleRootHashesEvent.superblockId = Keccak256Hash.wrap(response.superblockHash.getValue());
             queryMerkleRootHashesEvent.sessionId = Keccak256Hash.wrap(response.sessionId.getValue());
             queryMerkleRootHashesEvent.submitter = response.submitter.getValue();
             result.add(queryMerkleRootHashesEvent);
@@ -1043,7 +1038,6 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     public static class QueryMerkleRootHashesEvent {
-        public Keccak256Hash superblockId;
         public Keccak256Hash sessionId;
         public String submitter;
     }
@@ -1066,7 +1060,6 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (SyscoinBattleManager.RespondMerkleRootHashesEventResponse response : respondMerkleRootHashesEvents) {
             RespondMerkleRootHashesEvent respondMerkleRootHashesEvent = new RespondMerkleRootHashesEvent();
-            respondMerkleRootHashesEvent.superblockId = Keccak256Hash.wrap(response.superblockHash.getValue());
             respondMerkleRootHashesEvent.sessionId = Keccak256Hash.wrap(response.sessionId.getValue());
             respondMerkleRootHashesEvent.challenger = response.challenger.getValue();
             result.add(respondMerkleRootHashesEvent);
@@ -1079,7 +1072,6 @@ public class EthWrapper implements SuperblockConstantProvider {
     // Event wrapper classes
 
     public static class RespondMerkleRootHashesEvent {
-        public Keccak256Hash superblockId;
         public Keccak256Hash sessionId;
         public String challenger;
     }
@@ -1206,12 +1198,11 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     /**
      * Responds to a Merkle root hashes query.
-     * @param superblockId Hash of the superblock whose Merkle root hashes were requested.
      * @param sessionId Battle session ID.
      * @param syscoinBlockHashes Syscoin block hashes that are supposedly in the superblock.
      * @param account Caller's address.
      */
-    public void respondMerkleRootHashes(Keccak256Hash superblockId, Keccak256Hash sessionId,
+    public void respondMerkleRootHashes( Keccak256Hash sessionId,
                                         List<Sha256Hash> syscoinBlockHashes, String account)
             throws Exception {
         Thread.sleep(500); // in case the transaction takes some time to complete
@@ -1222,10 +1213,10 @@ public class EthWrapper implements SuperblockConstantProvider {
         for (Sha256Hash syscoinBlockHash : syscoinBlockHashes)
             rawHashes.add(new Bytes32(syscoinBlockHash.getBytes()));
         CompletableFuture<TransactionReceipt> futureReceipt =
-                battleManager.respondMerkleRootHashes(new Bytes32(superblockId.getBytes()), new Bytes32(sessionId.getBytes()), new DynamicArray<Bytes32>(rawHashes)).sendAsync();
+                battleManager.respondMerkleRootHashes(new Bytes32(sessionId.getBytes()), new DynamicArray<Bytes32>(rawHashes)).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("Responded to Merkle root hashes query for session {}, superblock {}. Receipt: {}",
-                        sessionId, superblockId, receipt.toString()));
+                log.info("Responded to Merkle root hashes query for session {}, Receipt: {}",
+                        sessionId, receipt.toString()));
     }
 
     /**
@@ -1320,20 +1311,19 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     /**
      * Requests a list of all the hashes in a certain superblock.
-     * @param superblockId Hash of superblock being challenged.
      * @param sessionId Battle session ID.
      * @param account Caller's address.
      * @throws InterruptedException
      */
-    public void queryMerkleRootHashes(Keccak256Hash superblockId, Keccak256Hash sessionId, String account)
+    public void queryMerkleRootHashes(Keccak256Hash sessionId, String account)
             throws InterruptedException, Exception {
-        log.info("Querying Merkle root hashes for superblock {}", superblockId);
+        log.info("Querying Merkle root hashes for session {}", sessionId);
         Thread.sleep(500); // in case the transaction takes some time to complete
         if (arePendingTransactionsForChallengerAddress()) {
             throw new Exception("Skipping queryMerkleRootHashes, there are pending transaction for the challenger address.");
         }
         CompletableFuture<TransactionReceipt> futureReceipt = battleManagerForChallenges.queryMerkleRootHashes(
-                new Bytes32(superblockId.getBytes()), new Bytes32(sessionId.getBytes())).sendAsync();
+                new Bytes32(sessionId.getBytes())).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("queryMerkleRootHashes receipt {}", receipt.toString()));
     }
@@ -1417,6 +1407,10 @@ public class EthWrapper implements SuperblockConstantProvider {
     public Superblock getSuperblockBySession(Keccak256Hash sessionId) throws Exception {
         byte[] ret = battleManagerGetter.getSuperblockBySession(new Bytes32(sessionId.getBytes())).send().getValue();
         return superblockChain.getSuperblock(Keccak256Hash.wrap(ret));
+    }
+    public Keccak256Hash getSuperblockIdBySession(Keccak256Hash sessionId) throws Exception {
+        byte[] ret = battleManagerGetter.getSuperblockBySession(new Bytes32(sessionId.getBytes())).send().getValue();
+        return Keccak256Hash.wrap(ret);
     }
     public ChallengeState getSessionChallengeState(Keccak256Hash sessionId) throws Exception {
         BigInteger ret = battleManagerGetter.getSessionChallengeState(new Bytes32(sessionId.getBytes())).send().getValue();

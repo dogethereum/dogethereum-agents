@@ -73,9 +73,8 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
             QueryMerkleRootHashesEventResponse queryMerkleRootHashesEventResponse =
                     new QueryMerkleRootHashesEventResponse();
             queryMerkleRootHashesEventResponse.log = eventValues.getLog();
-            queryMerkleRootHashesEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            queryMerkleRootHashesEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
-            queryMerkleRootHashesEventResponse.submitter = new Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
+            queryMerkleRootHashesEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            queryMerkleRootHashesEventResponse.submitter = new Address ((String)eventValues.getNonIndexedValues().get(1).getValue());
             result.add(queryMerkleRootHashesEventResponse);
         }
 
@@ -124,9 +123,8 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
             ChallengerConvictedEventResponse newChallengerConvictedEventResponse =
                     new ChallengerConvictedEventResponse();
             newChallengerConvictedEventResponse.log = eventValues.getLog();
-            newChallengerConvictedEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            newChallengerConvictedEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
-            newChallengerConvictedEventResponse.challenger = new Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
+            newChallengerConvictedEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            newChallengerConvictedEventResponse.challenger = new Address ((String)eventValues.getNonIndexedValues().get(1).getValue());
             result.add(newChallengerConvictedEventResponse);
         }
 
@@ -149,9 +147,8 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
             SubmitterConvictedEventResponse newSubmitterConvictedEventResponse =
                     new SubmitterConvictedEventResponse();
             newSubmitterConvictedEventResponse.log = eventValues.getLog();
-            newSubmitterConvictedEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            newSubmitterConvictedEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
-            newSubmitterConvictedEventResponse.submitter = new Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
+            newSubmitterConvictedEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            newSubmitterConvictedEventResponse.submitter = new Address ((String)eventValues.getNonIndexedValues().get(1).getValue());
             result.add(newSubmitterConvictedEventResponse);
         }
 
@@ -175,9 +172,8 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
             RespondMerkleRootHashesEventResponse newRespondMerkleRootHashesEventResponse =
                     new RespondMerkleRootHashesEventResponse();
             newRespondMerkleRootHashesEventResponse.log = eventValues.getLog();
-            newRespondMerkleRootHashesEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            newRespondMerkleRootHashesEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
-            newRespondMerkleRootHashesEventResponse.challenger = new Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
+            newRespondMerkleRootHashesEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            newRespondMerkleRootHashesEventResponse.challenger = new Address ((String)eventValues.getNonIndexedValues().get(1).getValue());
             result.add(newRespondMerkleRootHashesEventResponse);
         }
 
