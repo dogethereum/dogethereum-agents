@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.web3j.abi.datatypes.DynamicArray;
 import org.web3j.abi.datatypes.DynamicBytes;
 import org.web3j.abi.datatypes.generated.Bytes32;
+import org.web3j.abi.datatypes.generated.Int256;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.abi.datatypes.generated.Uint32;
 import org.web3j.protocol.Web3j;
@@ -1222,16 +1223,14 @@ public class EthWrapper implements SuperblockConstantProvider {
     /**
      * Requests the header of a Syscoin block in a certain superblock.
      * @param sessionId Battle session ID.
-     * @param account Caller's address.
      * */
-    public void queryLastBlockHeader(Keccak256Hash sessionId, long index,
-                                  String account) throws Exception {
+    public void queryLastBlockHeader(Keccak256Hash sessionId, long index) throws Exception {
         Thread.sleep(500); // in case the transaction takes some time to complete
         if (arePendingTransactionsForChallengerAddress()) {
             throw new Exception("Skipping queryBlockHeader, there are pending transaction for the challenger address.");
         }
         CompletableFuture<TransactionReceipt> futureReceipt =
-                battleManagerForChallenges.queryLastBlockHeader(new Bytes32(sessionId.getBytes()), new Uint256(index)).sendAsync();
+                battleManagerForChallenges.queryLastBlockHeader(new Bytes32(sessionId.getBytes()), new Int256(index)).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("Requested Syscoin last block header for session {}", sessionId));
     }
@@ -1412,6 +1411,11 @@ public class EthWrapper implements SuperblockConstantProvider {
         byte[] ret = battleManagerGetter.getSuperblockBySession(new Bytes32(sessionId.getBytes())).send().getValue();
         return Keccak256Hash.wrap(ret);
     }
+    public Sha256Hash getSuperblockLastHash(Keccak256Hash superblockHash) throws Exception {
+        byte[] ret = superblocksGetter.getSuperblockLastHash(new Bytes32(superblockHash.getBytes())).send().getValue();
+        return Sha256Hash.wrap(ret);
+    }
+
     public ChallengeState getSessionChallengeState(Keccak256Hash sessionId) throws Exception {
         BigInteger ret = battleManagerGetter.getSessionChallengeState(new Bytes32(sessionId.getBytes())).send().getValue();
         return ChallengeState.values()[ret.intValue()];

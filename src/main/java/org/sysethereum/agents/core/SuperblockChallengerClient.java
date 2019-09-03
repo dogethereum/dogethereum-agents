@@ -2,14 +2,13 @@ package org.sysethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.Sha256Hash;
+import org.bitcoinj.core.StoredBlock;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.sysethereum.agents.core.syscoin.Superblock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.sysethereum.agents.core.syscoin.SuperblockChain;
-import org.sysethereum.agents.core.syscoin.SuperblockUtils;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -210,11 +209,26 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         Superblock superblock = superblockChain.getSuperblockByHeight(height.longValue());
         if(superblock == null)
             throw new Exception("Superblock {} not found in local chain at height {} " + superblockId + height.longValue());
+
+
+
         List<Sha256Hash> localHashes = superblock.getSyscoinBlockHashes();
         if(localHashes.size() != superblockChain.SUPERBLOCK_DURATION)
             throw new Exception("Local superblock must have 60 hashes, we found: " + localHashes.size());
         if(hashesFromContract.size() != superblockChain.SUPERBLOCK_DURATION)
             throw new Exception("Stored superblock must have 60 hashes, we found: " + hashesFromContract.size());
+
+        StoredBlock firstBlock = syscoinWrapper.getBlock(hashesFromContract.get(0));
+        // if we don't have the block representing the first hash of the superblock then it must be a bad block to us, so we should ask submitter to prove 0th block
+        if(firstBlock == null) {
+            return 0;
+        }
+        // check first block prev hash matches last superblock last block hash
+        Sha256Hash lastBlockHash = ethWrapper.getSuperblockLastHash(superblock.getParentId());
+        // if prev hash doesn't match last superblock last block hash then enforce submitter to respond with 0th header to verify it is linked to previous superblock
+        if(firstBlock.getHeader().getPrevBlockHash() != lastBlockHash){
+            return 0;
+        }
         // start from position 57 and walk back to 0, checking to ensure if a hash is different then request the header of the proceeding index (i+1) to check the prevBlock field of the header matches the previous hash (i position)
         for (int i = hashesFromContract.size()-3; i >= 0; i--) {
             // we check hash in i position and if not matching want to request the i+1 header which will give prevBlock which should match hash in i position otherwise chain is broken
@@ -222,8 +236,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 return i+1;
             }
         }
-        // if all matches then just return 0 meaning we don't have to check interim block for this challenge
-        return 0;
+        // if all matches then just return -1 meaning we don't have to check interim block for this challenge
+        return -1;
     }
     /**
      * Queries last header for the session that the challenger is battling.
@@ -233,8 +247,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      */
     private void startLastBlockHeaderQueries(EthWrapper.RespondMerkleRootHashesEvent defenderResponse) throws Exception {
         log.info("Starting last block header query for session {}", defenderResponse.sessionId);
-        ethWrapper.queryLastBlockHeader(defenderResponse.sessionId, findInvalidInterimBlockIndex(defenderResponse.sessionId),
-                myAddress);
+        ethWrapper.queryLastBlockHeader(defenderResponse.sessionId, findInvalidInterimBlockIndex(defenderResponse.sessionId));
 
     }
 
