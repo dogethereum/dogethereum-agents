@@ -218,19 +218,20 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         if(hashesFromContract.size() != superblockChain.SUPERBLOCK_DURATION)
             throw new Exception("Stored superblock must have 60 hashes, we found: " + hashesFromContract.size());
 
+        // we want to ensure block->prev of first header matches previous superblock's last hash to check continuation of superblocks
         StoredBlock firstBlock = syscoinWrapper.getBlock(hashesFromContract.get(0));
         // if we don't have the block representing the first hash of the superblock then it must be a bad block to us, so we should ask submitter to prove 0th block
         if(firstBlock == null) {
             return 0;
         }
-        // check first block prev hash matches last superblock last block hash
+        // check first block prev hash matches prev superblock last block hash
         Sha256Hash lastBlockHash = ethWrapper.getSuperblockLastHash(superblock.getParentId());
-        // if prev hash doesn't match last superblock last block hash then enforce submitter to respond with 0th header to verify it is linked to previous superblock
+        // if prev hash doesn't match prev superblock last block hash then enforce submitter to respond with 0th header to verify it is linked to previous superblock
         if(firstBlock.getHeader().getPrevBlockHash() != lastBlockHash){
             return 0;
         }
-        // start from position 57 and walk back to 0, checking to ensure if a hash is different then request the header of the proceeding index (i+1) to check the prevBlock field of the header matches the previous hash (i position)
-        for (int i = hashesFromContract.size()-3; i >= 0; i--) {
+        // start from position 58 and walk back to 0, checking to ensure if a hash is different then request the header of the proceeding index (i+1) to check the prevBlock field of the header matches the previous hash (i position)
+        for (int i = hashesFromContract.size()-2; i >= 0; i--) {
             // we check hash in i position and if not matching want to request the i+1 header which will give prevBlock which should match hash in i position otherwise chain is broken
             if(!hashesFromContract.get(i).equals(localHashes.get(i))) {
                 return i+1;
