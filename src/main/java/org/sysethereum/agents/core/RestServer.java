@@ -35,7 +35,7 @@ import java.util.LinkedHashMap;
 @Service
 @Slf4j(topic = "RestServer")
 public class RestServer {
-    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
+    private static final Logger logger = LoggerFactory.getLogger("RestServer");
 
     public RestServer() {}
     @Autowired

@@ -35,7 +35,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @Service
 @Slf4j(topic = "SyscoinToEthClient")
 public class SyscoinToEthClient {
-    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
+    private static final Logger logger = LoggerFactory.getLogger("SyscoinToEthClient");
 
     @Autowired
     private EthWrapper ethWrapper;
@@ -80,17 +80,17 @@ public class SyscoinToEthClient {
         public void run() {
             try {
                 if (!ethWrapper.isEthNodeSyncing()) {
-                    log.debug("SyscoinToEthClientTimerTask");
+                    logger.debug("SyscoinToEthClientTimerTask");
                     ethWrapper.updateContractFacadesGasPrice();
                     if (config.isSyscoinSuperblockSubmitterEnabled()) {
                         updateBridgeSuperblockChain();
                     }
                 } else {
-                    log.warn("SyscoinToEthClientTimerTask skipped because the eth node is syncing blocks");
+                    logger.warn("SyscoinToEthClientTimerTask skipped because the eth node is syncing blocks");
                 }
             } catch (Exception e) {
 
-                log.error(e.getMessage(), e);
+                logger.error(e.getMessage(), e);
             }
         }
     }
@@ -102,12 +102,12 @@ public class SyscoinToEthClient {
      */
     public long updateBridgeSuperblockChain() throws Exception {
         if (ethWrapper.arePendingTransactionsForSendSuperblocksAddress()) {
-            log.debug("Skipping sending superblocks, there are pending transaction for the sender address.");
+            logger.debug("Skipping sending superblocks, there are pending transaction for the sender address.");
             return 0;
         }
         Keccak256Hash bestSuperblockId = ethWrapper.getBestSuperblockId();
         checkNotNull(bestSuperblockId, "No best chain superblock found");
-        log.debug("Best superblock {}.", bestSuperblockId);
+        logger.debug("Best superblock {}.", bestSuperblockId);
 
         Keccak256Hash highestDescendantId ;
         Superblock highestDescendant = ethWrapper.getHighestSemiApprovedOrApprovedDescendant(bestSuperblockId);
@@ -119,13 +119,13 @@ public class SyscoinToEthClient {
 
         Superblock toConfirm = superblockChain.getFirstDescendant(highestDescendantId);
         if (toConfirm == null) {
-            log.info("Best superblock from contracts, {}, not found in local database. Stopping.", highestDescendantId);
+            logger.info("Best superblock from contracts, {}, not found in local database. Stopping.", highestDescendantId);
             return 0;
         }
 
 
         if (!superblockChain.sendingTimePassed(toConfirm) || !ethWrapper.getAbilityToProposeNextSuperblock()) {
-            log.debug("Too early to send superblock {}, will try again in a few seconds.",
+            logger.debug("Too early to send superblock {}, will try again in a few seconds.",
                     toConfirm.getSuperblockId());
             return 0;
         }

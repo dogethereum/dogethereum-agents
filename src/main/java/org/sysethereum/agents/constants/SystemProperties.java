@@ -26,7 +26,7 @@ import java.util.Properties;
  */
 @Slf4j(topic = "SystemProperties")
 public class SystemProperties {
-    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
+    private static final Logger logger = LoggerFactory.getLogger("SystemProperties");
     private static final String LOCAL = "local";
     private static final String INTEGRATION = "integration";
     private static final String ETHGANACHE_SYSCOINMAIN = "ethganachesyscoinmain";
@@ -48,12 +48,12 @@ public class SystemProperties {
             Config javaSystemProperties = ConfigFactory.load("no-such-resource-only-system-props");
             String file = System.getProperty("sysethereum.agents.conf.file");
             Config cmdLineConfigFile = file != null ? ConfigFactory.parseFile(new File(file)) : ConfigFactory.empty();
-            log.info("Config ( {} ): user properties from -Dsysethereum.agents.conf.file file '{}'",
+            logger.info("Config ( {} ): user properties from -Dsysethereum.agents.conf.file file '{}'",
                     cmdLineConfigFile.entrySet().isEmpty() ? NO : YES, file);
             config = javaSystemProperties
                     .withFallback(cmdLineConfigFile);
 
-            log.debug("Config trace: " + config.root().render(ConfigRenderOptions.defaults().
+            logger.debug("Config trace: " + config.root().render(ConfigRenderOptions.defaults().
                     setComments(false).setJson(false)));
 
             Properties props = new Properties();
@@ -70,7 +70,7 @@ public class SystemProperties {
             this.projectVersionModifier = this.projectVersionModifier.replaceAll("\"", "");
 
         } catch (Exception e) {
-            log.error("Can't read config.", e);
+            logger.error("Can't read config.", e);
             throw new RuntimeException(e);
         }
     }

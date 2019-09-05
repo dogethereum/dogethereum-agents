@@ -32,13 +32,13 @@ import java.util.List;
  * @author Oscar Guindzberg
  */
 public class GenesisSuperblockGeneratorMain {
-    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
+    private static final Logger logger = LoggerFactory.getLogger("GenesisSuperblockGeneratorMain");
     private static String baseDir = "/yourPath/sysethereum-agents";
     private static String subDir = "/src/main/java/org/sysethereum/agents/tool";
 
     public static void main(String[] args) throws Exception {
         SystemProperties config = SystemProperties.CONFIG;
-        log.info("Running GenesisSuperblockGeneratorMain version: {}-{}", config.projectVersion(), config.projectVersionModifier());
+        logger.info("Running GenesisSuperblockGeneratorMain version: {}-{}", config.projectVersion(), config.projectVersionModifier());
         // Instantiate the spring context
         AnnotationConfigApplicationContext c = new AnnotationConfigApplicationContext();
         c.register(SyscoinWrapper.class);

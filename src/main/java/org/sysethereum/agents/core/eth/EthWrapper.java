@@ -47,7 +47,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 @Component
 @Slf4j(topic = "EthWrapper")
 public class EthWrapper implements SuperblockConstantProvider {
-    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
+    private static final Logger logger = LoggerFactory.getLogger("EthWrapper");
     private Web3j web3;
     private Web3j web3Secondary;
     public enum ChallengeState {
@@ -108,20 +108,20 @@ public class EthWrapper implements SuperblockConstantProvider {
         if(generalAddress.length() > 0){
             PersonalUnlockAccount personalUnlockAccount = admin.personalUnlockAccount(generalAddress, config.generalPurposeAndSendSuperblocksUnlockPW(), BigInteger.ZERO).send();
             if (personalUnlockAccount != null && personalUnlockAccount.accountUnlocked()) {
-                log.info("general.purpose.and.send.superblocks.address is unlocked and ready to use!");
+                logger.info("general.purpose.and.send.superblocks.address is unlocked and ready to use!");
             }
             else{
-                log.warn("general.purpose.and.send.superblocks.address could not be unlocked, please check the password you set in the configuration file");
+                logger.warn("general.purpose.and.send.superblocks.address could not be unlocked, please check the password you set in the configuration file");
             }
         }
         String challengerAddress = config.syscoinSuperblockChallengerAddress();
         if(challengerAddress.length() > 0 && !generalAddress.equals(challengerAddress)){
             PersonalUnlockAccount personalUnlockAccount = admin.personalUnlockAccount(challengerAddress, config.syscoinSuperblockChallengerUnlockPW(), BigInteger.ZERO).send();
             if (personalUnlockAccount != null && personalUnlockAccount.accountUnlocked()) {
-                log.info("syscoin.superblock.challenger.address is unlocked and ready to use!");
+                logger.info("syscoin.superblock.challenger.address is unlocked and ready to use!");
             }
             else{
-                log.warn("syscoin.superblock.challenger.address could not be unlocked, please check the password you set in the configuration file");
+                logger.warn("syscoin.superblock.challenger.address could not be unlocked, please check the password you set in the configuration file");
             }
         }
         admin.shutdown();
@@ -250,7 +250,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             }
             if(gasPriceMinimum != gasPriceSuggestedByEthNode) {
                 gasPriceMinimum = gasPriceSuggestedByEthNode;
-                log.info("setting new min gas price to " + gasPriceMinimum);
+                logger.info("setting new min gas price to " + gasPriceMinimum);
                 if (claimManager != null)
                     claimManager.setGasPrice(gasPriceMinimum);
                 if (claimManagerForChallenges != null)
@@ -347,13 +347,13 @@ public class EthWrapper implements SuperblockConstantProvider {
             throws BlockStoreException, IOException, Exception {
         if (superblockChain.getSuperblock(superblockId) == null) {
             // The superblock isn't in the main chain.
-            log.info("Superblock {} is not in the main chain. Returning from getHighestApprovableOrNewDescendant.", superblockId);
+            logger.info("Superblock {} is not in the main chain. Returning from getHighestApprovableOrNewDescendant.", superblockId);
             return null;
         }
 
         if (superblockChain.getSuperblock(superblockId).getSuperblockHeight() == superblockChain.getChainHeight()) {
             // There's nothing above the tip of the chain.
-            log.info("Superblock {} is above the tip of the chain. Returning from getHighestApprovableOrNewDescendant.", superblockId);
+            logger.info("Superblock {} is above the tip of the chain. Returning from getHighestApprovableOrNewDescendant.", superblockId);
             return null;
         }
         Superblock currentSuperblock = superblockChain.getChainHead();
@@ -381,13 +381,13 @@ public class EthWrapper implements SuperblockConstantProvider {
             throws BlockStoreException, IOException, Exception {
         if (superblockChain.getSuperblock(superblockId) == null) {
             // The superblock isn't in the main chain.
-            log.info("Superblock {} is not in the main chain. Returning from getHighestSemiApprovedOrApprovedDescendant.", superblockId);
+            logger.info("Superblock {} is not in the main chain. Returning from getHighestSemiApprovedOrApprovedDescendant.", superblockId);
             return null;
         }
 
         if (superblockChain.getSuperblock(superblockId).getSuperblockHeight() == superblockChain.getChainHeight()) {
             // There's nothing above the tip of the chain.
-            log.info("Superblock {} is above the tip of the chain. Returning from getHighestSemiApprovedOrApprovedDescendant.", superblockId);
+            logger.info("Superblock {} is above the tip of the chain. Returning from getHighestSemiApprovedOrApprovedDescendant.", superblockId);
             return null;
         }
         Superblock currentSuperblock = superblockChain.getChainHead();
@@ -408,7 +408,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         // Check if the parent has been approved before sending this superblock.
         Keccak256Hash parentId = superblock.getParentId();
         if (!(isSuperblockApproved(parentId) || isSuperblockSemiApproved(parentId))) {
-            log.info("Superblock {} not sent because its parent was neither approved nor semi approved.",
+            logger.info("Superblock {} not sent because its parent was neither approved nor semi approved.",
                     superblock.getSuperblockId());
             return false;
         }
@@ -427,16 +427,16 @@ public class EthWrapper implements SuperblockConstantProvider {
                 }
             }
            if(!allowed){
-               log.info("Superblock {} has already been sent. Returning.", superblock.getSuperblockId());
+               logger.info("Superblock {} has already been sent. Returning.", superblock.getSuperblockId());
                return false;
             }
         }
 
 
-        log.info("About to send superblock {} to the bridge.", superblock.getSuperblockId());
+        logger.info("About to send superblock {} to the bridge.", superblock.getSuperblockId());
         Thread.sleep(500);
         if (arePendingTransactionsForSendSuperblocksAddress()) {
-            log.debug("Skipping sending superblocks, there are pending transaction for the sender address.");
+            logger.debug("Skipping sending superblocks, there are pending transaction for the sender address.");
             return false;
         }
 
@@ -446,9 +446,9 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         // The parent is either approved or semi approved. We can send the superblock.
         CompletableFuture<TransactionReceipt> futureReceipt = proposeSuperblock(superblock);
-        log.info("Sent superblock {}", superblock.getSuperblockId());
+        logger.info("Sent superblock {}", superblock.getSuperblockId());
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("proposeSuperblock receipt {}", receipt.toString())
+                logger.info("proposeSuperblock receipt {}", receipt.toString())
         );
         Thread.sleep(200);
         return true;
@@ -490,10 +490,10 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     private void makeDeposit(SyscoinClaimManager myClaimManager, BigInteger weiValue) throws InterruptedException {
         CompletableFuture<TransactionReceipt> futureReceipt = myClaimManager.makeDeposit(weiValue).sendAsync();
-        log.info("Deposited {} wei.", weiValue);
+        logger.info("Deposited {} wei.", weiValue);
 
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("makeClaimDeposit receipt {}", receipt.toString())
+                logger.info("makeClaimDeposit receipt {}", receipt.toString())
         );
         Thread.sleep(200); // in case the transaction takes some time to complete
     }
@@ -543,9 +543,9 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     private void withdrawDeposit(SyscoinClaimManager myClaimManager, BigInteger weiValue) throws Exception {
         CompletableFuture<TransactionReceipt> futureReceipt = myClaimManager.withdrawDeposit(new Uint256(weiValue)).sendAsync();
-        log.info("Withdrew {} wei.", weiValue);
+        logger.info("Withdrew {} wei.", weiValue);
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("withdrawDeposit receipt {}", receipt.toString())
+                logger.info("withdrawDeposit receipt {}", receipt.toString())
         );
     }
 
@@ -597,7 +597,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         CompletableFuture<TransactionReceipt> futureReceipt =
                 superblocks.invalidate(new Bytes32(superblockId.getBytes()), new org.web3j.abi.datatypes.Address(validator)).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("Invalidated superblock {}", superblockId));
+                logger.info("Invalidated superblock {}", superblockId));
     }
 
 
@@ -839,7 +839,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         CompletableFuture<TransactionReceipt> futureReceipt =
                 myClaimManager.checkClaimFinished(new Bytes32(superblockId.getBytes())).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("checkClaimFinished receipt {}", receipt.toString())
+                logger.info("checkClaimFinished receipt {}", receipt.toString())
         );
     }
 
@@ -856,7 +856,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         CompletableFuture<TransactionReceipt> futureReceipt =
                 claimManager.confirmClaim(new Bytes32(superblockId.getBytes()), new Bytes32(descendantId.getBytes())).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("confirmClaim receipt {}", receipt.toString())
+                logger.info("confirmClaim receipt {}", receipt.toString())
         );
     }
 
@@ -871,7 +871,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         CompletableFuture<TransactionReceipt> futureReceipt =
                 claimManager.rejectClaim(new Bytes32(superblockId.getBytes())).sendAsync();
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
-                log.info("rejectClaim receipt {}", receipt.toString())
+                logger.info("rejectClaim receipt {}", receipt.toString())
         );
     }
 
@@ -1190,7 +1190,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             CompletableFuture<TransactionReceipt> futureReceipt = battleManager.respondLastBlockHeader(
                     new Bytes32(sessionId.getBytes()), new DynamicBytes(blockHeaderBytes), blockHeaderBytesInterim == null? DynamicBytes.DEFAULT: new DynamicBytes(blockHeaderBytesInterim)).sendAsync();
             futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                    log.info("Responded to last block header query for Syscoin session {}, Receipt: {}",
+                    logger.info("Responded to last block header query for Syscoin session {}, Receipt: {}",
                             sessionId, receipt)
             );
         }
@@ -1216,7 +1216,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         CompletableFuture<TransactionReceipt> futureReceipt =
                 battleManager.respondMerkleRootHashes(new Bytes32(sessionId.getBytes()), new DynamicArray<Bytes32>(rawHashes)).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("Responded to Merkle root hashes query for session {}, Receipt: {}",
+                logger.info("Responded to Merkle root hashes query for session {}, Receipt: {}",
                         sessionId, receipt.toString()));
     }
 
@@ -1232,7 +1232,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         CompletableFuture<TransactionReceipt> futureReceipt =
                 battleManagerForChallenges.queryLastBlockHeader(new Bytes32(sessionId.getBytes()), new Int256(index)).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("Requested Syscoin last block header for session {}", sessionId));
+                logger.info("Requested Syscoin last block header for session {}", sessionId));
     }
 
     // TODO: see if the challenger should know which superblock this is
@@ -1247,7 +1247,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         CompletableFuture<TransactionReceipt> futureReceipt =
                 myBattleManager.verifySuperblock(new Bytes32(sessionId.getBytes())).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("Verified superblock for session {}", sessionId));
+                logger.info("Verified superblock for session {}", sessionId));
     }
 
     /**
@@ -1259,7 +1259,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     public void timeout(Keccak256Hash sessionId, SyscoinBattleManagerExtended myBattleManager) throws Exception {
         CompletableFuture<TransactionReceipt> futureReceipt = myBattleManager.timeout(new Bytes32(sessionId.getBytes())).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("Called timeout for session {}", sessionId));
+                logger.info("Called timeout for session {}", sessionId));
     }
 
 
@@ -1274,11 +1274,11 @@ public class EthWrapper implements SuperblockConstantProvider {
     public boolean challengeSuperblock(Keccak256Hash superblockId, String account)
             throws InterruptedException, Exception {
         if(!getClaimExists(superblockId) || getClaimDecided(superblockId)) {
-            log.info("superblock has already been decided upon or claim doesn't exist, skipping...{}", superblockId.toString());
+            logger.info("superblock has already been decided upon or claim doesn't exist, skipping...{}", superblockId.toString());
             return false;
         }
         if(getClaimSubmitter(superblockId).equals(getSyscoinSuperblockChallengerAddress())){
-            log.info("You cannot challenge a superblock you have submitted yourself, skipping...{}", superblockId.toString());
+            logger.info("You cannot challenge a superblock you have submitted yourself, skipping...{}", superblockId.toString());
             return false;
         }
 
@@ -1288,7 +1288,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         CompletableFuture<TransactionReceipt> futureReceipt =
                 claimManagerForChallenges.challengeSuperblock(new Bytes32(superblockId.getBytes())).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("challengeSuperblock receipt {}", receipt.toString()));
+                logger.info("challengeSuperblock receipt {}", receipt.toString()));
         return true;
     }
 
@@ -1300,10 +1300,10 @@ public class EthWrapper implements SuperblockConstantProvider {
     private void makeChallengerDeposit(BigInteger weiValue)
             throws InterruptedException {
         CompletableFuture<TransactionReceipt> futureReceipt = claimManagerForChallenges.makeDeposit(weiValue).sendAsync();
-        log.info("Challenger deposited {} wei.", weiValue);
+        logger.info("Challenger deposited {} wei.", weiValue);
 
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("makeChallengerDeposit receipt {}", receipt.toString())
+                logger.info("makeChallengerDeposit receipt {}", receipt.toString())
         );
         Thread.sleep(200); // in case the transaction takes some time to complete
     }
@@ -1316,7 +1316,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     public void queryMerkleRootHashes(Keccak256Hash sessionId, String account)
             throws InterruptedException, Exception {
-        log.info("Querying Merkle root hashes for session {}", sessionId);
+        logger.info("Querying Merkle root hashes for session {}", sessionId);
         Thread.sleep(500); // in case the transaction takes some time to complete
         if (arePendingTransactionsForChallengerAddress()) {
             throw new Exception("Skipping queryMerkleRootHashes, there are pending transaction for the challenger address.");
@@ -1324,7 +1324,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         CompletableFuture<TransactionReceipt> futureReceipt = battleManagerForChallenges.queryMerkleRootHashes(
                 new Bytes32(sessionId.getBytes())).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("queryMerkleRootHashes receipt {}", receipt.toString()));
+                logger.info("queryMerkleRootHashes receipt {}", receipt.toString()));
     }
 
 

@@ -15,7 +15,6 @@ import org.bitcoinj.store.BlockStoreException;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.util.AgentUtils;
 import org.sysethereum.agents.constants.AgentConstants;
-import org.sysethereum.agents.util.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +28,7 @@ import java.util.Arrays;
 @Slf4j(topic = "SyscoinWrapper")
 public class SyscoinWrapper {
 
-    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
+    private static final Logger logger = LoggerFactory.getLogger("SyscoinWrapper");
     SystemProperties config;
     private WalletAppKit kit;
     private Context syscoinContext;
@@ -145,10 +144,10 @@ public class SyscoinWrapper {
     public void tearDown() throws BlockStoreException, IOException {
         if (config.isSyscoinSuperblockSubmitterEnabled() ||
                  config.isSyscoinBlockChallengerEnabled()) {
-            log.info("SyscoinToEthClient tearDown starting...");
+            logger.info("SyscoinToEthClient tearDown starting...");
             stop();
 
-            log.info("SyscoinToEthClient tearDown finished.");
+            logger.info("SyscoinToEthClient tearDown finished.");
         }
     }
 

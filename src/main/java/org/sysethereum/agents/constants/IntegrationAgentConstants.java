@@ -5,13 +5,10 @@ import org.bitcoinj.core.Sha256Hash;
 import org.libdohj.params.SyscoinTestNet3Params;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.sysethereum.agents.core.syscoin.Superblock;
-import org.libdohj.params.SyscoinMainNetParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.List;
 
 /**

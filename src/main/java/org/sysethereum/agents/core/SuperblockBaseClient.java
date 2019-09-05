@@ -22,7 +22,7 @@ import java.util.*;
 
 @Slf4j(topic = "SuperblockBaseClient")
 public abstract class SuperblockBaseClient extends PersistentFileStore {
-    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
+    private static final Logger logger = LoggerFactory.getLogger("SuperblockBaseClient");
     @Autowired
     protected SyscoinWrapper syscoinWrapper;
 
@@ -75,11 +75,11 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
     @PreDestroy
     public void tearDown() throws BlockStoreException, ClassNotFoundException, IOException {
         if (isEnabled()) {
-            log.info("{} tearDown starting...", clientName);
+            logger.info("{} tearDown starting...", clientName);
 
             flushFiles();
 
-            log.info("{} tearDown finished.", clientName);
+            logger.info("{} tearDown finished.", clientName);
         }
     }
 
@@ -101,7 +101,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
                     restoreFiles();
 
                     if (arePendingTransactions()) {
-                        log.debug("Skipping because there are pending transaction for the sender address.");
+                        logger.debug("Skipping because there are pending transaction for the sender address.");
                         return;
                     }
 
@@ -124,10 +124,10 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
 
                     flushFiles();
                 } else {
-                    log.warn("SuperblocksBaseClientTimerTask skipped because the eth node is syncing blocks");
+                    logger.warn("SuperblocksBaseClientTimerTask skipped because the eth node is syncing blocks");
                 }
             } catch (Exception e) {
-                log.error(e.getMessage(), e);
+                logger.error(e.getMessage(), e);
             }
         }
     }

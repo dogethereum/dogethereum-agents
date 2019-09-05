@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 
 public class FileUtils {
-    private static final Logger LOGGER = LoggerFactory.getLogger("file");
+    private static final Logger logger = LoggerFactory.getLogger("file");
 
     public static boolean recursiveDelete(String fileName) {
         File file = new File(fileName);
@@ -22,7 +22,7 @@ public class FileUtils {
             }
 
             if (!file.setWritable(true))
-                LOGGER.error("File is not writable");
+                logger.error("File is not writable");
 
             boolean result = file.delete();
             return result;

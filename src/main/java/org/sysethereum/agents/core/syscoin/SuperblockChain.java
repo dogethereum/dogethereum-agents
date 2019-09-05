@@ -41,7 +41,7 @@ public class SuperblockChain {
     public int SUPERBLOCK_DURATION; // num blocks in a superblock
     private int SUPERBLOCK_DELAY; // time to wait before building a superblock
     private int SUPERBLOCK_STORING_WINDOW; // small time window between storing and sending to avoid losing sync
-    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
+    private static final Logger logger = LoggerFactory.getLogger("SuperblockChain");
 
     /* ---- CONSTRUCTION METHODS ---- */
 
@@ -112,7 +112,7 @@ public class SuperblockChain {
             superblockStorage.put(newSuperblock);
             if (newSuperblock.getChainWork().compareTo(superblockStorage.getChainHeadWork()) > 0) {
                 superblockStorage.setChainHead(newSuperblock);
-                log.info("New superblock chain head {}", newSuperblock);
+                logger.info("New superblock chain head {}", newSuperblock);
             }
 
             // set prev hash and end time for next superblock
@@ -219,7 +219,7 @@ public class SuperblockChain {
     public Superblock getFirstDescendant(Keccak256Hash parentId) throws BlockStoreException, IOException {
         if (getSuperblock(parentId) == null) {
             // The superblock isn't in the main chain.
-            log.info("Superblock {} is not in the main chain. Returning from getFirstDescendant.", parentId);
+            logger.info("Superblock {} is not in the main chain. Returning from getFirstDescendant.", parentId);
             return null;
         }
 

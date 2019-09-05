@@ -27,7 +27,7 @@ import java.util.*;
 @Slf4j(topic = "SuperblockChainClient")
 
 public class SuperblockChainClient {
-    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
+    private static final Logger logger = LoggerFactory.getLogger("SuperblockChainClient");
     @Autowired
     private SuperblockChain superblockChain;
 
@@ -88,10 +88,10 @@ public class SuperblockChainClient {
         @Override
         public void run() {
             try {
-                log.debug("UpdateSuperblocksTimerTask");
+                logger.debug("UpdateSuperblocksTimerTask");
                 updateChain();
             } catch (Exception e) {
-                log.error(e.getMessage(), e);
+                logger.error(e.getMessage(), e);
             }
         }
     }
