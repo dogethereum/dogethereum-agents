@@ -24,7 +24,7 @@ import java.util.*;
 @Service
 @Slf4j(topic = "SuperblockChallengerClient")
 public class SuperblockChallengerClient extends SuperblockBaseClient {
-    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
+    private static final Logger logger = LoggerFactory.getLogger("SuperblockChallengerClient");
     private HashSet<Keccak256Hash> semiApprovedSet;
     private File semiApprovedSetFile;
 
@@ -48,7 +48,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             // Maintain data structures
             getSemiApproved(fromBlock, toBlock);
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            logger.error(e.getMessage(), e);
             return fromBlock - 1;
         }
         return toBlock;
@@ -61,7 +61,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             invalidateLoserSuperblocks();
             invalidateNonMainChainSuperblocks();
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -78,7 +78,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 long confirmations = ethWrapper.getSuperblockConfirmations();
                 if (!mainChainSuperblock.getSuperblockId().equals(superblockId) &&
                         ethWrapper.getChainHeight().longValue() >= semiApprovedHeight + confirmations) {
-                    log.info("Semi-approved superblock {} not found in main chain. Invalidating.", superblockId);
+                    logger.info("Semi-approved superblock {} not found in main chain. Invalidating.", superblockId);
                     ethWrapper.rejectClaim(superblockId, myAddress);
                 }
             }
@@ -89,7 +89,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
             // decided is set to true inside of checkclaimfinished and thus only allows it to call once
             if (ethWrapper.getClaimInvalid(superblockId) && ethWrapper.getClaimExists(superblockId) && !ethWrapper.getClaimDecided(superblockId)) {
-                log.info("Superblock {} lost a battle. Invalidating.", superblockId);
+                logger.info("Superblock {} lost a battle. Invalidating.", superblockId);
                 ethWrapper.checkClaimFinished(superblockId, true);
                 sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(superblockId));
                 superblockToSessionsMap.remove(superblockId);
@@ -114,7 +114,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
         List<Keccak256Hash> toChallenge = new ArrayList<>();
         for (EthWrapper.SuperblockEvent newSuperblock : newSuperblockEvents) {
-            log.info("NewSuperblock {}. Validating...", newSuperblock.superblockId);
+            logger.info("NewSuperblock {}. Validating...", newSuperblock.superblockId);
 
             Superblock superblock = superblockChain.getSuperblock(newSuperblock.superblockId);
             if (superblock == null) {
@@ -122,16 +122,16 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 Superblock localSuperblock = superblockChain.getSuperblockByHeight(height.longValue());
                 if (localSuperblock == null) {
                     //FIXME: Local superbockchain might be out of sync
-                    log.info("Superblock {} not present in our superblock chain", newSuperblock.superblockId);
+                    logger.info("Superblock {} not present in our superblock chain", newSuperblock.superblockId);
                 } else {
-                    log.info("Superblock {} at height {} is replaced by {} in our superblock chain",
+                    logger.info("Superblock {} at height {} is replaced by {} in our superblock chain",
                             newSuperblock.superblockId,
                             height,
                             localSuperblock.getSuperblockId());
                     toChallenge.add(newSuperblock.superblockId);
                 }
             } else {
-                log.info("Superblock height: {}... superblock present in our superblock chain", superblock.getSuperblockHeight());
+                logger.info("Superblock height: {}... superblock present in our superblock chain", superblock.getSuperblockHeight());
             }
         }
         // check for pending if we have superblocks to challenge
@@ -226,15 +226,15 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
         // check first block prev hash matches prev superblock last block hash
         Sha256Hash lastBlockHash = ethWrapper.getSuperblockLastHash(superblock.getParentId());
-        // if prev hash doesn't match prev superblock last block hash then enforce submitter to respond with 0th header to verify it is linked to previous superblock
-        if(firstBlock.getHeader().getPrevBlockHash() != lastBlockHash){
-            return 0;
-        }
-        // start from position 58 and walk back to 0, checking to ensure if a hash is different then request the header of the proceeding index (i+1) to check the prevBlock field of the header matches the previous hash (i position)
-        for (int i = hashesFromContract.size()-2; i >= 0; i--) {
-            // we check hash in i position and if not matching want to request the i+1 header which will give prevBlock which should match hash in i position otherwise chain is broken
-            if(!hashesFromContract.get(i).equals(localHashes.get(i))) {
-                return i+1;
+        // add last block of prev superblock to the hashesFromContract as we will step through the local hashes and compare prev blocks to the contract hashes
+        hashesFromContract.add(0, lastBlockHash);
+        for (int i = 0; i < localHashes.size(); i++) {
+            StoredBlock block = syscoinWrapper.getBlock(localHashes.get(i));
+            if(block == null) {
+                throw new Exception("Cannot find local block at index: " + i);
+            }
+            if(block.getHeader().getPrevBlockHash() != hashesFromContract.get(i)){
+                return i;
             }
         }
         // if all matches then just return -1 meaning we don't have to check interim block for this challenge
@@ -247,7 +247,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @throws Exception
      */
     private void startLastBlockHeaderQueries(EthWrapper.RespondMerkleRootHashesEvent defenderResponse) throws Exception {
-        log.info("Starting last block header query for session {}", defenderResponse.sessionId);
+        logger.info("Starting last block header query for session {}", defenderResponse.sessionId);
         ethWrapper.queryLastBlockHeader(defenderResponse.sessionId, findInvalidInterimBlockIndex(defenderResponse.sessionId));
 
     }
@@ -351,7 +351,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     protected void callBattleTimeouts() throws Exception {
         for (Keccak256Hash sessionId : sessionToSuperblockMap.keySet()) {
             if (ethWrapper.getSubmitterHitTimeout(sessionId)) {
-                log.info("Submitter hit timeout on session {}. Calling timeout.", sessionId);
+                logger.info("Submitter hit timeout on session {}. Calling timeout.", sessionId);
                 ethWrapper.timeout(sessionId, ethWrapper.getBattleManagerForChallenges());
             }
         }
@@ -412,7 +412,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             if(superblock == null)
                 continue;
             if (sessionToSuperblockMap.containsKey(submitterConvictedEvent.sessionId)) {
-                log.info("Submitter convicted on session {}, superblock {}. Battle won!",
+                logger.info("Submitter convicted on session {}, superblock {}. Battle won!",
                         submitterConvictedEvent.sessionId, superblock.getSuperblockId());
                 sessionToSuperblockMap.remove(submitterConvictedEvent.sessionId);
             }
@@ -441,7 +441,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 Superblock superblock = ethWrapper.getSuperblockBySession(challengerConvictedEvent.sessionId);
                 if(superblock == null)
                     continue;
-                log.info("Challenger convicted on session {}, superblock {}. Battle lost!",
+                logger.info("Challenger convicted on session {}, superblock {}. Battle lost!",
                         challengerConvictedEvent.sessionId, superblock.getSuperblockId());
                 sessionToSuperblockMap.remove(challengerConvictedEvent.sessionId);
                 if (superblockToSessionsMap.containsKey(superblock.getSuperblockId())) {
