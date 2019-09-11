@@ -183,7 +183,6 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
 
     protected abstract long getConfirmations();
 
-    protected abstract void callBattleTimeouts() throws Exception;
 
     protected abstract long getTimerTaskPeriod(); // in seconds
 

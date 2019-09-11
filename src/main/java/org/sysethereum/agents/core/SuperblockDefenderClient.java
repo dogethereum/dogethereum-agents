@@ -38,8 +38,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     @Override
     public long reactToEvents(long fromBlock, long toBlock) {
         try {
-            respondToMerkleRootHashesQueries(fromBlock, toBlock);
-            respondToLastBlockHeaderQueries(fromBlock, toBlock);
+            respondToNewBattles(fromBlock, toBlock);
 
             // Maintain data structures
             removeSemiApprovedDescendants(fromBlock, toBlock);
@@ -54,7 +53,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     protected void reactToElapsedTime() {
         try {
             confirmEarliestApprovableSuperblock();
-            callBattleTimeouts();
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
@@ -120,58 +118,22 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     /* - Reacting to events - */
 
-    private void respondToLastBlockHeaderQueries(long fromBlock, long toBlock)
-            throws IOException, BlockStoreException, Exception {
-        List<EthWrapper.QueryLastBlockHeaderEvent> queryBlockHeaderEvents =
-                ethWrapper.getLastBlockHeaderQueries(fromBlock, toBlock);
+    private void respondToNewBattles(long fromBlock, long toBlock)
+            throws Exception {
+        List<EthWrapper.NewBattleEvent> queryBattleEvents =
+                ethWrapper.getNewBattleEvents(fromBlock, toBlock);
 
-        for (EthWrapper.QueryLastBlockHeaderEvent queryBlockHeader : queryBlockHeaderEvents) {
-            if (isMine(queryBlockHeader) && (ethWrapper.getSessionChallengeState(queryBlockHeader.sessionId) == EthWrapper.ChallengeState.QueryLastBlockHeader)) {
-                logger.info("Last header requested for session {}. Responding now.", queryBlockHeader.sessionId);
-
-                ethWrapper.respondLastBlockHeader(queryBlockHeader.sessionId, myAddress);
+        for (EthWrapper.NewBattleEvent queryBattleEvent : queryBattleEvents) {
+            if (isMine(queryBattleEvent) && (ethWrapper.getSessionChallengeState(queryBattleEvent.sessionId) == EthWrapper.ChallengeState.Challenged)) {
+                logger.info("Battle detected for session {}. Responding now.", queryBattleEvent.sessionId);
+                ethWrapper.respondBlockHeaders(queryBattleEvent.sessionId, queryBattleEvent.superblockId);
             }
         }
     }
 
-    private void respondToMerkleRootHashesQueries(long fromBlock, long toBlock) throws IOException, Exception {
-        List<EthWrapper.QueryMerkleRootHashesEvent> queryMerkleRootHashesEvents =
-                ethWrapper.getMerkleRootHashesQueries(fromBlock, toBlock);
-
-        for (EthWrapper.QueryMerkleRootHashesEvent queryMerkleRootHashes : queryMerkleRootHashesEvents) {
-            if (isMine(queryMerkleRootHashes) && ethWrapper.getSessionChallengeState(queryMerkleRootHashes.sessionId) == EthWrapper.ChallengeState.QueryMerkleRootHashes) {
-                Superblock superblock = ethWrapper.getSuperblockBySession(queryMerkleRootHashes.sessionId);
-                if(superblock == null)
-                    continue;
-                logger.info("Merkle root hashes requested for session {}, superblock {}. Responding now.",
-                        queryMerkleRootHashes.sessionId, superblock.getSuperblockId());
-
-                ethWrapper.respondMerkleRootHashes(queryMerkleRootHashes.sessionId,
-                        superblock.getSyscoinBlockHashes(), myAddress);
-            }
-        }
-    }
-
-    private void logErrorBattleEvents(long fromBlock, long toBlock) throws IOException {
-        List<EthWrapper.ErrorBattleEvent> errorBattleEvents = ethWrapper.getErrorBattleEvents(fromBlock, toBlock);
-
-        for (EthWrapper.ErrorBattleEvent errorBattleEvent : errorBattleEvents) {
-            if (sessionToSuperblockMap.containsKey(errorBattleEvent.sessionId)) {
-                logger.info("ErrorBattle. Session ID: {}, error: {}", errorBattleEvent.sessionId, errorBattleEvent.err);
-            }
-        }
-    }
 
 
     /* ---- HELPER METHODS ---- */
-
-    private boolean isMine(EthWrapper.QueryLastBlockHeaderEvent queryBlockHeader) {
-        return queryBlockHeader.submitter.equals(myAddress);
-    }
-
-    private boolean isMine(EthWrapper.QueryMerkleRootHashesEvent queryMerkleRootHashes) {
-        return queryMerkleRootHashes.submitter.equals(myAddress);
-    }
 
 
     private boolean submittedUnresponsiveTimeoutPassed(Keccak256Hash superblockId) throws Exception {
@@ -232,15 +194,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         return config.getAgentConstants().getDefenderConfirmations();
     }
 
-    @Override
-    protected void callBattleTimeouts() throws Exception {
-        for (Keccak256Hash sessionId : sessionToSuperblockMap.keySet()) {
-            if (ethWrapper.getChallengerHitTimeout(sessionId)) {
-                logger.info("Challenger hit timeout on session {}. Calling timeout.", sessionId);
-                ethWrapper.timeout(sessionId, ethWrapper.getBattleManager());
-            }
-        }
-    }
 
     /**
      * Removes superblocks from the data structure that keeps track of semi-approved superblocks.
@@ -291,39 +244,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         }
     }
 
-    /**
-     * Listens to NewSuperblock events to keep track of superblocks submitted by this client.
-     * @param fromBlock
-     * @param toBlock
-     * @throws IOException
-     */
-    private void getNewSuperblocks(long fromBlock, long toBlock) throws IOException {
-        List<EthWrapper.SuperblockEvent> newSuperblockEvents = ethWrapper.getNewSuperblocks(fromBlock, toBlock);
 
-        for (EthWrapper.SuperblockEvent newSuperblockEvent : newSuperblockEvents) {
-            if (isMine(newSuperblockEvent)) {
-                superblockToSessionsMap.put(newSuperblockEvent.superblockId, new HashSet<>());
-            }
-        }
-    }
-
-    /**
-     * Removes semi-approved superblocks from a data structure that keeps track of in battle superblocks.
-     * @param fromBlock
-     * @param toBlock
-     * @throws Exception
-     */
-    private void removeSemiApproved(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
-                ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
-
-        for (EthWrapper.SuperblockEvent semiApprovedSuperblockEvent : semiApprovedSuperblockEvents) {
-            if (superblockToSessionsMap.containsKey(semiApprovedSuperblockEvent.superblockId)) {
-                sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(semiApprovedSuperblockEvent.superblockId));
-                superblockToSessionsMap.remove(semiApprovedSuperblockEvent.superblockId);
-            }
-        }
-    }
 
     // TODO: see if this should have some fault tolerance for battles that were erroneously not added to set
     // TODO: look into refactoring this and moving it to the base class
