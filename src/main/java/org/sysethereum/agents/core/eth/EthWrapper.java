@@ -888,11 +888,6 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* ---------------------------------- */
     /* --------- Battle section --------- */
     /* ---------------------------------- */
-    Byte[] toObjects(byte[] bytesPrim) {
-        Byte[] bytes = new Byte[bytesPrim.length];
-        Arrays.setAll(bytes, n -> bytesPrim[n]);
-        return bytes;
-    }
     /**
      * Responds to a challenge with all block headers
      * @param sessionId Battle session ID.
