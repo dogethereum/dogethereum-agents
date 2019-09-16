@@ -1,11 +1,7 @@
 package org.sysethereum.agents.contract;
 
 import org.web3j.abi.EventEncoder;
-import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Address;
-import org.web3j.abi.datatypes.DynamicArray;
-import org.web3j.abi.datatypes.DynamicBytes;
-import org.web3j.abi.datatypes.Event;
 import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.protocol.Web3j;
@@ -18,7 +14,6 @@ import org.web3j.tx.TransactionManager;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
@@ -61,7 +56,31 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
 
         return result;
     }
+    public List<RespondBlockHeadersEventResponse> getNewBlockHeadersEventResponses(
+            DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
+            throws IOException {
+        List<RespondBlockHeadersEventResponse> result = new ArrayList<>();
+        EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
+        filter.addSingleTopic(EventEncoder.encode(RESPONDBLOCKHEADERS_EVENT));
+        EthLog ethLog = web3j.ethGetLogs(filter).send();
+        List<EthLog.LogResult> logResults = ethLog.getLogs();
 
+        for (EthLog.LogResult logResult : logResults) {
+            Log log = (Log) logResult.get();
+            EventValuesWithLog eventValues = extractEventParametersWithLog(RESPONDBLOCKHEADERS_EVENT, log);
+
+            RespondBlockHeadersEventResponse newBlockHeadersEventResponse =
+                    new RespondBlockHeadersEventResponse();
+            newBlockHeadersEventResponse.log = eventValues.getLog();
+            newBlockHeadersEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            newBlockHeadersEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
+            newBlockHeadersEventResponse.merkleHashCount = (Uint256) eventValues.getNonIndexedValues().get(2);
+            newBlockHeadersEventResponse.submitter = new Address ((String)eventValues.getNonIndexedValues().get(3).getValue());
+            result.add(newBlockHeadersEventResponse);
+        }
+
+        return result;
+    }
     public List<ChallengerConvictedEventResponse> getChallengerConvictedEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
@@ -78,8 +97,10 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
             ChallengerConvictedEventResponse newChallengerConvictedEventResponse =
                     new ChallengerConvictedEventResponse();
             newChallengerConvictedEventResponse.log = eventValues.getLog();
-            newChallengerConvictedEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            newChallengerConvictedEventResponse.challenger = new Address ((String)eventValues.getNonIndexedValues().get(1).getValue());
+            newChallengerConvictedEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            newChallengerConvictedEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
+            newChallengerConvictedEventResponse.err = (Uint256) eventValues.getNonIndexedValues().get(2);
+            newChallengerConvictedEventResponse.challenger = new Address ((String)eventValues.getNonIndexedValues().get(3).getValue());
             result.add(newChallengerConvictedEventResponse);
         }
 
@@ -102,8 +123,10 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
             SubmitterConvictedEventResponse newSubmitterConvictedEventResponse =
                     new SubmitterConvictedEventResponse();
             newSubmitterConvictedEventResponse.log = eventValues.getLog();
-            newSubmitterConvictedEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            newSubmitterConvictedEventResponse.submitter = new Address ((String)eventValues.getNonIndexedValues().get(1).getValue());
+            newSubmitterConvictedEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            newSubmitterConvictedEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
+            newSubmitterConvictedEventResponse.err = (Uint256) eventValues.getNonIndexedValues().get(2);
+            newSubmitterConvictedEventResponse.submitter = new Address ((String)eventValues.getNonIndexedValues().get(3).getValue());
             result.add(newSubmitterConvictedEventResponse);
         }
 

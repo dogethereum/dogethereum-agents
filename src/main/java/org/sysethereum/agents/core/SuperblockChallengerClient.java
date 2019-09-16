@@ -156,8 +156,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
         for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
             if (isMine(newBattleEvent) && ethWrapper.getSessionChallengeState(newBattleEvent.sessionId) == EthWrapper.ChallengeState.Challenged) {
-                sessionToSuperblockMap.put(newBattleEvent.sessionId, newBattleEvent.superblockId);
-                addToSuperblockToSessionsMap(newBattleEvent.sessionId, newBattleEvent.superblockId);
+                sessionToSuperblockMap.put(newBattleEvent.sessionId, newBattleEvent.superblockHash);
+                addToSuperblockToSessionsMap(newBattleEvent.sessionId, newBattleEvent.superblockHash);
             }
         }
     }
@@ -293,16 +293,13 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock, ethWrapper.getBattleManagerForChallengesGetter());
 
         for (EthWrapper.SubmitterConvictedEvent submitterConvictedEvent : submitterConvictedEvents) {
-            Superblock superblock = ethWrapper.getSuperblockBySession(submitterConvictedEvent.sessionId);
-            if(superblock == null)
-                continue;
             if (sessionToSuperblockMap.containsKey(submitterConvictedEvent.sessionId)) {
                 logger.info("Submitter convicted on session {}, superblock {}. Battle won!",
-                        submitterConvictedEvent.sessionId, superblock.getSuperblockId());
+                        submitterConvictedEvent.sessionId, submitterConvictedEvent.superblockHash);
                 sessionToSuperblockMap.remove(submitterConvictedEvent.sessionId);
             }
-            if (superblockToSessionsMap.containsKey(superblock.getSuperblockId())) {
-                superblockToSessionsMap.get(superblock.getSuperblockId()).remove(submitterConvictedEvent.sessionId);
+            if (superblockToSessionsMap.containsKey(submitterConvictedEvent.superblockHash)) {
+                superblockToSessionsMap.get(submitterConvictedEvent.superblockHash).remove(submitterConvictedEvent.sessionId);
             }
         }
     }
@@ -323,14 +320,11 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
         for (EthWrapper.ChallengerConvictedEvent challengerConvictedEvent : challengerConvictedEvents) {
             if (challengerConvictedEvent.challenger.equals(myAddress)) {
-                Superblock superblock = ethWrapper.getSuperblockBySession(challengerConvictedEvent.sessionId);
-                if(superblock == null)
-                    continue;
                 logger.info("Challenger convicted on session {}, superblock {}. Battle lost!",
-                        challengerConvictedEvent.sessionId, superblock.getSuperblockId());
+                        challengerConvictedEvent.sessionId, challengerConvictedEvent.superblockHash);
                 sessionToSuperblockMap.remove(challengerConvictedEvent.sessionId);
-                if (superblockToSessionsMap.containsKey(superblock.getSuperblockId())) {
-                    superblockToSessionsMap.get(superblock.getSuperblockId()).remove(challengerConvictedEvent.sessionId);
+                if (superblockToSessionsMap.containsKey(challengerConvictedEvent.superblockHash)) {
+                    superblockToSessionsMap.get(challengerConvictedEvent.superblockHash).remove(challengerConvictedEvent.sessionId);
                 }
             }
         }

@@ -239,7 +239,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             if (gasPriceSuggestedByEthNode.compareTo(gasPriceMaximum) > 0) {
                 gasPriceSuggestedByEthNode = gasPriceMaximum;
             }
-            if(gasPriceMinimum != gasPriceSuggestedByEthNode) {
+            if(!gasPriceMinimum.equals(gasPriceSuggestedByEthNode)) {
                 gasPriceMinimum = gasPriceSuggestedByEthNode;
                 logger.info("setting new min gas price to " + gasPriceMinimum);
                 if (claimManager != null)
@@ -787,7 +787,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (SyscoinBattleManager.NewBattleEventResponse response : newBattleEvents) {
             NewBattleEvent newBattleEvent = new NewBattleEvent();
-            newBattleEvent.superblockId = Keccak256Hash.wrap(response.superblockHash.getValue());
+            newBattleEvent.superblockHash = Keccak256Hash.wrap(response.superblockHash.getValue());
             newBattleEvent.sessionId = Keccak256Hash.wrap(response.sessionId.getValue());
             newBattleEvent.submitter = response.submitter.getValue();
             newBattleEvent.challenger = response.challenger.getValue();
@@ -796,6 +796,33 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         return result;
     }
+    /**
+     * Listens to RespondBlockHeaders events from SyscoinBattleManager contract within a given block window
+     * and parses web3j-generated instances into easier to manage RespondBlockHeaders objects.
+     * @param startBlock First Ethereum block to poll.
+     * @param endBlock Last Ethereum block to poll.
+     * @return All NewBattle events from SyscoinBattleManager as RespondBlockHeaders objects.
+     * @throws IOException
+     */
+    public List<RespondHeadersEvent> getNewRespondHeadersEvents(long startBlock, long endBlock) throws IOException {
+        List<RespondHeadersEvent> result = new ArrayList<>();
+        List<SyscoinBattleManager.RespondBlockHeadersEventResponse> newBattleEvents =
+                battleManagerForChallengesGetter.getNewBlockHeadersEventResponses(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+
+        for (SyscoinBattleManager.RespondBlockHeadersEventResponse response : newBattleEvents) {
+            RespondHeadersEvent newRespondHeadersEvent = new RespondHeadersEvent();
+            newRespondHeadersEvent.superblockHash = Keccak256Hash.wrap(response.superblockHash.getValue());
+            newRespondHeadersEvent.sessionId = Keccak256Hash.wrap(response.sessionId.getValue());
+            newRespondHeadersEvent.merkleHashCount = response.merkleHashCount.getValue().intValue();
+            newRespondHeadersEvent.submitter = response.submitter.getValue();
+            result.add(newRespondHeadersEvent);
+        }
+
+        return result;
+    }
+
 
     /**
      * Listens to ChallengerConvicted events from a given SyscoinBattleManager contract within a given block window
@@ -817,6 +844,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (SyscoinBattleManager.ChallengerConvictedEventResponse response : challengerConvictedEvents) {
             ChallengerConvictedEvent challengerConvictedEvent = new ChallengerConvictedEvent();
+            challengerConvictedEvent.superblockHash = Keccak256Hash.wrap(response.superblockHash.getValue());
             challengerConvictedEvent.sessionId = Keccak256Hash.wrap(response.sessionId.getValue());
             challengerConvictedEvent.challenger = response.challenger.getValue();
             result.add(challengerConvictedEvent);
@@ -845,6 +873,7 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         for (SyscoinBattleManager.SubmitterConvictedEventResponse response : submitterConvictedEvents) {
             SubmitterConvictedEvent submitterConvictedEvent = new SubmitterConvictedEvent();
+            submitterConvictedEvent.superblockHash = Keccak256Hash.wrap(response.superblockHash.getValue());
             submitterConvictedEvent.sessionId = Keccak256Hash.wrap(response.sessionId.getValue());
             submitterConvictedEvent.submitter = response.submitter.getValue();
             result.add(submitterConvictedEvent);
@@ -856,22 +885,30 @@ public class EthWrapper implements SuperblockConstantProvider {
     // Event wrapper classes
 
     public static class NewBattleEvent {
-        public Keccak256Hash superblockId;
+        public Keccak256Hash superblockHash;
         public Keccak256Hash sessionId;
         public String submitter;
         public String challenger;
     }
 
     public static class ChallengerConvictedEvent {
+        public Keccak256Hash superblockHash;
         public Keccak256Hash sessionId;
         public String challenger;
     }
 
     public static class SubmitterConvictedEvent {
+        public Keccak256Hash superblockHash;
         public Keccak256Hash sessionId;
         public String submitter;
     }
 
+    public static class RespondHeadersEvent {
+        public Keccak256Hash superblockHash;
+        public Keccak256Hash sessionId;
+        public int merkleHashCount;
+        public String submitter;
+    }
 
 
     /* ---- GETTERS ---- */
@@ -892,15 +929,23 @@ public class EthWrapper implements SuperblockConstantProvider {
      * Responds to a challenge with all block headers
      * @param sessionId Battle session ID.
      */
-    public void respondBlockHeaders(Keccak256Hash sessionId, Keccak256Hash superblockId) throws Exception {
+    public void respondBlockHeaders(Keccak256Hash sessionId, Keccak256Hash superblockId, int merkleHashCount) throws Exception {
         Thread.sleep(500); // in case the transaction takes some time to complete
         if (arePendingTransactionsForSendSuperblocksAddress()) {
             throw new Exception("Skipping respondBlockHeader, there are pending transaction for the sender address.");
         }
+        int numHashesRequired = merkleHashCount < 3? 16: 12;
+        int startIndex = merkleHashCount*16;
+        int endIndex = startIndex + numHashesRequired;
+        if(startIndex > 48)
+            throw new Exception("Skipping respondBlockHeader, startIndex cannot be > 48.");
         Superblock superblock = superblockChain.getSuperblock(superblockId);
         List<Sha256Hash> listHashes = superblock.getSyscoinBlockHashes();
+        if(!getSuperblockDuration().equals(listHashes.size()))
+            throw new Exception("Skipping respondBlockHeader, superblock hash array list is incorrect length.");
+
         byte[] blockHeaderBytes = null;
-        for(int i = 0;i<listHashes.size();i++){
+        for(int i = startIndex;i<endIndex;i++){
             AltcoinBlock altBlock = (AltcoinBlock) syscoinWrapper.getBlock(listHashes.get(i)).getHeader();
             byte[] serializedBytes = altBlock.bitcoinSerialize();
             if(blockHeaderBytes == null)
@@ -910,15 +955,14 @@ public class EthWrapper implements SuperblockConstantProvider {
         }
 
         CompletableFuture<TransactionReceipt> futureReceipt = battleManager.respondBlockHeaders(
-                new Bytes32(sessionId.getBytes()), new DynamicBytes(blockHeaderBytes), new Uint256(listHashes.size())).sendAsync();
+                new Bytes32(superblockId.getBytes()), new DynamicBytes(blockHeaderBytes), new Uint256(numHashesRequired)).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                logger.info("Responded to last block header query for Syscoin session {}, Receipt: {}",
-                        sessionId, receipt)
+                logger.info("Responded to last block header query for Syscoin superblock {} session {}, Receipt: {}",
+                        superblockId, sessionId, receipt)
         );
 
 
     }
-
     // TODO: see if the challenger should know which superblock this is
 
 
@@ -1020,11 +1064,10 @@ public class EthWrapper implements SuperblockConstantProvider {
         return battleManagerForChallengesGetter.getSubmitterHitTimeout(new Bytes32(sessionId.getBytes())).send().getValue();
     }
 
-    public Superblock getSuperblockBySession(Keccak256Hash sessionId) throws Exception {
-        byte[] ret = battleManagerGetter.getSuperblockBySession(new Bytes32(sessionId.getBytes())).send().getValue();
-        return superblockChain.getSuperblock(Keccak256Hash.wrap(ret));
+    public int getNumMerkleHashesBySession(Keccak256Hash sessionId) throws Exception {
+        BigInteger ret = battleManagerGetter.getNumMerkleHashesBySession(new Bytes32(sessionId.getBytes())).send().getValue();
+        return ret.intValue();
     }
-
 
     public ChallengeState getSessionChallengeState(Keccak256Hash sessionId) throws Exception {
         BigInteger ret = battleManagerGetter.getSessionChallengeState(new Bytes32(sessionId.getBytes())).send().getValue();

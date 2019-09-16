@@ -42,6 +42,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
             // Maintain data structures
             removeSemiApprovedDescendants(fromBlock, toBlock);
+
+            respondToHeaders(fromBlock, toBlock);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             return fromBlock - 1;
@@ -53,6 +55,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     protected void reactToElapsedTime() {
         try {
             confirmEarliestApprovableSuperblock();
+
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
@@ -62,7 +65,24 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     /* ---- CONFIRMING/DEFENDING ---- */
 
     /* - Reacting to elapsed time - */
+    /**
+     * Responds to ongoing battle by responding with 16 headers 3 times and 12 headers the last time for a total of 60 headers over 4 transactions/blocks
+     * @throws Exception
+     */
+    void respondToHeaders(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.RespondHeadersEvent> respondHeaderEvents =
+                ethWrapper.getNewRespondHeadersEvents(fromBlock, toBlock);
 
+        for (EthWrapper.RespondHeadersEvent respondHeaderEvent : respondHeaderEvents) {
+            if (isMine(respondHeaderEvent) && (ethWrapper.getSessionChallengeState(respondHeaderEvent.sessionId) == EthWrapper.ChallengeState.Challenged)) {
+                // only respond if the event is the one you are looking for (it matches the number of hashes the contract thinks is the latest)
+                if (respondHeaderEvent.merkleHashCount == ethWrapper.getNumMerkleHashesBySession(respondHeaderEvent.sessionId)) {
+                    logger.info("Header response detected for superblock {} session {}. Merkle hash count: {}. Responding with next set now.", respondHeaderEvent.superblockHash, respondHeaderEvent.sessionId, respondHeaderEvent.merkleHashCount);
+                    ethWrapper.respondBlockHeaders(respondHeaderEvent.sessionId, respondHeaderEvent.superblockHash, respondHeaderEvent.merkleHashCount);
+                }
+            }
+        }
+    }
     /**
      * Finds earliest superblock that's not invalid and stored locally,
      * but not confirmed in Sysethereum Contracts, and confirms it if its timeout has passed
@@ -125,12 +145,11 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
         for (EthWrapper.NewBattleEvent queryBattleEvent : queryBattleEvents) {
             if (isMine(queryBattleEvent) && (ethWrapper.getSessionChallengeState(queryBattleEvent.sessionId) == EthWrapper.ChallengeState.Challenged)) {
-                logger.info("Battle detected for session {}. Responding now.", queryBattleEvent.sessionId);
-                ethWrapper.respondBlockHeaders(queryBattleEvent.sessionId, queryBattleEvent.superblockId);
+                logger.info("Battle detected for superblock {} session {}. Responding now with first set of headers.", queryBattleEvent.superblockHash, queryBattleEvent.sessionId);
+                ethWrapper.respondBlockHeaders(queryBattleEvent.sessionId, queryBattleEvent.superblockHash, 0);
             }
         }
     }
-
 
 
     /* ---- HELPER METHODS ---- */
@@ -189,6 +208,9 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         return newBattleEvent.submitter.equals(myAddress);
     }
 
+    private boolean isMine(EthWrapper.RespondHeadersEvent respondHeadersEvent) {
+        return respondHeadersEvent.submitter.equals(myAddress);
+    }
     @Override
     protected long getConfirmations() {
         return config.getAgentConstants().getDefenderConfirmations();
@@ -262,14 +284,11 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
         for (EthWrapper.SubmitterConvictedEvent submitterConvictedEvent : submitterConvictedEvents) {
             if (submitterConvictedEvent.submitter.equals(myAddress)) {
-                Superblock superblock = ethWrapper.getSuperblockBySession(submitterConvictedEvent.sessionId);
-                if(superblock == null)
-                    continue;
                 logger.info("Submitter convicted on session {}, superblock {}. Battle lost!",
-                        submitterConvictedEvent.sessionId, superblock.getSuperblockId());
+                        submitterConvictedEvent.sessionId, submitterConvictedEvent.superblockHash);
                 sessionToSuperblockMap.remove(submitterConvictedEvent.sessionId);
-                if (superblockToSessionsMap.containsKey(superblock.getSuperblockId())) {
-                    superblockToSessionsMap.get(superblock.getSuperblockId()).remove(submitterConvictedEvent.sessionId);
+                if (superblockToSessionsMap.containsKey(submitterConvictedEvent.superblockHash)) {
+                    superblockToSessionsMap.get(submitterConvictedEvent.superblockHash).remove(submitterConvictedEvent.sessionId);
                 }
             }
         }
@@ -288,16 +307,13 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock, ethWrapper.getBattleManagerGetter());
 
         for (EthWrapper.ChallengerConvictedEvent challengerConvictedEvent : challengerConvictedEvents) {
-            Superblock superblock = ethWrapper.getSuperblockBySession(challengerConvictedEvent.sessionId);
-            if(superblock == null)
-                continue;
             if (sessionToSuperblockMap.containsKey(challengerConvictedEvent.sessionId)) {
                 logger.info("Challenger convicted on session {}, superblock {}. Battle won!",
-                        challengerConvictedEvent.sessionId, superblock.getSuperblockId());
+                        challengerConvictedEvent.sessionId, challengerConvictedEvent.superblockHash);
                 sessionToSuperblockMap.remove(challengerConvictedEvent.sessionId);
             }
-            if (superblockToSessionsMap.containsKey(superblock.getSuperblockId())) {
-                superblockToSessionsMap.get(superblock.getSuperblockId()).remove(challengerConvictedEvent.sessionId);
+            if (superblockToSessionsMap.containsKey(challengerConvictedEvent.superblockHash)) {
+                superblockToSessionsMap.get(challengerConvictedEvent.superblockHash).remove(challengerConvictedEvent.sessionId);
             }
         }
     }

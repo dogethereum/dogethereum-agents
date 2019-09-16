@@ -143,7 +143,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
         for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
             if (isMine(newBattleEvent)) {
                 Keccak256Hash sessionId = newBattleEvent.sessionId;
-                Keccak256Hash superblockId = newBattleEvent.superblockId;
+                Keccak256Hash superblockId = newBattleEvent.superblockHash;
                 sessionToSuperblockMap.put(sessionId, superblockId);
                 addToSuperblockToSessionsMap(sessionId, superblockId);
             }
