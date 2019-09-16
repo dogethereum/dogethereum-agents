@@ -12,7 +12,8 @@ import org.springframework.context.annotation.Configuration;
 @ComponentScan
 @Slf4j(topic = "Main")
 public class Main {
-    private static final Logger logger = LoggerFactory.getLogger("LocalAgentConstants");
+    private static final Logger logger = LoggerFactory.getLogger("Main");
+
     public static void main(String[] args) {
         SystemProperties config = SystemProperties.CONFIG;
         logger.info("Running Sysethereum agents version: {}-{}", config.projectVersion(), config.projectVersionModifier());

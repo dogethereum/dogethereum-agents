@@ -18,7 +18,7 @@ import java.util.List;
  */
 public class EthGanacheSyscoinMainAgentConstants extends AgentConstants {
 
-    private static final Logger log = LoggerFactory.getLogger("EthGanacheSyscoinMainAgentConstants");
+    private static final Logger logger = LoggerFactory.getLogger("EthGanacheSyscoinMainAgentConstants");
 
     private static EthGanacheSyscoinMainAgentConstants instance = new EthGanacheSyscoinMainAgentConstants();
 

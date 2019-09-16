@@ -15,15 +15,10 @@ import org.sysethereum.agents.core.syscoin.SyscoinRPCClient;
 import org.sysethereum.agents.util.RestError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.OutputStream;
-
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -37,9 +32,11 @@ import java.util.LinkedHashMap;
 public class RestServer {
     private static final Logger logger = LoggerFactory.getLogger("RestServer");
 
-    public RestServer() {}
-    @Autowired
-    protected SyscoinToEthClient syscoinToEthClient;
+    private final SyscoinToEthClient syscoinToEthClient;
+
+    public RestServer(SyscoinToEthClient syscoinToEthClient) {
+        this.syscoinToEthClient = syscoinToEthClient;
+    }
 
     @PostConstruct
     public void setup() throws Exception {
@@ -83,7 +80,7 @@ public class RestServer {
             try {
                 String hash = parms.get("hash");
                 if(hash != null && hash.startsWith("0x"))
-                    hash = hash.substring(2, hash.length());
+                    hash = hash.substring(2);
                 String height = parms.get("height");
                 String spvString = syscoinToEthClient.getSuperblockSPVProof(hash != null? Sha256Hash.wrap(hash): null, height != null? Integer.decode(height): -1);
                 response.append(spvString);
@@ -112,7 +109,7 @@ public class RestServer {
             try {
                 String hash = parms.get("hash");
                 if(hash != null && hash.startsWith("0x"))
-                    hash = hash.substring(2, hash.length());
+                    hash = hash.substring(2);
                 String height = parms.get("height");
                 String superblockString = syscoinToEthClient.getSuperblockBySyscoinBlock(hash != null? Sha256Hash.wrap(hash): null, height != null? Integer.decode(height): -1);
                 response.append(superblockString);
@@ -125,6 +122,7 @@ public class RestServer {
             RestServer.writeResponse(httpExchange, response.toString());
         }
     }
+
     private class GetSuperblockHandler implements HttpHandler {
         public void handle(HttpExchange httpExchange) throws IOException {
             httpExchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
@@ -141,7 +139,7 @@ public class RestServer {
             try {
                 String hash = parms.get("hash");
                 if(hash != null && hash.startsWith("0x"))
-                    hash = hash.substring(2, hash.length());
+                    hash = hash.substring(2);
                 String height = parms.get("height");
                 String superblockString = syscoinToEthClient.getSuperblock(hash != null? Keccak256Hash.wrap(hash): null, height != null? Integer.decode(height): -1);
                 response.append(superblockString);
@@ -155,8 +153,7 @@ public class RestServer {
         }
     }
 
-
-    public class GetSyscoinRPCHandler implements HttpHandler {
+    public static class GetSyscoinRPCHandler implements HttpHandler {
         public void handle(HttpExchange httpExchange) throws IOException {
             httpExchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
 
@@ -191,7 +188,7 @@ public class RestServer {
     public static LinkedHashMap<String, String> queryToMap(String query){
         LinkedHashMap<String, String> result = new LinkedHashMap<String, String>();
         for (String param : query.split("&")) {
-            String pair[] = param.split("=");
+            String[] pair = param.split("=");
             if (pair.length>1) {
                 result.put(pair[0], pair[1]);
             }else{
@@ -200,16 +197,12 @@ public class RestServer {
         }
         return result;
     }
+
     public static void writeResponse(HttpExchange httpExchange, String response) throws IOException {
         httpExchange.sendResponseHeaders(200, response.length());
         OutputStream os = httpExchange.getResponseBody();
         os.write(response.getBytes());
         os.close();
     }
-
-
-
-
-
 }
 

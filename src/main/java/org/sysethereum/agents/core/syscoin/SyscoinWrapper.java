@@ -35,8 +35,6 @@ public class SyscoinWrapper {
     private AgentConstants agentConstants;
     private File dataDirectory;
 
-
-
     @Autowired
     public SyscoinWrapper() {
         this.config = SystemProperties.CONFIG;
@@ -50,7 +48,6 @@ public class SyscoinWrapper {
         }
     }
 
-
     public void setup() {
         kit = new WalletAppKit(syscoinContext, Script.ScriptType.P2WPKH, null, dataDirectory, "sysethereumAgentLibdohj") {
             @Override
@@ -59,18 +56,14 @@ public class SyscoinWrapper {
                 vPeerGroup.setDownloadTxDependencies(0);
             }
 
-
-
             @Override
             protected BlockStore provideBlockStore(File file) throws BlockStoreException {
                 return new AltcoinLevelDBBlockStore(syscoinContext, getChainFile());
             }
 
-
             protected File getChainFile() {
                 return new File(directory, "chain");
             }
-
         };
 
         // TODO: Make the syscoin peer list configurable
@@ -95,10 +88,6 @@ public class SyscoinWrapper {
         kit.stopAsync().awaitTerminated();
     }
 
-    public int getBestChainHeight() {
-        return kit.chain().getBestChainHeight();
-    }
-
     public StoredBlock getChainHead() {
         return kit.chain().getChainHead();
     }
@@ -115,30 +104,14 @@ public class SyscoinWrapper {
         Arrays.sort(timestamps, unused+1, 11);
         return timestamps[unused + (11-unused)/2];
     }
+
     public StoredBlock getBlock(Sha256Hash hash) throws BlockStoreException {
         return kit.store().get(hash);
     }
-    public StoredBlock getBlockByHeight(Sha256Hash hash, int height) throws BlockStoreException {
-        if(height < 0)
-            height = 0;
-        StoredBlock currentBlock = kit.store().get(hash);
-        if(currentBlock == null)
-            return null;
-        while(true){
-            if(currentBlock.getHeight() <= height)
-                break;
-            currentBlock = kit.store().get(currentBlock.getHeader().getPrevBlockHash());
-            if(currentBlock == null)
-                return null;
-        }
-        return currentBlock;
-    }
+
     public StoredBlock getStoredBlockAtHeight(int height) throws BlockStoreException {
         return AgentUtils.getStoredBlockAtHeight(kit.store(), height);
     }
-
-
-
 
     @PreDestroy
     public void tearDown() {
@@ -151,9 +124,4 @@ public class SyscoinWrapper {
         }
     }
 
-
-
-    public void broadcastSyscoinTransaction(Transaction tx) {
-        kit.peerGroup().broadcastTransaction(tx);
-    }
 }

@@ -1,11 +1,6 @@
 package org.sysethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
-import org.bitcoinj.core.AltcoinBlock;
-import org.bitcoinj.core.StoredBlock;
-import org.bitcoinj.store.BlockStoreException;
-import org.bitcoinj.core.Sha256Hash;
-import org.sysethereum.agents.contract.SyscoinBattleManager;
 import org.sysethereum.agents.core.syscoin.*;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.slf4j.Logger;

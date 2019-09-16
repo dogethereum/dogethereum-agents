@@ -19,34 +19,35 @@ import java.io.*;
 
 import java.util.*;
 
-
-
-
 /**
  * Provides methods for interacting with a superblock chain.
  * Storage is managed by SuperblockLevelDBBlockStore.
  * @author Catalina Juarros
  */
-
 @Component
 @Slf4j(topic = "SuperblockChain")
 public class SuperblockChain {
-    @Autowired
-    private SyscoinWrapper syscoinWrapper; // Interface with the Syscoin blockchain
-    @Autowired
-    private SuperblockConstantProvider provider; // Interface with the Ethereum blockchain
+
+    private static final Logger logger = LoggerFactory.getLogger("SuperblockChain");
+    private final SyscoinWrapper syscoinWrapper; // Interface with the Syscoin blockchain
+    private final SuperblockConstantProvider provider; // Interface with the Ethereum blockchain
     private NetworkParameters params;
     private SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
 
     public int SUPERBLOCK_DURATION; // num blocks in a superblock
     private int SUPERBLOCK_DELAY; // time to wait before building a superblock
     private int SUPERBLOCK_STORING_WINDOW; // small time window between storing and sending to avoid losing sync
-    private static final Logger logger = LoggerFactory.getLogger("SuperblockChain");
 
     /* ---- CONSTRUCTION METHODS ---- */
 
     @Autowired
-    public SuperblockChain() {}
+    public SuperblockChain(
+            SyscoinWrapper syscoinWrapper,
+            SuperblockConstantProvider provider
+    ) {
+        this.syscoinWrapper = syscoinWrapper;
+        this.provider = provider;
+    }
 
     /**
      * Sets up variables and initialises chain.
@@ -166,7 +167,7 @@ public class SuperblockChain {
      * @return Tip of superblock chain as saved on disk.
      * @throws BlockStoreException
      */
-    public Superblock getChainHead() throws BlockStoreException, IOException {
+    public Superblock getChainHead() {
         return superblockStorage.getChainHead();
     }
 
@@ -175,7 +176,7 @@ public class SuperblockChain {
      * @return Height of tip of superblock chain as saved on disk.
      * @throws BlockStoreException
      */
-    public long getChainHeight() throws BlockStoreException, IOException {
+    public long getChainHeight() {
         return getChainHead().getSuperblockHeight();
     }
 
@@ -194,10 +195,8 @@ public class SuperblockChain {
      * @param superblockHeight Height of a superblock
      * @return Superblock with the given height if said height is less than that of the chain tip,
      *         null otherwise.
-     * @throws BlockStoreException
-     * @throws IOException If a superblock hash cannot be calculated.
      */
-    public Superblock getSuperblockByHeight(long superblockHeight) throws BlockStoreException, IOException {
+    public Superblock getSuperblockByHeight(long superblockHeight) {
         Superblock currentSuperblock = getChainHead();
         if (superblockHeight > currentSuperblock.getSuperblockHeight())
             return null; // Superblock does not exist.
@@ -214,9 +213,8 @@ public class SuperblockChain {
      * @param parentId parentId of desired superblock.
      * @return Best superblock in main chain with superblockId as its parentId if said superblock exists,
      *         null otherwise.
-     * @throws BlockStoreException
      */
-    public Superblock getFirstDescendant(Keccak256Hash parentId) throws BlockStoreException, IOException {
+    public Superblock getFirstDescendant(Keccak256Hash parentId) {
         if (getSuperblock(parentId) == null) {
             // The superblock isn't in the main chain.
             logger.info("Superblock {} is not in the main chain. Returning from getFirstDescendant.", parentId);
@@ -279,7 +277,7 @@ public class SuperblockChain {
      * @return Superblock parent if said parent is part of the main chain, null otherwise.
      * @throws IOException
      */
-    public Superblock getParent(Superblock superblock) throws IOException {
+    public Superblock getParent(Superblock superblock) {
         return getSuperblock(superblock.getParentId());
     }
 

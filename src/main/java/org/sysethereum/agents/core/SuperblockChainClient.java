@@ -11,7 +11,6 @@ import org.sysethereum.agents.core.syscoin.Superblock;
 import org.sysethereum.agents.core.syscoin.SuperblockChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -25,17 +24,19 @@ import java.util.*;
 
 @Service
 @Slf4j(topic = "SuperblockChainClient")
-
 public class SuperblockChainClient {
+
     private static final Logger logger = LoggerFactory.getLogger("SuperblockChainClient");
-    @Autowired
-    private SuperblockChain superblockChain;
+    private final SuperblockChain superblockChain;
+    private final SyscoinWrapper syscoinWrapper;
 
-    @Autowired
-    private SyscoinWrapper syscoinWrapper;
-
-
-    public SuperblockChainClient() {}
+    public SuperblockChainClient(
+            SuperblockChain superblockChain,
+            SyscoinWrapper syscoinWrapper
+    ) {
+        this.superblockChain = superblockChain;
+        this.syscoinWrapper = syscoinWrapper;
+    }
 
     @PostConstruct
     public void setup() {
