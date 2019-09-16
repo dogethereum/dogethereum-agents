@@ -139,38 +139,6 @@ public class SyscoinToEthClient {
     }
 
     /**
-     * Helper method for updateBridgeSuperblockChain().
-     * Gets the earliest superblock from the bridge's superblock locator
-     * that was also found in the agent's main chain.
-     * @param superblockLocator List of ancestors provided by the bridge.
-     * @return Earliest matched block if it is found,
-     *         null otherwise.
-     * @throws BlockStoreException
-     * @throws IOException
-     */
-    private Superblock getEarliestMatchingSuperblock(List<Bytes32> superblockLocator)
-            throws BlockStoreException, IOException {
-        Superblock matchedSuperblock = null;
-
-        for (int i = 0; i < superblockLocator.size(); i++) {
-            Keccak256Hash superblockBridgeHash = Keccak256Hash.wrap(superblockLocator.get(i).getValue());
-            Superblock bridgeSuperblock = superblockChain.getSuperblock(superblockBridgeHash);
-
-            if (bridgeSuperblock == null)
-                continue;
-
-            Superblock bestRelaySuperblockInLocalChain =
-                    superblockChain.getSuperblockByHeight(bridgeSuperblock.getSuperblockHeight());
-
-            if (bestRelaySuperblockInLocalChain != null && bridgeSuperblock.getSuperblockId().equals(bestRelaySuperblockInLocalChain.getSuperblockId())) {
-                matchedSuperblock = bestRelaySuperblockInLocalChain;
-                break;
-            }
-        }
-
-        return matchedSuperblock;
-    }
-    /**
      * Relays all unprocessed transactions to Ethereum contracts by calling sendRelayTx.
      * @throws Exception
      */
