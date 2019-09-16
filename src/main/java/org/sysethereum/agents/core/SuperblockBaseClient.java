@@ -73,7 +73,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
     }
 
     @PreDestroy
-    public void tearDown() throws BlockStoreException, ClassNotFoundException, IOException {
+    public void tearDown() throws ClassNotFoundException, IOException {
         if (isEnabled()) {
             logger.info("{} tearDown starting...", clientName);
 
@@ -200,7 +200,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
 
     /* ---- DATABASE METHODS ---- */
 
-    void setupBaseFiles() throws IOException {
+    void setupBaseFiles() {
         this.latestEthBlockProcessed = config.getAgentConstants().getEthInitialCheckpoint();
         this.dataDirectory = new File(config.dataDirectory());
         this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() +

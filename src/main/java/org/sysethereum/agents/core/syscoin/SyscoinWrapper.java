@@ -38,7 +38,7 @@ public class SyscoinWrapper {
 
 
     @Autowired
-    public SyscoinWrapper() throws Exception {
+    public SyscoinWrapper() {
         this.config = SystemProperties.CONFIG;
         if (config.isSyscoinSuperblockSubmitterEnabled() ||
                  config.isSyscoinBlockChallengerEnabled()) {
@@ -141,7 +141,7 @@ public class SyscoinWrapper {
 
 
     @PreDestroy
-    public void tearDown() throws BlockStoreException, IOException {
+    public void tearDown() {
         if (config.isSyscoinSuperblockSubmitterEnabled() ||
                  config.isSyscoinBlockChallengerEnabled()) {
             logger.info("SyscoinToEthClient tearDown starting...");

@@ -174,7 +174,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     /* ---- OVERRIDE ABSTRACT METHODS ---- */
 
     @Override
-    protected void setupFiles() throws IOException {
+    protected void setupFiles() {
         setupBaseFiles();
     }
 
@@ -326,7 +326,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     @Override
-    protected void flushFiles() throws ClassNotFoundException, IOException {
+    protected void flushFiles() throws IOException {
         flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
         flush(sessionToSuperblockMap, sessionToSuperblockMapFile);
         flush(superblockToSessionsMap, superblockToSessionsMapFile);

@@ -376,12 +376,7 @@ public class EthWrapper implements SuperblockConstantProvider {
                 if(isSuperblockApproved(parentId)){
                     allowed = getBestSuperblockId().equals(parentId);
                 }
-                else if(isSuperblockSemiApproved(parentId)){
-                    allowed = true;
-                }
-                else{
-                    allowed = false;
-                }
+                else allowed = isSuperblockSemiApproved(parentId);
             }
            if(!allowed){
                logger.info("Superblock {} has already been sent. Returning.", superblock.getSuperblockId());
@@ -483,7 +478,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         }
     }
 
-    private void withdrawDeposit(SyscoinClaimManager myClaimManager, BigInteger weiValue) throws Exception {
+    private void withdrawDeposit(SyscoinClaimManager myClaimManager, BigInteger weiValue) {
         CompletableFuture<TransactionReceipt> futureReceipt = myClaimManager.withdrawDeposit(new Uint256(weiValue)).sendAsync();
         logger.info("Withdrew {} wei.", weiValue);
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
@@ -744,7 +739,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @param descendantId Its highest semi-approved descendant.
      * @param account Caller's address.
      */
-    public void confirmClaim(Keccak256Hash superblockId, Keccak256Hash descendantId, String account) throws Exception {
+    public void confirmClaim(Keccak256Hash superblockId, Keccak256Hash descendantId, String account) {
         CompletableFuture<TransactionReceipt> futureReceipt =
                 claimManager.confirmClaim(new Bytes32(superblockId.getBytes()), new Bytes32(descendantId.getBytes())).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
@@ -757,9 +752,8 @@ public class EthWrapper implements SuperblockConstantProvider {
      * See SyscoinClaimManager source code for further reference.
      * @param superblockId ID of superblock to be rejected.
      * @param account Caller's address.
-     * @throws Exception
      */
-    public void rejectClaim(Keccak256Hash superblockId, String account) throws Exception {
+    public void rejectClaim(Keccak256Hash superblockId, String account) {
         CompletableFuture<TransactionReceipt> futureReceipt =
                 claimManager.rejectClaim(new Bytes32(superblockId.getBytes())).sendAsync();
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->

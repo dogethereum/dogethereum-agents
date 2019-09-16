@@ -16,7 +16,7 @@ public abstract class PersistentFileStore {
             synchronized (this) {
                 try(
                     FileInputStream fileInputStream = new FileInputStream(file);
-                    ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
+                    ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream)
                 ) {
                     obj = obj.getClass().cast(objectInputStream.readObject());
                 }
@@ -32,7 +32,7 @@ public abstract class PersistentFileStore {
         }
         try (
             FileOutputStream fileOutputStream = new FileOutputStream(file);
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream);
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream)
         ) {
             objectOutputStream.writeObject(obj);
         }

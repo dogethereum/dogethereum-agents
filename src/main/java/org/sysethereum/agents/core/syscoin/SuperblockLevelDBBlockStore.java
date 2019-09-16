@@ -94,9 +94,8 @@ public class SuperblockLevelDBBlockStore {
      *   as the Keccak-256 hash of a string which consists of the character '0' 32 times
      * - its chain work is 0
      * @throws java.io.IOException
-     * @throws BlockStoreException
      */
-    private synchronized void initStoreIfNeeded(NetworkParameters params) throws IOException, BlockStoreException {
+    private synchronized void initStoreIfNeeded(NetworkParameters params) throws IOException {
         if (db.get(CHAIN_HEAD_KEY) != null)
             return; // Already initialised.
         SystemProperties config = SystemProperties.CONFIG;
@@ -125,7 +124,7 @@ public class SuperblockLevelDBBlockStore {
      * @param superblockId Keccak-256 hash of superblock.
      * @return superblock identified by hash
      */
-    public synchronized Superblock get(Keccak256Hash superblockId) throws IOException {
+    public synchronized Superblock get(Keccak256Hash superblockId) {
         byte[] bits = db.get(superblockId.getBytes());
         if (bits == null)
             return null;
@@ -181,27 +180,24 @@ public class SuperblockLevelDBBlockStore {
     /**
      * Returns tip of superblock chain. Not necessarily approved in the contracts.
      * @return Highest stored superblock.
-     * @throws BlockStoreException
      */
-    public synchronized Superblock getChainHead() throws BlockStoreException, IOException {
+    public synchronized Superblock getChainHead() {
         return get(getChainHeadId());
     }
 
     /**
      * Returns hash of tip of superblock chain. Not necessarily approved in the contracts.
      * @return Highest stored superblock's hash.
-     * @throws BlockStoreException
      */
-    public synchronized Keccak256Hash getChainHeadId() throws BlockStoreException {
+    public synchronized Keccak256Hash getChainHeadId() {
         return Keccak256Hash.wrap(db.get(CHAIN_HEAD_KEY));
     }
 
     /**
      * Sets tip of superblock chain.
      * @param chainHead Superblock with the highest chain work.
-     * @throws BlockStoreException
      */
-    public synchronized void setChainHead(Superblock chainHead) throws BlockStoreException, IOException {
+    public synchronized void setChainHead(Superblock chainHead) throws IOException {
         db.put(CHAIN_HEAD_KEY, chainHead.getSuperblockId().getBytes());
     }
 

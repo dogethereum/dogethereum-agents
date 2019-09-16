@@ -64,7 +64,7 @@ public class RestServer {
                     "\t/superblock?height=<superblockheight>" + System.lineSeparator() + System.lineSeparator() +
                     "Valid Syscoin RPC calls: " + System.lineSeparator() +
                     "\t/syscoinrpc?method=<methodname>&param1name=<param1value>&paramNname=<paramNvalue>...";
-            RestServer.writeResponse(httpExchange, response.toString());
+            RestServer.writeResponse(httpExchange, response);
         }
     }
     private class GetSPVHandler implements HttpHandler {

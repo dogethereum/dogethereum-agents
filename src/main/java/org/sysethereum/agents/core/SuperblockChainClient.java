@@ -38,7 +38,7 @@ public class SuperblockChainClient {
     public SuperblockChainClient() {}
 
     @PostConstruct
-    public void setup() throws Exception {
+    public void setup() {
         SystemProperties config = SystemProperties.CONFIG;
         AgentConstants agentConstants = config.getAgentConstants();
         if (config.isSyscoinSuperblockSubmitterEnabled() ||

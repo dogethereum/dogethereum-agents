@@ -46,7 +46,7 @@ public class SuperblockChain {
     /* ---- CONSTRUCTION METHODS ---- */
 
     @Autowired
-    public SuperblockChain() throws Exception, BlockStoreException {}
+    public SuperblockChain() {}
 
     /**
      * Sets up variables and initialises chain.
@@ -184,7 +184,7 @@ public class SuperblockChain {
      * @param superblockHash Keccak-256 hash of a superblock.
      * @return Superblock with given hash if it's found in the database, null otherwise.
      */
-    public Superblock getSuperblock(Keccak256Hash superblockHash) throws IOException {
+    public Superblock getSuperblock(Keccak256Hash superblockHash) {
         return superblockStorage.get(superblockHash);
     }
 

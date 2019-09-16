@@ -55,7 +55,7 @@ public class SyscoinToEthClient {
 
 
     @PostConstruct
-    public void setup() throws Exception {
+    public void setup() {
         config = SystemProperties.CONFIG;
         if (config.isSyscoinSuperblockSubmitterEnabled()) {
             agentConstants = config.getAgentConstants();

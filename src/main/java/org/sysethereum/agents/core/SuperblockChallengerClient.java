@@ -193,7 +193,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     /* ---- OVERRIDE ABSTRACT METHODS ---- */
 
     @Override
-    protected void setupFiles() throws IOException {
+    protected void setupFiles() {
         setupBaseFiles();
         setupSemiApprovedSet();
     }
@@ -338,7 +338,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     @Override
-    protected void flushFiles() throws ClassNotFoundException, IOException {
+    protected void flushFiles() throws IOException {
         flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
         flush(sessionToSuperblockMap, sessionToSuperblockMapFile);
         flush(semiApprovedSet, semiApprovedSetFile);
