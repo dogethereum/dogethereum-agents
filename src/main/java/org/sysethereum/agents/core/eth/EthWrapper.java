@@ -949,7 +949,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         }
 
         CompletableFuture<TransactionReceipt> futureReceipt = battleManager.respondBlockHeaders(
-                new Bytes32(superblockId.getBytes()), new DynamicBytes(blockHeaderBytes), new Uint256(numHashesRequired)).sendAsync();
+                new Bytes32(sessionId.getBytes()), new DynamicBytes(blockHeaderBytes), new Uint256(numHashesRequired)).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 logger.info("Responded to last block header query for Syscoin superblock {} session {}, Receipt: {}",
                         superblockId, sessionId, receipt)
