@@ -105,29 +105,6 @@ public class Superblock {
     }
 
     /**
-     * Constructs a Superblock object from an already calculated Merkle root.
-     * @param merkleRoot Merkle root, already calculated from a list of Syscoin block hashes.
-     * @param chainWork Last Syscoin block's accumulated chainwork.
-     * @param lastSyscoinBlockTime Last Syscoin block's timestamp.
-     * @param lastSyscoinBlockBits Difficulty bits of the last block in the superblock bits used to verify accumulatedWork through difficulty calculation
-     * @param parentId Previous superblock's SHA-256 hash.
-     * @param superblockHeight Height of this superblock within superblock chain.
-     */
-    public Superblock(Sha256Hash merkleRoot, BigInteger chainWork, long lastSyscoinBlockTime,
-                       Sha256Hash lastSyscoinBlockHash, long lastSyscoinBlockBits,
-                      Keccak256Hash parentId, long superblockHeight) {
-        this.merkleRoot = merkleRoot;
-        this.chainWork = chainWork;
-        this.lastSyscoinBlockTime = lastSyscoinBlockTime;
-        this.lastSyscoinBlockHash = lastSyscoinBlockHash;
-        this.parentId = parentId;
-        this.lastSyscoinBlockBits = lastSyscoinBlockBits;
-        // set helper fields
-        this.superblockHeight = superblockHeight;
-        this.syscoinBlockHashes = new ArrayList<>();
-    }
-
-    /**
      * Constructs a Superblock object from an array representing a serialized superblock.
      * @param payload Serialized superblock.
      * @throws ProtocolException
