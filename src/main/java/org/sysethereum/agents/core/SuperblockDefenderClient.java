@@ -1,6 +1,7 @@
 package org.sysethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
+import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.core.syscoin.*;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.slf4j.Logger;
@@ -15,14 +16,13 @@ import java.util.*;
  * and defends/confirms the ones submitted by the agent.
  * @author Catalina Juarros
  */
-
 @Service
 @Slf4j(topic = "SuperblockDefenderClient")
 public class SuperblockDefenderClient extends SuperblockBaseClient {
     private static final Logger logger = LoggerFactory.getLogger("SuperblockDefenderClient");
 
-    public SuperblockDefenderClient() {
-        super("Superblock defender client");
+    public SuperblockDefenderClient(SystemProperties systemProperties) {
+        super("Superblock defender client", systemProperties);
     }
 
     @Override

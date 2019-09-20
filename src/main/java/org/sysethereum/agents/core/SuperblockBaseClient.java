@@ -18,7 +18,6 @@ import java.util.*;
  * @author Catalina Juarros
  * @author Ismael Bejarano
  */
-
 @Slf4j(topic = "SuperblockBaseClient")
 public abstract class SuperblockBaseClient extends PersistentFileStore {
     private static final Logger logger = LoggerFactory.getLogger("SuperblockBaseClient");
@@ -53,9 +52,9 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
     protected File superblockToSessionsMapFile;
 
 
-    public SuperblockBaseClient(String clientName) {
+    public SuperblockBaseClient(String clientName, SystemProperties systemProperties) {
         this.clientName = clientName;
-        this.config = SystemProperties.CONFIG;
+        this.config = systemProperties;
     }
 
     @PostConstruct

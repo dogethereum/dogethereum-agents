@@ -2,9 +2,7 @@ package org.sysethereum.agents.core.syscoin;
 
 import org.bitcoinj.core.*;
 import org.bitcoinj.store.BlockStoreException;
-import org.bitcoinj.core.Context;
 
-import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.fusesource.leveldbjni.*;
 import org.iq80.leveldb.*;
@@ -23,7 +21,7 @@ import java.nio.*;
 public class SuperblockLevelDBBlockStore {
 
     private static final byte[] CHAIN_HEAD_KEY = "chainhead".getBytes(); // to store chain head hash
-    private final Context context;
+    private final SystemProperties config;
     private final File path;
     private DB db;
 
@@ -31,25 +29,23 @@ public class SuperblockLevelDBBlockStore {
 
     /**
      * Constructor.
-     * @param context Syscoin context.
      * @param directory Where data is stored.
      * @throws BlockStoreException
      */
-    public SuperblockLevelDBBlockStore(Context context, File directory, NetworkParameters params)
+    public SuperblockLevelDBBlockStore(SystemProperties config, File directory, NetworkParameters params)
             throws BlockStoreException {
-        this(context, directory, JniDBFactory.factory, params); // this might not work, ask later
+        this(config, directory, JniDBFactory.factory, params); // this might not work, ask later
     }
 
     /**
      * Helper for previous constructor.
-     * @param context Syscoin context.
      * @param directory Where data is stored.
      * @param dbFactory Interface for opening and repairing directory if needed.
      * @throws BlockStoreException
      */
-    public SuperblockLevelDBBlockStore(Context context, File directory, DBFactory dbFactory, NetworkParameters params)
+    public SuperblockLevelDBBlockStore(SystemProperties config, File directory, DBFactory dbFactory, NetworkParameters params)
             throws BlockStoreException {
-        this.context = context;
+        this.config = config;
         this.path = directory;
         Options options = new Options();
         options.createIfMissing();
@@ -93,9 +89,7 @@ public class SuperblockLevelDBBlockStore {
     private synchronized void initStoreIfNeeded(NetworkParameters params) throws IOException {
         if (db.get(CHAIN_HEAD_KEY) != null)
             return; // Already initialised.
-        SystemProperties config = SystemProperties.CONFIG;
-        AgentConstants agentConstants = config.getAgentConstants();
-        Superblock genesisSuperblock = agentConstants.getGenesisSuperblock();
+        Superblock genesisSuperblock = config.getAgentConstants().getGenesisSuperblock();
         put(genesisSuperblock);
         setChainHead(genesisSuperblock);
     }

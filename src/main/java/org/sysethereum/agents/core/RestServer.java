@@ -1,8 +1,4 @@
-/*
- * Copyright (C) 2019 Jagdeep Sidhu
- */
 package org.sysethereum.agents.core;
-
 
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpExchange;
@@ -10,6 +6,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.Sha256Hash;
+import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.sysethereum.agents.core.syscoin.SyscoinRPCClient;
 import org.sysethereum.agents.util.RestError;
@@ -30,11 +27,16 @@ import java.util.LinkedHashMap;
 @Service
 @Slf4j(topic = "RestServer")
 public class RestServer {
+    @SuppressWarnings("unused")
     private static final Logger logger = LoggerFactory.getLogger("RestServer");
 
+    private final SystemProperties systemProperties;
     private final SyscoinToEthClient syscoinToEthClient;
 
-    public RestServer(SyscoinToEthClient syscoinToEthClient) {
+    public RestServer(
+            SystemProperties systemProperties,
+            SyscoinToEthClient syscoinToEthClient) {
+        this.systemProperties = systemProperties;
         this.syscoinToEthClient = syscoinToEthClient;
     }
 
@@ -45,12 +47,12 @@ public class RestServer {
         server.createContext("/spvproof", new GetSPVHandler());
         server.createContext("/superblockbysyscoinblock", new GetSuperblockBySyscoinHandler());
         server.createContext("/superblock", new GetSuperblockHandler());
-        server.createContext("/syscoinrpc", new GetSyscoinRPCHandler());
+        server.createContext("/syscoinrpc", new GetSyscoinRPCHandler(systemProperties));
         server.setExecutor(null); // creates a default executor
         server.start();
     }
     // http://localhost:8000/info
-    static class InfoHandler implements HttpHandler {
+    private static class InfoHandler implements HttpHandler {
         public void handle(HttpExchange httpExchange) throws IOException {
             String response = "Valid Superblock calls: " + System.lineSeparator() +
                     "\t/spvproof?hash=<blockhash>" + System.lineSeparator() +
@@ -154,6 +156,13 @@ public class RestServer {
     }
 
     public static class GetSyscoinRPCHandler implements HttpHandler {
+
+        private final SystemProperties config;
+
+        public GetSyscoinRPCHandler(SystemProperties config) {
+            this.config = config;
+        }
+
         public void handle(HttpExchange httpExchange) throws IOException {
             httpExchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
 
@@ -168,8 +177,8 @@ public class RestServer {
             try {
                 String method = params.get("method");
                 params.remove("method");
-                ArrayList<Object> paramList = new ArrayList<Object>(params.values());
-                SyscoinRPCClient sc = new SyscoinRPCClient();
+                ArrayList<Object> paramList = new ArrayList<>(params.values());
+                SyscoinRPCClient sc = new SyscoinRPCClient(config);
                 response.append(sc.makeCoreCall(method, paramList));
             } catch (Exception e) {
                 RestError error = new RestError(e.toString());
@@ -186,7 +195,7 @@ public class RestServer {
      * @return map
      */
     public static LinkedHashMap<String, String> queryToMap(String query){
-        LinkedHashMap<String, String> result = new LinkedHashMap<String, String>();
+        LinkedHashMap<String, String> result = new LinkedHashMap<>();
         for (String param : query.split("&")) {
             String[] pair = param.split("=");
             if (pair.length>1) {

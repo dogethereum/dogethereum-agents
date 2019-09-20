@@ -10,7 +10,6 @@ import com.google.gson.Gson;
 import org.sysethereum.agents.core.syscoin.*;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
-import org.bitcoinj.store.BlockStoreException;
 import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.core.syscoin.SyscoinWrapper;
@@ -45,11 +44,13 @@ public class SyscoinToEthClient {
     private AgentConstants agentConstants;
 
     public SyscoinToEthClient(
+            SystemProperties systemProperties,
             SuperblockChain superblockChain,
             SyscoinWrapper syscoinWrapper,
             EthWrapper ethWrapper,
             Gson gson
     ) {
+        this.config = systemProperties;
         this.superblockChain = superblockChain;
         this.syscoinWrapper = syscoinWrapper;
         this.ethWrapper = ethWrapper;
@@ -58,7 +59,7 @@ public class SyscoinToEthClient {
 
     @PostConstruct
     public void setup() {
-        config = SystemProperties.CONFIG;
+
         if (config.isSyscoinSuperblockSubmitterEnabled()) {
             agentConstants = config.getAgentConstants();
 
@@ -242,9 +243,8 @@ public class SyscoinToEthClient {
      * Finds the superblock in the superblock main chain that contains the block identified by `blockHash`.
      * @param blockHash SHA-256 hash of a block that we want to find.
      * @return Superblock where the block can be found.
-     * @throws BlockStoreException
      */
-    private Superblock findBestSuperblockFor(Sha256Hash blockHash) throws BlockStoreException, IOException {
+    private Superblock findBestSuperblockFor(Sha256Hash blockHash) {
         Superblock currentSuperblock = superblockChain.getChainHead();
 
         while (currentSuperblock != null) {

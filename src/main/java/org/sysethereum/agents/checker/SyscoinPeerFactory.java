@@ -5,8 +5,10 @@
  */
 package org.sysethereum.agents.checker;
 
+import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.PeerAddress;
+import org.springframework.stereotype.Service;
 import org.sysethereum.agents.constants.SystemProperties;
 
 import java.net.InetAddress;
@@ -19,11 +21,18 @@ import java.util.List;
 /**
  * Builds a PeerAddress list based on a String list and a default port
  */
+@Service
+@Slf4j(topic = "SyscoinPeerFactory")
 public class SyscoinPeerFactory {
 
-    public static List<PeerAddress> buildSyscoinPeerAddresses(int defaultPort, List<String> syscoinPeerAddressesString) throws UnknownHostException {
-        SystemProperties config = SystemProperties.CONFIG;
-        NetworkParameters networkParams = config.getAgentConstants().getSyscoinParams();
+    private final SystemProperties systemProperties;
+
+    public SyscoinPeerFactory(SystemProperties systemProperties) {
+        this.systemProperties = systemProperties;
+    }
+
+    public List<PeerAddress> buildSyscoinPeerAddresses(int defaultPort, List<String> syscoinPeerAddressesString) throws UnknownHostException {
+        NetworkParameters networkParams = systemProperties.getAgentConstants().getSyscoinParams();
         List<PeerAddress> syscoinPeerAddresses = new ArrayList<>();
         if(syscoinPeerAddressesString != null) {
             for (String syscoinPeerAddressString : syscoinPeerAddressesString) {

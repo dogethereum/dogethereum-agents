@@ -29,6 +29,7 @@ import java.util.*;
 public class SuperblockChain {
 
     private static final Logger logger = LoggerFactory.getLogger("SuperblockChain");
+    private final SystemProperties config;
     private final SyscoinWrapper syscoinWrapper; // Interface with the Syscoin blockchain
     private final SuperblockConstantProvider provider; // Interface with the Ethereum blockchain
     private NetworkParameters params;
@@ -42,9 +43,11 @@ public class SuperblockChain {
 
     @Autowired
     public SuperblockChain(
+            SystemProperties systemProperties,
             SyscoinWrapper syscoinWrapper,
             SuperblockConstantProvider provider
     ) {
+        this.config = systemProperties;
         this.syscoinWrapper = syscoinWrapper;
         this.provider = provider;
     }
@@ -56,13 +59,11 @@ public class SuperblockChain {
      */
     @PostConstruct
     private void setup() throws Exception, BlockStoreException {
-        SystemProperties config = SystemProperties.CONFIG;
         AgentConstants agentConstants = config.getAgentConstants();
-        Context context = new Context(agentConstants.getSyscoinParams());
         File directory = new File(config.dataDirectory());
         File chainFile = new File(directory.getAbsolutePath() + "/SuperblockChain");
         this.params = agentConstants.getSyscoinParams();
-        this.superblockStorage = new SuperblockLevelDBBlockStore(context, chainFile, params);
+        this.superblockStorage = new SuperblockLevelDBBlockStore(config, chainFile, params);
         this.SUPERBLOCK_DURATION = provider.getSuperblockDuration().intValue();
         this.SUPERBLOCK_DELAY = provider.getSuperblockDelay().intValue();
         this.SUPERBLOCK_STORING_WINDOW = 60; // store superblocks one minute before they should be sent
@@ -270,15 +271,4 @@ public class SuperblockChain {
     public boolean sendingTimePassed(Superblock superblock) {
         return new Date(superblock.getLastSyscoinBlockTime()).before(getSendingStopTime());
     }
-
-    /**
-     * Returns a superblock's parent by ID if it's in the main chain.
-     * @param superblock Superblock.
-     * @return Superblock parent if said parent is part of the main chain, null otherwise.
-     * @throws IOException
-     */
-    public Superblock getParent(Superblock superblock) {
-        return getSuperblock(superblock.getParentId());
-    }
-
 }

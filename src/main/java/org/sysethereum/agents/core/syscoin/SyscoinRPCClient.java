@@ -18,17 +18,15 @@ import net.minidev.json.*;
 import java.net.*;
 import java.util.List;
 
-import org.springframework.stereotype.Component;
 import org.sysethereum.agents.constants.SystemProperties;
 
 @Slf4j(topic = "SyscoinRPCClient")
 public class SyscoinRPCClient {
 
     private int requestId = 0;
-
     private JSONRPC2Session rpcSession;
-    public SyscoinRPCClient() throws MalformedURLException {
-        SystemProperties config = SystemProperties.CONFIG;
+
+    public SyscoinRPCClient(SystemProperties config) throws MalformedURLException {
         rpcSession = new JSONRPC2Session(new URL(config.syscoinRPCURL()));
         rpcSession.getOptions().ignoreVersion(true);
         rpcSession.setConnectionConfigurator(new SyscoinRPCBasicAuth(config.syscoinRPCUser(),config.syscoinRPCPassword()));

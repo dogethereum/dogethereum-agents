@@ -17,23 +17,31 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.List;
 
-@Component
-@Slf4j(topic = "OperatorPeersChecker")
 /**
  * Makes sure the syscoin peer is up. Otherwise prevents the agent from starting (fail fast strategy)
  */
+@Component
+@Slf4j(topic = "OperatorPeersChecker")
 public class OperatorPeersChecker {
 
-    public OperatorPeersChecker() {
+    private final SystemProperties systemProperties;
+    private final SyscoinPeerFactory syscoinPeerFactory;
+
+    public OperatorPeersChecker(
+            SystemProperties systemProperties,
+            SyscoinPeerFactory syscoinPeerFactory
+    ) {
+        this.systemProperties = systemProperties;
+        this.syscoinPeerFactory = syscoinPeerFactory;
     }
 
     @PostConstruct
     public void setup() throws Exception {
-        SystemProperties config = SystemProperties.CONFIG;
-        int defaultPort = config.getAgentConstants().getSyscoinParams().getPort();
+        int defaultPort = systemProperties.getAgentConstants().getSyscoinParams().getPort();
         List<String> peerStrings = Lists.newArrayList("127.0.0.1");
-        List<PeerAddress> peerAddresses = SyscoinPeerFactory.buildSyscoinPeerAddresses(defaultPort, peerStrings);
-        if (peerAddresses == null || peerAddresses.isEmpty()) {
+        List<PeerAddress> peerAddresses = syscoinPeerFactory.buildSyscoinPeerAddresses(defaultPort, peerStrings);
+
+        if (peerAddresses.isEmpty()) {
             // Can't happen until we implement peer list configuration
             throw new RuntimeException("No Syscoin Peers");
         }

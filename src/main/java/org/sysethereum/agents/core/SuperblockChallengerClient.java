@@ -1,8 +1,7 @@
 package org.sysethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
-import org.bitcoinj.core.Sha256Hash;
-import org.bitcoinj.core.StoredBlock;
+import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.sysethereum.agents.core.syscoin.Superblock;
@@ -28,8 +27,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     private HashSet<Keccak256Hash> semiApprovedSet;
     private File semiApprovedSetFile;
 
-    public SuperblockChallengerClient() {
-        super("Superblock challenger client");
+    public SuperblockChallengerClient(SystemProperties systemProperties) {
+        super("Superblock challenger client", systemProperties);
     }
 
     @Override
