@@ -23,18 +23,18 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-@Configuration
-@ComponentScan
-@Slf4j(topic = "GenesisSuperblockGeneratorMain")
 /**
  * Tool to create a genesis superblock
  * @author Catalina Juarros
  * @author Oscar Guindzberg
  */
+@Configuration
+@ComponentScan
+@Slf4j(topic = "GenesisSuperblockGeneratorMain")
 public class GenesisSuperblockGeneratorMain {
     private static final Logger logger = LoggerFactory.getLogger("GenesisSuperblockGeneratorMain");
-    private static String baseDir = "/yourPath/sysethereum-agents";
-    private static String subDir = "/src/main/java/org/sysethereum/agents/tool";
+    private static final String BASE_DIR = "/yourPath/sysethereum-agents";
+    private static final String SUB_DIR = "/src/main/java/org/sysethereum/agents/tool";
 
     public static void main(String[] args) throws Exception {
         SystemProperties config = SystemProperties.CONFIG;
@@ -55,7 +55,7 @@ public class GenesisSuperblockGeneratorMain {
         NetworkParameters params = agentConstants.getSyscoinParams();
 
         BufferedReader reader = new BufferedReader(
-                new FileReader(baseDir + subDir + "/syscoinmain-2309215-to-2309216"));
+                new FileReader(BASE_DIR + SUB_DIR + "/syscoinmain-2309215-to-2309216"));
         List<Sha256Hash> syscoinBlockHashes = parseBlockHashes(reader);
         Keccak256Hash genesisParentHash = Keccak256Hash.wrap(new byte[32]); // initialised with 0s
         StoredBlock lastSyscoinBlock = syscoinWrapper.getBlock(syscoinBlockHashes.get(syscoinBlockHashes.size() - 1));

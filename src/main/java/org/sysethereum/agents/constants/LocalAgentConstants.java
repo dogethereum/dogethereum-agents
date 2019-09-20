@@ -18,7 +18,7 @@ import java.util.List;
  */
 public class LocalAgentConstants extends AgentConstants {
 
-    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
+    private static final Logger logger = LoggerFactory.getLogger("LocalAgentConstants");
 
     private static LocalAgentConstants instance = new LocalAgentConstants();
 

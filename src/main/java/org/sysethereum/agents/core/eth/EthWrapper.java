@@ -50,36 +50,34 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j(topic = "EthWrapper")
 public class EthWrapper implements SuperblockConstantProvider {
     private static final Logger logger = LoggerFactory.getLogger("EthWrapper");
-    private Web3j web3;
-    private Web3j web3Secondary;
+    private final Web3j web3;
+    private final Web3j web3Secondary;
     public enum ChallengeState {
         Unchallenged,             // Unchallenged submission
         Challenged               // Claims was challenged
     }
     // Extensions of contracts generated automatically by web3j
-    private SyscoinClaimManagerExtended claimManager;
-    private SyscoinClaimManagerExtended claimManagerGetter;
-    private SyscoinClaimManagerExtended claimManagerForChallenges;
-    private SyscoinClaimManagerExtended claimManagerForChallengesGetter;
-    private SyscoinBattleManagerExtended battleManager;
-    private SyscoinBattleManagerExtended battleManagerForChallenges;
-    private SyscoinBattleManagerExtended battleManagerGetter;
-    private SyscoinBattleManagerExtended battleManagerForChallengesGetter;
-    private SyscoinSuperblocksExtended superblocks;
-    private SyscoinSuperblocksExtended superblocksGetter;
+    private final SyscoinClaimManagerExtended claimManager;
+    private final SyscoinClaimManagerExtended claimManagerGetter;
+    private final SyscoinClaimManagerExtended claimManagerForChallenges;
+    private final SyscoinClaimManagerExtended claimManagerForChallengesGetter;
+    private final SyscoinBattleManagerExtended battleManager;
+    private final SyscoinBattleManagerExtended battleManagerForChallenges;
+    private final SyscoinBattleManagerExtended battleManagerGetter;
+    private final SyscoinBattleManagerExtended battleManagerForChallengesGetter;
+    private final SyscoinSuperblocksExtended superblocks;
+    private final SyscoinSuperblocksExtended superblocksGetter;
 
-    private SystemProperties config;
+    private final SystemProperties config;
     private BigInteger gasPriceMinimum;
     private BigInteger gasPriceMaximum;
 
-    private String generalPurposeAndSendSuperblocksAddress;
-    private String syscoinSuperblockChallengerAddress;
+    private final String generalPurposeAndSendSuperblocksAddress;
+    private final String syscoinSuperblockChallengerAddress;
 
-    private BigInteger minProposalDeposit;
-    @Autowired
-    private SuperblockChain superblockChain;
-    @Autowired
-    private SyscoinWrapper syscoinWrapper;
+    private final BigInteger minProposalDeposit;
+    private final SuperblockChain superblockChain;
+    private final SyscoinWrapper syscoinWrapper;
     private int randomizationCounter;
 
     /* ---------------------------------- */
@@ -87,12 +85,18 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* ---------------------------------- */
 
     @Autowired
-    public EthWrapper() throws Exception {
+    public EthWrapper(
+            SuperblockChain superblockChain,
+            SyscoinWrapper syscoinWrapper
+    ) throws Exception {
+        this.superblockChain = superblockChain;
+        this.syscoinWrapper = syscoinWrapper;
+
         setRandomizationCounter();
         config = SystemProperties.CONFIG;
         String path = config.dataDirectory() + "/geth/geth.ipc";
         String secondaryURL = config.secondaryURL();
-        
+
         web3Secondary = Web3j.build(new HttpService(secondaryURL));
         Admin admin = Admin.build(new UnixIpcService(path));
         String generalAddress = config.generalPurposeAndSendSuperblocksAddress();
@@ -445,7 +449,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * over the same superblock.
      * @return Initial deposit for covering a reward and a single battle.
      */
-    private BigInteger getSuperblockDeposit()  {
+    private BigInteger getSuperblockDeposit() {
         return minProposalDeposit;
     }
 
@@ -543,7 +547,6 @@ public class EthWrapper implements SuperblockConstantProvider {
     public boolean isSuperblockNew(Keccak256Hash superblockId) throws Exception {
         return getSuperblockStatus(superblockId).equals(SuperblockUtils.STATUS_NEW);
     }
-
 
     public BigInteger getSuperblockHeight(Keccak256Hash superblockId) throws Exception {
         return superblocksGetter.getSuperblockHeight(new Bytes32(superblockId.getBytes())).send().getValue();
@@ -964,9 +967,8 @@ public class EthWrapper implements SuperblockConstantProvider {
      * Calls timeout for a session where a participant hasn't responded in time, thus closing the battle.
      * @param sessionId Battle session ID.
      * @param myBattleManager SyscoinBattleManager contract that the caller is using to handle its battles.
-     * @throws Exception
      */
-    public void timeout(Keccak256Hash sessionId, SyscoinBattleManagerExtended myBattleManager)  {
+    public void timeout(Keccak256Hash sessionId, SyscoinBattleManagerExtended myBattleManager) {
         CompletableFuture<TransactionReceipt> futureReceipt = myBattleManager.timeout(new Bytes32(sessionId.getBytes())).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 logger.info("Called timeout for session {}", sessionId));
@@ -979,10 +981,9 @@ public class EthWrapper implements SuperblockConstantProvider {
      * Challenges a superblock.
      * @param superblockId Hash of superblock to be challenged.
      * @param account Caller's address.
-     * @throws InterruptedException
+     * @throws Exception
      */
-    public boolean challengeSuperblock(Keccak256Hash superblockId, String account)
-            throws Exception {
+    public boolean challengeSuperblock(Keccak256Hash superblockId, String account) throws Exception {
         if(!getClaimExists(superblockId) || getClaimDecided(superblockId)) {
             logger.info("superblock has already been decided upon or claim doesn't exist, skipping...{}", superblockId.toString());
             return false;

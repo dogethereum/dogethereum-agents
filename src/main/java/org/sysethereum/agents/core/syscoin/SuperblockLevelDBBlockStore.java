@@ -12,9 +12,7 @@ import org.iq80.leveldb.*;
 import java.math.BigInteger;
 import java.io.*;
 import java.nio.*;
-import java.util.*;
 
-//import static com.google.common.base.Preconditions.checkState;
 
 /**
  * LevelDB for storing and retrieving superblocks.
@@ -22,14 +20,12 @@ import java.util.*;
  * the information itself is handled by SuperblockChain, primarily via the updateChain() method.
  * @author Catalina Juarros
  */
-
 public class SuperblockLevelDBBlockStore {
-    private static final byte[] CHAIN_HEAD_KEY = "chainhead".getBytes(); // to store chain head hash
 
+    private static final byte[] CHAIN_HEAD_KEY = "chainhead".getBytes(); // to store chain head hash
     private final Context context;
     private final File path;
     private DB db;
-
 
     /* ---- ESSENTIAL DATABASE METHODS ---- */
 
@@ -77,10 +73,9 @@ public class SuperblockLevelDBBlockStore {
      * @param options Directory options.
      * @param params Syscoin network parameters.
      * @throws IOException
-     * @throws BlockStoreException
      */
     private synchronized void tryOpen(File directory, DBFactory dbFactory, Options options, NetworkParameters params)
-            throws IOException, BlockStoreException {
+            throws IOException {
         db = dbFactory.open(directory, options);
         initStoreIfNeeded(params);
     }
@@ -204,9 +199,8 @@ public class SuperblockLevelDBBlockStore {
     /**
      * Returns tip work.
      * @return Chain head's accumulated work.
-     * @throws BlockStoreException
      */
-    public synchronized BigInteger getChainHeadWork() throws BlockStoreException, IOException {
+    public synchronized BigInteger getChainHeadWork() {
         return getChainHead().getChainWork();
     }
 
