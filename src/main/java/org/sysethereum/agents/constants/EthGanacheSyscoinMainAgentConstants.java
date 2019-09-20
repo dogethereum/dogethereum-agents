@@ -1,11 +1,9 @@
 package org.sysethereum.agents.constants;
 
 import com.google.common.collect.Lists;
-import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Sha256Hash;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.sysethereum.agents.core.syscoin.Superblock;
-import org.sysethereum.agents.core.syscoin.SuperblockUtils;
 import org.libdohj.params.SyscoinMainNetParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +16,7 @@ import java.util.List;
  */
 public class EthGanacheSyscoinMainAgentConstants extends AgentConstants {
 
+    @SuppressWarnings("unused")
     private static final Logger logger = LoggerFactory.getLogger("EthGanacheSyscoinMainAgentConstants");
 
     private static EthGanacheSyscoinMainAgentConstants instance = new EthGanacheSyscoinMainAgentConstants();
