@@ -37,20 +37,20 @@ public class GenesisSuperblockGeneratorMain {
     private static final String SUB_DIR = "/src/main/java/org/sysethereum/agents/tool";
 
     public static void main(String[] args) throws Exception {
-        SystemProperties config = SystemProperties.CONFIG;
-        logger.info("Running GenesisSuperblockGeneratorMain version: {}-{}", config.projectVersion(), config.projectVersionModifier());
         // Instantiate the spring context
         AnnotationConfigApplicationContext c = new AnnotationConfigApplicationContext();
+        SystemProperties config = c.getBean(SystemProperties.class);
+        logger.info("Running GenesisSuperblockGeneratorMain version: {}-{}", config.projectVersion(), config.projectVersionModifier());
+
         c.register(SyscoinWrapper.class);
         c.refresh();
         SyscoinWrapper syscoinWrapper = c.getBean(SyscoinWrapper.class);
-        Superblock s = getGenesisSuperblock(syscoinWrapper);
+        Superblock s = getGenesisSuperblock(config, syscoinWrapper);
         s.getSuperblockId();
         System.out.println(s);
     }
 
-    private static Superblock getGenesisSuperblock(SyscoinWrapper syscoinWrapper) throws IOException, BlockStoreException {
-        SystemProperties config = SystemProperties.CONFIG;
+    private static Superblock getGenesisSuperblock(SystemProperties config, SyscoinWrapper syscoinWrapper) throws IOException, BlockStoreException {
         AgentConstants agentConstants = config.getAgentConstants();
         NetworkParameters params = agentConstants.getSyscoinParams();
 
