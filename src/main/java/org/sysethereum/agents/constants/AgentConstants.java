@@ -1,17 +1,13 @@
 package org.sysethereum.agents.constants;
 
-import org.bitcoinj.core.Coin;
 import org.sysethereum.agents.core.syscoin.Superblock;
 import org.libdohj.params.AbstractSyscoinParams;
-
-import java.math.BigInteger;
 
 /**
  * Agent and Bridge constants.
  * Subclasses are customizations for each network (syscoin regtest and eth ganache, syscoin mainnet and eth rinkeby, syscoin mainnet and eth prod)
  */
 public class AgentConstants {
-
 
     protected AbstractSyscoinParams syscoinParams;
 
@@ -31,7 +27,10 @@ public class AgentConstants {
         return syscoinParams;
     }
 
-    public long getSyscoinToEthTimerTaskPeriod() { return syscoinToEthTimerTaskPeriod; }
+    public long getSyscoinToEthTimerTaskPeriod() {
+        return syscoinToEthTimerTaskPeriod;
+    }
+
     public Superblock getGenesisSuperblock() {
         return genesisSuperblock;
     }
@@ -39,12 +38,15 @@ public class AgentConstants {
     public long getDefenderTimerTaskPeriod() {
         return defenderTimerTaskPeriod;
     }
+
     public long getChallengerTimerTaskPeriod() {
         return challengerTimerTaskPeriod;
     }
+
     public long getDefenderConfirmations() {
         return defenderConfirmations;
     }
+
     public long getChallengerConfirmations() {
         return challengerConfirmations;
     }
@@ -52,9 +54,9 @@ public class AgentConstants {
     public String getNetworkId() {
         return networkId;
     }
+
     public int getEthInitialCheckpoint() {
         return ethInitialCheckpoint;
     }
-
 
 }
