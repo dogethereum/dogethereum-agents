@@ -193,7 +193,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
 
     private boolean challengedByMe(EthWrapper.SuperblockEvent superblockEvent) throws Exception {
-        return ethWrapper.getClaimChallenger(superblockEvent.superblockId).equals(myAddress);
+        return ethWrapper.getClaimChallenger(superblockEvent.superblockId).getValue().equals(myAddress);
     }
 
     /* ---- OVERRIDE ABSTRACT METHODS ---- */
