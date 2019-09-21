@@ -4,15 +4,12 @@ import com.google.common.io.ByteStreams;
 import com.google.common.primitives.*;
 import org.bitcoinj.core.Utils;
 import org.bouncycastle.jcajce.provider.digest.Keccak;
-import org.web3j.crypto.Hash;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 import static com.google.common.base.Preconditions.checkArgument;

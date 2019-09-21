@@ -57,8 +57,7 @@ public class AltcoinLevelDBBlockStore implements BlockStore {
         }
     }
 
-    private synchronized void tryOpen(File directory, DBFactory dbFactory, Options options)
-            throws IOException, BlockStoreException {
+    private synchronized void tryOpen(File directory, DBFactory dbFactory, Options options) throws IOException {
         db = dbFactory.open(directory, options);
         initStoreIfNeeded();
     }

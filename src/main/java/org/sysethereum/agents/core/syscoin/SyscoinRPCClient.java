@@ -3,18 +3,10 @@
  */
 package org.sysethereum.agents.core.syscoin;
 
-
 import lombok.extern.slf4j.Slf4j;
-// The Client sessions package
 import com.thetransactioncompany.jsonrpc2.client.*;
-
-// The Base package for representing JSON-RPC 2.0 messages
 import com.thetransactioncompany.jsonrpc2.*;
-
-// The JSON Smart package for JSON encoding/decoding (optional)
 import net.minidev.json.*;
-
-// For creating URLs
 import java.net.*;
 import java.util.List;
 
@@ -23,8 +15,8 @@ import org.sysethereum.agents.constants.SystemProperties;
 @Slf4j(topic = "SyscoinRPCClient")
 public class SyscoinRPCClient {
 
+    private final JSONRPC2Session rpcSession;
     private int requestId = 0;
-    private JSONRPC2Session rpcSession;
 
     public SyscoinRPCClient(SystemProperties config) throws MalformedURLException {
         rpcSession = new JSONRPC2Session(new URL(config.syscoinRPCURL()));
