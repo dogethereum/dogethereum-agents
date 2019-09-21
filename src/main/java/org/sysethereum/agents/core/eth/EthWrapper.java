@@ -8,6 +8,7 @@ import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.bitcoinj.store.BlockStoreException;
+import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.contract.*;
 import org.sysethereum.agents.core.syscoin.*;
@@ -79,6 +80,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     private final String syscoinSuperblockChallengerAddress;
 
     private final BigInteger minProposalDeposit;
+    private final AgentConstants agentConstants;
     private final SuperblockChain superblockChain;
     private final SyscoinWrapper syscoinWrapper;
     private final Gson gson;
@@ -91,11 +93,13 @@ public class EthWrapper implements SuperblockConstantProvider {
     @Autowired
     public EthWrapper(
             SystemProperties systemProperties,
+            AgentConstants agentConstants,
             SuperblockChain superblockChain,
             SyscoinWrapper syscoinWrapper,
             Gson gson
     ) throws Exception {
         this.config = systemProperties;
+        this.agentConstants = agentConstants;
         this.superblockChain = superblockChain;
         this.syscoinWrapper = syscoinWrapper;
         this.gson = gson;
@@ -133,7 +137,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         String superblocksContractAddress;
 
         if (config.isGanache()) {
-            String networkId = config.getAgentConstants().getNetworkId();
+            String networkId = agentConstants.getNetworkId();
             claimManagerContractAddress = SyscoinClaimManagerExtended.getAddress(networkId);
             battleManagerContractAddress = SyscoinBattleManagerExtended.getAddress(networkId);
             superblocksContractAddress = SyscoinSuperblocksExtended.getAddress(networkId);
@@ -141,7 +145,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             generalPurposeAndSendSuperblocksAddress = accounts.get(0);
             syscoinSuperblockChallengerAddress = accounts.get(1);
         } else {
-            String networkId = config.getAgentConstants().getNetworkId();
+            String networkId = agentConstants.getNetworkId();
             claimManagerContractAddress = SyscoinClaimManagerExtended.getAddress(networkId);
             battleManagerContractAddress = SyscoinBattleManagerExtended.getAddress(networkId);
             superblocksContractAddress = SyscoinSuperblocksExtended.getAddress(networkId);

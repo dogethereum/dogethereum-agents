@@ -1,6 +1,7 @@
 package org.sysethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
+import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.core.syscoin.*;
 import org.sysethereum.agents.core.eth.EthWrapper;
@@ -21,8 +22,14 @@ import java.util.*;
 public class SuperblockDefenderClient extends SuperblockBaseClient {
     private static final Logger logger = LoggerFactory.getLogger("SuperblockDefenderClient");
 
-    public SuperblockDefenderClient(SystemProperties systemProperties) {
-        super("Superblock defender client", systemProperties);
+    public SuperblockDefenderClient(
+            SystemProperties systemProperties,
+            AgentConstants agentConstants,
+            SyscoinWrapper syscoinWrapper,
+            EthWrapper ethWrapper,
+            SuperblockChain superblockChain
+    ) {
+        super("Superblock defender client", systemProperties, agentConstants, syscoinWrapper, ethWrapper, superblockChain);
     }
 
     @Override
@@ -206,11 +213,11 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     private boolean isMine(EthWrapper.RespondHeadersEvent respondHeadersEvent) {
         return respondHeadersEvent.submitter.equals(myAddress);
     }
+
     @Override
     protected long getConfirmations() {
-        return config.getAgentConstants().getDefenderConfirmations();
+        return agentConstants.getDefenderConfirmations();
     }
-
 
     /**
      * Removes superblocks from the data structure that keeps track of semi-approved superblocks.
@@ -237,7 +244,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     @Override
     protected long getTimerTaskPeriod() {
-        return config.getAgentConstants().getDefenderTimerTaskPeriod();
+        return agentConstants.getDefenderTimerTaskPeriod();
     }
 
 

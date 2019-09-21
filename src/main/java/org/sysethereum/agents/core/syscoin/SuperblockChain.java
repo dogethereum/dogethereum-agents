@@ -30,6 +30,7 @@ public class SuperblockChain {
 
     private static final Logger logger = LoggerFactory.getLogger("SuperblockChain");
     private final SystemProperties config;
+    private final AgentConstants agentConstants;
     private final SyscoinWrapper syscoinWrapper; // Interface with the Syscoin blockchain
     private final SuperblockConstantProvider provider; // Interface with the Ethereum blockchain
     private NetworkParameters params;
@@ -44,10 +45,12 @@ public class SuperblockChain {
     @Autowired
     public SuperblockChain(
             SystemProperties systemProperties,
+            AgentConstants agentConstants,
             SyscoinWrapper syscoinWrapper,
             SuperblockConstantProvider provider
     ) {
         this.config = systemProperties;
+        this.agentConstants = agentConstants;
         this.syscoinWrapper = syscoinWrapper;
         this.provider = provider;
     }
@@ -59,11 +62,10 @@ public class SuperblockChain {
      */
     @PostConstruct
     private void setup() throws Exception, BlockStoreException {
-        AgentConstants agentConstants = config.getAgentConstants();
         File directory = new File(config.dataDirectory());
         File chainFile = new File(directory.getAbsolutePath() + "/SuperblockChain");
         this.params = agentConstants.getSyscoinParams();
-        this.superblockStorage = new SuperblockLevelDBBlockStore(config, chainFile, params);
+        this.superblockStorage = new SuperblockLevelDBBlockStore(agentConstants, chainFile);
         this.SUPERBLOCK_DURATION = provider.getSuperblockDuration().intValue();
         this.SUPERBLOCK_DELAY = provider.getSuperblockDelay().intValue();
         this.SUPERBLOCK_STORING_WINDOW = 60; // store superblocks one minute before they should be sent

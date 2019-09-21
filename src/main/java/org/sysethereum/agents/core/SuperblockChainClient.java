@@ -27,23 +27,26 @@ import java.util.*;
 public class SuperblockChainClient {
 
     private static final Logger logger = LoggerFactory.getLogger("SuperblockChainClient");
+
     private final SystemProperties config;
+    private final AgentConstants agentConstants;
     private final SuperblockChain superblockChain;
     private final SyscoinWrapper syscoinWrapper;
 
     public SuperblockChainClient(
             SystemProperties systemProperties,
+            AgentConstants agentConstants,
             SuperblockChain superblockChain,
             SyscoinWrapper syscoinWrapper
     ) {
         this.config = systemProperties;
+        this.agentConstants = agentConstants;
         this.superblockChain = superblockChain;
         this.syscoinWrapper = syscoinWrapper;
     }
 
     @PostConstruct
     public void setup() {
-        AgentConstants agentConstants = config.getAgentConstants();
         if (config.isSyscoinSuperblockSubmitterEnabled() ||
                  config.isSyscoinBlockChallengerEnabled()) {
             new Timer("SuperblockChainClient").scheduleAtFixedRate(new UpdateSuperblocksTimerTask(),

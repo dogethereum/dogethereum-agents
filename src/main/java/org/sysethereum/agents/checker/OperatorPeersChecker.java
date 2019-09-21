@@ -8,8 +8,8 @@ package org.sysethereum.agents.checker;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.PeerAddress;
-import org.sysethereum.agents.constants.SystemProperties;
 import org.springframework.stereotype.Component;
+import org.sysethereum.agents.constants.AgentConstants;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
@@ -24,20 +24,20 @@ import java.util.List;
 @Slf4j(topic = "OperatorPeersChecker")
 public class OperatorPeersChecker {
 
-    private final SystemProperties systemProperties;
+    private final AgentConstants agentConstants;
     private final SyscoinPeerFactory syscoinPeerFactory;
 
     public OperatorPeersChecker(
-            SystemProperties systemProperties,
+            AgentConstants agentConstants,
             SyscoinPeerFactory syscoinPeerFactory
     ) {
-        this.systemProperties = systemProperties;
+        this.agentConstants = agentConstants;
         this.syscoinPeerFactory = syscoinPeerFactory;
     }
 
     @PostConstruct
     public void setup() throws Exception {
-        int defaultPort = systemProperties.getAgentConstants().getSyscoinParams().getPort();
+        int defaultPort = agentConstants.getSyscoinParams().getPort();
         List<String> peerStrings = Lists.newArrayList("127.0.0.1");
         List<PeerAddress> peerAddresses = syscoinPeerFactory.buildSyscoinPeerAddresses(defaultPort, peerStrings);
 
@@ -58,8 +58,7 @@ public class OperatorPeersChecker {
         try {
             Socket socket = new Socket(host, port);
             socket.close();
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             throw new RuntimeException("Cannot connect to Syscoin node " + address.getSocketAddress().getHostName() + ":" + address.getSocketAddress().getPort());
         }
     }

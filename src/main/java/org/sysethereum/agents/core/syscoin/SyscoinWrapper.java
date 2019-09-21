@@ -12,6 +12,7 @@ import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
+import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.util.AgentUtils;
 import org.slf4j.Logger;
@@ -34,11 +35,11 @@ public class SyscoinWrapper {
     private File dataDirectory;
 
     @Autowired
-    public SyscoinWrapper(SystemProperties systemProperties) {
+    public SyscoinWrapper(SystemProperties systemProperties, AgentConstants agentConstants) {
         this.config = systemProperties;
 
         if (config.isSyscoinSuperblockSubmitterEnabled() || config.isSyscoinBlockChallengerEnabled()) {
-            this.syscoinContext = new Context(config.getAgentConstants().getSyscoinParams());
+            this.syscoinContext = new Context(agentConstants.getSyscoinParams());
             this.dataDirectory = new File(config.dataDirectory() + "/SyscoinWrapper");
             setup();
             start();

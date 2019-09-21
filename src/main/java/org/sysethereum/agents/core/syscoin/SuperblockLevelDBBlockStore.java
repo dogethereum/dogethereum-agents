@@ -1,9 +1,8 @@
 package org.sysethereum.agents.core.syscoin;
 
-import org.bitcoinj.core.*;
 import org.bitcoinj.store.BlockStoreException;
 
-import org.sysethereum.agents.constants.SystemProperties;
+import org.sysethereum.agents.constants.AgentConstants;
 import org.fusesource.leveldbjni.*;
 import org.iq80.leveldb.*;
 
@@ -21,7 +20,7 @@ import java.nio.*;
 public class SuperblockLevelDBBlockStore {
 
     private static final byte[] CHAIN_HEAD_KEY = "chainhead".getBytes(); // to store chain head hash
-    private final SystemProperties config;
+    private final AgentConstants agentConstants;
     private final File path;
     private DB db;
 
@@ -32,9 +31,9 @@ public class SuperblockLevelDBBlockStore {
      * @param directory Where data is stored.
      * @throws BlockStoreException
      */
-    public SuperblockLevelDBBlockStore(SystemProperties config, File directory, NetworkParameters params)
+    public SuperblockLevelDBBlockStore(AgentConstants agentConstants, File directory)
             throws BlockStoreException {
-        this(config, directory, JniDBFactory.factory, params); // this might not work, ask later
+        this(agentConstants, directory, JniDBFactory.factory); // this might not work, ask later
     }
 
     /**
@@ -43,19 +42,19 @@ public class SuperblockLevelDBBlockStore {
      * @param dbFactory Interface for opening and repairing directory if needed.
      * @throws BlockStoreException
      */
-    public SuperblockLevelDBBlockStore(SystemProperties config, File directory, DBFactory dbFactory, NetworkParameters params)
+    public SuperblockLevelDBBlockStore(AgentConstants agentConstants, File directory, DBFactory dbFactory)
             throws BlockStoreException {
-        this.config = config;
+        this.agentConstants = agentConstants;
         this.path = directory;
         Options options = new Options();
         options.createIfMissing();
 
         try {
-            tryOpen(directory, dbFactory, options, params);
+            tryOpen(directory, dbFactory, options);
         } catch (IOException e) {
             try {
                 dbFactory.repair(directory, options);
-                tryOpen(directory, dbFactory, options, params);
+                tryOpen(directory, dbFactory, options);
             } catch (IOException e1) {
                 throw new BlockStoreException(e1);
             }
@@ -67,13 +66,12 @@ public class SuperblockLevelDBBlockStore {
      * @param directory Where data is stored.
      * @param dbFactory Interface for opening directory.
      * @param options Directory options.
-     * @param params Syscoin network parameters.
      * @throws IOException
      */
-    private synchronized void tryOpen(File directory, DBFactory dbFactory, Options options, NetworkParameters params)
+    private synchronized void tryOpen(File directory, DBFactory dbFactory, Options options)
             throws IOException {
         db = dbFactory.open(directory, options);
-        initStoreIfNeeded(params);
+        initStoreIfNeeded();
     }
 
     /**
@@ -86,10 +84,10 @@ public class SuperblockLevelDBBlockStore {
      * - its chain work is 0
      * @throws java.io.IOException
      */
-    private synchronized void initStoreIfNeeded(NetworkParameters params) throws IOException {
+    private synchronized void initStoreIfNeeded() throws IOException {
         if (db.get(CHAIN_HEAD_KEY) != null)
             return; // Already initialised.
-        Superblock genesisSuperblock = config.getAgentConstants().getGenesisSuperblock();
+        Superblock genesisSuperblock = agentConstants.getGenesisSuperblock();
         put(genesisSuperblock);
         setChainHead(genesisSuperblock);
     }

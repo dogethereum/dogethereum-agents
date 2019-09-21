@@ -45,13 +45,13 @@ public class GenesisSuperblockGeneratorMain {
         c.register(SyscoinWrapper.class);
         c.refresh();
         SyscoinWrapper syscoinWrapper = c.getBean(SyscoinWrapper.class);
-        Superblock s = getGenesisSuperblock(config, syscoinWrapper);
+        AgentConstants agentConstants = c.getBean(AgentConstants.class);
+        Superblock s = getGenesisSuperblock(config, agentConstants, syscoinWrapper);
         s.getSuperblockId();
         System.out.println(s);
     }
 
-    private static Superblock getGenesisSuperblock(SystemProperties config, SyscoinWrapper syscoinWrapper) throws IOException, BlockStoreException {
-        AgentConstants agentConstants = config.getAgentConstants();
+    private static Superblock getGenesisSuperblock(SystemProperties config, AgentConstants agentConstants, SyscoinWrapper syscoinWrapper) throws IOException, BlockStoreException {
         NetworkParameters params = agentConstants.getSyscoinParams();
 
         BufferedReader reader = new BufferedReader(

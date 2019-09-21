@@ -40,17 +40,19 @@ public class SyscoinToEthClient {
     private final SuperblockChain superblockChain;
     private final Gson gson;
 
-    private SystemProperties config;
-    private AgentConstants agentConstants;
+    private final SystemProperties config;
+    private final AgentConstants agentConstants;
 
     public SyscoinToEthClient(
             SystemProperties systemProperties,
+            AgentConstants agentConstants,
             SuperblockChain superblockChain,
             SyscoinWrapper syscoinWrapper,
             EthWrapper ethWrapper,
             Gson gson
     ) {
         this.config = systemProperties;
+        this.agentConstants = agentConstants;
         this.superblockChain = superblockChain;
         this.syscoinWrapper = syscoinWrapper;
         this.ethWrapper = ethWrapper;
@@ -61,8 +63,6 @@ public class SyscoinToEthClient {
     public void setup() {
 
         if (config.isSyscoinSuperblockSubmitterEnabled()) {
-            agentConstants = config.getAgentConstants();
-
             new Timer("Syscoin to Eth client").scheduleAtFixedRate(new SyscoinToEthClientTimerTask(),
                     getFirstExecutionDate(), agentConstants.getSyscoinToEthTimerTaskPeriod());
 

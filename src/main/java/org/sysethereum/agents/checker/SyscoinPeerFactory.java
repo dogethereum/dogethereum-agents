@@ -9,13 +9,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.PeerAddress;
 import org.springframework.stereotype.Service;
-import org.sysethereum.agents.constants.SystemProperties;
+import org.sysethereum.agents.constants.AgentConstants;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
-
 
 
 /**
@@ -25,16 +24,16 @@ import java.util.List;
 @Slf4j(topic = "SyscoinPeerFactory")
 public class SyscoinPeerFactory {
 
-    private final SystemProperties systemProperties;
+    private final AgentConstants agentConstants;
 
-    public SyscoinPeerFactory(SystemProperties systemProperties) {
-        this.systemProperties = systemProperties;
+    public SyscoinPeerFactory(AgentConstants agentConstants) {
+        this.agentConstants = agentConstants;
     }
 
     public List<PeerAddress> buildSyscoinPeerAddresses(int defaultPort, List<String> syscoinPeerAddressesString) throws UnknownHostException {
-        NetworkParameters networkParams = systemProperties.getAgentConstants().getSyscoinParams();
+        NetworkParameters networkParams = agentConstants.getSyscoinParams();
         List<PeerAddress> syscoinPeerAddresses = new ArrayList<>();
-        if(syscoinPeerAddressesString != null) {
+        if (syscoinPeerAddressesString != null) {
             for (String syscoinPeerAddressString : syscoinPeerAddressesString) {
                 PeerAddress syscoinPeerAddress;
                 if (syscoinPeerAddressString.indexOf(':') == -1) {
@@ -42,7 +41,7 @@ public class SyscoinPeerFactory {
                 } else {
                     String syscoinPeerAddressesHost = syscoinPeerAddressString.substring(0, syscoinPeerAddressString.indexOf(':'));
                     String syscoinPeerAddressesPort = syscoinPeerAddressString.substring(syscoinPeerAddressString.indexOf(':') + 1);
-                    syscoinPeerAddress = new PeerAddress(networkParams, InetAddress.getByName(syscoinPeerAddressesHost), Integer.valueOf(syscoinPeerAddressesPort));
+                    syscoinPeerAddress = new PeerAddress(networkParams, InetAddress.getByName(syscoinPeerAddressesHost), Integer.parseInt(syscoinPeerAddressesPort));
                 }
                 syscoinPeerAddresses.add(syscoinPeerAddress);
             }

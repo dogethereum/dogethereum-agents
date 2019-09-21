@@ -1,6 +1,7 @@
 package org.sysethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
+import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
@@ -8,6 +9,8 @@ import org.sysethereum.agents.core.syscoin.Superblock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.sysethereum.agents.core.syscoin.SuperblockChain;
+import org.sysethereum.agents.core.syscoin.SyscoinWrapper;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -27,8 +30,14 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     private HashSet<Keccak256Hash> semiApprovedSet;
     private File semiApprovedSetFile;
 
-    public SuperblockChallengerClient(SystemProperties systemProperties) {
-        super("Superblock challenger client", systemProperties);
+    public SuperblockChallengerClient(
+            SystemProperties systemProperties,
+            AgentConstants agentConstants,
+            SyscoinWrapper syscoinWrapper,
+            EthWrapper ethWrapper,
+            SuperblockChain superblockChain
+    ) {
+        super("Superblock challenger client", systemProperties, agentConstants, syscoinWrapper, ethWrapper, superblockChain);
     }
 
     @Override
@@ -187,8 +196,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         return ethWrapper.getClaimChallenger(superblockEvent.superblockId).equals(myAddress);
     }
 
-
-
     /* ---- OVERRIDE ABSTRACT METHODS ---- */
 
     @Override
@@ -229,7 +236,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     @Override
     protected long getConfirmations() {
-        return config.getAgentConstants().getChallengerConfirmations();
+        return agentConstants.getChallengerConfirmations();
     }
 
     protected void callBattleTimeouts() throws Exception {
@@ -275,7 +282,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     @Override
     protected long getTimerTaskPeriod() {
-        return config.getAgentConstants().getChallengerTimerTaskPeriod();
+        return agentConstants.getChallengerTimerTaskPeriod();
     }
 
     /**
