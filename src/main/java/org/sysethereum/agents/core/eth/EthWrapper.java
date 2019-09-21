@@ -80,7 +80,6 @@ public class EthWrapper implements SuperblockConstantProvider {
     private final String syscoinSuperblockChallengerAddress;
 
     private final BigInteger minProposalDeposit;
-    private final AgentConstants agentConstants;
     private final SuperblockChain superblockChain;
     private final SyscoinWrapper syscoinWrapper;
     private final Gson gson;
@@ -99,7 +98,6 @@ public class EthWrapper implements SuperblockConstantProvider {
             Gson gson
     ) throws Exception {
         this.config = systemProperties;
-        this.agentConstants = agentConstants;
         this.superblockChain = superblockChain;
         this.syscoinWrapper = syscoinWrapper;
         this.gson = gson;

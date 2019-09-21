@@ -1,7 +1,6 @@
 package org.sysethereum.agents.constants;
 
 import com.google.common.collect.Lists;
-import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Sha256Hash;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.sysethereum.agents.core.syscoin.Superblock;
@@ -18,6 +17,7 @@ import java.util.List;
  */
 public class LocalAgentConstants extends AgentConstants {
 
+    @SuppressWarnings("unused")
     private static final Logger logger = LoggerFactory.getLogger("LocalAgentConstants");
 
     public LocalAgentConstants() {
