@@ -90,7 +90,6 @@ public class SyscoinToEthClient {
                     logger.warn("SyscoinToEthClientTimerTask skipped because the eth node is syncing blocks");
                 }
             } catch (Exception e) {
-
                 logger.error(e.getMessage(), e);
             }
         }
@@ -258,4 +257,3 @@ public class SyscoinToEthClient {
     }
 
 }
-

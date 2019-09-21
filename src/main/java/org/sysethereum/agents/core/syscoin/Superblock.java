@@ -19,36 +19,6 @@ import java.util.List;
 
 public class Superblock {
 
-    /* ---- INFO FIELDS ---- */
-
-    // Root of a Merkle tree comprised of Syscoin block hashes. 32 bytes.
-    private Sha256Hash merkleRoot;
-
-    // Total chain work put into this superblock -- same as total chain work put into last block. 32 bytes.
-    private BigInteger chainWork;
-
-    // Timestamp of last mined Syscoin block in the superblock. 32 bytes to comply with Solidity version.
-    private long lastSyscoinBlockTime;
-
-
-    // SHA-256 hash of last mined Syscoin block in the superblock. 32 bytes.
-    private Sha256Hash lastSyscoinBlockHash;
-
-    // Bits (difficulty) of last difficulty adjustment. 32 bytes.
-    private long lastSyscoinBlockBits;
-
-    // SHA3-256 hash of previous superblock. 32 bytes.
-    private Keccak256Hash parentId;
-
-    /* ---- EXTRA FIELDS ---- */
-
-    private Keccak256Hash superblockId; // SHA3-256 hash of superblock data
-    private long superblockHeight;
-    private List<Sha256Hash> syscoinBlockHashes;
-
-
-    /* ---- CONSTANTS ---- */
-
     public static final int HASH_BYTES_LENGTH = 32;
     public static final int BIG_INTEGER_LENGTH = 32;
     public static final int UINT32_LENGTH = 4;
@@ -69,8 +39,29 @@ public class Superblock {
     private static final int NUMBER_OF_HASHES_PAYLOAD_OFFSET = SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET + UINT32_LENGTH;
     private static final int SYSCOIN_BLOCK_HASHES_PAYLOAD_OFFSET = NUMBER_OF_HASHES_PAYLOAD_OFFSET + UINT32_LENGTH;
 
+    // Root of a Merkle tree comprised of Syscoin block hashes. 32 bytes.
+    private final Sha256Hash merkleRoot;
 
-    /* ---- CONSTRUCTION METHODS ---- */
+    // Total chain work put into this superblock -- same as total chain work put into last block. 32 bytes.
+    private final BigInteger chainWork;
+
+    // Timestamp of last mined Syscoin block in the superblock. 32 bytes to comply with Solidity version.
+    private final long lastSyscoinBlockTime;
+
+    // SHA-256 hash of last mined Syscoin block in the superblock. 32 bytes.
+    private final Sha256Hash lastSyscoinBlockHash;
+
+    // Bits (difficulty) of last difficulty adjustment. 32 bytes.
+    private final long lastSyscoinBlockBits;
+
+    // SHA3-256 hash of previous superblock. 32 bytes.
+    private final Keccak256Hash parentId;
+
+    /* ---- EXTRA FIELDS ---- */
+
+    private Keccak256Hash superblockId; // SHA3-256 hash of superblock data
+    private final long superblockHeight;
+    private final List<Sha256Hash> syscoinBlockHashes;
 
     /**
      * Constructs a Superblock object from a list of Syscoin block hashes.
@@ -107,10 +98,9 @@ public class Superblock {
     /**
      * Constructs a Superblock object from an array representing a serialized superblock.
      * @param payload Serialized superblock.
-     * @throws ProtocolException
      */
     // TODO: see what to do with potential exceptions when reading block fields
-    public Superblock(byte[] payload) throws ProtocolException {
+    public Superblock(byte[] payload) {
         this.merkleRoot = Sha256Hash.wrapReversed(SuperblockUtils.readBytes(
                 payload, MERKLE_ROOT_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
         this.chainWork = new BigInteger(Utils.reverseBytes(SuperblockUtils.readBytes(
@@ -283,8 +273,7 @@ public class Superblock {
      * @throws IOException
      */
     public void serializeHashesLE(List<Sha256Hash> hashes, OutputStream stream) throws IOException {
-        for (int i = 0; i < hashes.size(); i++)
-            stream.write(hashes.get(i).getReversedBytes());
+        for (Sha256Hash hash : hashes) stream.write(hash.getReversedBytes());
     }
 
     /**

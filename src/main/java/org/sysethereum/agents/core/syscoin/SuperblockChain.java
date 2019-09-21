@@ -33,7 +33,6 @@ public class SuperblockChain {
     private final AgentConstants agentConstants;
     private final SyscoinWrapper syscoinWrapper; // Interface with the Syscoin blockchain
     private final SuperblockConstantProvider provider; // Interface with the Ethereum blockchain
-    private NetworkParameters params;
     private SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
 
     public int SUPERBLOCK_DURATION; // num blocks in a superblock
@@ -64,7 +63,6 @@ public class SuperblockChain {
     private void setup() throws Exception, BlockStoreException {
         File directory = new File(config.dataDirectory());
         File chainFile = new File(directory.getAbsolutePath() + "/SuperblockChain");
-        this.params = agentConstants.getSyscoinParams();
         this.superblockStorage = new SuperblockLevelDBBlockStore(agentConstants, chainFile);
         this.SUPERBLOCK_DURATION = provider.getSuperblockDuration().intValue();
         this.SUPERBLOCK_DELAY = provider.getSuperblockDelay().intValue();
@@ -103,16 +101,23 @@ public class SuperblockChain {
         while (!allSyscoinHashesToHash.empty()) {
             // Modify allSyscoinHashesToHash and get hashes for next superblock.
             nextSuperblockSyscoinHashes = popBlocksBeforeTime(allSyscoinHashesToHash, getStoringStopTime());
-            // if we don't have a collection of 60 blocks that are atleast 3 hours old we exit
+            // if we don't have a collection of 60 blocks that are at least 3 hours old we exit
             if(nextSuperblockSyscoinHashes.isEmpty()){
                 break;
             }
             StoredBlock nextSuperblockLastBlock = syscoinWrapper.getBlock(
                     nextSuperblockSyscoinHashes.get(nextSuperblockSyscoinHashes.size() - 1));
 
-            Superblock newSuperblock = new Superblock(this.params, nextSuperblockSyscoinHashes,
-                    nextSuperblockLastBlock.getChainWork(), nextSuperblockLastBlock.getHeader().getTimeSeconds(),nextSuperblockLastBlock.getHeader().getDifficultyTarget(),
-                    nextSuperblockPrevHash, nextSuperblockHeight);
+            Superblock newSuperblock = new Superblock(
+                    agentConstants.getSyscoinParams(),
+                    nextSuperblockSyscoinHashes,
+                    nextSuperblockLastBlock.getChainWork(),
+                    nextSuperblockLastBlock.getHeader().getTimeSeconds(),
+                    nextSuperblockLastBlock.getHeader().getDifficultyTarget(),
+                    nextSuperblockPrevHash,
+                    nextSuperblockHeight
+            );
+
             superblockStorage.put(newSuperblock);
             if (newSuperblock.getChainWork().compareTo(superblockStorage.getChainHeadWork()) > 0) {
                 superblockStorage.setChainHead(newSuperblock);
