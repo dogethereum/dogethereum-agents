@@ -31,9 +31,9 @@ public class SyscoinWrapper {
     private static final Logger logger = LoggerFactory.getLogger("SyscoinWrapper");
     private final SystemProperties config;
     private final AgentUtils agentUtils;
+    private final File dataDirectory;
+    private final Context syscoinContext;
     private WalletAppKit kit;
-    private Context syscoinContext;
-    private File dataDirectory;
 
     @Autowired
     public SyscoinWrapper(
@@ -43,10 +43,10 @@ public class SyscoinWrapper {
     ) {
         this.config = systemProperties;
         this.agentUtils = agentUtils;
+        this.dataDirectory = new File(config.dataDirectory() + "/SyscoinWrapper");
+        this.syscoinContext = new Context(agentConstants.getSyscoinParams());
 
         if (config.isSyscoinSuperblockSubmitterEnabled() || config.isSyscoinBlockChallengerEnabled()) {
-            this.syscoinContext = new Context(agentConstants.getSyscoinParams());
-            this.dataDirectory = new File(config.dataDirectory() + "/SyscoinWrapper");
             setup();
             start();
         }
