@@ -22,7 +22,6 @@ public class AgentConstants {
     protected int ethInitialCheckpoint;
     protected String networkId;
 
-
     public AbstractSyscoinParams getSyscoinParams() {
         return syscoinParams;
     }

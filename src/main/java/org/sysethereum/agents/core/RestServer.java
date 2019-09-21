@@ -51,6 +51,7 @@ public class RestServer {
         server.setExecutor(null); // creates a default executor
         server.start();
     }
+
     // http://localhost:8000/info
     private static class InfoHandler implements HttpHandler {
         public void handle(HttpExchange httpExchange) throws IOException {
@@ -66,6 +67,7 @@ public class RestServer {
             RestServer.writeResponse(httpExchange, response);
         }
     }
+
     private class GetSPVHandler implements HttpHandler {
         public void handle(HttpExchange httpExchange) throws IOException {
             httpExchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
@@ -95,6 +97,7 @@ public class RestServer {
             RestServer.writeResponse(httpExchange, response.toString());
         }
     }
+
     private class GetSuperblockBySyscoinHandler implements HttpHandler {
         public void handle(HttpExchange httpExchange) throws IOException {
             httpExchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
