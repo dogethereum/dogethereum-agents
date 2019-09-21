@@ -1130,6 +1130,4 @@ public class EthWrapper implements SuperblockConstantProvider {
         return gson.toJson(spvProof);
     }
 
-
-
 }

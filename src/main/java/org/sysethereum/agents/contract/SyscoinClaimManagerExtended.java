@@ -1,9 +1,7 @@
 package org.sysethereum.agents.contract;
 
 import org.web3j.abi.EventEncoder;
-import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Address;
-import org.web3j.abi.datatypes.Event;
 import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
@@ -15,7 +13,6 @@ import org.web3j.tx.TransactionManager;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class SyscoinClaimManagerExtended extends SyscoinClaimManager {
@@ -29,9 +26,11 @@ public class SyscoinClaimManagerExtended extends SyscoinClaimManager {
                                                    BigInteger gasLimit) {
         return new SyscoinClaimManagerExtended(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
+
     public static String getAddress(String networkId) {
         return getPreviouslyDeployedAddress(networkId);
     }
+
     public List<SuperblockBattleDecidedEventResponse> getSuperblockBattleDecidedEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {

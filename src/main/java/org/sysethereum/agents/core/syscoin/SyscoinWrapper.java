@@ -127,5 +127,4 @@ public class SyscoinWrapper {
             logger.info("SyscoinToEthClient tearDown finished.");
         }
     }
-
 }
