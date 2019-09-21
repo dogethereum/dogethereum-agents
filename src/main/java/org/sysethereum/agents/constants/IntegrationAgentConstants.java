@@ -20,13 +20,7 @@ public class IntegrationAgentConstants extends AgentConstants {
 
     private static final Logger logger = LoggerFactory.getLogger("IntegrationAgentConstants");
 
-    private static IntegrationAgentConstants instance = new IntegrationAgentConstants();
-
-    public static IntegrationAgentConstants getInstance() {
-        return instance;
-    }
-
-    IntegrationAgentConstants() {
+    public IntegrationAgentConstants() {
         syscoinParams = SyscoinTestNet3Params.get();
 
         syscoinToEthTimerTaskPeriod = 15 * 1000;

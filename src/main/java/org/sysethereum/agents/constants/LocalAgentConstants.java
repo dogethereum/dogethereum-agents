@@ -20,13 +20,7 @@ public class LocalAgentConstants extends AgentConstants {
 
     private static final Logger logger = LoggerFactory.getLogger("LocalAgentConstants");
 
-    private static LocalAgentConstants instance = new LocalAgentConstants();
-
-    public static LocalAgentConstants getInstance() {
-        return instance;
-    }
-
-    LocalAgentConstants() {
+    public LocalAgentConstants() {
         syscoinParams = SyscoinRegTestParams.get();
 
         syscoinToEthTimerTaskPeriod = 10 * 1000;
@@ -45,6 +39,5 @@ public class LocalAgentConstants extends AgentConstants {
 
         ethInitialCheckpoint = 0;
         networkId = "32001"; // local eth network
-
     }
 }

@@ -19,13 +19,7 @@ public class EthGanacheSyscoinMainAgentConstants extends AgentConstants {
     @SuppressWarnings("unused")
     private static final Logger logger = LoggerFactory.getLogger("EthGanacheSyscoinMainAgentConstants");
 
-    private static EthGanacheSyscoinMainAgentConstants instance = new EthGanacheSyscoinMainAgentConstants();
-
-    public static EthGanacheSyscoinMainAgentConstants getInstance() {
-        return instance;
-    }
-
-    EthGanacheSyscoinMainAgentConstants() {
+    public EthGanacheSyscoinMainAgentConstants() {
         syscoinParams = SyscoinMainNetParams.get();
 
         syscoinToEthTimerTaskPeriod = 10 * 1000;
@@ -45,6 +39,5 @@ public class EthGanacheSyscoinMainAgentConstants extends AgentConstants {
 
         ethInitialCheckpoint = 0;
         networkId = "32000"; // eth mainnet
-
     }
 }
