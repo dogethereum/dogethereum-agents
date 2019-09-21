@@ -30,13 +30,19 @@ public class SyscoinWrapper {
 
     private static final Logger logger = LoggerFactory.getLogger("SyscoinWrapper");
     private final SystemProperties config;
+    private final AgentUtils agentUtils;
     private WalletAppKit kit;
     private Context syscoinContext;
     private File dataDirectory;
 
     @Autowired
-    public SyscoinWrapper(SystemProperties systemProperties, AgentConstants agentConstants) {
+    public SyscoinWrapper(
+            SystemProperties systemProperties,
+            AgentConstants agentConstants,
+            AgentUtils agentUtils
+    ) {
         this.config = systemProperties;
+        this.agentUtils = agentUtils;
 
         if (config.isSyscoinSuperblockSubmitterEnabled() || config.isSyscoinBlockChallengerEnabled()) {
             this.syscoinContext = new Context(agentConstants.getSyscoinParams());
@@ -108,7 +114,7 @@ public class SyscoinWrapper {
     }
 
     public StoredBlock getStoredBlockAtHeight(int height) throws BlockStoreException {
-        return AgentUtils.getStoredBlockAtHeight(kit.store(), height);
+        return agentUtils.getStoredBlockAtHeight(kit.store(), height);
     }
 
     @PreDestroy
