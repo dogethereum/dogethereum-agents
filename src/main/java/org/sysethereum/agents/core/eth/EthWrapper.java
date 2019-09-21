@@ -1095,18 +1095,6 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* ----- Relay Syscoin tx section ------ */
     /* ---------------------------------- */
 
-    private static class SPVProof {
-        public final int index;
-        public final List<String> merklePath;
-        public final String superBlock;
-
-        public SPVProof(int indexIn, List<String> merklePathIn, String superBlockIn) {
-            this.index = indexIn;
-            this.merklePath = merklePathIn;
-            this.superBlock = superBlockIn;
-        }
-    }
-
     /**
      * Returns an SPV Proof to the superblock for a Syscoin transaction to Sysethereum contracts.
      * @param block Syscoin block that the transaction is in.
