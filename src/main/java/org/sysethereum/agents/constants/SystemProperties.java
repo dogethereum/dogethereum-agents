@@ -25,9 +25,10 @@ import java.util.Properties;
 @Slf4j(topic = "SystemProperties")
 public class SystemProperties {
     private static final Logger logger = LoggerFactory.getLogger("SystemProperties");
-    private static final String LOCAL = "local";
-    private static final String INTEGRATION = "integration";
-    private static final String ETHGANACHE_SYSCOINMAIN = "ethganachesyscoinmain";
+
+    public static final String LOCAL = "local";
+    public static final String INTEGRATION = "integration";
+    public static final String ETHGANACHE_SYSCOINMAIN = "ethganachesyscoinmain";
 
     private static final String YES = "yes";
     private static final String NO = "no";
@@ -36,7 +37,6 @@ public class SystemProperties {
 
     private final String projectVersion;
     private final String projectVersionModifier;
-    private AgentConstants agentConstants;
 
     public SystemProperties() {
         try {
@@ -61,26 +61,6 @@ public class SystemProperties {
             logger.error("Can't read config.", e);
             throw new RuntimeException(e);
         }
-    }
-
-    public AgentConstants getAgentConstants() {
-        if (agentConstants == null) {
-            String constants = constants();
-            switch (constants) {
-                case INTEGRATION:
-                    agentConstants = IntegrationAgentConstants.getInstance();
-                    break;
-                case LOCAL:
-                    agentConstants = LocalAgentConstants.getInstance();
-                    break;
-                case ETHGANACHE_SYSCOINMAIN:
-                    agentConstants = EthGanacheSyscoinMainAgentConstants.getInstance();
-                    break;
-                default:
-                    throw new RuntimeException("Unknown value for 'constants': '" + constants + "'");
-            }
-        }
-        return agentConstants;
     }
 
     public boolean isSyscoinSuperblockSubmitterEnabled() {
