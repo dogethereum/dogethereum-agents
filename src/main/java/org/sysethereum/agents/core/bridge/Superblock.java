@@ -61,7 +61,7 @@ public class Superblock {
 
     /* ---- EXTRA FIELDS ---- */
 
-    private Keccak256Hash superblockId; // SHA3-256 hash of superblock data
+    private final Keccak256Hash superblockId; // SHA3-256 hash of superblock data
     private final long superblockHeight;
     private final List<Sha256Hash> syscoinBlockHashes;
 
@@ -95,6 +95,8 @@ public class Superblock {
         // set helper fields
         this.superblockHeight = superblockHeight;
         this.syscoinBlockHashes = new ArrayList<>(syscoinBlockHashes);
+
+        this.superblockId = calculateHash();
     }
 
     /**
@@ -119,6 +121,8 @@ public class Superblock {
         this.superblockHeight = Utils.readUint32(payload, SUPERBLOCK_HEIGHT_PAYLOAD_OFFSET);
         long numberOfSyscoinBlockHashes = Utils.readUint32(payload, NUMBER_OF_HASHES_PAYLOAD_OFFSET);
         this.syscoinBlockHashes = deserializeHashesLE(payload, SYSCOIN_BLOCK_HASHES_PAYLOAD_OFFSET, numberOfSyscoinBlockHashes);
+
+        this.superblockId = calculateHash();
     }
 
     /**
@@ -126,15 +130,16 @@ public class Superblock {
      * @return Superblock ID in Keccak wrapper format.
      * @throws IOException
      */
-    private Keccak256Hash calculateHash() throws IOException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        serializeBE(outputStream);
-        byte[] data = outputStream.toByteArray();
-        return Keccak256Hash.of(data);
+    private Keccak256Hash calculateHash() {
+        try {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            serializeBE(outputStream);
+            byte[] data = outputStream.toByteArray();
+            return Keccak256Hash.of(data);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
-
-
-    /* ---- GETTERS ---- */
 
     /**
      * Accesses Merkle root attribute.
@@ -190,9 +195,7 @@ public class Superblock {
      * Accesses superblock hash attribute if already calculated, calculates it otherwise.
      * @return Superblock hash.
      */
-    public Keccak256Hash getSuperblockId() throws IOException {
-        if (superblockId == null)
-            superblockId = calculateHash();
+    public Keccak256Hash getSuperblockId() {
         return superblockId;
     }
 
