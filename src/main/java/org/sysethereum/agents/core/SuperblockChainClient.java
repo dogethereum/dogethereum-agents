@@ -7,7 +7,7 @@ import org.bitcoinj.store.BlockStoreException;
 import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.core.syscoin.SyscoinWrapper;
-import org.sysethereum.agents.core.syscoin.Superblock;
+import org.sysethereum.agents.core.bridge.Superblock;
 import org.sysethereum.agents.core.syscoin.SuperblockChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

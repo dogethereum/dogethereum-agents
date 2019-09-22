@@ -1,6 +1,6 @@
 package org.sysethereum.agents.constants;
 
-import org.sysethereum.agents.core.syscoin.Superblock;
+import org.sysethereum.agents.core.bridge.Superblock;
 import org.libdohj.params.AbstractSyscoinParams;
 
 /**

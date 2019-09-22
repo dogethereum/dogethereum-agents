@@ -5,7 +5,7 @@ import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
-import org.sysethereum.agents.core.syscoin.Superblock;
+import org.sysethereum.agents.core.bridge.Superblock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;

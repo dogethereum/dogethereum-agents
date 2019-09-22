@@ -1,6 +1,8 @@
-package org.sysethereum.agents.core.syscoin;
+package org.sysethereum.agents.core.bridge;
 
 import org.bitcoinj.core.*;
+import org.sysethereum.agents.core.syscoin.Keccak256Hash;
+import org.sysethereum.agents.core.syscoin.SuperblockUtils;
 
 
 import java.io.ByteArrayOutputStream;

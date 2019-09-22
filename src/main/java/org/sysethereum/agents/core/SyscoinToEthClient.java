@@ -7,6 +7,7 @@ package org.sysethereum.agents.core;
 
 
 import com.google.gson.Gson;
+import org.sysethereum.agents.core.bridge.Superblock;
 import org.sysethereum.agents.core.syscoin.*;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;

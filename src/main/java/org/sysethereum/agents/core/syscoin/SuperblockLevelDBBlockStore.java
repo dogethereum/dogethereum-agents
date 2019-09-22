@@ -5,6 +5,7 @@ import org.bitcoinj.store.BlockStoreException;
 import org.sysethereum.agents.constants.AgentConstants;
 import org.fusesource.leveldbjni.*;
 import org.iq80.leveldb.*;
+import org.sysethereum.agents.core.bridge.Superblock;
 
 import java.math.BigInteger;
 import java.io.*;
