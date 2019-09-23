@@ -13,8 +13,8 @@ import java.util.Base64;
 @Slf4j(topic = "SyscoinRPCBasicAuth")
 public class SyscoinRPCBasicAuth implements ConnectionConfigurator {
 
-    private String username;
-    private String password;
+    private final String username;
+    private final String password;
 
     public SyscoinRPCBasicAuth(String username, String password) {
         this.username = username;
@@ -22,7 +22,7 @@ public class SyscoinRPCBasicAuth implements ConnectionConfigurator {
     }
 
     public void configure(HttpURLConnection conn) {
-        String encoding = Base64.getEncoder().encodeToString((this.username + ":" + this.password).getBytes());
+        String encoding = Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
         conn.setRequestProperty("Authorization", "Basic " + encoding);
     }
 }

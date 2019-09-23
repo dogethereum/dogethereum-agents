@@ -7,10 +7,10 @@ package org.sysethereum.agents.core;
 
 
 import com.google.gson.Gson;
+import org.sysethereum.agents.core.bridge.Superblock;
 import org.sysethereum.agents.core.syscoin.*;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
-import org.bitcoinj.store.BlockStoreException;
 import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.core.syscoin.SyscoinWrapper;
@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.io.*;
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -41,15 +40,19 @@ public class SyscoinToEthClient {
     private final SuperblockChain superblockChain;
     private final Gson gson;
 
-    private SystemProperties config;
-    private AgentConstants agentConstants;
+    private final SystemProperties config;
+    private final AgentConstants agentConstants;
 
     public SyscoinToEthClient(
+            SystemProperties systemProperties,
+            AgentConstants agentConstants,
             SuperblockChain superblockChain,
             SyscoinWrapper syscoinWrapper,
             EthWrapper ethWrapper,
             Gson gson
     ) {
+        this.config = systemProperties;
+        this.agentConstants = agentConstants;
         this.superblockChain = superblockChain;
         this.syscoinWrapper = syscoinWrapper;
         this.ethWrapper = ethWrapper;
@@ -58,10 +61,8 @@ public class SyscoinToEthClient {
 
     @PostConstruct
     public void setup() {
-        config = SystemProperties.CONFIG;
-        if (config.isSyscoinSuperblockSubmitterEnabled()) {
-            agentConstants = config.getAgentConstants();
 
+        if (config.isSyscoinSuperblockSubmitterEnabled()) {
             new Timer("Syscoin to Eth client").scheduleAtFixedRate(new SyscoinToEthClientTimerTask(),
                     getFirstExecutionDate(), agentConstants.getSyscoinToEthTimerTaskPeriod());
 
@@ -89,7 +90,6 @@ public class SyscoinToEthClient {
                     logger.warn("SyscoinToEthClientTimerTask skipped because the eth node is syncing blocks");
                 }
             } catch (Exception e) {
-
                 logger.error(e.getMessage(), e);
             }
         }
@@ -152,7 +152,7 @@ public class SyscoinToEthClient {
                 RestError spvProofError = new RestError("Block has not been stored in local database. Block hash: " + blockHash);
                 return gson.toJson(spvProofError);
             }
-            Superblock txSuperblock = findBestSuperblockFor(txStoredBlock.getHeader().getHash());
+            Superblock txSuperblock = superblockChain.findBySysBlockHash(txStoredBlock.getHeader().getHash());
 
             if (txSuperblock == null) {
                 RestError spvProofError = new RestError("Superblock has not been stored in local database yet. " +
@@ -186,7 +186,7 @@ public class SyscoinToEthClient {
         public final long superblockHeight;
         public final boolean approved;
 
-        public SuperBlockResponse(Superblock sbIn, boolean approvedIn) throws IOException {
+        public SuperBlockResponse(Superblock sbIn, boolean approvedIn) {
             this.merkleRoot = sbIn.getMerkleRoot().toString();
             this.lastSyscoinBlockTime = sbIn.getLastSyscoinBlockTime();
             this.lastSyscoinBlockHash = sbIn.getLastSyscoinBlockHash().toString();
@@ -223,7 +223,7 @@ public class SyscoinToEthClient {
                 RestError spvProofError = new RestError("Block has not been stored in local database.");
                 return gson.toJson(spvProofError);
             }
-            Superblock txSuperblock = findBestSuperblockFor(txStoredBlock.getHeader().getHash());
+            Superblock txSuperblock = superblockChain.findBySysBlockHash(txStoredBlock.getHeader().getHash());
 
             return getJsonResponse(txSuperblock);
         }
@@ -238,24 +238,4 @@ public class SyscoinToEthClient {
         return gson.toJson(response);
     }
 
-    /**
-     * Finds the superblock in the superblock main chain that contains the block identified by `blockHash`.
-     * @param blockHash SHA-256 hash of a block that we want to find.
-     * @return Superblock where the block can be found.
-     * @throws BlockStoreException
-     */
-    private Superblock findBestSuperblockFor(Sha256Hash blockHash) throws BlockStoreException, IOException {
-        Superblock currentSuperblock = superblockChain.getChainHead();
-
-        while (currentSuperblock != null) {
-            if (currentSuperblock.hasSyscoinBlock(blockHash))
-                return currentSuperblock;
-            currentSuperblock = superblockChain.getSuperblock(currentSuperblock.getParentId());
-        }
-
-        // current superblock is null
-        return null;
-    }
-
 }
-

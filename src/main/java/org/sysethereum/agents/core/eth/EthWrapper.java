@@ -8,8 +8,10 @@ import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.bitcoinj.store.BlockStoreException;
+import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.contract.*;
+import org.sysethereum.agents.core.bridge.Superblock;
 import org.sysethereum.agents.core.syscoin.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +37,6 @@ import org.web3j.tx.ClientTransactionManager;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -49,13 +50,17 @@ import java.util.concurrent.CompletableFuture;
 @Component
 @Slf4j(topic = "EthWrapper")
 public class EthWrapper implements SuperblockConstantProvider {
+
     private static final Logger logger = LoggerFactory.getLogger("EthWrapper");
+
     private final Web3j web3;
     private final Web3j web3Secondary;
+
     public enum ChallengeState {
         Unchallenged,             // Unchallenged submission
         Challenged               // Claims was challenged
     }
+
     // Extensions of contracts generated automatically by web3j
     private final SyscoinClaimManagerExtended claimManager;
     private final SyscoinClaimManagerExtended claimManagerGetter;
@@ -78,6 +83,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     private final BigInteger minProposalDeposit;
     private final SuperblockChain superblockChain;
     private final SyscoinWrapper syscoinWrapper;
+    private final Gson gson;
     private int randomizationCounter;
 
     /* ---------------------------------- */
@@ -86,18 +92,22 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     @Autowired
     public EthWrapper(
+            SystemProperties systemProperties,
+            AgentConstants agentConstants,
             SuperblockChain superblockChain,
-            SyscoinWrapper syscoinWrapper
+            SyscoinWrapper syscoinWrapper,
+            Gson gson
     ) throws Exception {
+        this.config = systemProperties;
         this.superblockChain = superblockChain;
         this.syscoinWrapper = syscoinWrapper;
+        this.gson = gson;
 
         setRandomizationCounter();
-        config = SystemProperties.CONFIG;
         String path = config.dataDirectory() + "/geth/geth.ipc";
         String secondaryURL = config.secondaryURL();
 
-        web3Secondary = Web3j.build(new HttpService(secondaryURL));
+        this.web3Secondary = Web3j.build(new HttpService(secondaryURL));
         Admin admin = Admin.build(new UnixIpcService(path));
         String generalAddress = config.generalPurposeAndSendSuperblocksAddress();
         if(generalAddress.length() > 0){
@@ -126,7 +136,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         String superblocksContractAddress;
 
         if (config.isGanache()) {
-            String networkId = config.getAgentConstants().getNetworkId();
+            String networkId = agentConstants.getNetworkId();
             claimManagerContractAddress = SyscoinClaimManagerExtended.getAddress(networkId);
             battleManagerContractAddress = SyscoinBattleManagerExtended.getAddress(networkId);
             superblocksContractAddress = SyscoinSuperblocksExtended.getAddress(networkId);
@@ -134,7 +144,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             generalPurposeAndSendSuperblocksAddress = accounts.get(0);
             syscoinSuperblockChallengerAddress = accounts.get(1);
         } else {
-            String networkId = config.getAgentConstants().getNetworkId();
+            String networkId = agentConstants.getNetworkId();
             claimManagerContractAddress = SyscoinClaimManagerExtended.getAddress(networkId);
             battleManagerContractAddress = SyscoinBattleManagerExtended.getAddress(networkId);
             superblocksContractAddress = SyscoinSuperblocksExtended.getAddress(networkId);
@@ -222,7 +232,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     private boolean arePendingTransactionsFor(String address) throws InterruptedException, IOException {
         BigInteger latest = web3Secondary.ethGetTransactionCount(address, DefaultBlockParameterName.LATEST).send().getTransactionCount();
-        BigInteger pending = BigInteger.ZERO;
+        BigInteger pending;
         try{
             pending = web3.ethGetTransactionCount(address, DefaultBlockParameterName.PENDING).send().getTransactionCount();
         }
@@ -938,7 +948,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             throw new Exception("Skipping respondBlockHeader, startIndex cannot be > 48.");
         Superblock superblock = superblockChain.getSuperblock(superblockId);
         List<Sha256Hash> listHashes = superblock.getSyscoinBlockHashes();
-        if(!getSuperblockDuration().equals(listHashes.size()))
+        if(!getSuperblockDuration().equals(BigInteger.valueOf(listHashes.size())))
             throw new Exception("Skipping respondBlockHeader, superblock hash array list is incorrect length.");
 
         byte[] blockHeaderBytes = null;
@@ -1086,16 +1096,6 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* ----- Relay Syscoin tx section ------ */
     /* ---------------------------------- */
 
-    private class SPVProof {
-        public int index;
-        List<String> merklePath;
-        String superBlock;
-        public SPVProof(int indexIn, List<String> merklePathIn, String superBlockIn) {
-            this.index = indexIn;
-            this.merklePath = merklePathIn;
-            this.superBlock = superBlockIn;
-        }
-    }
     /**
      * Returns an SPV Proof to the superblock for a Syscoin transaction to Sysethereum contracts.
      * @param block Syscoin block that the transaction is in.
@@ -1116,11 +1116,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             syscoinBlockSiblingsBigInteger.add(sha256Hash.toString());
 
         SPVProof spvProof = new SPVProof(syscoinBlockIndex, syscoinBlockSiblingsBigInteger, superblock.getSuperblockId().toString());
-        Gson g = new Gson();
-        return g.toJson(spvProof);
-
+        return gson.toJson(spvProof);
     }
-
-
 
 }

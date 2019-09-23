@@ -5,17 +5,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.bitcoinj.store.BlockStoreException;
 
-import org.sysethereum.agents.constants.SystemProperties;
-import org.sysethereum.agents.constants.*;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.sysethereum.agents.core.bridge.Superblock;
+import org.sysethereum.agents.core.bridge.SuperblockFactory;
+import org.sysethereum.agents.service.rest.MerkleRootComputer;
 
+import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.io.*;
 
 import java.util.*;
 
@@ -31,22 +31,27 @@ public class SuperblockChain {
     private static final Logger logger = LoggerFactory.getLogger("SuperblockChain");
     private final SyscoinWrapper syscoinWrapper; // Interface with the Syscoin blockchain
     private final SuperblockConstantProvider provider; // Interface with the Ethereum blockchain
-    private NetworkParameters params;
-    private SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
+    private final MerkleRootComputer merkleRootComputer;
+    private final SuperblockFactory superblockFactory;
+    private final SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
 
     public int SUPERBLOCK_DURATION; // num blocks in a superblock
     private int SUPERBLOCK_DELAY; // time to wait before building a superblock
     private int SUPERBLOCK_STORING_WINDOW; // small time window between storing and sending to avoid losing sync
 
-    /* ---- CONSTRUCTION METHODS ---- */
-
     @Autowired
     public SuperblockChain(
             SyscoinWrapper syscoinWrapper,
-            SuperblockConstantProvider provider
+            SuperblockFactory superblockFactory,
+            SuperblockLevelDBBlockStore superblockLevelDBBlockStore,
+            SuperblockConstantProvider provider,
+            MerkleRootComputer merkleRootComputer
     ) {
         this.syscoinWrapper = syscoinWrapper;
+        this.superblockFactory = superblockFactory;
+        this.superblockStorage = superblockLevelDBBlockStore;
         this.provider = provider;
+        this.merkleRootComputer = merkleRootComputer;
     }
 
     /**
@@ -55,14 +60,7 @@ public class SuperblockChain {
      * @throws BlockStoreException if superblockStorage is not properly initialized.
      */
     @PostConstruct
-    private void setup() throws Exception, BlockStoreException {
-        SystemProperties config = SystemProperties.CONFIG;
-        AgentConstants agentConstants = config.getAgentConstants();
-        Context context = new Context(agentConstants.getSyscoinParams());
-        File directory = new File(config.dataDirectory());
-        File chainFile = new File(directory.getAbsolutePath() + "/SuperblockChain");
-        this.params = agentConstants.getSyscoinParams();
-        this.superblockStorage = new SuperblockLevelDBBlockStore(context, chainFile, params);
+    private void setup() throws Exception {
         this.SUPERBLOCK_DURATION = provider.getSuperblockDuration().intValue();
         this.SUPERBLOCK_DELAY = provider.getSuperblockDelay().intValue();
         this.SUPERBLOCK_STORING_WINDOW = 60; // store superblocks one minute before they should be sent
@@ -70,10 +68,9 @@ public class SuperblockChain {
 
     /**
      * Closes the block storage underlying this blockchain.
-     * @throws BlockStoreException if an exception is thrown during closing.
      */
     @PreDestroy
-    private void close() throws BlockStoreException {
+    private void close()  {
         this.superblockStorage.close();
     }
 
@@ -100,16 +97,23 @@ public class SuperblockChain {
         while (!allSyscoinHashesToHash.empty()) {
             // Modify allSyscoinHashesToHash and get hashes for next superblock.
             nextSuperblockSyscoinHashes = popBlocksBeforeTime(allSyscoinHashesToHash, getStoringStopTime());
-            // if we don't have a collection of 60 blocks that are atleast 3 hours old we exit
+            // if we don't have a collection of 60 blocks that are at least 3 hours old we exit
             if(nextSuperblockSyscoinHashes.isEmpty()){
                 break;
             }
             StoredBlock nextSuperblockLastBlock = syscoinWrapper.getBlock(
                     nextSuperblockSyscoinHashes.get(nextSuperblockSyscoinHashes.size() - 1));
 
-            Superblock newSuperblock = new Superblock(this.params, nextSuperblockSyscoinHashes,
-                    nextSuperblockLastBlock.getChainWork(), nextSuperblockLastBlock.getHeader().getTimeSeconds(),nextSuperblockLastBlock.getHeader().getDifficultyTarget(),
-                    nextSuperblockPrevHash, nextSuperblockHeight);
+            Superblock newSuperblock = superblockFactory.make(
+                    merkleRootComputer.computeMerkleRoot(nextSuperblockSyscoinHashes),
+                    nextSuperblockSyscoinHashes,
+                    nextSuperblockLastBlock.getChainWork(),
+                    nextSuperblockLastBlock.getHeader().getTimeSeconds(),
+                    nextSuperblockLastBlock.getHeader().getDifficultyTarget(),
+                    nextSuperblockPrevHash,
+                    nextSuperblockHeight
+            );
+
             superblockStorage.put(newSuperblock);
             if (newSuperblock.getChainWork().compareTo(superblockStorage.getChainHeadWork()) > 0) {
                 superblockStorage.setChainHead(newSuperblock);
@@ -234,11 +238,26 @@ public class SuperblockChain {
         return currentSuperblock;
     }
 
+    /**
+     * Finds the superblock in the superblock main chain that contains the block identified by `blockHash`.
+     * @param blockHash SHA-256 hash of a block that we want to find.
+     * @return Superblock where the block can be found.
+     */
+    @Nullable
+    public Superblock findBySysBlockHash(Sha256Hash blockHash) {
+        Superblock sb = getChainHead();
+
+        while (sb != null) {
+            if (sb.hasSyscoinBlock(blockHash))
+                return sb;
+            sb = getSuperblock(sb.getParentId());
+        }
+
+        // current superblock is null
+        return null;
+    }
 
     /* ---- HELPER METHODS AND CLASSES ---- */
-
-
-
 
     /**
      * To be used when building a superblock.
@@ -270,15 +289,4 @@ public class SuperblockChain {
     public boolean sendingTimePassed(Superblock superblock) {
         return new Date(superblock.getLastSyscoinBlockTime()).before(getSendingStopTime());
     }
-
-    /**
-     * Returns a superblock's parent by ID if it's in the main chain.
-     * @param superblock Superblock.
-     * @return Superblock parent if said parent is part of the main chain, null otherwise.
-     * @throws IOException
-     */
-    public Superblock getParent(Superblock superblock) {
-        return getSuperblock(superblock.getParentId());
-    }
-
 }

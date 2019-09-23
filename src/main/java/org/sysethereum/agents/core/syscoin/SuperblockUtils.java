@@ -19,11 +19,14 @@ public class SuperblockUtils {
 
     /* ---- SUPERBLOCK STATUS CODES ---- */
 
+    @SuppressWarnings("unused")
     public static final BigInteger STATUS_UNINITIALIZED = BigInteger.valueOf(0);
     public static final BigInteger STATUS_NEW = BigInteger.valueOf(1);
+    @SuppressWarnings("unused")
     public static final BigInteger STATUS_IN_BATTLE = BigInteger.valueOf(2);
     public static final BigInteger STATUS_SEMI_APPROVED = BigInteger.valueOf(3);
     public static final BigInteger STATUS_APPROVED = BigInteger.valueOf(4);
+    @SuppressWarnings("unused")
     public static final BigInteger STATUS_INVALID = BigInteger.valueOf(5);
 
     public static byte[] toBytes32(BigInteger n) throws IOException {
@@ -93,10 +96,10 @@ public class SuperblockUtils {
 
     public static long readPaddedUint32(byte[] bytes, int offset) {
         int realOffset = offset + 28; // read last 4 bytes
-        return (bytes[realOffset] & 0xffl) |
-                ((bytes[realOffset + 1] & 0xffl) << 8) |
-                ((bytes[realOffset + 2] & 0xffl) << 16) |
-                ((bytes[realOffset + 3] & 0xffl) << 24);
+        return (bytes[realOffset] & 0xffL) |
+                ((bytes[realOffset + 1] & 0xffL) << 8) |
+                ((bytes[realOffset + 2] & 0xffL) << 16) |
+                ((bytes[realOffset + 3] & 0xffL) << 24);
     }
 
     /**

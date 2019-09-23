@@ -1,12 +1,12 @@
 package org.sysethereum.agents.constants;
 
-import com.google.common.collect.Lists;
 import org.bitcoinj.core.Sha256Hash;
 import org.libdohj.params.SyscoinTestNet3Params;
-import org.sysethereum.agents.core.syscoin.Keccak256Hash;
-import org.sysethereum.agents.core.syscoin.Superblock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.sysethereum.agents.core.bridge.SuperblockData;
+import org.sysethereum.agents.core.syscoin.Keccak256Hash;
+import org.sysethereum.agents.service.rest.MerkleRootComputer;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -20,25 +20,20 @@ public class IntegrationAgentConstants extends AgentConstants {
 
     private static final Logger logger = LoggerFactory.getLogger("IntegrationAgentConstants");
 
-    private static IntegrationAgentConstants instance = new IntegrationAgentConstants();
-
-    public static IntegrationAgentConstants getInstance() {
-        return instance;
-    }
-
-    IntegrationAgentConstants() {
+    public IntegrationAgentConstants() {
         syscoinParams = SyscoinTestNet3Params.get();
 
         syscoinToEthTimerTaskPeriod = 15 * 1000;
 
-        List<Sha256Hash> genesisSuperblockBlockList = Lists.newArrayList(Sha256Hash.wrap("000004fd0a684f4ce4d5e254f7230e7a620b3d5dc88a3facf555b8bab0a63f4b"));
-        Keccak256Hash genesisSuperblockParentId = Keccak256Hash.wrap(new byte[32]); // initialised with 0s
+        List<Sha256Hash> sysHashes = List.of(Sha256Hash.wrap("000004fd0a684f4ce4d5e254f7230e7a620b3d5dc88a3facf555b8bab0a63f4b"));
 
-        genesisSuperblock = new Superblock(
-                syscoinParams, genesisSuperblockBlockList,
-                new BigInteger("377487720"), 1566534575,504365055,
-                genesisSuperblockParentId, 1);
-
+        genesisSuperblock = new SuperblockData(
+                MerkleRootComputer.computeMerkleRoot(syscoinParams, sysHashes),
+                sysHashes,
+                new BigInteger("377487720"), 1566534575, 504365055,
+                Keccak256Hash.wrap(new byte[32]), // initialised with 0s
+                1
+        );
 
         defenderTimerTaskPeriod = 15 * 1000;
         challengerTimerTaskPeriod = 15 * 1000;
@@ -47,13 +42,7 @@ public class IntegrationAgentConstants extends AgentConstants {
 
         ethInitialCheckpoint = 4959851;
         networkId = "4"; // eth rinkeby 4; eth mainnet 1
-        try {
-            logger.info("genesisSuperblock Hash " + genesisSuperblock.getSuperblockId().toString());
-        }
-        catch(java.io.IOException exception){
-            logger.info("exception " + exception.toString());
-        }
-        logger.info("genesisSuperblock " + genesisSuperblock.toString());
 
+        logger.info("genesisSuperblock " + genesisSuperblock.toString());
     }
 }

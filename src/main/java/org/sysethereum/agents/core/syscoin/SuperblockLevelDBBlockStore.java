@@ -1,17 +1,23 @@
 package org.sysethereum.agents.core.syscoin;
 
-import org.bitcoinj.core.*;
+import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.store.BlockStoreException;
-import org.bitcoinj.core.Context;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.sysethereum.agents.constants.AgentConstants;
-import org.sysethereum.agents.constants.SystemProperties;
 import org.fusesource.leveldbjni.*;
 import org.iq80.leveldb.*;
+import org.sysethereum.agents.constants.SystemProperties;
+import org.sysethereum.agents.core.bridge.Superblock;
+import org.sysethereum.agents.core.bridge.SuperblockData;
+import org.sysethereum.agents.core.bridge.SuperblockFactory;
+import org.sysethereum.agents.core.bridge.SuperblockSerializationHelper;
 
 import java.math.BigInteger;
 import java.io.*;
 import java.nio.*;
+import java.nio.file.Paths;
 
 
 /**
@@ -20,48 +26,66 @@ import java.nio.*;
  * the information itself is handled by SuperblockChain, primarily via the updateChain() method.
  * @author Catalina Juarros
  */
+@Service
+@Slf4j(topic = "SuperblockLevelDBBlockStore")
 public class SuperblockLevelDBBlockStore {
 
     private static final byte[] CHAIN_HEAD_KEY = "chainhead".getBytes(); // to store chain head hash
-    private final Context context;
+    private final AgentConstants agentConstants;
     private final File path;
+    private final SuperblockFactory superblockFactory;
+    private final SuperblockSerializationHelper serializationHelper;
     private DB db;
-
-    /* ---- ESSENTIAL DATABASE METHODS ---- */
 
     /**
      * Constructor.
-     * @param context Syscoin context.
-     * @param directory Where data is stored.
      * @throws BlockStoreException
      */
-    public SuperblockLevelDBBlockStore(Context context, File directory, NetworkParameters params)
-            throws BlockStoreException {
-        this(context, directory, JniDBFactory.factory, params); // this might not work, ask later
+    @Autowired
+    public SuperblockLevelDBBlockStore(
+            AgentConstants agentConstants,
+            SystemProperties config,
+            SuperblockFactory superblockFactory,
+            SuperblockSerializationHelper serializationHelper
+    ) {
+        this(
+                agentConstants,
+                Paths.get(config.dataDirectory(), "/SuperblockChain").toFile(),
+                JniDBFactory.factory,
+                superblockFactory,
+                serializationHelper
+        ); // this might not work, ask later
     }
 
     /**
      * Helper for previous constructor.
-     * @param context Syscoin context.
      * @param directory Where data is stored.
      * @param dbFactory Interface for opening and repairing directory if needed.
-     * @throws BlockStoreException
+     * @param superblockFactory
+     * @param serializationHelper
      */
-    public SuperblockLevelDBBlockStore(Context context, File directory, DBFactory dbFactory, NetworkParameters params)
-            throws BlockStoreException {
-        this.context = context;
+    public SuperblockLevelDBBlockStore(
+            AgentConstants agentConstants,
+            File directory,
+            DBFactory dbFactory,
+            SuperblockFactory superblockFactory,
+            SuperblockSerializationHelper serializationHelper) {
+        this.agentConstants = agentConstants;
         this.path = directory;
+        this.superblockFactory = superblockFactory;
+        this.serializationHelper = serializationHelper;
+
         Options options = new Options();
         options.createIfMissing();
 
         try {
-            tryOpen(directory, dbFactory, options, params);
+            tryOpen(directory, dbFactory, options);
         } catch (IOException e) {
             try {
                 dbFactory.repair(directory, options);
-                tryOpen(directory, dbFactory, options, params);
+                tryOpen(directory, dbFactory, options);
             } catch (IOException e1) {
-                throw new BlockStoreException(e1);
+                throw new RuntimeException(e1);
             }
         }
     }
@@ -71,13 +95,12 @@ public class SuperblockLevelDBBlockStore {
      * @param directory Where data is stored.
      * @param dbFactory Interface for opening directory.
      * @param options Directory options.
-     * @param params Syscoin network parameters.
      * @throws IOException
      */
-    private synchronized void tryOpen(File directory, DBFactory dbFactory, Options options, NetworkParameters params)
+    private synchronized void tryOpen(File directory, DBFactory dbFactory, Options options)
             throws IOException {
         db = dbFactory.open(directory, options);
-        initStoreIfNeeded(params);
+        initStoreIfNeeded();
     }
 
     /**
@@ -90,32 +113,30 @@ public class SuperblockLevelDBBlockStore {
      * - its chain work is 0
      * @throws java.io.IOException
      */
-    private synchronized void initStoreIfNeeded(NetworkParameters params) throws IOException {
+    private synchronized void initStoreIfNeeded() {
         if (db.get(CHAIN_HEAD_KEY) != null)
             return; // Already initialised.
-        SystemProperties config = SystemProperties.CONFIG;
-        AgentConstants agentConstants = config.getAgentConstants();
-        Superblock genesisSuperblock = agentConstants.getGenesisSuperblock();
+        SuperblockData data = agentConstants.getGenesisSuperblock();
+        Superblock genesisSuperblock = superblockFactory.fromData(data);
         put(genesisSuperblock);
         setChainHead(genesisSuperblock);
     }
 
     /**
      * Writes a superblock to the database.
-     * @param block Superblock to be written.
+     * @param sb Superblock to be written.
      * @throws java.io.IOException
      */
-    public synchronized void put(Superblock block) throws IOException {
-//        buffer.clear();
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        block.serializeForStorage(stream);
+    public synchronized void put(Superblock sb) {
+        ByteArrayOutputStream stream = serializationHelper.serializeForStorage(sb.data);
+
         ByteBuffer buffer = ByteBuffer.allocate(stream.size());
         buffer.put(stream.toByteArray());
-        db.put(block.getSuperblockId().getBytes(), buffer.array());
+        db.put(sb.getSuperblockId().getBytes(), buffer.array());
     }
 
     /**
-     * Retrieves a deserialised superblock from the database.
+     * Retrieves a deserialized superblock from the database.
      * @param superblockId Keccak-256 hash of superblock.
      * @return superblock identified by hash
      */
@@ -123,18 +144,19 @@ public class SuperblockLevelDBBlockStore {
         byte[] bits = db.get(superblockId.getBytes());
         if (bits == null)
             return null;
-        return new Superblock(bits);
+
+        return superblockFactory.fromBytes(bits);
     }
 
     /**
      * Closes underlying database.
      * @throws BlockStoreException
      */
-    public synchronized void close() throws BlockStoreException {
+    public synchronized void close() {
         try {
             db.close();
         } catch (IOException e) {
-            throw new BlockStoreException(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -144,6 +166,7 @@ public class SuperblockLevelDBBlockStore {
      * Erases the contents of the database (but NOT the underlying files themselves).
      * @throws BlockStoreException
      */
+    @SuppressWarnings("unused")
     public synchronized void reset() throws BlockStoreException {
         try {
             WriteBatch batch = db.createWriteBatch();
@@ -165,6 +188,7 @@ public class SuperblockLevelDBBlockStore {
         }
     }
 
+    @SuppressWarnings("unused")
     public synchronized void destroy() throws IOException {
         JniDBFactory.factory.destroy(path, new Options());
     }
@@ -192,7 +216,7 @@ public class SuperblockLevelDBBlockStore {
      * Sets tip of superblock chain.
      * @param chainHead Superblock with the highest chain work.
      */
-    public synchronized void setChainHead(Superblock chainHead) throws IOException {
+    public synchronized void setChainHead(Superblock chainHead) {
         db.put(CHAIN_HEAD_KEY, chainHead.getSuperblockId().getBytes());
     }
 

@@ -12,9 +12,9 @@ import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
+import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.util.AgentUtils;
-import org.sysethereum.agents.constants.AgentConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,20 +29,24 @@ import java.util.Arrays;
 public class SyscoinWrapper {
 
     private static final Logger logger = LoggerFactory.getLogger("SyscoinWrapper");
-    SystemProperties config;
+    private final SystemProperties config;
+    private final AgentUtils agentUtils;
+    private final File dataDirectory;
+    private final Context syscoinContext;
     private WalletAppKit kit;
-    private Context syscoinContext;
-    private AgentConstants agentConstants;
-    private File dataDirectory;
 
     @Autowired
-    public SyscoinWrapper() {
-        this.config = SystemProperties.CONFIG;
-        if (config.isSyscoinSuperblockSubmitterEnabled() ||
-                 config.isSyscoinBlockChallengerEnabled()) {
-            this.agentConstants = config.getAgentConstants();
-            this.syscoinContext = new Context(agentConstants.getSyscoinParams());
-            this.dataDirectory = new File(config.dataDirectory() + "/SyscoinWrapper");
+    public SyscoinWrapper(
+            SystemProperties systemProperties,
+            AgentConstants agentConstants,
+            AgentUtils agentUtils
+    ) {
+        this.config = systemProperties;
+        this.agentUtils = agentUtils;
+        this.dataDirectory = new File(config.dataDirectory() + "/SyscoinWrapper");
+        this.syscoinContext = new Context(agentConstants.getSyscoinParams());
+
+        if (config.isSyscoinSuperblockSubmitterEnabled() || config.isSyscoinBlockChallengerEnabled()) {
             setup();
             start();
         }
@@ -110,7 +114,7 @@ public class SyscoinWrapper {
     }
 
     public StoredBlock getStoredBlockAtHeight(int height) throws BlockStoreException {
-        return AgentUtils.getStoredBlockAtHeight(kit.store(), height);
+        return agentUtils.getStoredBlockAtHeight(kit.store(), height);
     }
 
     @PreDestroy
@@ -123,5 +127,4 @@ public class SyscoinWrapper {
             logger.info("SyscoinToEthClient tearDown finished.");
         }
     }
-
 }

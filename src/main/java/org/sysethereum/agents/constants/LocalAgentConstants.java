@@ -1,13 +1,12 @@
 package org.sysethereum.agents.constants;
 
-import com.google.common.collect.Lists;
-import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Sha256Hash;
+import org.sysethereum.agents.core.bridge.SuperblockData;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
-import org.sysethereum.agents.core.syscoin.Superblock;
 import org.libdohj.params.SyscoinRegTestParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.sysethereum.agents.service.rest.MerkleRootComputer;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -18,26 +17,23 @@ import java.util.List;
  */
 public class LocalAgentConstants extends AgentConstants {
 
+    @SuppressWarnings("unused")
     private static final Logger logger = LoggerFactory.getLogger("LocalAgentConstants");
 
-    private static LocalAgentConstants instance = new LocalAgentConstants();
-
-    public static LocalAgentConstants getInstance() {
-        return instance;
-    }
-
-    LocalAgentConstants() {
+    public LocalAgentConstants() {
         syscoinParams = SyscoinRegTestParams.get();
 
         syscoinToEthTimerTaskPeriod = 10 * 1000;
 
-        List<Sha256Hash> genesisSuperblockBlockList = Lists.newArrayList(syscoinParams.getGenesisBlock().getHash());
-        Keccak256Hash genesisSuperblockParentId = Keccak256Hash.wrap(new byte[32]); // initialised with 0s
+        List<Sha256Hash> sysHashes = List.of(syscoinParams.getGenesisBlock().getHash());
 
-        genesisSuperblock = new Superblock(
-                syscoinParams, genesisSuperblockBlockList,
+        genesisSuperblock = new SuperblockData(
+                MerkleRootComputer.computeMerkleRoot(syscoinParams, sysHashes),
+                sysHashes,
                 BigInteger.valueOf(0), syscoinParams.getGenesisBlock().getTimeSeconds(),0,
-                genesisSuperblockParentId, 0);
+                Keccak256Hash.wrap(new byte[32]), // initialised with 0s
+                1
+        );
         defenderTimerTaskPeriod = 15 * 1000;
         challengerTimerTaskPeriod = 15 * 1000;
         defenderConfirmations = 1;
@@ -45,6 +41,5 @@ public class LocalAgentConstants extends AgentConstants {
 
         ethInitialCheckpoint = 0;
         networkId = "32001"; // local eth network
-
     }
 }

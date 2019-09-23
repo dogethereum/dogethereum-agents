@@ -1,12 +1,12 @@
 package org.sysethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
+import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.core.syscoin.*;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -18,28 +18,19 @@ import java.util.*;
  * @author Catalina Juarros
  * @author Ismael Bejarano
  */
-
 @Slf4j(topic = "SuperblockBaseClient")
 public abstract class SuperblockBaseClient extends PersistentFileStore {
     private static final Logger logger = LoggerFactory.getLogger("SuperblockBaseClient");
-    @Autowired
-    protected SyscoinWrapper syscoinWrapper;
 
-    @Autowired
-    protected EthWrapper ethWrapper;
-
-    @Autowired
-    protected SuperblockChain superblockChain;
-
-    protected SystemProperties config;
-
-    protected String clientName;
-
+    protected final AgentConstants agentConstants;
+    protected final SyscoinWrapper syscoinWrapper;
+    protected final EthWrapper ethWrapper;
+    protected final SuperblockChain superblockChain;
+    protected final SystemProperties config;
+    protected final String clientName;
     protected String myAddress;
-
     protected long latestEthBlockProcessed;
     protected File latestEthBlockProcessedFile;
-
 
     // Data is duplicated for performance using it.
 
@@ -52,10 +43,20 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
     protected File sessionToSuperblockMapFile;
     protected File superblockToSessionsMapFile;
 
-
-    public SuperblockBaseClient(String clientName) {
+    public SuperblockBaseClient(
+            String clientName,
+            SystemProperties systemProperties,
+            AgentConstants agentConstants,
+            SyscoinWrapper syscoinWrapper,
+            EthWrapper ethWrapper,
+            SuperblockChain superblockChain
+    ) {
         this.clientName = clientName;
-        this.config = SystemProperties.CONFIG;
+        this.config = systemProperties;
+        this.agentConstants = agentConstants;
+        this.syscoinWrapper = syscoinWrapper;
+        this.ethWrapper = ethWrapper;
+        this.superblockChain = superblockChain;
     }
 
     @PostConstruct
@@ -200,7 +201,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
     /* ---- DATABASE METHODS ---- */
 
     void setupBaseFiles() {
-        this.latestEthBlockProcessed = config.getAgentConstants().getEthInitialCheckpoint();
+        this.latestEthBlockProcessed = agentConstants.getEthInitialCheckpoint();
         this.dataDirectory = new File(config.dataDirectory());
         this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() +
                 "/" + getLastEthBlockProcessedFilename());
@@ -250,14 +251,9 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
         removeSuperblocks(fromBlock, toBlock, invalidSuperblockEvents);
     }
 
-
     /* ----- HELPER METHODS ----- */
 
-    boolean isMine(EthWrapper.SuperblockEvent superblockEvent) {
-        return superblockEvent.who.equals(myAddress);
-    }
-
-    boolean isMine(Keccak256Hash superblockId) throws Exception {
+    protected boolean isMine(Keccak256Hash superblockId) throws Exception {
         return ethWrapper.getClaimSubmitter(superblockId).equals(myAddress);
     }
 

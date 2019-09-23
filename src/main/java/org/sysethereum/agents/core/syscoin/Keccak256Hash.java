@@ -4,15 +4,12 @@ import com.google.common.io.ByteStreams;
 import com.google.common.primitives.*;
 import org.bitcoinj.core.Utils;
 import org.bouncycastle.jcajce.provider.digest.Keccak;
-import org.web3j.crypto.Hash;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -44,7 +41,7 @@ public class Keccak256Hash implements Serializable, Comparable<Keccak256Hash> {
      * @return a new instance
      * @throws IllegalArgumentException if the given array length is not exactly 32
      */
-    @SuppressWarnings("deprecation") // the constructor will be made private in the future
+    // the constructor will be made private in the future
     public static Keccak256Hash wrap(byte[] rawHashBytes) {
         return new Keccak256Hash(rawHashBytes);
     }
@@ -68,7 +65,6 @@ public class Keccak256Hash implements Serializable, Comparable<Keccak256Hash> {
      * @return a new instance
      * @throws IllegalArgumentException if the given array length is not exactly 32
      */
-    @SuppressWarnings("deprecation") // the constructor will be made private in the future
     public static Keccak256Hash wrapReversed(byte[] rawHashBytes) {
         return wrap(Utils.reverseBytes(rawHashBytes));
     }
@@ -97,11 +93,8 @@ public class Keccak256Hash implements Serializable, Comparable<Keccak256Hash> {
      * @throws IOException if an error occurs while reading the file
      */
     public static Keccak256Hash of(File file) throws IOException {
-        FileInputStream in = new FileInputStream(file);
-        try {
+        try (FileInputStream in = new FileInputStream(file)) {
             return of(ByteStreams.toByteArray(in));
-        } finally {
-            in.close();
         }
     }
 
@@ -155,6 +148,7 @@ public class Keccak256Hash implements Serializable, Comparable<Keccak256Hash> {
     /**
      * Returns the bytes interpreted as a positive integer.
      */
+    @SuppressWarnings("unused")
     public BigInteger toBigInteger() {
         return new BigInteger(1, bytes);
     }
