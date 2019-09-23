@@ -1,7 +1,7 @@
 package org.sysethereum.agents.constants;
 
-import org.sysethereum.agents.core.bridge.Superblock;
 import org.libdohj.params.AbstractSyscoinParams;
+import org.sysethereum.agents.core.bridge.SuperblockData;
 
 /**
  * Agent and Bridge constants.
@@ -13,7 +13,7 @@ public class AgentConstants {
 
     protected long syscoinToEthTimerTaskPeriod;
     // Minimum number of confirmations a tx has to have in order to EVALUATE relaying it to eth
-    protected Superblock genesisSuperblock;
+    protected SuperblockData genesisSuperblock;
     protected long defenderTimerTaskPeriod;
     protected long challengerTimerTaskPeriod;
     protected long defenderConfirmations;
@@ -30,7 +30,7 @@ public class AgentConstants {
         return syscoinToEthTimerTaskPeriod;
     }
 
-    public Superblock getGenesisSuperblock() {
+    public SuperblockData getGenesisSuperblock() {
         return genesisSuperblock;
     }
 

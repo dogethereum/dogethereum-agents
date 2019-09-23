@@ -2,11 +2,12 @@ package org.sysethereum.agents.constants;
 
 import com.google.common.collect.Lists;
 import org.bitcoinj.core.Sha256Hash;
+import org.sysethereum.agents.core.bridge.SuperblockData;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
-import org.sysethereum.agents.core.bridge.Superblock;
 import org.libdohj.params.SyscoinRegTestParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.sysethereum.agents.service.rest.MerkleRootComputer;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -28,10 +29,12 @@ public class LocalAgentConstants extends AgentConstants {
         List<Sha256Hash> genesisSuperblockBlockList = Lists.newArrayList(syscoinParams.getGenesisBlock().getHash());
         Keccak256Hash genesisSuperblockParentId = Keccak256Hash.wrap(new byte[32]); // initialised with 0s
 
-        genesisSuperblock = new Superblock(
-                syscoinParams, genesisSuperblockBlockList,
+        genesisSuperblock = new SuperblockData(
+                MerkleRootComputer.computeMerkleRoot(syscoinParams, genesisSuperblockBlockList),
+                genesisSuperblockBlockList,
                 BigInteger.valueOf(0), syscoinParams.getGenesisBlock().getTimeSeconds(),0,
-                genesisSuperblockParentId, 0);
+                genesisSuperblockParentId, 0
+        );
         defenderTimerTaskPeriod = 15 * 1000;
         challengerTimerTaskPeriod = 15 * 1000;
         defenderConfirmations = 1;
