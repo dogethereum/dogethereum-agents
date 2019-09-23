@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.io.*;
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -153,7 +152,7 @@ public class SyscoinToEthClient {
                 RestError spvProofError = new RestError("Block has not been stored in local database. Block hash: " + blockHash);
                 return gson.toJson(spvProofError);
             }
-            Superblock txSuperblock = findBestSuperblockFor(txStoredBlock.getHeader().getHash());
+            Superblock txSuperblock = superblockChain.findBySysBlockHash(txStoredBlock.getHeader().getHash());
 
             if (txSuperblock == null) {
                 RestError spvProofError = new RestError("Superblock has not been stored in local database yet. " +
@@ -187,7 +186,7 @@ public class SyscoinToEthClient {
         public final long superblockHeight;
         public final boolean approved;
 
-        public SuperBlockResponse(Superblock sbIn, boolean approvedIn) throws IOException {
+        public SuperBlockResponse(Superblock sbIn, boolean approvedIn) {
             this.merkleRoot = sbIn.getMerkleRoot().toString();
             this.lastSyscoinBlockTime = sbIn.getLastSyscoinBlockTime();
             this.lastSyscoinBlockHash = sbIn.getLastSyscoinBlockHash().toString();
@@ -224,7 +223,7 @@ public class SyscoinToEthClient {
                 RestError spvProofError = new RestError("Block has not been stored in local database.");
                 return gson.toJson(spvProofError);
             }
-            Superblock txSuperblock = findBestSuperblockFor(txStoredBlock.getHeader().getHash());
+            Superblock txSuperblock = superblockChain.findBySysBlockHash(txStoredBlock.getHeader().getHash());
 
             return getJsonResponse(txSuperblock);
         }
@@ -237,24 +236,6 @@ public class SyscoinToEthClient {
         }
         SuperBlockResponse response = new SuperBlockResponse(txSuperblock, ethWrapper.isSuperblockApproved(txSuperblock.getSuperblockId()));
         return gson.toJson(response);
-    }
-
-    /**
-     * Finds the superblock in the superblock main chain that contains the block identified by `blockHash`.
-     * @param blockHash SHA-256 hash of a block that we want to find.
-     * @return Superblock where the block can be found.
-     */
-    private Superblock findBestSuperblockFor(Sha256Hash blockHash) {
-        Superblock currentSuperblock = superblockChain.getChainHead();
-
-        while (currentSuperblock != null) {
-            if (currentSuperblock.hasSyscoinBlock(blockHash))
-                return currentSuperblock;
-            currentSuperblock = superblockChain.getSuperblock(currentSuperblock.getParentId());
-        }
-
-        // current superblock is null
-        return null;
     }
 
 }

@@ -13,6 +13,7 @@ import org.sysethereum.agents.core.bridge.Superblock;
 import org.sysethereum.agents.core.bridge.SuperblockFactory;
 import org.sysethereum.agents.service.rest.MerkleRootComputer;
 
+import javax.annotation.Nullable;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
@@ -37,8 +38,6 @@ public class SuperblockChain {
     public int SUPERBLOCK_DURATION; // num blocks in a superblock
     private int SUPERBLOCK_DELAY; // time to wait before building a superblock
     private int SUPERBLOCK_STORING_WINDOW; // small time window between storing and sending to avoid losing sync
-
-    /* ---- CONSTRUCTION METHODS ---- */
 
     @Autowired
     public SuperblockChain(
@@ -239,11 +238,26 @@ public class SuperblockChain {
         return currentSuperblock;
     }
 
+    /**
+     * Finds the superblock in the superblock main chain that contains the block identified by `blockHash`.
+     * @param blockHash SHA-256 hash of a block that we want to find.
+     * @return Superblock where the block can be found.
+     */
+    @Nullable
+    public Superblock findBySysBlockHash(Sha256Hash blockHash) {
+        Superblock sb = getChainHead();
+
+        while (sb != null) {
+            if (sb.hasSyscoinBlock(blockHash))
+                return sb;
+            sb = getSuperblock(sb.getParentId());
+        }
+
+        // current superblock is null
+        return null;
+    }
 
     /* ---- HELPER METHODS AND CLASSES ---- */
-
-
-
 
     /**
      * To be used when building a superblock.
