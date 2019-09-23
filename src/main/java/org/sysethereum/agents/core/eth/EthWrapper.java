@@ -31,7 +31,6 @@ import org.web3j.protocol.core.DefaultBlockParameterName;
 
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
-import org.web3j.protocol.ipc.UnixIpcService;
 import org.web3j.tx.ClientTransactionManager;
 
 import java.io.IOException;
@@ -104,11 +103,11 @@ public class EthWrapper implements SuperblockConstantProvider {
         this.gson = gson;
 
         setRandomizationCounter();
-        String path = config.dataDirectory() + "/geth/geth.ipc";
+
         String secondaryURL = config.secondaryURL();
 
         this.web3Secondary = Web3j.build(new HttpService(secondaryURL));
-        Admin admin = Admin.build(new UnixIpcService(path));
+        Admin admin = Admin.build(new HttpService());
         String generalAddress = config.generalPurposeAndSendSuperblocksAddress();
         if(generalAddress.length() > 0){
             PersonalUnlockAccount personalUnlockAccount = admin.personalUnlockAccount(generalAddress, config.generalPurposeAndSendSuperblocksUnlockPW(), BigInteger.ZERO).send();
@@ -130,7 +129,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             }
         }
         admin.shutdown();
-        web3 = Web3j.build(new UnixIpcService(path));
+        web3 = Web3j.build(new HttpService());  // defaults to http://localhost:8545/
         String claimManagerContractAddress;
         String battleManagerContractAddress;
         String superblocksContractAddress;
