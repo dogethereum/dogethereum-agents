@@ -5,18 +5,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.bitcoinj.store.BlockStoreException;
 
-import org.sysethereum.agents.constants.SystemProperties;
-import org.sysethereum.agents.constants.*;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.sysethereum.agents.core.bridge.Superblock;
+import org.sysethereum.agents.core.bridge.SuperblockFactory;
+import org.sysethereum.agents.service.rest.MerkleRootComputer;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.io.*;
 
 import java.util.*;
 
@@ -30,11 +28,11 @@ import java.util.*;
 public class SuperblockChain {
 
     private static final Logger logger = LoggerFactory.getLogger("SuperblockChain");
-    private final SystemProperties config;
-    private final AgentConstants agentConstants;
     private final SyscoinWrapper syscoinWrapper; // Interface with the Syscoin blockchain
     private final SuperblockConstantProvider provider; // Interface with the Ethereum blockchain
-    private SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
+    private final MerkleRootComputer merkleRootComputer;
+    private final SuperblockFactory superblockFactory;
+    private final SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
 
     public int SUPERBLOCK_DURATION; // num blocks in a superblock
     private int SUPERBLOCK_DELAY; // time to wait before building a superblock
@@ -44,15 +42,17 @@ public class SuperblockChain {
 
     @Autowired
     public SuperblockChain(
-            SystemProperties systemProperties,
-            AgentConstants agentConstants,
             SyscoinWrapper syscoinWrapper,
-            SuperblockConstantProvider provider
+            SuperblockFactory superblockFactory,
+            SuperblockLevelDBBlockStore superblockLevelDBBlockStore,
+            SuperblockConstantProvider provider,
+            MerkleRootComputer merkleRootComputer
     ) {
-        this.config = systemProperties;
-        this.agentConstants = agentConstants;
         this.syscoinWrapper = syscoinWrapper;
+        this.superblockFactory = superblockFactory;
+        this.superblockStorage = superblockLevelDBBlockStore;
         this.provider = provider;
+        this.merkleRootComputer = merkleRootComputer;
     }
 
     /**
@@ -61,10 +61,7 @@ public class SuperblockChain {
      * @throws BlockStoreException if superblockStorage is not properly initialized.
      */
     @PostConstruct
-    private void setup() throws Exception, BlockStoreException {
-        File directory = new File(config.dataDirectory());
-        File chainFile = new File(directory.getAbsolutePath() + "/SuperblockChain");
-        this.superblockStorage = new SuperblockLevelDBBlockStore(agentConstants, chainFile);
+    private void setup() throws Exception {
         this.SUPERBLOCK_DURATION = provider.getSuperblockDuration().intValue();
         this.SUPERBLOCK_DELAY = provider.getSuperblockDelay().intValue();
         this.SUPERBLOCK_STORING_WINDOW = 60; // store superblocks one minute before they should be sent
@@ -72,10 +69,9 @@ public class SuperblockChain {
 
     /**
      * Closes the block storage underlying this blockchain.
-     * @throws BlockStoreException if an exception is thrown during closing.
      */
     @PreDestroy
-    private void close() throws BlockStoreException {
+    private void close()  {
         this.superblockStorage.close();
     }
 
@@ -109,8 +105,8 @@ public class SuperblockChain {
             StoredBlock nextSuperblockLastBlock = syscoinWrapper.getBlock(
                     nextSuperblockSyscoinHashes.get(nextSuperblockSyscoinHashes.size() - 1));
 
-            Superblock newSuperblock = new Superblock(
-                    agentConstants.getSyscoinParams(),
+            Superblock newSuperblock = superblockFactory.make(
+                    merkleRootComputer.computeMerkleRoot(nextSuperblockSyscoinHashes),
                     nextSuperblockSyscoinHashes,
                     nextSuperblockLastBlock.getChainWork(),
                     nextSuperblockLastBlock.getHeader().getTimeSeconds(),
