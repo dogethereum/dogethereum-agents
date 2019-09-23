@@ -30,14 +30,14 @@ public class GetSuperblockBySyscoinHandler extends CommonHttpHandler {
     public void handle(HttpExchange httpExchange) throws IOException {
         if (setOriginAndHandleOptionsMethod(httpExchange)) return;
 
-        LinkedHashMap<String, String> parms = queryToMap(httpExchange.getRequestURI().getQuery());
+        LinkedHashMap<String, String> params = queryToMap(httpExchange.getRequestURI().getQuery());
         StringBuilder response = new StringBuilder();
 
         try {
-            String hash = parms.get("hash");
+            String hash = params.get("hash");
             if (hash != null && hash.startsWith("0x"))
                 hash = hash.substring(2);
-            String height = parms.get("height");
+            String height = params.get("height");
             String superblockString = syscoinToEthClient.getSuperblockBySyscoinBlock(hash != null ? Sha256Hash.wrap(hash) : null, height != null ? Integer.decode(height) : -1);
             response.append(superblockString);
         } catch (Exception exception) {
