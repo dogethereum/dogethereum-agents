@@ -8,6 +8,7 @@ import org.libdohj.params.AbstractSyscoinParams;
 import org.springframework.stereotype.Service;
 import org.sysethereum.agents.constants.AgentConstants;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -30,8 +31,9 @@ public class MerkleRootComputer {
         for (int i = 0; i < hashes.size(); i++)
             Utils.setBitLE(includeBits, i);
 
-        PartialMerkleTree tree = PartialMerkleTree.buildFromLeaves(params, includeBits, hashes);
-        return tree.getTxnHashAndMerkleRoot(hashes);
+        var hashesCopy = new ArrayList<>(hashes);
+        PartialMerkleTree tree = PartialMerkleTree.buildFromLeaves(params, includeBits, hashesCopy);
+        return tree.getTxnHashAndMerkleRoot(hashesCopy);
     }
 
 }
