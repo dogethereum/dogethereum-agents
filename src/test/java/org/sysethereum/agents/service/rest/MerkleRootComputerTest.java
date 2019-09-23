@@ -1,6 +1,5 @@
 package org.sysethereum.agents.service.rest;
 
-import com.google.common.collect.Lists;
 import org.bitcoinj.core.Sha256Hash;
 import org.junit.jupiter.api.Test;
 import org.libdohj.params.SyscoinRegTestParams;
@@ -14,7 +13,7 @@ class MerkleRootComputerTest {
     @Test
     void computeMerkleRoot() {
         SyscoinRegTestParams params = SyscoinRegTestParams.get();
-        List<Sha256Hash> hashes = Lists.newArrayList(params.getGenesisBlock().getHash());
+        List<Sha256Hash> hashes = List.of(params.getGenesisBlock().getHash());
 
         Sha256Hash underTest = MerkleRootComputer.computeMerkleRoot(params, hashes);
 

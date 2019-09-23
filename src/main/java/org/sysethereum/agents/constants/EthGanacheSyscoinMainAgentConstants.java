@@ -1,6 +1,5 @@
 package org.sysethereum.agents.constants;
 
-import com.google.common.collect.Lists;
 import org.bitcoinj.core.Sha256Hash;
 import org.libdohj.params.SyscoinMainNetParams;
 import org.slf4j.Logger;
@@ -25,16 +24,15 @@ public class EthGanacheSyscoinMainAgentConstants extends AgentConstants {
         syscoinParams = SyscoinMainNetParams.get();
         syscoinToEthTimerTaskPeriod = 10 * 1000;
 
-        List<Sha256Hash> genesisSuperblockBlockList = Lists.newArrayList(syscoinParams.getGenesisBlock().getHash());
-        Keccak256Hash genesisSuperblockParentId = Keccak256Hash.wrap(new byte[32]); // initialised with 0s
+        List<Sha256Hash> sysHashes = List.of(syscoinParams.getGenesisBlock().getHash());
 
         genesisSuperblock = new SuperblockData(
-                MerkleRootComputer.computeMerkleRoot(syscoinParams, genesisSuperblockBlockList),
-                genesisSuperblockBlockList,
+                MerkleRootComputer.computeMerkleRoot(syscoinParams, sysHashes),
+                sysHashes,
                 new BigInteger("0x0000000000000000000000000000000000000000000b5aea51981d092e7d9739"),
                 1562016306,
                 0,
-                genesisSuperblockParentId,
+                Keccak256Hash.wrap(new byte[32]), // initialised with 0s
                 1
         );
 

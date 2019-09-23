@@ -1,6 +1,5 @@
 package org.sysethereum.agents.constants;
 
-import com.google.common.collect.Lists;
 import org.bitcoinj.core.Sha256Hash;
 import org.sysethereum.agents.core.bridge.SuperblockData;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
@@ -26,14 +25,13 @@ public class LocalAgentConstants extends AgentConstants {
 
         syscoinToEthTimerTaskPeriod = 10 * 1000;
 
-        List<Sha256Hash> genesisSuperblockBlockList = Lists.newArrayList(syscoinParams.getGenesisBlock().getHash());
-        Keccak256Hash genesisSuperblockParentId = Keccak256Hash.wrap(new byte[32]); // initialised with 0s
+        List<Sha256Hash> sysHashes = List.of(syscoinParams.getGenesisBlock().getHash());
 
         genesisSuperblock = new SuperblockData(
-                MerkleRootComputer.computeMerkleRoot(syscoinParams, genesisSuperblockBlockList),
-                genesisSuperblockBlockList,
+                MerkleRootComputer.computeMerkleRoot(syscoinParams, sysHashes),
+                sysHashes,
                 BigInteger.valueOf(0), syscoinParams.getGenesisBlock().getTimeSeconds(),0,
-                genesisSuperblockParentId,
+                Keccak256Hash.wrap(new byte[32]), // initialised with 0s
                 1
         );
         defenderTimerTaskPeriod = 15 * 1000;

@@ -1,6 +1,5 @@
 package org.sysethereum.agents.core.bridge;
 
-import com.google.common.collect.Lists;
 import com.google.common.io.BaseEncoding;
 import org.bitcoinj.core.Sha256Hash;
 import org.junit.jupiter.api.Test;
@@ -9,7 +8,7 @@ import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.sysethereum.agents.service.rest.MerkleRootComputer;
 
 import java.math.BigInteger;
-import java.util.List;
+import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -31,7 +30,7 @@ class SuperblockSerializationHelperTest {
     @Test
     void serializeForStorage() {
 
-        List<Sha256Hash> hashes = Lists.newArrayList();
+        var hashes = new ArrayList<Sha256Hash>();
         hashes.add(Sha256Hash.wrap(SYS_HASH_1));
         hashes.add(Sha256Hash.wrap(SYS_HASH_2));
         hashes.add(Sha256Hash.wrap(SYS_HASH_3));
@@ -46,7 +45,7 @@ class SuperblockSerializationHelperTest {
                 0
         );
 
-        SuperblockSerializationHelper underTest = new SuperblockSerializationHelper();
+        var underTest = new SuperblockSerializationHelper();
 
         String result = BASE_ENCODING.encode(underTest.serializeForStorage(data).toByteArray());
         assertEquals(EXPECTED_RESULT, result);
@@ -54,7 +53,7 @@ class SuperblockSerializationHelperTest {
 
     @Test
     void fromBytes() {
-        SuperblockSerializationHelper underTest = new SuperblockSerializationHelper();
+        var underTest = new SuperblockSerializationHelper();
 
         byte[] bytes = BASE_ENCODING.decode(EXPECTED_RESULT);
 

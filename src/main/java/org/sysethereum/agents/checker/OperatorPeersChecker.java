@@ -5,7 +5,6 @@
  */
 package org.sysethereum.agents.checker;
 
-import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.PeerAddress;
 import org.springframework.stereotype.Component;
@@ -38,7 +37,7 @@ public class OperatorPeersChecker {
     @PostConstruct
     public void setup() throws Exception {
         int defaultPort = agentConstants.getSyscoinParams().getPort();
-        List<String> peerStrings = Lists.newArrayList("127.0.0.1");
+        List<String> peerStrings = List.of("127.0.0.1");
         List<PeerAddress> peerAddresses = syscoinPeerFactory.buildSyscoinPeerAddresses(defaultPort, peerStrings);
 
         if (peerAddresses.isEmpty()) {
