@@ -35,7 +35,7 @@ public class EthGanacheSyscoinMainAgentConstants extends AgentConstants {
                 1562016306,
                 0,
                 genesisSuperblockParentId,
-                0
+                1
         );
 
         defenderTimerTaskPeriod = 15 * 1000;

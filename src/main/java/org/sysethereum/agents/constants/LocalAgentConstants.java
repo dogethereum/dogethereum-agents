@@ -33,7 +33,8 @@ public class LocalAgentConstants extends AgentConstants {
                 MerkleRootComputer.computeMerkleRoot(syscoinParams, genesisSuperblockBlockList),
                 genesisSuperblockBlockList,
                 BigInteger.valueOf(0), syscoinParams.getGenesisBlock().getTimeSeconds(),0,
-                genesisSuperblockParentId, 0
+                genesisSuperblockParentId,
+                1
         );
         defenderTimerTaskPeriod = 15 * 1000;
         challengerTimerTaskPeriod = 15 * 1000;
