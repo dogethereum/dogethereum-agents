@@ -18,6 +18,9 @@ public class SuperblockData {
     // Timestamp of last mined Syscoin block in the superblock. 32 bytes to comply with Solidity version.
     public final long lastSyscoinBlockTime;
 
+    // Median timestamp of last mined Syscoin block in the superblock. 32 bytes to comply with Solidity version.
+    public final long lastSyscoinBlockTimeMTP;
+
     // SHA-256 hash of last mined Syscoin block in the superblock. 32 bytes.
     public final Sha256Hash lastSyscoinBlockHash;
 
@@ -38,6 +41,7 @@ public class SuperblockData {
      *                        mined within the one hour lapse corresponding to this superblock.
      * @param chainWork Last Syscoin block's accumulated ChainWork.
      * @param lastSyscoinBlockTime Last Syscoin block's timestamp.
+     * @param lastSyscoinBlockTimeMTP Last Syscoin block's median timestamp.
      * @param lastSyscoinBlockBits Difficulty bits of the last block in the superblock bits used to verify accumulatedWork through difficulty calculation
      * @param parentId Previous superblock's SHA-256 hash.
      * @param superblockHeight Height of this superblock within superblock chain.
@@ -47,6 +51,7 @@ public class SuperblockData {
             List<Sha256Hash> syscoinBlockHashes,
             BigInteger chainWork,
             long lastSyscoinBlockTime,
+            long lastSyscoinBlockTimeMTP,
             long lastSyscoinBlockBits,
             Sha256Hash lastSyscoinBlockHash,
             Keccak256Hash parentId,
@@ -55,6 +60,7 @@ public class SuperblockData {
         this.merkleRoot = merkleRoot;
         this.chainWork = chainWork;
         this.lastSyscoinBlockTime = lastSyscoinBlockTime;
+        this.lastSyscoinBlockTimeMTP = lastSyscoinBlockTimeMTP;
         this.lastSyscoinBlockBits = lastSyscoinBlockBits;
         this.lastSyscoinBlockHash = lastSyscoinBlockHash;
         this.parentId = parentId;
@@ -69,6 +75,7 @@ public class SuperblockData {
      *                        mined within the one hour lapse corresponding to this superblock.
      * @param chainWork Last Syscoin block's accumulated ChainWork.
      * @param lastSyscoinBlockTime Last Syscoin block's timestamp.
+     * @param lastSyscoinBlockTimeMTP Last Syscoin block's median timestamp.
      * @param lastSyscoinBlockBits Difficulty bits of the last block in the superblock bits used to verify accumulatedWork through difficulty calculation
      * @param parentId Previous superblock's SHA-256 hash.
      * @param superblockHeight Height of this superblock within superblock chain.
@@ -78,6 +85,7 @@ public class SuperblockData {
             List<Sha256Hash> syscoinBlockHashes,
             BigInteger chainWork,
             long lastSyscoinBlockTime,
+            long lastSyscoinBlockTimeMTP,
             long lastSyscoinBlockBits,
             Keccak256Hash parentId,
             long superblockHeight
@@ -86,6 +94,7 @@ public class SuperblockData {
                 syscoinBlockHashes,
                 chainWork,
                 lastSyscoinBlockTime,
+                lastSyscoinBlockTimeMTP,
                 lastSyscoinBlockBits,
                 syscoinBlockHashes.get(syscoinBlockHashes.size() -1),
                 parentId,
@@ -112,6 +121,7 @@ public class SuperblockData {
                 "merkleRoot=" + merkleRoot +
                 ", chainWork=" + chainWork +
                 ", lastSyscoinBlockTime=" + lastSyscoinBlockTime +
+                ", lastSyscoinBlockTimeMTP=" + lastSyscoinBlockTimeMTP +
                 ", lastSyscoinBlockHash=" + lastSyscoinBlockHash +
                 ", lastSyscoinBlockBits=" + lastSyscoinBlockBits +
                 ", parentId=" + parentId +

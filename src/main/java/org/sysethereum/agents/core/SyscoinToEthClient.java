@@ -179,6 +179,7 @@ public class SyscoinToEthClient {
     private static class SuperBlockResponse {
         public final String merkleRoot;
         public final long lastSyscoinBlockTime;
+        public final long lastSyscoinBlockMedianTime;
         public final String lastSyscoinBlockHash;
         public final long lastSyscoinBlockBits;
         public final String parentId;
@@ -189,6 +190,7 @@ public class SyscoinToEthClient {
         public SuperBlockResponse(Superblock sbIn, boolean approvedIn) {
             this.merkleRoot = sbIn.getMerkleRoot().toString();
             this.lastSyscoinBlockTime = sbIn.getLastSyscoinBlockTime();
+            this.lastSyscoinBlockMedianTime = sbIn.getLastSyscoinBlockMedianTime();
             this.lastSyscoinBlockHash = sbIn.getLastSyscoinBlockHash().toString();
             this.lastSyscoinBlockBits = sbIn.getlastSyscoinBlockBits();
             this.parentId = sbIn.getParentId().toString();

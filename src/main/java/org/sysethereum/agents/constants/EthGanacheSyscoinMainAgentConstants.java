@@ -31,6 +31,7 @@ public class EthGanacheSyscoinMainAgentConstants extends AgentConstants {
                 sysHashes,
                 new BigInteger("0x0000000000000000000000000000000000000000000b5aea51981d092e7d9739"),
                 1562016306,
+                1562016306,
                 0,
                 Keccak256Hash.wrap(new byte[32]), // initialised with 0s
                 1

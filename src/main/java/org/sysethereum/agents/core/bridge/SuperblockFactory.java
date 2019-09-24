@@ -28,6 +28,7 @@ public class SuperblockFactory {
             List<Sha256Hash> syscoinBlockHashes,
             BigInteger chainWork,
             long lastSyscoinBlockTime,
+            long lastSyscoinBlockTimeMTP,
             long lastSyscoinBlockBits,
             Keccak256Hash prevHash,
             long height
@@ -39,6 +40,7 @@ public class SuperblockFactory {
                 syscoinBlockHashes,
                 chainWork,
                 lastSyscoinBlockTime,
+                lastSyscoinBlockTimeMTP,
                 lastSyscoinBlockBits,
                 lastSyscoinBlockHash,
                 prevHash,

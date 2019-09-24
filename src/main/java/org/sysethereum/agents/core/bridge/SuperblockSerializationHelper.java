@@ -26,8 +26,9 @@ public class SuperblockSerializationHelper {
     private static final int MERKLE_ROOT_PAYLOAD_OFFSET = 0;
     private static final int CHAIN_WORK_PAYLOAD_OFFSET = MERKLE_ROOT_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
     private static final int LAST_BLOCK_TIME_PAYLOAD_OFFSET = CHAIN_WORK_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
+    private static final int LAST_BLOCK_TIME_MTP_PAYLOAD_OFFSET = LAST_BLOCK_TIME_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
     private static final int LAST_BLOCK_HASH_PAYLOAD_OFFSET =
-            LAST_BLOCK_TIME_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
+            LAST_BLOCK_TIME_MTP_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
 
     private static final int LAST_BLOCK_BITS_PAYLOAD_OFFSET = LAST_BLOCK_HASH_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
 
@@ -49,6 +50,8 @@ public class SuperblockSerializationHelper {
                 payload, CHAIN_WORK_PAYLOAD_OFFSET, BIG_INTEGER_LENGTH)));
         long lastSyscoinBlockTime = new BigInteger(Utils.reverseBytes(SuperblockUtils.readBytes(
                 payload, LAST_BLOCK_TIME_PAYLOAD_OFFSET, BIG_INTEGER_LENGTH))).longValue();
+        long lastSyscoinBlockTimeMTP = new BigInteger(Utils.reverseBytes(SuperblockUtils.readBytes(
+                payload, LAST_BLOCK_TIME_MTP_PAYLOAD_OFFSET, BIG_INTEGER_LENGTH))).longValue();
         Sha256Hash lastSyscoinBlockHash = Sha256Hash.wrapReversed(SuperblockUtils.readBytes(
                 payload, LAST_BLOCK_HASH_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
         long lastSyscoinBlockBits = Utils.readUint32(payload, LAST_BLOCK_BITS_PAYLOAD_OFFSET);
@@ -60,11 +63,11 @@ public class SuperblockSerializationHelper {
         long numberOfSyscoinBlockHashes = Utils.readUint32(payload, NUMBER_OF_HASHES_PAYLOAD_OFFSET);
         List<Sha256Hash> syscoinBlockHashes = deserializeHashesLE(payload, SYSCOIN_BLOCK_HASHES_PAYLOAD_OFFSET, numberOfSyscoinBlockHashes);
 
-        return new SuperblockData(merkleRoot, syscoinBlockHashes, chainWork, lastSyscoinBlockTime, lastSyscoinBlockBits, lastSyscoinBlockHash, parentId, height);
+        return new SuperblockData(merkleRoot, syscoinBlockHashes, chainWork, lastSyscoinBlockTime, lastSyscoinBlockTimeMTP, lastSyscoinBlockBits, lastSyscoinBlockHash, parentId, height);
     }
 
     /**
-     * Serializes Merkle root, chain work, last block hash, last block time and previous superblock hash
+     * Serializes Merkle root, chain work, last block hash, last block time/mtp and previous superblock hash
      * (in that order) to an output stream in little-endian format.
      * This is the information that should be used for calculating the superblock hash,
      * sending the superblock to Sysethereum Contracts and defending it in the challenges.
@@ -77,6 +80,7 @@ public class SuperblockSerializationHelper {
         stream.write(sbd.merkleRoot.getReversedBytes()); // 32
         stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(sbd.chainWork))); // 32
         stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(sbd.lastSyscoinBlockTime))); // 32
+        stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(sbd.lastSyscoinBlockTimeMTP))); // 32
         stream.write(sbd.lastSyscoinBlockHash.getReversedBytes()); // 32
         stream.write(Utils.reverseBytes(SuperblockUtils.toUint32(sbd.lastSyscoinBlockBits))); // 4
         stream.write(sbd.parentId.getReversedBytes()); // 32
@@ -92,6 +96,7 @@ public class SuperblockSerializationHelper {
         stream.write(sb.merkleRoot.getBytes());
         stream.write(SuperblockUtils.toBytes32(sb.chainWork));
         stream.write(SuperblockUtils.toBytes32(sb.lastSyscoinBlockTime));
+        stream.write(SuperblockUtils.toBytes32(sb.lastSyscoinBlockTimeMTP));
         stream.write(sb.lastSyscoinBlockHash.getBytes());
         stream.write(SuperblockUtils.toUint32(sb.lastSyscoinBlockBits));
         stream.write(sb.parentId.getBytes());
@@ -105,7 +110,7 @@ public class SuperblockSerializationHelper {
 
     /**
      * Serializes every superblock field into an output stream in little-endian format.
-     * Order: Merkle root, chain work, last block hash, last block time, previous superblock hash,
+     * Order: Merkle root, chain work, last block hash, last block time/mtp, previous superblock hash,
      * last block height, superblock height.
      * The last few fields should *not* be sent to Sysethereum Contracts, but they are necessary
      * for rebuilding a superblock with auxiliary information from a serialized byte array.

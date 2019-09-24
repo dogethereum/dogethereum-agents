@@ -40,6 +40,7 @@ class SuperblockSerializationHelperTest {
                 hashes,
                 new BigInteger("b5aea51981d092e7d9739", 16),
                 1562016306,
+                1562016306,
                 0,
                 Keccak256Hash.wrap(new byte[32]), // initialised with 0s
                 0

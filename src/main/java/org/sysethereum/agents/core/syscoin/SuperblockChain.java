@@ -109,6 +109,7 @@ public class SuperblockChain {
                     nextSuperblockSyscoinHashes,
                     nextSuperblockLastBlock.getChainWork(),
                     nextSuperblockLastBlock.getHeader().getTimeSeconds(),
+                    syscoinWrapper.getMedianTimestamp(nextSuperblockLastBlock),
                     nextSuperblockLastBlock.getHeader().getDifficultyTarget(),
                     nextSuperblockPrevHash,
                     nextSuperblockHeight

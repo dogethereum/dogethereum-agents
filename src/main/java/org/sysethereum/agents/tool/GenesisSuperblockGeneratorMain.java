@@ -70,7 +70,8 @@ public class GenesisSuperblockGeneratorMain {
                 MerkleRootComputer.computeMerkleRoot(params, syscoinBlockHashes),
                 syscoinBlockHashes,
                 lastSyscoinBlock.getChainWork(),
-                lastSyscoinBlock.getHeader().getTimeSeconds(),0,
+                lastSyscoinBlock.getHeader().getTimeSeconds(),
+                syscoinWrapper.getMedianTimestamp(lastSyscoinBlock),0,
                 genesisParentHash,
                 0);
     }

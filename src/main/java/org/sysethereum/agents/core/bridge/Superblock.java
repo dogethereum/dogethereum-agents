@@ -58,6 +58,14 @@ public class Superblock {
     }
 
     /**
+     * Accesses last Syscoin block median time attribute.
+     * @return Superblock last Syscoin block median time.
+     */
+    public long getLastSyscoinBlockMedianTime() {
+        return data.lastSyscoinBlockTimeMTP;
+    }
+
+    /**
      * Accesses last Syscoin block hash attribute.
      * @return Superblock last Syscoin block hash.
      */
