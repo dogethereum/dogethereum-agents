@@ -37,7 +37,7 @@ public class SuperblockChain {
 
     public int SUPERBLOCK_DURATION; // num blocks in a superblock
     private int SUPERBLOCK_DELAY; // time to wait before building a superblock
-    private int SUPERBLOCK_STORING_WINDOW; // small time window between storing and sending to avoid losing sync
+    private int SUPERBLOCK_STORING_WINDOW; // time window between storing and sending to avoid losing sync
 
     @Autowired
     public SuperblockChain(
@@ -63,7 +63,7 @@ public class SuperblockChain {
     private void setup() throws Exception {
         this.SUPERBLOCK_DURATION = provider.getSuperblockDuration().intValue();
         this.SUPERBLOCK_DELAY = provider.getSuperblockDelay().intValue();
-        this.SUPERBLOCK_STORING_WINDOW = 60; // store superblocks one minute before they should be sent
+        this.SUPERBLOCK_STORING_WINDOW = 7200; // store superblocks 2 hr before they should be sent
     }
 
     /**
@@ -97,7 +97,7 @@ public class SuperblockChain {
         while (!allSyscoinHashesToHash.empty()) {
             // Modify allSyscoinHashesToHash and get hashes for next superblock.
             nextSuperblockSyscoinHashes = popBlocksBeforeTime(allSyscoinHashesToHash, getStoringStopTime());
-            // if we don't have a collection of 60 blocks that are at least 3 hours old we exit
+            // if we don't have a collection of 60 blocks that are at least 1 hour old we exit
             if(nextSuperblockSyscoinHashes.isEmpty()){
                 break;
             }

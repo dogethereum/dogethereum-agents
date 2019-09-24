@@ -127,8 +127,11 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 BigInteger height = ethWrapper.getSuperblockHeight(newSuperblock.superblockId);
                 Superblock localSuperblock = superblockChain.getSuperblockByHeight(height.longValue());
                 if (localSuperblock == null) {
-                    //FIXME: Local superbockchain might be out of sync
+                    // local superblockchain should not be out of sync because there is 2 hour descrepency between saving and sending
+                    // this could mean our local syscoin node is out of sync (out of our control) in which case we have no choice but to challenge
+                    // we have to assume if your local syscoin node is forked or not synced and we cannot detect difference between bad and good SB in that case we must challenge
                     logger.info("Superblock {} not present in our superblock chain", newSuperblock.superblockId);
+                    toChallenge.add(newSuperblock.superblockId);
                 } else {
                     logger.info("Superblock {} at height {} is replaced by {} in our superblock chain",
                             newSuperblock.superblockId,
