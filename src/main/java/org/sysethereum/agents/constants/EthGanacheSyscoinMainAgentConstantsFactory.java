@@ -14,12 +14,12 @@ import java.util.List;
 /**
  * AgentConstants for Syscoin Mainnet and Eth Ganache.
  */
-public class EthGanacheSyscoinMainAgentConstants {
+public class EthGanacheSyscoinMainAgentConstantsFactory {
 
     @SuppressWarnings("unused")
     private static final Logger logger = LoggerFactory.getLogger("EthGanacheSyscoinMainAgentConstants");
 
-    public EthGanacheSyscoinMainAgentConstants() {
+    public EthGanacheSyscoinMainAgentConstantsFactory() {
 
     }
 
