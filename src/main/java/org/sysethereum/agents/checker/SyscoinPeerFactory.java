@@ -30,22 +30,29 @@ public class SyscoinPeerFactory {
         this.agentConstants = agentConstants;
     }
 
-    public List<PeerAddress> buildSyscoinPeerAddresses(int defaultPort, List<String> syscoinPeerAddressesString) throws UnknownHostException {
+    /**
+     * @param defaultPort Port will be used if no port is specified for a syscoinPeerAddresses element
+     * @param syscoinPeerAddresses List of Syscoin peer addresses in format: "host[:port]"
+     * @return List of Syscoin peer addresses
+     * @throws UnknownHostException
+     */
+    public List<PeerAddress> buildSyscoinPeerAddresses(int defaultPort, List<String> syscoinPeerAddresses) throws UnknownHostException {
         NetworkParameters networkParams = agentConstants.getSyscoinParams();
-        List<PeerAddress> syscoinPeerAddresses = new ArrayList<>();
-        if (syscoinPeerAddressesString != null) {
-            for (String syscoinPeerAddressString : syscoinPeerAddressesString) {
-                PeerAddress syscoinPeerAddress;
-                if (syscoinPeerAddressString.indexOf(':') == -1) {
-                    syscoinPeerAddress = new PeerAddress(networkParams, InetAddress.getByName(syscoinPeerAddressString), defaultPort);
+        List<PeerAddress> result = new ArrayList<>();
+
+        if (syscoinPeerAddresses != null) {
+            for (String addr : syscoinPeerAddresses) {
+                PeerAddress peerAddress;
+                if (addr.indexOf(':') == -1) {
+                    peerAddress = new PeerAddress(networkParams, InetAddress.getByName(addr), defaultPort);
                 } else {
-                    String syscoinPeerAddressesHost = syscoinPeerAddressString.substring(0, syscoinPeerAddressString.indexOf(':'));
-                    String syscoinPeerAddressesPort = syscoinPeerAddressString.substring(syscoinPeerAddressString.indexOf(':') + 1);
-                    syscoinPeerAddress = new PeerAddress(networkParams, InetAddress.getByName(syscoinPeerAddressesHost), Integer.parseInt(syscoinPeerAddressesPort));
+                    String host = addr.substring(0, addr.indexOf(':'));
+                    String port = addr.substring(addr.indexOf(':') + 1);
+                    peerAddress = new PeerAddress(networkParams, InetAddress.getByName(host), Integer.parseInt(port));
                 }
-                syscoinPeerAddresses.add(syscoinPeerAddress);
+                result.add(peerAddress);
             }
         }
-        return syscoinPeerAddresses;
+        return result;
     }
 }
