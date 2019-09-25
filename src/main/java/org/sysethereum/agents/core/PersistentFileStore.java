@@ -7,24 +7,36 @@ import java.io.*;
  * @author Catalina Juarros
  */
 public abstract class PersistentFileStore {
-    File dataDirectory;
+    public final File dataDirectory;
+
+
+    public PersistentFileStore(String dataDirectory) {
+        this(new File(dataDirectory));
+    }
+
+    public PersistentFileStore(File dataDirectory) {
+        this.dataDirectory = dataDirectory;
+    }
 
     abstract void setupFiles() throws IOException;
 
-    void restore(Serializable obj, File file) throws ClassNotFoundException, IOException {
+    public <T extends Serializable> T restore(T obj, File file) throws ClassNotFoundException, IOException {
         if (file.exists()) {
             synchronized (this) {
                 try(
                     FileInputStream fileInputStream = new FileInputStream(file);
                     ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream)
                 ) {
-                    obj = obj.getClass().cast(objectInputStream.readObject());
+                    //noinspection unchecked
+                    return (T)obj.getClass().cast(objectInputStream.readObject());
                 }
             }
         }
+
+        return obj;
     }
 
-    void flush(Serializable obj, File file) throws IOException {
+    public void flush(Serializable obj, File file) throws IOException {
         if (!dataDirectory.exists()) {
             if (!dataDirectory.mkdirs()) {
                 throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());

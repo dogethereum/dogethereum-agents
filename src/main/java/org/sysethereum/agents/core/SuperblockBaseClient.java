@@ -51,6 +51,8 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
             EthWrapper ethWrapper,
             SuperblockChain superblockChain
     ) {
+        super(systemProperties.dataDirectory());
+
         this.clientName = clientName;
         this.config = systemProperties;
         this.agentConstants = agentConstants;
@@ -202,7 +204,6 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
 
     void setupBaseFiles() {
         this.latestEthBlockProcessed = agentConstants.getEthInitialCheckpoint();
-        this.dataDirectory = new File(config.dataDirectory());
         this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() +
                 "/" + getLastEthBlockProcessedFilename());
         this.sessionToSuperblockMap =  new HashMap<>();
@@ -211,7 +212,6 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
         this.superblockToSessionsMap = new HashMap<>();
         this.superblockToSessionsMapFile = new File(dataDirectory.getAbsolutePath() + "/"
                 + getSuperblockToSessionsMapFilename());
-
     }
 
 
