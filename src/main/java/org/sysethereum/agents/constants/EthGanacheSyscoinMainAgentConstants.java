@@ -14,19 +14,22 @@ import java.util.List;
 /**
  * AgentConstants for Syscoin Mainnet and Eth Ganache.
  */
-public class EthGanacheSyscoinMainAgentConstants extends AgentConstants {
+public class EthGanacheSyscoinMainAgentConstants {
 
     @SuppressWarnings("unused")
     private static final Logger logger = LoggerFactory.getLogger("EthGanacheSyscoinMainAgentConstants");
 
     public EthGanacheSyscoinMainAgentConstants() {
 
-        syscoinParams = SyscoinMainNetParams.get();
-        syscoinToEthTimerTaskPeriod = 10 * 1000;
+    }
+
+    public AgentConstants create() {
+        var syscoinParams = SyscoinMainNetParams.get();
+        var syscoinToEthTimerTaskPeriod = 10 * 1000;
 
         List<Sha256Hash> sysHashes = List.of(syscoinParams.getGenesisBlock().getHash());
 
-        genesisSuperblock = new SuperblockData(
+        var genesisSuperblock = new SuperblockData(
                 MerkleRootComputer.computeMerkleRoot(syscoinParams, sysHashes),
                 sysHashes,
                 new BigInteger("0x0000000000000000000000000000000000000000000b5aea51981d092e7d9739"),
@@ -37,12 +40,24 @@ public class EthGanacheSyscoinMainAgentConstants extends AgentConstants {
                 1
         );
 
-        defenderTimerTaskPeriod = 15 * 1000;
-        challengerTimerTaskPeriod = 15 * 1000;
-        defenderConfirmations = 1;
-        challengerConfirmations = 1;
+        var defenderTimerTaskPeriod = 15 * 1000;
+        var challengerTimerTaskPeriod = 15 * 1000;
+        var defenderConfirmations = 1;
+        var challengerConfirmations = 1;
 
-        ethInitialCheckpoint = 0;
-        networkId = "32000"; // eth mainnet
+        var ethInitialCheckpoint = 0;
+        var networkId = "32000"; // eth mainnet
+
+        return new AgentConstants(
+            syscoinParams,
+            syscoinToEthTimerTaskPeriod,
+            genesisSuperblock,
+            defenderTimerTaskPeriod,
+            challengerTimerTaskPeriod,
+            defenderConfirmations,
+            challengerConfirmations,
+            ethInitialCheckpoint,
+            networkId
+        );
     }
 }

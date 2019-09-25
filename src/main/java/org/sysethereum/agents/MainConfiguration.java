@@ -30,13 +30,13 @@ public class MainConfiguration {
 
         switch (constants) {
             case INTEGRATION:
-                result = new IntegrationAgentConstants();
+                result = new IntegrationAgentConstants().create();
                 break;
             case LOCAL:
-                result = new LocalAgentConstants();
+                result = new LocalAgentConstants().create();
                 break;
             case ETHGANACHE_SYSCOINMAIN:
-                result = new EthGanacheSyscoinMainAgentConstants();
+                result = new EthGanacheSyscoinMainAgentConstants().create();
                 break;
             default:
                 throw new RuntimeException("Unknown value for 'constants': '" + constants + "'");

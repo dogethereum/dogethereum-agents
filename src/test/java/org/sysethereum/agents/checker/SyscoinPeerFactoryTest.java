@@ -17,7 +17,7 @@ class SyscoinPeerFactoryTest {
 
     @Test
     void buildSyscoinPeerAddresses() throws UnknownHostException {
-        SyscoinPeerFactory underTest = new SyscoinPeerFactory(new LocalAgentConstants());
+        SyscoinPeerFactory underTest = new SyscoinPeerFactory(new LocalAgentConstants().create());
 
         List<String> list = new ArrayList<>();
         list.add("127.0.0.1");
