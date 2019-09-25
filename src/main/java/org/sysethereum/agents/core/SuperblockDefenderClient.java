@@ -124,7 +124,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         if (ethWrapper.semiApprovedAndApprovable(toConfirm, highestDescendant)) {
             // The superblock is semi approved and it can be approved if it has enough confirmations
             logger.info("Confirming semi-approved superblock {} with descendant {}", toConfirmId, highestDescendantId);
-            ethWrapper.confirmClaim(toConfirmId, highestDescendantId, myAddress);
+            ethWrapper.confirmClaim(toConfirmId, highestDescendantId);
         }
         else if (ethWrapper.newAndTimeoutPassed(highestDescendantId) || ethWrapper.getInBattleAndSemiApprovable(highestDescendantId)) {
             // Either the superblock is unchallenged or it won all the battles;

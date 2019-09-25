@@ -750,9 +750,8 @@ public class EthWrapper implements SuperblockConstantProvider {
      * See SyscoinClaimManager source code for further reference.
      * @param superblockId Superblock to be confirmed.
      * @param descendantId Its highest semi-approved descendant.
-     * @param account Caller's address.
      */
-    public void confirmClaim(Keccak256Hash superblockId, Keccak256Hash descendantId, String account) {
+    public void confirmClaim(Keccak256Hash superblockId, Keccak256Hash descendantId) {
         CompletableFuture<TransactionReceipt> futureReceipt =
                 claimManager.confirmClaim(new Bytes32(superblockId.getBytes()), new Bytes32(descendantId.getBytes())).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
@@ -1104,8 +1103,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @throws Exception
      */
     public String getSuperblockSPVProof( AltcoinBlock block,
-                            Superblock superblock, SuperblockPartialMerkleTree superblockPMT)
-            throws Exception {
+                            Superblock superblock, SuperblockPartialMerkleTree superblockPMT) {
         Sha256Hash syscoinBlockHash = block.getHash();
 
         // Construct SPV proof for block
