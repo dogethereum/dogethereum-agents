@@ -341,9 +341,9 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     @Override
     protected void restoreFiles() throws ClassNotFoundException, IOException {
-        restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
-        restore(sessionToSuperblockMap, sessionToSuperblockMapFile);
-        restore(semiApprovedSet, semiApprovedSetFile);
+        latestEthBlockProcessed = restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
+        sessionToSuperblockMap = restore(sessionToSuperblockMap, sessionToSuperblockMapFile);
+        semiApprovedSet = restore(semiApprovedSet, semiApprovedSetFile);
     }
 
     @Override
