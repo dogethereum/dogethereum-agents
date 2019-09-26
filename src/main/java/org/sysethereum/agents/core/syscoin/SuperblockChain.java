@@ -8,7 +8,7 @@ import org.bitcoinj.store.BlockStoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.sysethereum.agents.core.bridge.Superblock;
 import org.sysethereum.agents.core.bridge.SuperblockFactory;
 import org.sysethereum.agents.service.rest.MerkleRootComputer;
@@ -24,11 +24,12 @@ import java.util.*;
  * Storage is managed by SuperblockLevelDBBlockStore.
  * @author Catalina Juarros
  */
-@Component
+@Service
 @Slf4j(topic = "SuperblockChain")
 public class SuperblockChain {
 
     private static final Logger logger = LoggerFactory.getLogger("SuperblockChain");
+
     private final SyscoinWrapper syscoinWrapper; // Interface with the Syscoin blockchain
     private final SuperblockConstantProvider provider; // Interface with the Ethereum blockchain
     private final MerkleRootComputer merkleRootComputer;
