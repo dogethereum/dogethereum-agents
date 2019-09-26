@@ -31,13 +31,13 @@ public class GetSPVHandler extends CommonHttpHandler {
         if (setOriginAndHandleOptionsMethod(httpExchange)) return;
 
         StringBuilder response = new StringBuilder();
-        LinkedHashMap<String, String> parms = queryToMap(httpExchange.getRequestURI().getQuery());
+        LinkedHashMap<String, String> params = queryToMap(httpExchange.getRequestURI().getQuery());
 
         try {
-            String hash = parms.get("hash");
+            String hash = params.get("hash");
             if (hash != null && hash.startsWith("0x"))
                 hash = hash.substring(2);
-            String height = parms.get("height");
+            String height = params.get("height");
             String spvString = syscoinToEthClient.getSuperblockSPVProof(hash != null ? Sha256Hash.wrap(hash) : null, height != null ? Integer.decode(height) : -1);
             response.append(spvString);
         } catch (Exception exception) {
