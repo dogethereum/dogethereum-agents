@@ -14,6 +14,7 @@ import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.List;
 
 /**
@@ -35,30 +36,32 @@ public class OperatorPeersChecker {
     }
 
     @PostConstruct
-    public void setup() throws Exception {
+    public void setup() {
         int defaultPort = agentConstants.getSyscoinParams().getPort();
         List<String> peerStrings = List.of("127.0.0.1");
-        List<PeerAddress> peerAddresses = syscoinPeerFactory.buildSyscoinPeerAddresses(defaultPort, peerStrings);
+        List<PeerAddress> peerAddresses;
 
-        if (peerAddresses.isEmpty()) {
-            // Can't happen until we implement peer list configuration
-            throw new RuntimeException("No Syscoin Peers");
-        }
-        for (PeerAddress address : peerAddresses) {
-            checkPeerAddress(address);
+        try {
+            peerAddresses = syscoinPeerFactory.buildSyscoinPeerAddresses(defaultPort, peerStrings);
+
+            if (peerAddresses.isEmpty()) {
+                // Can't happen until we implement peer list configuration
+                throw new RuntimeException("No Syscoin Peers");
+            }
+            for (PeerAddress address : peerAddresses) {
+                checkAddressOrFail(address.getSocketAddress());
+            }
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private void checkPeerAddress(PeerAddress address) {
-        InetSocketAddress saddr = address.getSocketAddress();
-        String host = saddr.getHostName();
-        int port = saddr.getPort();
-
+    private void checkAddressOrFail(InetSocketAddress isa) {
         try {
-            Socket socket = new Socket(host, port);
+            Socket socket = new Socket(isa.getHostName(), isa.getPort());
             socket.close();
         } catch (IOException ex) {
-            throw new RuntimeException("Cannot connect to Syscoin node " + address.getSocketAddress().getHostName() + ":" + address.getSocketAddress().getPort());
+            throw new RuntimeException("Cannot connect to Syscoin node " + isa.getHostName() + ":" + isa.getPort());
         }
     }
 

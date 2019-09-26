@@ -4,7 +4,7 @@ import org.bitcoinj.core.PeerAddress;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.sysethereum.agents.constants.LocalAgentConstants;
+import org.sysethereum.agents.constants.LocalAgentConstantsFactory;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -17,7 +17,7 @@ class SyscoinPeerFactoryTest {
 
     @Test
     void buildSyscoinPeerAddresses() throws UnknownHostException {
-        SyscoinPeerFactory underTest = new SyscoinPeerFactory(new LocalAgentConstants());
+        SyscoinPeerFactory underTest = new SyscoinPeerFactory(new LocalAgentConstantsFactory().create());
 
         List<String> list = new ArrayList<>();
         list.add("127.0.0.1");

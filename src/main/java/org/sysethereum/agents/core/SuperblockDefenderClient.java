@@ -9,6 +9,7 @@ import org.sysethereum.agents.core.eth.EthWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.sysethereum.agents.util.RandomizationCounter;
 
 import java.io.*;
 import java.util.*;
@@ -23,14 +24,18 @@ import java.util.*;
 public class SuperblockDefenderClient extends SuperblockBaseClient {
     private static final Logger logger = LoggerFactory.getLogger("SuperblockDefenderClient");
 
+    private final RandomizationCounter randomizationCounter;
+
     public SuperblockDefenderClient(
             SystemProperties systemProperties,
             AgentConstants agentConstants,
             SyscoinWrapper syscoinWrapper,
             EthWrapper ethWrapper,
-            SuperblockChain superblockChain
+            SuperblockChain superblockChain,
+            RandomizationCounter randomizationCounter
     ) {
         super("Superblock defender client", systemProperties, agentConstants, syscoinWrapper, ethWrapper, superblockChain);
+        this.randomizationCounter = randomizationCounter;
     }
 
     @Override
@@ -124,7 +129,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         if (ethWrapper.semiApprovedAndApprovable(toConfirm, highestDescendant)) {
             // The superblock is semi approved and it can be approved if it has enough confirmations
             logger.info("Confirming semi-approved superblock {} with descendant {}", toConfirmId, highestDescendantId);
-            ethWrapper.confirmClaim(toConfirmId, highestDescendantId, myAddress);
+            ethWrapper.confirmClaim(toConfirmId, highestDescendantId);
         }
         else if (ethWrapper.newAndTimeoutPassed(highestDescendantId) || ethWrapper.getInBattleAndSemiApprovable(highestDescendantId)) {
             // Either the superblock is unchallenged or it won all the battles;
@@ -163,7 +168,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     private Date getUnresponsiveTimeoutDate() throws Exception {
-        float delay = ethWrapper.getSuperblockTimeout().floatValue()*(ethWrapper.getRandomizationCounter()/100.0f);
+        double delay = ethWrapper.getSuperblockTimeout().floatValue() * randomizationCounter.getValue();
         int superblockTimeout = ethWrapper.getSuperblockTimeout().intValue() + (int)delay;
         return SuperblockUtils.getNSecondsAgo(superblockTimeout);
     }

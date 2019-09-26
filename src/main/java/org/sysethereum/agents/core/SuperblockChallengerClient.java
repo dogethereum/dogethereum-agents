@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.sysethereum.agents.core.syscoin.SuperblockChain;
 import org.sysethereum.agents.core.syscoin.SyscoinWrapper;
+import org.sysethereum.agents.util.RandomizationCounter;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -27,6 +28,7 @@ import java.util.*;
 @Slf4j(topic = "SuperblockChallengerClient")
 public class SuperblockChallengerClient extends SuperblockBaseClient {
     private static final Logger logger = LoggerFactory.getLogger("SuperblockChallengerClient");
+    private final RandomizationCounter randomizationCounter;
     private HashSet<Keccak256Hash> semiApprovedSet;
     private File semiApprovedSetFile;
 
@@ -38,6 +40,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             SuperblockChain superblockChain
     ) {
         super("Superblock challenger client", systemProperties, agentConstants, syscoinWrapper, ethWrapper, superblockChain);
+
+        this.randomizationCounter = new RandomizationCounter();
     }
 
     @Override
@@ -85,7 +89,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 if (!mainChainSuperblock.getSuperblockId().equals(superblockId) &&
                         ethWrapper.getChainHeight().longValue() >= semiApprovedHeight + confirmations) {
                     logger.info("Semi-approved superblock {} not found in main chain. Invalidating.", superblockId);
-                    ethWrapper.rejectClaim(superblockId, myAddress);
+                    ethWrapper.rejectClaim(superblockId);
                 }
             }
         }
@@ -116,7 +120,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     private void validateNewSuperblocks(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SuperblockEvent> newSuperblockEvents = ethWrapper.getNewSuperblocks(fromBlock, toBlock);
         if(newSuperblockEvents.size() > 0){
-            ethWrapper.setRandomizationCounter();
+            randomizationCounter.updateRandomValue();
         }
         List<Keccak256Hash> toChallenge = new ArrayList<>();
         for (EthWrapper.SuperblockEvent newSuperblock : newSuperblockEvents) {

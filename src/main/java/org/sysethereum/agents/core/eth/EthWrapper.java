@@ -83,7 +83,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     private final SuperblockChain superblockChain;
     private final SyscoinWrapper syscoinWrapper;
     private final Gson gson;
-    private int randomizationCounter;
+
 
     /* ---------------------------------- */
     /* ------ General code section ------ */
@@ -101,8 +101,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         this.superblockChain = superblockChain;
         this.syscoinWrapper = syscoinWrapper;
         this.gson = gson;
-
-        setRandomizationCounter();
 
         String secondaryURL = config.secondaryURL();
 
@@ -750,9 +748,8 @@ public class EthWrapper implements SuperblockConstantProvider {
      * See SyscoinClaimManager source code for further reference.
      * @param superblockId Superblock to be confirmed.
      * @param descendantId Its highest semi-approved descendant.
-     * @param account Caller's address.
      */
-    public void confirmClaim(Keccak256Hash superblockId, Keccak256Hash descendantId, String account) {
+    public void confirmClaim(Keccak256Hash superblockId, Keccak256Hash descendantId) {
         CompletableFuture<TransactionReceipt> futureReceipt =
                 claimManager.confirmClaim(new Bytes32(superblockId.getBytes()), new Bytes32(descendantId.getBytes())).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
@@ -764,9 +761,8 @@ public class EthWrapper implements SuperblockConstantProvider {
      * Rejects a claim.
      * See SyscoinClaimManager source code for further reference.
      * @param superblockId ID of superblock to be rejected.
-     * @param account Caller's address.
      */
-    public void rejectClaim(Keccak256Hash superblockId, String account) {
+    public void rejectClaim(Keccak256Hash superblockId) {
         CompletableFuture<TransactionReceipt> futureReceipt =
                 claimManager.rejectClaim(new Bytes32(superblockId.getBytes())).sendAsync();
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
@@ -1033,8 +1029,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         return claimManagerGetter.getClaimInvalid(new Bytes32(superblockId.getBytes())).send().getValue();
     }
 
-
-
     public boolean getInBattleAndSemiApprovable(Keccak256Hash superblockId) throws Exception {
         return claimManagerGetter.getInBattleAndSemiApprovable(new Bytes32(superblockId.getBytes())).send().getValue();
     }
@@ -1079,19 +1073,6 @@ public class EthWrapper implements SuperblockConstantProvider {
         return ChallengeState.values()[ret.intValue()];
     }
 
-    public int getRandomizationCounter(){
-        return randomizationCounter;
-    }
-    public void setRandomizationCounter(){
-        double randomDouble = Math.random();
-        randomDouble = randomDouble * 100 + 1;
-        if(randomDouble < 10)
-            randomDouble = 10;
-        randomizationCounter = (int)randomDouble;
-    }
-
-
-
     /* ---------------------------------- */
     /* ----- Relay Syscoin tx section ------ */
     /* ---------------------------------- */
@@ -1104,8 +1085,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @throws Exception
      */
     public String getSuperblockSPVProof( AltcoinBlock block,
-                            Superblock superblock, SuperblockPartialMerkleTree superblockPMT)
-            throws Exception {
+                            Superblock superblock, SuperblockPartialMerkleTree superblockPMT) {
         Sha256Hash syscoinBlockHash = block.getHash();
 
         // Construct SPV proof for block

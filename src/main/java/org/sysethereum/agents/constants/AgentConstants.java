@@ -9,18 +9,40 @@ import org.sysethereum.agents.core.bridge.SuperblockData;
  */
 public class AgentConstants {
 
-    protected AbstractSyscoinParams syscoinParams;
+    protected final AbstractSyscoinParams syscoinParams;
 
-    protected long syscoinToEthTimerTaskPeriod;
+    protected final long syscoinToEthTimerTaskPeriod;
     // Minimum number of confirmations a tx has to have in order to EVALUATE relaying it to eth
-    protected SuperblockData genesisSuperblock;
-    protected long defenderTimerTaskPeriod;
-    protected long challengerTimerTaskPeriod;
-    protected long defenderConfirmations;
-    protected long challengerConfirmations;
+    protected final SuperblockData genesisSuperblock;
+    protected final long defenderTimerTaskPeriod;
+    protected final long challengerTimerTaskPeriod;
+    protected final long defenderConfirmations;
+    protected final long challengerConfirmations;
 
-    protected int ethInitialCheckpoint;
-    protected String networkId;
+    protected final int ethInitialCheckpoint;
+    protected final String networkId;
+
+    public AgentConstants(
+            AbstractSyscoinParams syscoinParams,
+            long syscoinToEthTimerTaskPeriod,
+            SuperblockData genesisSuperblock,
+            long defenderTimerTaskPeriod,
+            long challengerTimerTaskPeriod,
+            long defenderConfirmations,
+            long challengerConfirmations,
+            int ethInitialCheckpoint,
+            String networkId
+    ) {
+        this.syscoinParams = syscoinParams;
+        this.syscoinToEthTimerTaskPeriod = syscoinToEthTimerTaskPeriod;
+        this.genesisSuperblock = genesisSuperblock;
+        this.defenderTimerTaskPeriod = defenderTimerTaskPeriod;
+        this.challengerTimerTaskPeriod = challengerTimerTaskPeriod;
+        this.defenderConfirmations = defenderConfirmations;
+        this.challengerConfirmations = challengerConfirmations;
+        this.ethInitialCheckpoint = ethInitialCheckpoint;
+        this.networkId = networkId;
+    }
 
     public AbstractSyscoinParams getSyscoinParams() {
         return syscoinParams;
