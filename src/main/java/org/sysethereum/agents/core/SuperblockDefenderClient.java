@@ -9,6 +9,7 @@ import org.sysethereum.agents.core.eth.EthWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.sysethereum.agents.util.RandomizationCounter;
 
 import java.io.*;
 import java.util.*;
@@ -23,14 +24,18 @@ import java.util.*;
 public class SuperblockDefenderClient extends SuperblockBaseClient {
     private static final Logger logger = LoggerFactory.getLogger("SuperblockDefenderClient");
 
+    private final RandomizationCounter randomizationCounter;
+
     public SuperblockDefenderClient(
             SystemProperties systemProperties,
             AgentConstants agentConstants,
             SyscoinWrapper syscoinWrapper,
             EthWrapper ethWrapper,
-            SuperblockChain superblockChain
+            SuperblockChain superblockChain,
+            RandomizationCounter randomizationCounter
     ) {
         super("Superblock defender client", systemProperties, agentConstants, syscoinWrapper, ethWrapper, superblockChain);
+        this.randomizationCounter = randomizationCounter;
     }
 
     @Override
@@ -163,7 +168,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     private Date getUnresponsiveTimeoutDate() throws Exception {
-        float delay = ethWrapper.getSuperblockTimeout().floatValue()*(ethWrapper.getRandomizationCounter()/100.0f);
+        double delay = ethWrapper.getSuperblockTimeout().floatValue() * randomizationCounter.getValue();
         int superblockTimeout = ethWrapper.getSuperblockTimeout().intValue() + (int)delay;
         return SuperblockUtils.getNSecondsAgo(superblockTimeout);
     }
