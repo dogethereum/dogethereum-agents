@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.util.*;
 
@@ -32,6 +32,7 @@ public class SuperblockChainClient {
     private final AgentConstants agentConstants;
     private final SuperblockChain superblockChain;
     private final SyscoinWrapper syscoinWrapper;
+    private final Timer timer;
 
     public SuperblockChainClient(
             SystemProperties systemProperties,
@@ -43,15 +44,30 @@ public class SuperblockChainClient {
         this.agentConstants = agentConstants;
         this.superblockChain = superblockChain;
         this.syscoinWrapper = syscoinWrapper;
+        this.timer = new Timer("SuperblockChainClient", true);
     }
 
-    @PostConstruct
-    public void setup() {
-        if (config.isSyscoinSuperblockSubmitterEnabled() ||
-                 config.isSyscoinBlockChallengerEnabled()) {
-            new Timer("SuperblockChainClient").scheduleAtFixedRate(new UpdateSuperblocksTimerTask(),
-                      getFirstExecutionDate(), agentConstants.getSyscoinToEthTimerTaskPeriod());
+    public boolean setup() {
+        if (config.isSyscoinSuperblockSubmitterEnabled() || config.isSyscoinBlockChallengerEnabled()) {
+            try {
+                timer.scheduleAtFixedRate(
+                        new UpdateSuperblocksTimerTask(),
+                        getFirstExecutionDate(),
+                        agentConstants.getSyscoinToEthTimerTaskPeriod()
+                );
+            } catch (Exception e) {
+                return false;
+            }
         }
+
+        return true;
+    }
+
+    @PreDestroy
+    public void cleanUp() {
+        timer.cancel();
+        timer.purge();
+        logger.info("cleanUp: Timer was canceled.");
     }
 
     private Date getFirstExecutionDate() {

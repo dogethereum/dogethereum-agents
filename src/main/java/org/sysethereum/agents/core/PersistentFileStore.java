@@ -6,7 +6,7 @@ import java.io.*;
  * Base methods for managing file storage.
  * @author Catalina Juarros
  */
-public abstract class PersistentFileStore {
+public class PersistentFileStore {
     public final File dataDirectory;
 
 
@@ -17,8 +17,6 @@ public abstract class PersistentFileStore {
     public PersistentFileStore(File dataDirectory) {
         this.dataDirectory = dataDirectory;
     }
-
-    abstract void setupFiles() throws IOException;
 
     public <T extends Serializable> T restore(T obj, File file) throws ClassNotFoundException, IOException {
         if (file.exists()) {

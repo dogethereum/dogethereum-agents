@@ -8,7 +8,6 @@ import org.sysethereum.agents.core.eth.EthWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.io.*;
 import java.util.*;
@@ -30,7 +29,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
     protected final String clientName;
     protected String myAddress;
     protected long latestEthBlockProcessed;
-    protected File latestEthBlockProcessedFile;
+    protected final File latestEthBlockProcessedFile;
 
     // Data is duplicated for performance using it.
 
@@ -40,8 +39,9 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
     // key: superblock id, value: set of session ids
     protected HashMap<Keccak256Hash, HashSet<Keccak256Hash>> superblockToSessionsMap;
 
-    protected File sessionToSuperblockMapFile;
-    protected File superblockToSessionsMapFile;
+    protected final File sessionToSuperblockMapFile;
+    protected final File superblockToSessionsMapFile;
+    private final Timer timer;
 
     public SuperblockBaseClient(
             String clientName,
@@ -59,35 +59,43 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
         this.syscoinWrapper = syscoinWrapper;
         this.ethWrapper = ethWrapper;
         this.superblockChain = superblockChain;
+        this.timer = new Timer(clientName, true);
+
+        this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() + "/" + getLastEthBlockProcessedFilename());
+        this.sessionToSuperblockMapFile = new File(dataDirectory.getAbsolutePath() + "/" + getSessionToSuperblockMapFilename());
+        this.superblockToSessionsMapFile = new File(dataDirectory.getAbsolutePath() + "/" + getSuperblockToSessionsMapFilename());
+
+        this.latestEthBlockProcessed = agentConstants.getEthInitialCheckpoint();
+        this.sessionToSuperblockMap = new HashMap<>();
+        this.superblockToSessionsMap = new HashMap<>();
     }
 
-    @PostConstruct
-    public void setup() throws ClassNotFoundException, IOException {
+    public boolean setup() throws ClassNotFoundException, IOException {
         if (isEnabled()) {
-            setupFiles();
-
             restoreFiles();
-
-            setupClient();
-
-            setupTimer();
+            try {
+                timer.scheduleAtFixedRate(new SuperblocksBaseClientTimerTask(),
+                        getFirstExecutionDate(), getTimerTaskPeriod());
+            } catch (Exception e) {
+                return false;
+            }
         }
+        return true;
     }
 
     @PreDestroy
-    public void tearDown() throws ClassNotFoundException, IOException {
+    public void cleanUp() throws ClassNotFoundException, IOException {
         if (isEnabled()) {
-            logger.info("{} tearDown starting...", clientName);
+            logger.info("cleanUp[{}]: Starting...", clientName);
+
+            timer.cancel();
+            timer.purge();
+            logger.info("cleanUp: Timer was canceled.");
 
             flushFiles();
 
-            logger.info("{} tearDown finished.", clientName);
+            logger.info("cleanUp[{}]: finished.", clientName);
         }
-    }
-
-    private void setupTimer() {
-       new Timer(clientName).scheduleAtFixedRate(new SuperblocksBaseClientTimerTask(),
-               getFirstExecutionDate(), getTimerTaskPeriod());
     }
 
     private Date getFirstExecutionDate() {
@@ -129,7 +137,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
                     logger.warn("SuperblocksBaseClientTimerTask skipped because the eth node is syncing blocks");
                 }
             } catch (Exception e) {
-                logger.error(e.getMessage(), e);
+                logger.error("SuperblocksBaseClientTimerTask: Exception: {}", e.getMessage(), e);
             }
         }
     }
@@ -177,8 +185,6 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
 
     protected abstract String getSuperblockToSessionsMapFilename();
 
-    protected abstract void setupClient();
-
     protected abstract void reactToElapsedTime();
 
     protected abstract boolean isMine(EthWrapper.NewBattleEvent newBattleEvent);
@@ -198,21 +204,6 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
     protected abstract void restoreFiles() throws ClassNotFoundException, IOException;
 
     protected abstract void flushFiles() throws ClassNotFoundException, IOException;
-
-
-    /* ---- DATABASE METHODS ---- */
-
-    void setupBaseFiles() {
-        this.latestEthBlockProcessed = agentConstants.getEthInitialCheckpoint();
-        this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() +
-                "/" + getLastEthBlockProcessedFilename());
-        this.sessionToSuperblockMap =  new HashMap<>();
-        this.sessionToSuperblockMapFile = new File(dataDirectory.getAbsolutePath() + "/" +
-                getSessionToSuperblockMapFilename());
-        this.superblockToSessionsMap = new HashMap<>();
-        this.superblockToSessionsMapFile = new File(dataDirectory.getAbsolutePath() + "/"
-                + getSuperblockToSessionsMapFilename());
-    }
 
 
     /* ---- BATTLE MAP METHODS ---- */

@@ -7,69 +7,47 @@ package org.sysethereum.agents.core.syscoin;
 
 
 import lombok.extern.slf4j.Slf4j;
-import org.bitcoinj.core.*;
-import org.bitcoinj.kits.WalletAppKit;
-import org.bitcoinj.script.Script;
-import org.bitcoinj.store.BlockStore;
+import org.bitcoinj.core.Context;
+import org.bitcoinj.core.Sha256Hash;
+import org.bitcoinj.core.StoredBlock;
 import org.bitcoinj.store.BlockStoreException;
-import org.sysethereum.agents.constants.AgentConstants;
-import org.sysethereum.agents.constants.SystemProperties;
-import org.sysethereum.agents.util.AgentUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+import org.sysethereum.agents.constants.SystemProperties;
+import org.sysethereum.agents.util.AgentUtils;
 
-import javax.annotation.PreDestroy;
-import java.io.*;
+import java.io.InputStream;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-@Component
+@Service
 @Slf4j(topic = "SyscoinWrapper")
 public class SyscoinWrapper {
 
     private static final Logger logger = LoggerFactory.getLogger("SyscoinWrapper");
+
     private final SystemProperties config;
     private final AgentUtils agentUtils;
-    private final File dataDirectory;
     private final Context syscoinContext;
-    private WalletAppKit kit;
+    private final SyscoinWalletAppKit kit;
 
     @Autowired
     public SyscoinWrapper(
             SystemProperties systemProperties,
-            AgentConstants agentConstants,
-            AgentUtils agentUtils
+            AgentUtils agentUtils,
+            Context syscoinContext,
+            SyscoinWalletAppKit syscoinWalletAppKit
     ) {
         this.config = systemProperties;
         this.agentUtils = agentUtils;
-        this.dataDirectory = new File(config.dataDirectory() + "/SyscoinWrapper");
-        this.syscoinContext = new Context(agentConstants.getSyscoinParams());
-
-        if (config.isSyscoinSuperblockSubmitterEnabled() || config.isSyscoinBlockChallengerEnabled()) {
-            setup();
-            start();
-        }
+        this.syscoinContext = syscoinContext;
+        this.kit = syscoinWalletAppKit;
     }
 
-    public void setup() {
-        kit = new WalletAppKit(syscoinContext, Script.ScriptType.P2WPKH, null, dataDirectory, "sysethereumAgentLibdohj") {
-            @Override
-            protected void onSetupCompleted() {
-                Context.propagate(syscoinContext);
-                vPeerGroup.setDownloadTxDependencies(0);
-            }
-
-            @Override
-            protected BlockStore provideBlockStore(File file) throws BlockStoreException {
-                return new AltcoinLevelDBBlockStore(syscoinContext, getChainFile());
-            }
-
-            protected File getChainFile() {
-                return new File(directory, "chain");
-            }
-        };
-
+    public void setupAndStart() {
         // TODO: Make the syscoin peer list configurable
         // if (!peerAddresses.isEmpty()) {
         //    kit.setPeerNodes(peerAddresses.toArray(new PeerAddress[]{}));
@@ -80,21 +58,50 @@ public class SyscoinWrapper {
         if (checkpoints != null) {
             kit.setCheckpoints(checkpoints);
         }
-    }
 
-    public void start() {
+        logger.debug("About to start WalletAppKit");
+
         Context.propagate(syscoinContext);
-        kit.startAsync().awaitRunning();
+        try {
+            kit.startAsync().awaitRunning();
+            logger.debug("WalletAppKit is running");
+        } catch (IllegalStateException e) {
+            logger.error("SyscoinWrapper failed to initialize");
+        }
     }
 
     public void stop() {
-        Context.propagate(syscoinContext);
-        kit.stopAsync().awaitTerminated();
+        if (config.isSyscoinSuperblockSubmitterEnabled() || config.isSyscoinBlockChallengerEnabled()) {
+            logger.info("stop: Starting...");
+
+            Context.propagate(syscoinContext);
+
+            logger.debug("stop: Request WAK to stop");
+            try {
+                kit.stopAsync().awaitTerminated(10, TimeUnit.SECONDS);
+                logger.debug("stop: WAK stopped");
+            } catch (TimeoutException e) {
+                logger.debug("stop: WAK not stopped in 10 seconds, kill the thread instead");
+                // Kill it
+                for (Thread thread : Thread.getAllStackTraces().keySet()) {
+                    if (thread.getName().startsWith(SyscoinWalletAppKit.class.getSimpleName())) {
+                        logger.info("stop: Interrupt thread:{}, isAlive:{}, isInterrupted:{}",
+                                thread.getName(), thread.isAlive(), thread.isInterrupted());
+                        thread.interrupt();
+                    }
+                }
+            }
+
+            logger.info("stop: Finished");
+        } else {
+            logger.debug("stop: No action");
+        }
     }
 
     public StoredBlock getChainHead() {
         return kit.chain().getChainHead();
     }
+
     /**
      * Gets the median timestamp of the last 11 blocks
      */
@@ -105,8 +112,8 @@ public class SyscoinWrapper {
         while (unused >= 0 && (storedBlock = storedBlock.getPrev(kit.store())) != null)
             timestamps[unused--] = storedBlock.getHeader().getTimeSeconds();
 
-        Arrays.sort(timestamps, unused+1, 11);
-        return timestamps[unused + (11-unused)/2];
+        Arrays.sort(timestamps, unused + 1, 11);
+        return timestamps[unused + (11 - unused) / 2];
     }
 
     public StoredBlock getBlock(Sha256Hash hash) throws BlockStoreException {
@@ -115,16 +122,5 @@ public class SyscoinWrapper {
 
     public StoredBlock getStoredBlockAtHeight(int height) throws BlockStoreException {
         return agentUtils.getStoredBlockAtHeight(kit.store(), height);
-    }
-
-    @PreDestroy
-    public void tearDown() {
-        if (config.isSyscoinSuperblockSubmitterEnabled() ||
-                 config.isSyscoinBlockChallengerEnabled()) {
-            logger.info("SyscoinToEthClient tearDown starting...");
-            stop();
-
-            logger.info("SyscoinToEthClient tearDown finished.");
-        }
     }
 }

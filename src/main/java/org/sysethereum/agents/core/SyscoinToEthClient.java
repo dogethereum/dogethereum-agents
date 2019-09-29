@@ -7,6 +7,7 @@ package org.sysethereum.agents.core;
 
 
 import com.google.gson.Gson;
+import org.sysethereum.agents.constants.EthAddresses;
 import org.sysethereum.agents.core.bridge.Superblock;
 import org.sysethereum.agents.core.syscoin.*;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -38,10 +39,12 @@ public class SyscoinToEthClient {
     private final EthWrapper ethWrapper;
     private final SyscoinWrapper syscoinWrapper;
     private final SuperblockChain superblockChain;
+    private final EthAddresses ethAddresses;
     private final Gson gson;
 
     private final SystemProperties config;
     private final AgentConstants agentConstants;
+    private final Timer timer;
 
     public SyscoinToEthClient(
             SystemProperties systemProperties,
@@ -49,6 +52,7 @@ public class SyscoinToEthClient {
             SuperblockChain superblockChain,
             SyscoinWrapper syscoinWrapper,
             EthWrapper ethWrapper,
+            EthAddresses ethAddresses,
             Gson gson
     ) {
         this.config = systemProperties;
@@ -56,17 +60,31 @@ public class SyscoinToEthClient {
         this.superblockChain = superblockChain;
         this.syscoinWrapper = syscoinWrapper;
         this.ethWrapper = ethWrapper;
+        this.ethAddresses = ethAddresses;
         this.gson = gson;
+        this.timer = new Timer("Syscoin to Eth client", true);
     }
 
-    @PostConstruct
-    public void setup() {
-
+    public boolean setup() {
         if (config.isSyscoinSuperblockSubmitterEnabled()) {
-            new Timer("Syscoin to Eth client").scheduleAtFixedRate(new SyscoinToEthClientTimerTask(),
-                    getFirstExecutionDate(), agentConstants.getSyscoinToEthTimerTaskPeriod());
-
+            try {
+                timer.scheduleAtFixedRate(
+                        new SyscoinToEthClientTimerTask(),
+                        getFirstExecutionDate(),
+                        agentConstants.getSyscoinToEthTimerTaskPeriod()
+                );
+            } catch (Exception e) {
+                return false;
+            }
         }
+        return true;
+    }
+
+    @PreDestroy
+    public void cleanUp() {
+        timer.cancel();
+        timer.purge();
+        logger.info("cleanUp: Timer was canceled.");
     }
 
     private Date getFirstExecutionDate() {
@@ -75,7 +93,6 @@ public class SyscoinToEthClient {
         return firstExecution.getTime();
     }
 
-    @SuppressWarnings("unused")
     private class SyscoinToEthClientTimerTask extends TimerTask {
         @Override
         public void run() {
@@ -129,7 +146,7 @@ public class SyscoinToEthClient {
             return 0;
         }
 
-        if(!ethWrapper.sendStoreSuperblock(toConfirm, ethWrapper.getGeneralPurposeAndSendSuperblocksAddress())){
+        if(!ethWrapper.sendStoreSuperblock(toConfirm, ethAddresses.generalPurposeAndSendSuperblocksAddress)){
             return 0;
         }
 

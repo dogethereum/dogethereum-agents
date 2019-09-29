@@ -5,6 +5,7 @@ import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.StoredBlock;
 import org.bitcoinj.store.BlockStoreException;
 import org.libdohj.params.AbstractSyscoinParams;
+import org.sysethereum.agents.MainLifecycle;
 import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.core.bridge.SuperblockData;
@@ -42,11 +43,17 @@ public class GenesisSuperblockGeneratorMain {
     public static void main(String[] args) throws Exception {
         // Instantiate the spring context
         AnnotationConfigApplicationContext c = new AnnotationConfigApplicationContext();
+        c.registerShutdownHook();
+
         SystemProperties config = c.getBean(SystemProperties.class);
         logger.info("Running GenesisSuperblockGeneratorMain version: {}-{}", config.projectVersion(), config.projectVersionModifier());
 
         c.register(SyscoinWrapper.class);
         c.refresh();
+
+        var lifecycle = c.getBean(MainLifecycle.class);
+        lifecycle.initialize();
+
         SyscoinWrapper syscoinWrapper = c.getBean(SyscoinWrapper.class);
         AgentConstants agentConstants = c.getBean(AgentConstants.class);
         SuperblockFactory superblockFactory = c.getBean(SuperblockFactory.class);
@@ -71,7 +78,8 @@ public class GenesisSuperblockGeneratorMain {
                 syscoinBlockHashes,
                 lastSyscoinBlock.getChainWork(),
                 lastSyscoinBlock.getHeader().getTimeSeconds(),
-                syscoinWrapper.getMedianTimestamp(lastSyscoinBlock),0,
+                syscoinWrapper.getMedianTimestamp(lastSyscoinBlock),
+                0,
                 genesisParentHash,
                 0);
     }

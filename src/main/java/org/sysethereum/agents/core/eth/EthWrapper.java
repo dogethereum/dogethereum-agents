@@ -8,7 +8,7 @@ import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.bitcoinj.store.BlockStoreException;
-import org.sysethereum.agents.constants.AgentConstants;
+import org.sysethereum.agents.constants.EthAddresses;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.contract.*;
 import org.sysethereum.agents.core.bridge.Superblock;
@@ -24,14 +24,10 @@ import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.abi.datatypes.generated.Uint32;
 import org.web3j.protocol.Web3j;
-import org.web3j.protocol.admin.Admin;
-import org.web3j.protocol.admin.methods.response.PersonalUnlockAccount;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
-import org.web3j.protocol.http.HttpService;
-import org.web3j.tx.ClientTransactionManager;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -48,15 +44,17 @@ import java.util.concurrent.CompletableFuture;
  */
 @Component
 @Slf4j(topic = "EthWrapper")
-public class EthWrapper implements SuperblockConstantProvider {
+public class EthWrapper {
 
     private static final Logger logger = LoggerFactory.getLogger("EthWrapper");
 
     private final Web3j web3;
     private final Web3j web3Secondary;
+    private final EthAddresses ethAddresses;
 
     public enum ChallengeState {
-        Unchallenged,             // Unchallenged submission
+        @SuppressWarnings("unused")
+        Unchallenged,            // Unchallenged submission
         Challenged               // Claims was challenged
     }
 
@@ -66,7 +64,6 @@ public class EthWrapper implements SuperblockConstantProvider {
     private final SyscoinClaimManagerExtended claimManagerForChallenges;
     private final SyscoinClaimManagerExtended claimManagerForChallengesGetter;
     private final SyscoinBattleManagerExtended battleManager;
-    private final SyscoinBattleManagerExtended battleManagerForChallenges;
     private final SyscoinBattleManagerExtended battleManagerGetter;
     private final SyscoinBattleManagerExtended battleManagerForChallengesGetter;
     private final SyscoinSuperblocksExtended superblocks;
@@ -76,125 +73,58 @@ public class EthWrapper implements SuperblockConstantProvider {
     private BigInteger gasPriceMinimum;
     private BigInteger gasPriceMaximum;
 
-    private final String generalPurposeAndSendSuperblocksAddress;
-    private final String syscoinSuperblockChallengerAddress;
+    private final BigInteger superblockDuration;
+    private final BigInteger superblockTimeout;
 
     private final BigInteger minProposalDeposit;
     private final SuperblockChain superblockChain;
     private final SyscoinWrapper syscoinWrapper;
     private final Gson gson;
 
-
-    /* ---------------------------------- */
-    /* ------ General code section ------ */
-    /* ---------------------------------- */
-
     @Autowired
     public EthWrapper(
             SystemProperties systemProperties,
-            AgentConstants agentConstants,
             SuperblockChain superblockChain,
             SyscoinWrapper syscoinWrapper,
-            Gson gson
+            Gson gson,
+            Web3j web3,
+            Web3j web3Secondary,
+            EthAddresses ethAddresses,
+            SyscoinBattleManagerExtended battleManager,
+            SyscoinBattleManagerExtended battleManagerGetter,
+            SyscoinBattleManagerExtended battleManagerForChallengesGetter,
+            SyscoinClaimManagerExtended claimManager,
+            SyscoinClaimManagerExtended claimManagerGetter,
+            SyscoinClaimManagerExtended claimManagerForChallenges,
+            SyscoinClaimManagerExtended claimManagerForChallengesGetter,
+            SyscoinSuperblocksExtended superblocks,
+            SyscoinSuperblocksExtended superblocksGetter,
+            BigInteger superblockDuration,
+            BigInteger superblockTimeout
     ) throws Exception {
+
         this.config = systemProperties;
         this.superblockChain = superblockChain;
         this.syscoinWrapper = syscoinWrapper;
         this.gson = gson;
-
-        String secondaryURL = config.secondaryURL();
-
-        this.web3Secondary = Web3j.build(new HttpService(secondaryURL));
-        Admin admin = Admin.build(new HttpService());
-        String generalAddress = config.generalPurposeAndSendSuperblocksAddress();
-        if(generalAddress.length() > 0){
-            PersonalUnlockAccount personalUnlockAccount = admin.personalUnlockAccount(generalAddress, config.generalPurposeAndSendSuperblocksUnlockPW(), BigInteger.ZERO).send();
-            if (personalUnlockAccount != null && personalUnlockAccount.accountUnlocked()) {
-                logger.info("general.purpose.and.send.superblocks.address is unlocked and ready to use!");
-            }
-            else{
-                logger.warn("general.purpose.and.send.superblocks.address could not be unlocked, please check the password you set in the configuration file");
-            }
-        }
-        String challengerAddress = config.syscoinSuperblockChallengerAddress();
-        if(challengerAddress.length() > 0 && !generalAddress.equals(challengerAddress)){
-            PersonalUnlockAccount personalUnlockAccount = admin.personalUnlockAccount(challengerAddress, config.syscoinSuperblockChallengerUnlockPW(), BigInteger.ZERO).send();
-            if (personalUnlockAccount != null && personalUnlockAccount.accountUnlocked()) {
-                logger.info("syscoin.superblock.challenger.address is unlocked and ready to use!");
-            }
-            else{
-                logger.warn("syscoin.superblock.challenger.address could not be unlocked, please check the password you set in the configuration file");
-            }
-        }
-        admin.shutdown();
-        web3 = Web3j.build(new HttpService());  // defaults to http://localhost:8545/
-        String claimManagerContractAddress;
-        String battleManagerContractAddress;
-        String superblocksContractAddress;
-
-        if (config.isGanache()) {
-            String networkId = agentConstants.getNetworkId();
-            claimManagerContractAddress = SyscoinClaimManagerExtended.getAddress(networkId);
-            battleManagerContractAddress = SyscoinBattleManagerExtended.getAddress(networkId);
-            superblocksContractAddress = SyscoinSuperblocksExtended.getAddress(networkId);
-            List<String> accounts = web3.ethAccounts().send().getAccounts();
-            generalPurposeAndSendSuperblocksAddress = accounts.get(0);
-            syscoinSuperblockChallengerAddress = accounts.get(1);
-        } else {
-            String networkId = agentConstants.getNetworkId();
-            claimManagerContractAddress = SyscoinClaimManagerExtended.getAddress(networkId);
-            battleManagerContractAddress = SyscoinBattleManagerExtended.getAddress(networkId);
-            superblocksContractAddress = SyscoinSuperblocksExtended.getAddress(networkId);
-            generalPurposeAndSendSuperblocksAddress = config.generalPurposeAndSendSuperblocksAddress();
-            syscoinSuperblockChallengerAddress = config.syscoinSuperblockChallengerAddress();
-        }
+        this.web3 = web3;
+        this.web3Secondary = web3Secondary;
+        this.ethAddresses = ethAddresses;
+        this.battleManager = battleManager;
+        this.battleManagerGetter = battleManagerGetter;
+        this.battleManagerForChallengesGetter = battleManagerForChallengesGetter;
+        this.claimManager = claimManager;
+        this.claimManagerGetter = claimManagerGetter;
+        this.claimManagerForChallenges = claimManagerForChallenges;
+        this.claimManagerForChallengesGetter = claimManagerForChallengesGetter;
+        this.superblocks = superblocks;
+        this.superblocksGetter = superblocksGetter;
+        this.superblockDuration = superblockDuration;
+        this.superblockTimeout = superblockTimeout;
 
         gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
         gasPriceMaximum = BigInteger.valueOf(config.gasPriceMaximum());
-        BigInteger gasLimit = BigInteger.valueOf(config.gasLimit());
         updateContractFacadesGasPrice();
-
-        claimManager = SyscoinClaimManagerExtended.load(claimManagerContractAddress, web3,
-                new ClientTransactionManager(web3, generalPurposeAndSendSuperblocksAddress),
-                gasPriceMinimum, gasLimit);
-        assert claimManager.isValid();
-        claimManagerGetter = SyscoinClaimManagerExtended.load(claimManagerContractAddress, web3Secondary,
-                new ClientTransactionManager(web3Secondary, generalPurposeAndSendSuperblocksAddress),
-                gasPriceMinimum, gasLimit);
-        assert claimManagerGetter.isValid();
-        claimManagerForChallenges = SyscoinClaimManagerExtended.load(claimManagerContractAddress, web3,
-                new ClientTransactionManager(web3, syscoinSuperblockChallengerAddress),
-                gasPriceMinimum, gasLimit);
-        assert claimManagerForChallenges.isValid();
-        claimManagerForChallengesGetter = SyscoinClaimManagerExtended.load(claimManagerContractAddress, web3Secondary,
-                new ClientTransactionManager(web3Secondary, syscoinSuperblockChallengerAddress),
-                gasPriceMinimum, gasLimit);
-        assert claimManagerForChallengesGetter.isValid();
-        battleManager = SyscoinBattleManagerExtended.load(battleManagerContractAddress, web3,
-                new ClientTransactionManager(web3, generalPurposeAndSendSuperblocksAddress),
-                gasPriceMinimum, gasLimit);
-        assert battleManager.isValid();
-        battleManagerForChallenges = SyscoinBattleManagerExtended.load(battleManagerContractAddress, web3,
-                new ClientTransactionManager(web3, syscoinSuperblockChallengerAddress),
-                gasPriceMinimum, gasLimit);
-        assert battleManagerForChallenges.isValid();
-        battleManagerGetter = SyscoinBattleManagerExtended.load(battleManagerContractAddress, web3Secondary,
-                new ClientTransactionManager(web3Secondary, generalPurposeAndSendSuperblocksAddress),
-                gasPriceMinimum, gasLimit);
-        assert battleManagerGetter.isValid();
-        battleManagerForChallengesGetter = SyscoinBattleManagerExtended.load(battleManagerContractAddress, web3Secondary,
-                new ClientTransactionManager(web3Secondary, syscoinSuperblockChallengerAddress),
-                gasPriceMinimum, gasLimit);
-        assert battleManagerForChallengesGetter.isValid();
-        superblocks = SyscoinSuperblocksExtended.load(superblocksContractAddress, web3,
-                new ClientTransactionManager(web3, generalPurposeAndSendSuperblocksAddress),
-                gasPriceMinimum, gasLimit);
-        assert superblocks.isValid();
-
-        superblocksGetter = SyscoinSuperblocksExtended.load(superblocksContractAddress, web3Secondary,
-                new ClientTransactionManager(web3Secondary, generalPurposeAndSendSuperblocksAddress),
-                gasPriceMinimum, gasLimit);
-        assert superblocksGetter.isValid();
 
         minProposalDeposit = claimManagerGetter.minProposalDeposit().send().getValue();
     }
@@ -214,11 +144,11 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     public boolean arePendingTransactionsForSendSuperblocksAddress() throws InterruptedException,IOException {
-        return arePendingTransactionsFor(generalPurposeAndSendSuperblocksAddress);
+        return arePendingTransactionsFor(ethAddresses.generalPurposeAndSendSuperblocksAddress);
     }
 
     public boolean arePendingTransactionsForChallengerAddress() throws InterruptedException, IOException {
-        return arePendingTransactionsFor(syscoinSuperblockChallengerAddress);
+        return arePendingTransactionsFor(ethAddresses.syscoinSuperblockChallengerAddress);
     }
 
     /**
@@ -244,6 +174,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * Sets gas prices for all contract instances.
      * @throws IOException
      */
+    @SuppressWarnings("deprecation")
     public void updateContractFacadesGasPrice() throws IOException {
         BigInteger gasPriceSuggestedByEthNode = web3Secondary.ethGasPrice().send().getGasPrice();
         if (gasPriceSuggestedByEthNode.compareTo(gasPriceMinimum) > 0) {
@@ -273,30 +204,10 @@ public class EthWrapper implements SuperblockConstantProvider {
         }
     }
 
-    public String getGeneralPurposeAndSendSuperblocksAddress() {
-        return generalPurposeAndSendSuperblocksAddress;
-    }
-    public boolean getAbilityToProposeNextSuperblock() throws Exception{
+    public boolean getAbilityToProposeNextSuperblock() throws Exception {
         return claimManagerGetter.getAbilityToProposeNextSuperblock(new Uint256(System.currentTimeMillis()/1000)).send().getValue();
     }
-    public String getSyscoinSuperblockChallengerAddress() {
-        return syscoinSuperblockChallengerAddress;
-    }
 
-
-
-    /* ---- CONTRACT GETTERS ---- */
-
-    public SyscoinBattleManagerExtended getBattleManagerForChallenges() {
-        return battleManagerForChallenges;
-    }
-    public SyscoinBattleManagerExtended getBattleManagerGetter() {
-        return battleManagerGetter;
-    }
-
-    public SyscoinBattleManagerExtended getBattleManagerForChallengesGetter() {
-        return battleManagerForChallengesGetter;
-    }
     /* ---------------------------------- */
     /* - Relay Syscoin superblocks section - */
     /* ---------------------------------- */
@@ -423,13 +334,15 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @return
      */
     private CompletableFuture<TransactionReceipt> proposeSuperblock(Superblock superblock) {
-        return claimManager.proposeSuperblock(new Bytes32(superblock.getMerkleRoot().getBytes()),
+        return claimManager.proposeSuperblock(
+                new Bytes32(superblock.getMerkleRoot().getBytes()),
                 new Uint256(superblock.getChainWork()),
                 new Uint256(superblock.getLastSyscoinBlockTime()),
                 new Uint256(superblock.getLastSyscoinBlockMedianTime()),
                 new Bytes32(superblock.getLastSyscoinBlockHash().getBytes()),
                 new Uint32(superblock.getlastSyscoinBlockBits()),
-                new Bytes32(superblock.getParentId().getBytes())).sendAsync();
+                new Bytes32(superblock.getParentId().getBytes())
+            ).sendAsync();
     }
 
 
@@ -466,7 +379,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * 60 requests max for block headers and the final verify superblock cost
      * @return Initial deposit for covering single battle during a challenge.
      */
-    private BigInteger getChallengeDesposit() {
+    private BigInteger getChallengeDeposit() {
         return minProposalDeposit;
     }
 
@@ -670,21 +583,6 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         public Keccak256Hash superblockId;
         public String who;
-    }
-
-
-    /* ---- GETTERS ---- */
-
-    public BigInteger getSuperblockDuration() throws Exception {
-        return battleManagerGetter.superblockDuration().send().getValue();
-    }
-
-    public BigInteger getSuperblockDelay() throws Exception {
-        return claimManagerGetter.superblockDelay().send().getValue();
-    }
-
-    public BigInteger getSuperblockTimeout() throws Exception {
-        return claimManagerGetter.superblockTimeout().send().getValue();
     }
 
     public Keccak256Hash getBestSuperblockId() throws Exception {
@@ -944,7 +842,7 @@ public class EthWrapper implements SuperblockConstantProvider {
             throw new Exception("Skipping respondBlockHeader, startIndex cannot be > 48.");
         Superblock superblock = superblockChain.getSuperblock(superblockId);
         List<Sha256Hash> listHashes = superblock.getSyscoinBlockHashes();
-        if(!getSuperblockDuration().equals(BigInteger.valueOf(listHashes.size())))
+        if(!superblockDuration.equals(BigInteger.valueOf(listHashes.size())))
             throw new Exception("Skipping respondBlockHeader, superblock hash array list is incorrect length.");
 
         byte[] blockHeaderBytes = null;
@@ -989,18 +887,19 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @param account Caller's address.
      * @throws Exception
      */
+    @SuppressWarnings("UnusedReturnValue")
     public boolean challengeSuperblock(Keccak256Hash superblockId, String account) throws Exception {
         if(!getClaimExists(superblockId) || getClaimDecided(superblockId)) {
             logger.info("superblock has already been decided upon or claim doesn't exist, skipping...{}", superblockId.toString());
             return false;
         }
-        if(getClaimSubmitter(superblockId).equals(getSyscoinSuperblockChallengerAddress())){
+        if(getClaimSubmitter(superblockId).equals(ethAddresses.syscoinSuperblockChallengerAddress)){
             logger.info("You cannot challenge a superblock you have submitted yourself, skipping...{}", superblockId.toString());
             return false;
         }
 
         // Make necessary deposit to cover reward
-        makeDepositIfNeeded(account, claimManagerForChallenges, claimManagerForChallengesGetter, getChallengeDesposit());
+        makeDepositIfNeeded(account, claimManagerForChallenges, claimManagerForChallengesGetter, getChallengeDeposit());
 
         CompletableFuture<TransactionReceipt> futureReceipt =
                 claimManagerForChallenges.challengeSuperblock(new Bytes32(superblockId.getBytes())).sendAsync();
@@ -1048,13 +947,13 @@ public class EthWrapper implements SuperblockConstantProvider {
                 isSuperblockSemiApproved(descendantId) &&
                 isSuperblockSemiApproved(superblockId));
     }
-    private Date getTimeoutDate() throws Exception {
-        int superblockTimeout = getSuperblockTimeout().intValue();
-        return SuperblockUtils.getNSecondsAgo(superblockTimeout);
-    }
+
     private boolean submittedTimeoutPassed(Keccak256Hash superblockId) throws Exception {
-        return getNewEventTimestampDate(superblockId).before(getTimeoutDate());
+        Date timeoutDate = SuperblockUtils.getNSecondsAgo(superblockTimeout.intValue());
+
+        return getNewEventTimestampDate(superblockId).before(timeoutDate);
     }
+
     public boolean newAndTimeoutPassed(Keccak256Hash superblockId) throws Exception {
         return (isSuperblockNew(superblockId) && submittedTimeoutPassed(superblockId));
     }

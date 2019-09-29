@@ -2,7 +2,9 @@ package org.sysethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
 import org.sysethereum.agents.constants.AgentConstants;
+import org.sysethereum.agents.constants.EthAddresses;
 import org.sysethereum.agents.constants.SystemProperties;
+import org.sysethereum.agents.contract.SyscoinBattleManagerExtended;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.sysethereum.agents.core.bridge.Superblock;
@@ -28,7 +30,11 @@ import java.util.*;
 @Slf4j(topic = "SuperblockChallengerClient")
 public class SuperblockChallengerClient extends SuperblockBaseClient {
     private static final Logger logger = LoggerFactory.getLogger("SuperblockChallengerClient");
+
     private final RandomizationCounter randomizationCounter;
+    private final SyscoinBattleManagerExtended battleManagerForChallenges;
+    private final SyscoinBattleManagerExtended battleManagerForChallengesGetter;
+
     private HashSet<Keccak256Hash> semiApprovedSet;
     private File semiApprovedSetFile;
 
@@ -37,16 +43,20 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             AgentConstants agentConstants,
             SyscoinWrapper syscoinWrapper,
             EthWrapper ethWrapper,
-            SuperblockChain superblockChain
+            SuperblockChain superblockChain,
+            EthAddresses ethAddresses,
+            SyscoinBattleManagerExtended battleManagerForChallenges,
+            SyscoinBattleManagerExtended battleManagerForChallengesGetter
     ) {
         super("Superblock challenger client", systemProperties, agentConstants, syscoinWrapper, ethWrapper, superblockChain);
+        this.battleManagerForChallengesGetter = battleManagerForChallengesGetter;
 
         this.randomizationCounter = new RandomizationCounter();
-    }
+        this.battleManagerForChallenges = battleManagerForChallenges;
+        this.myAddress = ethAddresses.syscoinSuperblockChallengerAddress;
 
-    @Override
-    protected void setupClient() {
-        myAddress = ethWrapper.getSyscoinSuperblockChallengerAddress();
+        this.semiApprovedSet = new HashSet<>();
+        this.semiApprovedSetFile = new File(dataDirectory.getAbsolutePath() + "/SemiApprovedSet.dat");
     }
 
     @Override
@@ -206,12 +216,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     /* ---- OVERRIDE ABSTRACT METHODS ---- */
 
     @Override
-    protected void setupFiles() {
-        setupBaseFiles();
-        setupSemiApprovedSet();
-    }
-
-    @Override
     protected boolean arePendingTransactions() throws InterruptedException, IOException {
         return ethWrapper.arePendingTransactionsForChallengerAddress();
     }
@@ -250,7 +254,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         for (Keccak256Hash sessionId : sessionToSuperblockMap.keySet()) {
             if (ethWrapper.getSubmitterHitTimeout(sessionId)) {
                 logger.info("Submitter hit timeout on session {}. Calling timeout.", sessionId);
-                ethWrapper.timeout(sessionId, ethWrapper.getBattleManagerForChallenges());
+                ethWrapper.timeout(sessionId, battleManagerForChallenges);
             }
         }
     }
@@ -303,7 +307,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     @Override
     protected void deleteSubmitterConvictedBattles(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SubmitterConvictedEvent> submitterConvictedEvents =
-                ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock, ethWrapper.getBattleManagerForChallengesGetter());
+                ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock, battleManagerForChallengesGetter);
 
         for (EthWrapper.SubmitterConvictedEvent submitterConvictedEvent : submitterConvictedEvents) {
             if (sessionToSuperblockMap.containsKey(submitterConvictedEvent.sessionId)) {
@@ -329,7 +333,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     @Override
     protected void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.ChallengerConvictedEvent> challengerConvictedEvents =
-                ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock, ethWrapper.getBattleManagerForChallengesGetter());
+                ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock, battleManagerForChallengesGetter);
 
         for (EthWrapper.ChallengerConvictedEvent challengerConvictedEvent : challengerConvictedEvents) {
             if (challengerConvictedEvent.challenger.equals(myAddress)) {
@@ -347,6 +351,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     protected void restoreFiles() throws ClassNotFoundException, IOException {
         latestEthBlockProcessed = restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
         sessionToSuperblockMap = restore(sessionToSuperblockMap, sessionToSuperblockMapFile);
+
         semiApprovedSet = restore(semiApprovedSet, semiApprovedSetFile);
     }
 
@@ -355,14 +360,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
         flush(sessionToSuperblockMap, sessionToSuperblockMapFile);
         flush(semiApprovedSet, semiApprovedSetFile);
-    }
-
-
-    /* ---- STORAGE ---- */
-
-    private void setupSemiApprovedSet() {
-        this.semiApprovedSet = new HashSet<>();
-        this.semiApprovedSetFile = new File(dataDirectory.getAbsolutePath() + "/SemiApprovedSet.dat");
     }
 
 }

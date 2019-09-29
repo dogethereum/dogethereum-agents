@@ -14,9 +14,9 @@ import org.sysethereum.agents.core.bridge.SuperblockFactory;
 import org.sysethereum.agents.service.rest.MerkleRootComputer;
 
 import javax.annotation.Nullable;
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
+import java.math.BigInteger;
 import java.util.*;
 
 /**
@@ -31,7 +31,6 @@ public class SuperblockChain {
     private static final Logger logger = LoggerFactory.getLogger("SuperblockChain");
 
     private final SyscoinWrapper syscoinWrapper; // Interface with the Syscoin blockchain
-    private final SuperblockConstantProvider provider; // Interface with the Ethereum blockchain
     private final MerkleRootComputer merkleRootComputer;
     private final SuperblockFactory superblockFactory;
     private final SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
@@ -45,25 +44,17 @@ public class SuperblockChain {
             SyscoinWrapper syscoinWrapper,
             SuperblockFactory superblockFactory,
             SuperblockLevelDBBlockStore superblockLevelDBBlockStore,
-            SuperblockConstantProvider provider,
-            MerkleRootComputer merkleRootComputer
+            MerkleRootComputer merkleRootComputer,
+            BigInteger superblockDuration,
+            BigInteger superblockDelay
     ) {
         this.syscoinWrapper = syscoinWrapper;
         this.superblockFactory = superblockFactory;
         this.superblockStorage = superblockLevelDBBlockStore;
-        this.provider = provider;
         this.merkleRootComputer = merkleRootComputer;
-    }
 
-    /**
-     * Sets up variables and initialises chain.
-     * @throws Exception if superblock duration or delay cannot be retrieved from SuperblockConstantProvider.
-     * @throws BlockStoreException if superblockStorage is not properly initialized.
-     */
-    @PostConstruct
-    private void setup() throws Exception {
-        this.SUPERBLOCK_DURATION = provider.getSuperblockDuration().intValue();
-        this.SUPERBLOCK_DELAY = provider.getSuperblockDelay().intValue();
+        this.SUPERBLOCK_DURATION = superblockDuration.intValue();
+        this.SUPERBLOCK_DELAY = superblockDelay.intValue();
         this.SUPERBLOCK_STORING_WINDOW = 7200; // store superblocks 2 hr before they should be sent
     }
 

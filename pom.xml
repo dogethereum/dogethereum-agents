@@ -87,6 +87,11 @@
             <version>5.1.9.RELEASE</version>
         </dependency>
         <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <version>5.1.9.RELEASE</version>
+        </dependency>
+        <dependency>
             <groupId>org.libdohj</groupId>
             <artifactId>libdohj-core</artifactId>
             <version>0.15.21-R</version>
@@ -100,6 +105,16 @@
             <groupId>org.web3j</groupId>
             <artifactId>core</artifactId>
             <version>4.5.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>3.14.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bitcoinj</groupId>
+            <artifactId>bitcoinj-core</artifactId>
+            <version>0.15.4</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
