@@ -74,7 +74,7 @@ public class SyscoinToEthClient {
             try {
                 timer.scheduleAtFixedRate(
                         new SyscoinToEthClientTimerTask(),
-                        getFirstExecutionDate(),
+                        20_000, // 20 seconds
                         agentConstants.getSyscoinToEthTimerTaskPeriod()
                 );
             } catch (Exception e) {
@@ -89,12 +89,6 @@ public class SyscoinToEthClient {
         timer.cancel();
         timer.purge();
         logger.info("cleanUp: Timer was canceled.");
-    }
-
-    private Date getFirstExecutionDate() {
-        Calendar firstExecution = Calendar.getInstance();
-        firstExecution.add(Calendar.SECOND, 20);
-        return firstExecution.getTime();
     }
 
     private class SyscoinToEthClientTimerTask extends TimerTask {
