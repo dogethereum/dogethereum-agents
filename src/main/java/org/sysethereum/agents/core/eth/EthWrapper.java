@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.DynamicBytes;
 import org.web3j.abi.datatypes.generated.Bytes32;
 
@@ -384,7 +385,7 @@ public class EthWrapper {
     }
 
     private BigInteger getDeposit(String account, SyscoinClaimManagerExtended myClaimManager) throws Exception {
-        return myClaimManager.getDeposit(new org.web3j.abi.datatypes.Address(account)).send().getValue();
+        return myClaimManager.getDeposit(new Address(account)).send().getValue();
     }
 
     /**
@@ -678,8 +679,8 @@ public class EthWrapper {
         return claimManagerGetter.superblockConfirmations().send().getValue().longValue();
     }
 
-    public org.web3j.abi.datatypes.Address getClaimChallenger(Keccak256Hash superblockId) throws Exception {
-        return new org.web3j.abi.datatypes.Address(claimManagerGetter.getClaimChallenger(new Bytes32(superblockId.getBytes())).send().getValue());
+    public Address getClaimChallenger(Keccak256Hash superblockId) throws Exception {
+        return new Address(claimManagerGetter.getClaimChallenger(new Bytes32(superblockId.getBytes())).send().getValue());
     }
 
 
