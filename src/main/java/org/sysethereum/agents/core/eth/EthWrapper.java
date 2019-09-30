@@ -1,9 +1,6 @@
 package org.sysethereum.agents.core.eth;
 
-
-
 import com.google.common.primitives.Bytes;
-import com.google.gson.Gson;
 
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
@@ -38,6 +35,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import static java.util.stream.Collectors.toList;
 
 /**
  * Helps the agent communication with the Eth blockchain.
@@ -80,14 +78,12 @@ public class EthWrapper {
     private final BigInteger minProposalDeposit;
     private final SuperblockChain superblockChain;
     private final SyscoinWrapper syscoinWrapper;
-    private final Gson gson;
 
     @Autowired
     public EthWrapper(
             SystemProperties systemProperties,
             SuperblockChain superblockChain,
             SyscoinWrapper syscoinWrapper,
-            Gson gson,
             Web3j web3,
             Web3j web3Secondary,
             EthAddresses ethAddresses,
@@ -106,7 +102,6 @@ public class EthWrapper {
         this.config = systemProperties;
         this.superblockChain = superblockChain;
         this.syscoinWrapper = syscoinWrapper;
-        this.gson = gson;
         this.web3 = web3;
         this.web3Secondary = web3Secondary;
         this.ethAddresses = ethAddresses;
@@ -831,32 +826,6 @@ public class EthWrapper {
     public ChallengeState getSessionChallengeState(Keccak256Hash sessionId) throws Exception {
         BigInteger ret = battleManagerGetter.getSessionChallengeState(new Bytes32(sessionId.getBytes())).send().getValue();
         return ChallengeState.values()[ret.intValue()];
-    }
-
-    /* ---------------------------------- */
-    /* ----- Relay Syscoin tx section ------ */
-    /* ---------------------------------- */
-
-    /**
-     * Returns an SPV Proof to the superblock for a Syscoin transaction to Sysethereum contracts.
-     * @param block Syscoin block that the transaction is in.
-     * @param superblockPMT Partial Merkle tree for constructing an SPV proof
-     *                      of the Syscoin block's existence in the superblock.
-     * @throws Exception
-     */
-    public String getSuperblockSPVProof( AltcoinBlock block,
-                            Superblock superblock, SuperblockPartialMerkleTree superblockPMT) {
-        Sha256Hash syscoinBlockHash = block.getHash();
-
-        // Construct SPV proof for block
-        int syscoinBlockIndex = superblockPMT.getTransactionIndex(syscoinBlockHash);
-        List<Sha256Hash> syscoinBlockSiblingsSha256Hash = superblockPMT.getTransactionPath(syscoinBlockHash);
-        List<String> syscoinBlockSiblingsBigInteger = new ArrayList<>();
-        for (Sha256Hash sha256Hash : syscoinBlockSiblingsSha256Hash)
-            syscoinBlockSiblingsBigInteger.add(sha256Hash.toString());
-
-        SPVProof spvProof = new SPVProof(syscoinBlockIndex, syscoinBlockSiblingsBigInteger, superblock.getSuperblockId().toString());
-        return gson.toJson(spvProof);
     }
 
 }

@@ -30,20 +30,16 @@ public class GetSPVHandler extends CommonHttpHandler {
     public void handle(HttpExchange httpExchange) throws IOException {
         if (setOriginAndHandleOptionsMethod(httpExchange)) return;
 
-        StringBuilder response = new StringBuilder();
         LinkedHashMap<String, String> params = queryToMap(httpExchange.getRequestURI().getQuery());
+        String response;
 
         try {
-            String hash = params.get("hash");
-            if (hash != null && hash.startsWith("0x"))
-                hash = hash.substring(2);
+            String hash = sanitizeHash(params.get("hash"));
             String height = params.get("height");
-            String spvString = syscoinToEthClient.getSuperblockSPVProof(hash != null ? Sha256Hash.wrap(hash) : null, height != null ? Integer.decode(height) : -1);
-            response.append(spvString);
+            response = gson.toJson(syscoinToEthClient.getSuperblockSPVProof(hash != null ? Sha256Hash.wrap(hash) : null, height != null ? Integer.decode(height) : -1));
         } catch (Exception exception) {
-            RestError error = new RestError("Could not get SPV proof, internal error!");
-            response.append(gson.toJson(error));
+            response = gson.toJson(new RestError("Could not get SPV proof, internal error!"));
         }
-        writeResponse(httpExchange, response.toString());
+        writeResponse(httpExchange, response);
     }
 }
