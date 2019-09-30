@@ -2,7 +2,7 @@ package org.sysethereum.agents.core.eth;
 
 import java.util.List;
 
-class SPVProof {
+public class SPVProof {
     public final int index;
     public final List<String> merklePath;
     public final String superBlock;
