@@ -7,6 +7,7 @@ package org.sysethereum.agents.core;
 
 
 import org.sysethereum.agents.constants.EthAddresses;
+import org.sysethereum.agents.core.bridge.ClaimContractApi;
 import org.sysethereum.agents.core.bridge.Superblock;
 import org.sysethereum.agents.core.bridge.SuperblockContractApi;
 import org.sysethereum.agents.core.eth.SPVProof;
@@ -43,6 +44,7 @@ public class SyscoinToEthClient {
     private final SyscoinWrapper syscoinWrapper;
     private final SuperblockChain superblockChain;
     private final SuperblockContractApi superblockContractApi;
+    private final ClaimContractApi claimContractApi;
     private final EthAddresses ethAddresses;
 
     private final SystemProperties config;
@@ -56,6 +58,7 @@ public class SyscoinToEthClient {
             SyscoinWrapper syscoinWrapper,
             EthWrapper ethWrapper,
             SuperblockContractApi superblockContractApi,
+            ClaimContractApi claimContractApi,
             EthAddresses ethAddresses
     ) {
         this.config = systemProperties;
@@ -64,6 +67,7 @@ public class SyscoinToEthClient {
         this.syscoinWrapper = syscoinWrapper;
         this.ethWrapper = ethWrapper;
         this.superblockContractApi = superblockContractApi;
+        this.claimContractApi = claimContractApi;
         this.ethAddresses = ethAddresses;
         this.timer = new Timer("Syscoin to Eth client", true);
     }
@@ -138,7 +142,7 @@ public class SyscoinToEthClient {
             return 0;
         }
 
-        if (!superblockChain.sendingTimePassed(toConfirm) || !ethWrapper.getAbilityToProposeNextSuperblock()) {
+        if (!superblockChain.sendingTimePassed(toConfirm) || !claimContractApi.getAbilityToProposeNextSuperblock()) {
             logger.debug("Too early to send superblock {}, will try again in a few seconds.",
                     toConfirm.getSuperblockId());
             return 0;

@@ -5,6 +5,8 @@ import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.EthAddresses;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.contract.SyscoinBattleManagerExtended;
+import org.sysethereum.agents.core.bridge.BattleContractApi;
+import org.sysethereum.agents.core.bridge.ClaimContractApi;
 import org.sysethereum.agents.core.bridge.SuperblockContractApi;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
@@ -35,6 +37,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     private final RandomizationCounter randomizationCounter;
     private final SyscoinBattleManagerExtended battleManagerForChallenges;
     private final SuperblockContractApi superblockContractApi;
+    private final ClaimContractApi claimContractApi;
+    private final BattleContractApi battleContractApi;
     private final SyscoinBattleManagerExtended battleManagerForChallengesGetter;
 
     private HashSet<Keccak256Hash> semiApprovedSet;
@@ -48,12 +52,16 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             SuperblockChain superblockChain,
             EthAddresses ethAddresses,
             SuperblockContractApi superblockContractApi,
+            ClaimContractApi claimContractApi,
+            BattleContractApi battleContractApi,
             SyscoinBattleManagerExtended battleManagerForChallenges,
             SyscoinBattleManagerExtended battleManagerForChallengesGetter
     ) {
-        super("Superblock challenger client", systemProperties, agentConstants, syscoinWrapper, ethWrapper, superblockContractApi, superblockChain);
+        super("Superblock challenger client", systemProperties, agentConstants, syscoinWrapper, ethWrapper, superblockContractApi, claimContractApi, superblockChain);
 
         this.superblockContractApi = superblockContractApi;
+        this.claimContractApi = claimContractApi;
+        this.battleContractApi = battleContractApi;
         this.battleManagerForChallengesGetter = battleManagerForChallengesGetter;
 
         this.randomizationCounter = new RandomizationCounter();
@@ -100,7 +108,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             long semiApprovedHeight = superblockContractApi.getHeight(superblockId).longValue();
             Superblock mainChainSuperblock = superblockChain.getByHeight(semiApprovedHeight);
             if (mainChainSuperblock != null) {
-                long confirmations = ethWrapper.getSuperblockConfirmations();
+                long confirmations = claimContractApi.getSuperblockConfirmations();
                 if (!mainChainSuperblock.getSuperblockId().equals(superblockId) &&
                         superblockContractApi.getChainHeight().longValue() >= semiApprovedHeight + confirmations) {
                     logger.info("Semi-approved superblock {} not found in main chain. Invalidating.", superblockId);
@@ -113,7 +121,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     private void invalidateLoserSuperblocks() throws Exception {
         for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
             // decided is set to true inside of checkclaimfinished and thus only allows it to call once
-            if (ethWrapper.getClaimInvalid(superblockId) && ethWrapper.getClaimExists(superblockId) && !ethWrapper.getClaimDecided(superblockId)) {
+            if (claimContractApi.getClaimInvalid(superblockId) && claimContractApi.getClaimExists(superblockId) && !claimContractApi.getClaimDecided(superblockId)) {
                 logger.info("Superblock {} lost a battle. Invalidating.", superblockId);
                 ethWrapper.checkClaimFinished(superblockId, true);
                 sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(superblockId));
@@ -185,7 +193,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
 
         for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
-            if (isMine(newBattleEvent) && ethWrapper.getSessionChallengeState(newBattleEvent.sessionId) == EthWrapper.ChallengeState.Challenged) {
+            if (isMine(newBattleEvent) && battleContractApi.getSessionChallengeState(newBattleEvent.sessionId) == EthWrapper.ChallengeState.Challenged) {
                 sessionToSuperblockMap.put(newBattleEvent.sessionId, newBattleEvent.superblockHash);
                 addToSuperblockToSessionsMap(newBattleEvent.sessionId, newBattleEvent.superblockHash);
             }
@@ -215,7 +223,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
 
     private boolean challengedByMe(SuperblockContractApi.SuperblockEvent superblockEvent) throws Exception {
-        return ethWrapper.getClaimChallenger(superblockEvent.superblockId).getValue().equals(myAddress);
+        return claimContractApi.getClaimChallenger(superblockEvent.superblockId).getValue().equals(myAddress);
     }
 
     /* ---- OVERRIDE ABSTRACT METHODS ---- */
@@ -257,7 +265,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     protected void callBattleTimeouts() throws Exception {
         for (Keccak256Hash sessionId : sessionToSuperblockMap.keySet()) {
-            if (ethWrapper.getSubmitterHitTimeout(sessionId)) {
+            if (battleContractApi.getSubmitterHitTimeout(sessionId)) {
                 logger.info("Submitter hit timeout on session {}. Calling timeout.", sessionId);
                 ethWrapper.timeout(sessionId, battleManagerForChallenges);
             }
@@ -292,7 +300,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
         }
         if (removeFromContract && config.isWithdrawFundsEnabled()) {
-            ethWrapper.withdrawAllFundsExceptLimit(myAddress, true);
+            claimContractApi.withdrawAllFundsExceptLimit(myAddress, true);
         }
     }
 

@@ -3,6 +3,7 @@ package org.sysethereum.agents.core;
 import lombok.extern.slf4j.Slf4j;
 import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.SystemProperties;
+import org.sysethereum.agents.core.bridge.ClaimContractApi;
 import org.sysethereum.agents.core.bridge.SuperblockContractApi;
 import org.sysethereum.agents.core.syscoin.*;
 import org.sysethereum.agents.core.eth.EthWrapper;
@@ -26,6 +27,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
     protected final SyscoinWrapper syscoinWrapper;
     protected final EthWrapper ethWrapper;
     protected final SuperblockContractApi superblockContractApi;
+    protected final ClaimContractApi claimContractApi;
     protected final SuperblockChain superblockChain;
     protected final SystemProperties config;
     protected final String clientName;
@@ -52,6 +54,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
             SyscoinWrapper syscoinWrapper,
             EthWrapper ethWrapper,
             SuperblockContractApi superblockContractApi,
+            ClaimContractApi claimContractApi,
             SuperblockChain superblockChain
     ) {
         super(systemProperties.dataDirectory());
@@ -62,6 +65,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
         this.syscoinWrapper = syscoinWrapper;
         this.ethWrapper = ethWrapper;
         this.superblockContractApi = superblockContractApi;
+        this.claimContractApi = claimContractApi;
         this.superblockChain = superblockChain;
         this.timer = new Timer(clientName, true);
 
@@ -249,7 +253,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
     /* ----- HELPER METHODS ----- */
 
     protected boolean isMine(Keccak256Hash superblockId) throws Exception {
-        return ethWrapper.getClaimSubmitter(superblockId).equals(myAddress);
+        return claimContractApi.getClaimSubmitter(superblockId).equals(myAddress);
     }
 
 }
