@@ -12,6 +12,7 @@ import org.sysethereum.agents.constants.EthAddresses;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.contract.*;
 import org.sysethereum.agents.core.bridge.Superblock;
+import org.sysethereum.agents.core.bridge.SuperblockContractApi;
 import org.sysethereum.agents.core.syscoin.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,13 +67,12 @@ public class EthWrapper {
     private final SyscoinBattleManagerExtended battleManager;
     private final SyscoinBattleManagerExtended battleManagerGetter;
     private final SyscoinBattleManagerExtended battleManagerForChallengesGetter;
-    private final SyscoinSuperblocksExtended superblocks;
-    private final SyscoinSuperblocksExtended superblocksGetter;
 
     private final SystemProperties config;
     private BigInteger gasPriceMinimum;
     private BigInteger gasPriceMaximum;
 
+    private final SuperblockContractApi superblockContractApi;
     private final BigInteger superblockDuration;
     private final BigInteger superblockTimeout;
 
@@ -97,8 +97,7 @@ public class EthWrapper {
             SyscoinClaimManagerExtended claimManagerGetter,
             SyscoinClaimManagerExtended claimManagerForChallenges,
             SyscoinClaimManagerExtended claimManagerForChallengesGetter,
-            SyscoinSuperblocksExtended superblocks,
-            SyscoinSuperblocksExtended superblocksGetter,
+            SuperblockContractApi superblockContractApi,
             BigInteger superblockDuration,
             BigInteger superblockTimeout
     ) throws Exception {
@@ -117,8 +116,7 @@ public class EthWrapper {
         this.claimManagerGetter = claimManagerGetter;
         this.claimManagerForChallenges = claimManagerForChallenges;
         this.claimManagerForChallengesGetter = claimManagerForChallengesGetter;
-        this.superblocks = superblocks;
-        this.superblocksGetter = superblocksGetter;
+        this.superblockContractApi = superblockContractApi;
         this.superblockDuration = superblockDuration;
         this.superblockTimeout = superblockTimeout;
 
@@ -188,18 +186,17 @@ public class EthWrapper {
                     claimManager.setGasPrice(gasPriceMinimum);
                 if (claimManagerForChallenges != null)
                     claimManagerForChallenges.setGasPrice(gasPriceMinimum);
-                if (superblocks != null)
-                    superblocks.setGasPrice(gasPriceMinimum);
-                if (battleManager != null)
-                    battleManager.setGasPrice(gasPriceMinimum);
                 if (claimManagerGetter != null)
                     claimManagerGetter.setGasPrice(gasPriceMinimum);
                 if (claimManagerForChallengesGetter != null)
                     claimManagerForChallengesGetter.setGasPrice(gasPriceMinimum);
-                if (superblocksGetter != null)
-                    superblocksGetter.setGasPrice(gasPriceMinimum);
+
+                if (battleManager != null)
+                    battleManager.setGasPrice(gasPriceMinimum);
                 if (battleManagerGetter != null)
                     battleManagerGetter.setGasPrice(gasPriceMinimum);
+
+                superblockContractApi.updateGasPrice(gasPriceMinimum);
             }
         }
     }
@@ -270,7 +267,10 @@ public class EthWrapper {
             return null;
         }
         Superblock currentSuperblock = superblockChain.getChainHead();
-        while (currentSuperblock != null && !currentSuperblock.getSuperblockId().equals(superblockId) && !isSuperblockSemiApproved(currentSuperblock.getSuperblockId()) && !isSuperblockApproved(currentSuperblock.getSuperblockId())) {
+        while (currentSuperblock != null
+                && !currentSuperblock.getSuperblockId().equals(superblockId)
+                && !superblockContractApi.isSemiApproved(currentSuperblock.getSuperblockId())
+                && !superblockContractApi.isApproved(currentSuperblock.getSuperblockId())) {
             currentSuperblock = superblockChain.getSuperblock(currentSuperblock.getParentId());
         }
 
@@ -286,7 +286,7 @@ public class EthWrapper {
 
         // Check if the parent has been approved before sending this superblock.
         Keccak256Hash parentId = superblock.getParentId();
-        if (!(isSuperblockApproved(parentId) || isSuperblockSemiApproved(parentId))) {
+        if (!(superblockContractApi.isApproved(parentId) || superblockContractApi.isSemiApproved(parentId))) {
             logger.info("Superblock {} not sent because its parent was neither approved nor semi approved.",
                     superblock.getSuperblockId());
             return false;
@@ -295,10 +295,10 @@ public class EthWrapper {
         if (getClaimExists(superblock.getSuperblockId())){
             boolean allowed = getClaimInvalid(superblock.getSuperblockId()) && getClaimDecided(superblock.getSuperblockId()) && !getClaimSubmitter(superblock.getSuperblockId()).equals(account);
             if(allowed){
-                if(isSuperblockApproved(parentId)){
-                    allowed = getBestSuperblockId().equals(parentId);
+                if(superblockContractApi.isApproved(parentId)){
+                    allowed = superblockContractApi.getBestSuperblockId().equals(parentId);
                 }
-                else allowed = isSuperblockSemiApproved(parentId);
+                else allowed = superblockContractApi.isSemiApproved(parentId);
             }
            if(!allowed){
                logger.info("Superblock {} has already been sent. Returning.", superblock.getSuperblockId());
@@ -447,146 +447,6 @@ public class EthWrapper {
         }
 
         withdrawAllFundsExceptLimit(account, myClaimManager, myClaimManagerGetter);
-    }
-
-
-
-    /* ---- SUPERBLOCK STATUS CHECKS ---- */
-
-    private BigInteger getSuperblockStatus(Keccak256Hash superblockId) throws Exception {
-        return superblocksGetter.getSuperblockStatus(new Bytes32(superblockId.getBytes())).send().getValue();
-    }
-
-    public boolean isSuperblockApproved(Keccak256Hash superblockId) throws Exception {
-        return getSuperblockStatus(superblockId).equals(Superblock.STATUS_APPROVED);
-    }
-
-    public boolean isSuperblockSemiApproved(Keccak256Hash superblockId) throws Exception {
-        return getSuperblockStatus(superblockId).equals(Superblock.STATUS_SEMI_APPROVED);
-    }
-
-    public boolean isSuperblockNew(Keccak256Hash superblockId) throws Exception {
-        return getSuperblockStatus(superblockId).equals(Superblock.STATUS_NEW);
-    }
-
-    public BigInteger getSuperblockHeight(Keccak256Hash superblockId) throws Exception {
-        return superblocksGetter.getSuperblockHeight(new Bytes32(superblockId.getBytes())).send().getValue();
-    }
-    public BigInteger getChainHeight() throws Exception {
-        return superblocksGetter.getChainHeight().send().getValue();
-    }
-
-    /**
-     * Listens to NewSuperblock events from SyscoinSuperblocks contract within a given block window
-     * and parses web3j-generated instances into easier to manage SuperblockEvent objects.
-     * @param startBlock First Ethereum block to poll.
-     * @param endBlock Last Ethereum block to poll.
-     * @return All NewSuperblock events from SyscoinSuperblocks as SuperblockEvent objects.
-     * @throws IOException
-     */
-    public List<SuperblockEvent> getNewSuperblocks(long startBlock, long endBlock) throws IOException {
-        List<SuperblockEvent> result = new ArrayList<>();
-        List<SyscoinSuperblocks.NewSuperblockEventResponse> newSuperblockEvents =
-                superblocksGetter.getNewSuperblockEvents(
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
-
-        for (SyscoinSuperblocks.NewSuperblockEventResponse response : newSuperblockEvents) {
-            SuperblockEvent newSuperblockEvent = new SuperblockEvent();
-            newSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockHash.getValue());
-            newSuperblockEvent.who = response.who.getValue();
-            result.add(newSuperblockEvent);
-        }
-
-        return result;
-    }
-
-    /**
-     * Listens to ApprovedSuperblock events from SyscoinSuperblocks contract within a given block window
-     * and parses web3j-generated instances into easier to manage SuperblockEvent objects.
-     * @param startBlock First Ethereum block to poll.
-     * @param endBlock Last Ethereum block to poll.
-     * @return All ApprovedSuperblock events from SyscoinSuperblocks as SuperblockEvent objects.
-     * @throws IOException
-     */
-    public List<SuperblockEvent> getApprovedSuperblocks(long startBlock, long endBlock)
-            throws IOException {
-        List<SuperblockEvent> result = new ArrayList<>();
-        List<SyscoinSuperblocks.ApprovedSuperblockEventResponse> approvedSuperblockEvents =
-                superblocksGetter.getApprovedSuperblockEvents(
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
-
-        for (SyscoinSuperblocks.ApprovedSuperblockEventResponse response : approvedSuperblockEvents) {
-            SuperblockEvent approvedSuperblockEvent = new SuperblockEvent();
-            approvedSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockHash.getValue());
-            approvedSuperblockEvent.who = response.who.getValue();
-            result.add(approvedSuperblockEvent);
-        }
-
-        return result;
-    }
-
-    /**
-     * Listens to SemiApprovedSuperblock events from SyscoinSuperblocks contract within a given block window
-     * and parses web3j-generated instances into easier to manage SuperblockEvent objects.
-     * @param startBlock First Ethereum block to poll.
-     * @param endBlock Last Ethereum block to poll.
-     * @return All SemiApprovedSuperblock events from SyscoinSuperblocks as SuperblockEvent objects.
-     * @throws IOException
-     */
-    public List<SuperblockEvent> getSemiApprovedSuperblocks(long startBlock, long endBlock)
-            throws IOException {
-        List<SuperblockEvent> result = new ArrayList<>();
-        List<SyscoinSuperblocks.SemiApprovedSuperblockEventResponse> semiApprovedSuperblockEvents =
-                superblocksGetter.getSemiApprovedSuperblockEvents(
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
-
-        for (SyscoinSuperblocks.SemiApprovedSuperblockEventResponse response : semiApprovedSuperblockEvents) {
-            SuperblockEvent semiApprovedSuperblockEvent = new SuperblockEvent();
-            semiApprovedSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockHash.getValue());
-            semiApprovedSuperblockEvent.who = response.who.getValue();
-            result.add(semiApprovedSuperblockEvent);
-        }
-
-        return result;
-    }
-
-    /**
-     * Listens to InvalidSuperblock events from SyscoinSuperblocks contract within a given block window
-     * and parses web3j-generated instances into easier to manage SuperblockEvent objects.
-     * @param startBlock First Ethereum block to poll.
-     * @param endBlock Last Ethereum block to poll.
-     * @return All InvalidSuperblock events from SyscoinSuperblocks as SuperblockEvent objects.
-     * @throws IOException
-     */
-    public List<SuperblockEvent> getInvalidSuperblocks(long startBlock, long endBlock)
-            throws IOException {
-        List<SuperblockEvent> result = new ArrayList<>();
-        List<SyscoinSuperblocks.InvalidSuperblockEventResponse> invalidSuperblockEvents =
-                superblocksGetter.getInvalidSuperblockEvents(
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
-
-        for (SyscoinSuperblocks.InvalidSuperblockEventResponse response : invalidSuperblockEvents) {
-            SuperblockEvent invalidSuperblockEvent = new SuperblockEvent();
-            invalidSuperblockEvent.superblockId = Keccak256Hash.wrap(response.superblockHash.getValue());
-            invalidSuperblockEvent.who = response.who.getValue();
-            result.add(invalidSuperblockEvent);
-        }
-
-        return result;
-    }
-
-    public static class SuperblockEvent {
-
-        public Keccak256Hash superblockId;
-        public String who;
-    }
-
-    public Keccak256Hash getBestSuperblockId() throws Exception {
-        return Keccak256Hash.wrap(superblocksGetter.getBestSuperblock().send().getValue());
     }
 
     /**
@@ -944,8 +804,8 @@ public class EthWrapper {
         Keccak256Hash descendantId = descendant.getSuperblockId();
         return (descendant.getSuperblockHeight() - superblock.getSuperblockHeight() >=
                 getSuperblockConfirmations() &&
-                isSuperblockSemiApproved(descendantId) &&
-                isSuperblockSemiApproved(superblockId));
+                superblockContractApi.isSemiApproved(descendantId) &&
+                superblockContractApi.isSemiApproved(superblockId));
     }
 
     private boolean submittedTimeoutPassed(Keccak256Hash superblockId) throws Exception {
@@ -955,7 +815,7 @@ public class EthWrapper {
     }
 
     public boolean newAndTimeoutPassed(Keccak256Hash superblockId) throws Exception {
-        return (isSuperblockNew(superblockId) && submittedTimeoutPassed(superblockId));
+        return (superblockContractApi.isNew(superblockId) && submittedTimeoutPassed(superblockId));
     }
 
     public boolean getSubmitterHitTimeout(Keccak256Hash sessionId) throws Exception {

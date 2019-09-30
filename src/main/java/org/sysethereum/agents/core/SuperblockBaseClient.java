@@ -3,6 +3,7 @@ package org.sysethereum.agents.core;
 import lombok.extern.slf4j.Slf4j;
 import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.SystemProperties;
+import org.sysethereum.agents.core.bridge.SuperblockContractApi;
 import org.sysethereum.agents.core.syscoin.*;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.slf4j.Logger;
@@ -24,6 +25,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
     protected final AgentConstants agentConstants;
     protected final SyscoinWrapper syscoinWrapper;
     protected final EthWrapper ethWrapper;
+    protected final SuperblockContractApi superblockContractApi;
     protected final SuperblockChain superblockChain;
     protected final SystemProperties config;
     protected final String clientName;
@@ -49,6 +51,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
             AgentConstants agentConstants,
             SyscoinWrapper syscoinWrapper,
             EthWrapper ethWrapper,
+            SuperblockContractApi superblockContractApi,
             SuperblockChain superblockChain
     ) {
         super(systemProperties.dataDirectory());
@@ -58,6 +61,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
         this.agentConstants = agentConstants;
         this.syscoinWrapper = syscoinWrapper;
         this.ethWrapper = ethWrapper;
+        this.superblockContractApi = superblockContractApi;
         this.superblockChain = superblockChain;
         this.timer = new Timer(clientName, true);
 
@@ -199,7 +203,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
     protected abstract void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception;
 
     protected abstract void removeSuperblocks(long fromBlock, long toBlock,
-                                              List<EthWrapper.SuperblockEvent> superblockEvents) throws Exception;
+                                              List<SuperblockContractApi.SuperblockEvent> superblockEvents) throws Exception;
 
     protected abstract void restoreFiles() throws ClassNotFoundException, IOException;
 
@@ -226,8 +230,8 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
      * @throws Exception
      */
     protected void removeApproved(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> approvedSuperblockEvents =
-                ethWrapper.getApprovedSuperblocks(fromBlock, toBlock);
+        List<SuperblockContractApi.SuperblockEvent> approvedSuperblockEvents =
+                superblockContractApi.getApprovedSuperblocks(fromBlock, toBlock);
         removeSuperblocks(fromBlock, toBlock, approvedSuperblockEvents);
     }
 
@@ -238,7 +242,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
      * @throws Exception
      */
     protected void removeInvalid(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> invalidSuperblockEvents = ethWrapper.getInvalidSuperblocks(fromBlock, toBlock);
+        List<SuperblockContractApi.SuperblockEvent> invalidSuperblockEvents = superblockContractApi.getInvalidSuperblocks(fromBlock, toBlock);
         removeSuperblocks(fromBlock, toBlock, invalidSuperblockEvents);
     }
 

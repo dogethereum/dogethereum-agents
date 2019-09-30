@@ -9,6 +9,7 @@ package org.sysethereum.agents.core;
 import com.google.gson.Gson;
 import org.sysethereum.agents.constants.EthAddresses;
 import org.sysethereum.agents.core.bridge.Superblock;
+import org.sysethereum.agents.core.bridge.SuperblockContractApi;
 import org.sysethereum.agents.core.syscoin.*;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
@@ -39,6 +40,7 @@ public class SyscoinToEthClient {
     private final EthWrapper ethWrapper;
     private final SyscoinWrapper syscoinWrapper;
     private final SuperblockChain superblockChain;
+    private final SuperblockContractApi superblockContractApi;
     private final EthAddresses ethAddresses;
     private final Gson gson;
 
@@ -52,6 +54,7 @@ public class SyscoinToEthClient {
             SuperblockChain superblockChain,
             SyscoinWrapper syscoinWrapper,
             EthWrapper ethWrapper,
+            SuperblockContractApi superblockContractApi,
             EthAddresses ethAddresses,
             Gson gson
     ) {
@@ -60,6 +63,7 @@ public class SyscoinToEthClient {
         this.superblockChain = superblockChain;
         this.syscoinWrapper = syscoinWrapper;
         this.ethWrapper = ethWrapper;
+        this.superblockContractApi = superblockContractApi;
         this.ethAddresses = ethAddresses;
         this.gson = gson;
         this.timer = new Timer("Syscoin to Eth client", true);
@@ -122,7 +126,7 @@ public class SyscoinToEthClient {
             logger.debug("Skipping sending superblocks, there are pending transaction for the sender address.");
             return 0;
         }
-        Keccak256Hash bestSuperblockId = ethWrapper.getBestSuperblockId();
+        Keccak256Hash bestSuperblockId = superblockContractApi.getBestSuperblockId();
         checkNotNull(bestSuperblockId, "No best chain superblock found");
         logger.debug("Best superblock {}.", bestSuperblockId);
 
@@ -177,7 +181,7 @@ public class SyscoinToEthClient {
                 return gson.toJson(spvProofError);
             }
 
-            if (!ethWrapper.isSuperblockApproved(txSuperblock.getSuperblockId())) {
+            if (!superblockContractApi.isApproved(txSuperblock.getSuperblockId())) {
                 RestError spvProofError = new RestError("Superblock has not been approved yet. " +
                         "Block hash: " + txStoredBlock.getHeader().getHash() + ", superblock ID: " + txSuperblock.getSuperblockId());
                 return gson.toJson(spvProofError);
@@ -224,7 +228,7 @@ public class SyscoinToEthClient {
             if (superblockId != null)
                 txSuperblock =  superblockChain.getSuperblock(superblockId);
             else
-                txSuperblock =  superblockChain.getSuperblockByHeight(height);
+                txSuperblock =  superblockChain.getByHeight(height);
 
             return getJsonResponse(txSuperblock);
         }
@@ -253,7 +257,7 @@ public class SyscoinToEthClient {
             RestError spvProofError = new RestError("Superblock has not been stored in local database yet.");
             return gson.toJson(spvProofError);
         }
-        SuperBlockResponse response = new SuperBlockResponse(txSuperblock, ethWrapper.isSuperblockApproved(txSuperblock.getSuperblockId()));
+        SuperBlockResponse response = new SuperBlockResponse(txSuperblock, superblockContractApi.isApproved(txSuperblock.getSuperblockId()));
         return gson.toJson(response);
     }
 

@@ -193,7 +193,7 @@ public class SuperblockChain {
      * @return Superblock with the given height if said height is less than that of the chain tip,
      *         null otherwise.
      */
-    public Superblock getSuperblockByHeight(long superblockHeight) {
+    public Superblock getByHeight(long superblockHeight) {
         Superblock currentSuperblock = getChainHead();
         if (superblockHeight > currentSuperblock.getSuperblockHeight())
             return null; // Superblock does not exist.
