@@ -458,15 +458,15 @@ public class EthWrapper {
     }
 
     public boolean isSuperblockApproved(Keccak256Hash superblockId) throws Exception {
-        return getSuperblockStatus(superblockId).equals(SuperblockUtils.STATUS_APPROVED);
+        return getSuperblockStatus(superblockId).equals(Superblock.STATUS_APPROVED);
     }
 
     public boolean isSuperblockSemiApproved(Keccak256Hash superblockId) throws Exception {
-        return getSuperblockStatus(superblockId).equals(SuperblockUtils.STATUS_SEMI_APPROVED);
+        return getSuperblockStatus(superblockId).equals(Superblock.STATUS_SEMI_APPROVED);
     }
 
     public boolean isSuperblockNew(Keccak256Hash superblockId) throws Exception {
-        return getSuperblockStatus(superblockId).equals(SuperblockUtils.STATUS_NEW);
+        return getSuperblockStatus(superblockId).equals(Superblock.STATUS_NEW);
     }
 
     public BigInteger getSuperblockHeight(Keccak256Hash superblockId) throws Exception {

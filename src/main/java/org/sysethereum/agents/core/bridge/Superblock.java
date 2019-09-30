@@ -14,6 +14,16 @@ import java.util.List;
  */
 public class Superblock {
 
+    @SuppressWarnings("unused")
+    public static final BigInteger STATUS_UNINITIALIZED = BigInteger.valueOf(0);
+    public static final BigInteger STATUS_NEW = BigInteger.valueOf(1);
+    @SuppressWarnings("unused")
+    public static final BigInteger STATUS_IN_BATTLE = BigInteger.valueOf(2);
+    public static final BigInteger STATUS_SEMI_APPROVED = BigInteger.valueOf(3);
+    public static final BigInteger STATUS_APPROVED = BigInteger.valueOf(4);
+    @SuppressWarnings("unused")
+    public static final BigInteger STATUS_INVALID = BigInteger.valueOf(5);
+
     private final Keccak256Hash superblockId;
     public final SuperblockData data;
 

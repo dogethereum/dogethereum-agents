@@ -17,18 +17,6 @@ import java.util.Date;
  */
 public class SuperblockUtils {
 
-    /* ---- SUPERBLOCK STATUS CODES ---- */
-
-    @SuppressWarnings("unused")
-    public static final BigInteger STATUS_UNINITIALIZED = BigInteger.valueOf(0);
-    public static final BigInteger STATUS_NEW = BigInteger.valueOf(1);
-    @SuppressWarnings("unused")
-    public static final BigInteger STATUS_IN_BATTLE = BigInteger.valueOf(2);
-    public static final BigInteger STATUS_SEMI_APPROVED = BigInteger.valueOf(3);
-    public static final BigInteger STATUS_APPROVED = BigInteger.valueOf(4);
-    @SuppressWarnings("unused")
-    public static final BigInteger STATUS_INVALID = BigInteger.valueOf(5);
-
     public static byte[] toBytes32(BigInteger n) throws IOException {
         byte[] hex = n.toByteArray();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
