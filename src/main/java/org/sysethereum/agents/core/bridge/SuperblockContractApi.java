@@ -1,16 +1,15 @@
 package org.sysethereum.agents.core.bridge;
 
 import org.springframework.stereotype.Service;
-import org.sysethereum.agents.contract.SyscoinSuperblocks;
 import org.sysethereum.agents.contract.SyscoinSuperblocksExtended;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.web3j.abi.datatypes.generated.Bytes32;
-import org.web3j.protocol.core.DefaultBlockParameter;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.List;
+
+import static java.util.stream.Collectors.toList;
 
 @Service
 public class SuperblockContractApi {
@@ -64,6 +63,11 @@ public class SuperblockContractApi {
     public static class SuperblockEvent {
         public Keccak256Hash superblockId;
         public String who;
+
+        public SuperblockEvent(Keccak256Hash superblockId, String who) {
+            this.superblockId = superblockId;
+            this.who = who;
+        }
     }
 
     /**
@@ -75,20 +79,13 @@ public class SuperblockContractApi {
      * @throws IOException
      */
     public List<SuperblockEvent> getNewSuperblocks(long startBlock, long endBlock) throws IOException {
-        List<SuperblockEvent> result = new ArrayList<>();
-        List<SyscoinSuperblocks.NewSuperblockEventResponse> newSuperblockEvents =
-                getter.getNewSuperblockEvents(
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
-        for (SyscoinSuperblocks.NewSuperblockEventResponse response : newSuperblockEvents) {
-            SuperblockEvent event = new SuperblockEvent();
-            event.superblockId = Keccak256Hash.wrap(response.superblockHash.getValue());
-            event.who = response.who.getValue();
-            result.add(event);
-        }
-
-        return result;
+        return getter.getNewSuperblockEvents(startBlock, endBlock)
+                .stream().map(response -> new SuperblockEvent(
+                        Keccak256Hash.wrap(response.superblockHash.getValue()),
+                        response.who.getValue()
+                ))
+                .collect(toList());
     }
 
     /**
@@ -99,22 +96,14 @@ public class SuperblockContractApi {
      * @return All ApprovedSuperblock events from SyscoinSuperblocks as SuperblockEvent objects.
      * @throws IOException
      */
-    public List<SuperblockEvent> getApprovedSuperblocks(long startBlock, long endBlock)
-            throws IOException {
-        List<SuperblockEvent> result = new ArrayList<>();
-        List<SyscoinSuperblocks.ApprovedSuperblockEventResponse> approvedSuperblockEvents =
-                getter.getApprovedSuperblockEvents(
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+    public List<SuperblockEvent> getApprovedSuperblocks(long startBlock, long endBlock) throws IOException {
 
-        for (SyscoinSuperblocks.ApprovedSuperblockEventResponse response : approvedSuperblockEvents) {
-            SuperblockEvent event = new SuperblockEvent();
-            event.superblockId = Keccak256Hash.wrap(response.superblockHash.getValue());
-            event.who = response.who.getValue();
-            result.add(event);
-        }
-
-        return result;
+        return getter.getApprovedSuperblockEvents(startBlock, endBlock)
+                .stream().map(response -> new SuperblockEvent(
+                        Keccak256Hash.wrap(response.superblockHash.getValue()),
+                        response.who.getValue()
+                ))
+                .collect(toList());
     }
 
     /**
@@ -125,22 +114,14 @@ public class SuperblockContractApi {
      * @return All SemiApprovedSuperblock events from SyscoinSuperblocks as SuperblockEvent objects.
      * @throws IOException
      */
-    public List<SuperblockEvent> getSemiApprovedSuperblocks(long startBlock, long endBlock)
-            throws IOException {
-        List<SuperblockEvent> result = new ArrayList<>();
-        List<SyscoinSuperblocks.SemiApprovedSuperblockEventResponse> semiApprovedSuperblockEvents =
-                getter.getSemiApprovedSuperblockEvents(
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+    public List<SuperblockEvent> getSemiApprovedSuperblocks(long startBlock, long endBlock) throws IOException {
 
-        for (SyscoinSuperblocks.SemiApprovedSuperblockEventResponse response : semiApprovedSuperblockEvents) {
-            SuperblockEvent event = new SuperblockEvent();
-            event.superblockId = Keccak256Hash.wrap(response.superblockHash.getValue());
-            event.who = response.who.getValue();
-            result.add(event);
-        }
-
-        return result;
+        return getter.getSemiApprovedSuperblockEvents(startBlock, endBlock)
+                .stream().map(response -> new SuperblockEvent(
+                        Keccak256Hash.wrap(response.superblockHash.getValue()),
+                        response.who.getValue()
+                ))
+                .collect(toList());
     }
 
     /**
@@ -151,21 +132,13 @@ public class SuperblockContractApi {
      * @return All InvalidSuperblock events from SyscoinSuperblocks as SuperblockEvent objects.
      * @throws IOException
      */
-    public List<SuperblockEvent> getInvalidSuperblocks(long startBlock, long endBlock)
-            throws IOException {
-        List<SuperblockEvent> result = new ArrayList<>();
-        List<SyscoinSuperblocks.InvalidSuperblockEventResponse> invalidSuperblockEvents =
-                getter.getInvalidSuperblockEvents(
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+    public List<SuperblockEvent> getInvalidSuperblocks(long startBlock, long endBlock) throws IOException {
 
-        for (SyscoinSuperblocks.InvalidSuperblockEventResponse response : invalidSuperblockEvents) {
-            SuperblockEvent event = new SuperblockEvent();
-            event.superblockId = Keccak256Hash.wrap(response.superblockHash.getValue());
-            event.who = response.who.getValue();
-            result.add(event);
-        }
-
-        return result;
+        return getter.getInvalidSuperblockEvents(startBlock, endBlock)
+                .stream().map(response -> new SuperblockEvent(
+                        Keccak256Hash.wrap(response.superblockHash.getValue()),
+                        response.who.getValue()
+                ))
+                .collect(toList());
     }
 }
