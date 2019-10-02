@@ -55,7 +55,7 @@ public class SuperblockChain {
 
         this.SUPERBLOCK_DURATION = superblockDuration.intValue();
         this.SUPERBLOCK_DELAY = superblockDelay.intValue();
-        this.SUPERBLOCK_STORING_WINDOW = 7200; // store superblocks 2 hr before they should be sent
+        this.SUPERBLOCK_STORING_WINDOW = SUPERBLOCK_DELAY * 2/3 ; // store superblocks 2 hr before they should be sent
     }
 
     /**
