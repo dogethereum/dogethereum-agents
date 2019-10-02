@@ -632,7 +632,7 @@ public class EthWrapper {
     @SuppressWarnings("UnusedReturnValue")
     public boolean challengeSuperblock(Keccak256Hash superblockId, String account) throws Exception {
         if(!claimContractApi.getClaimExists(superblockId) || claimContractApi.getClaimDecided(superblockId)) {
-            logger.info("superblock has already been decided upon or claim doesn't exist, skipping...{}", superblockId.toString());
+            logger.info("Superblock has already been decided upon or claim doesn't exist, skipping...{}", superblockId.toString());
             return false;
         }
 

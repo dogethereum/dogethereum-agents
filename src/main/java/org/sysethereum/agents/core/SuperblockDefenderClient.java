@@ -14,6 +14,7 @@ import org.sysethereum.agents.core.eth.EthWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.sysethereum.agents.service.ChallengeEmailNotifier;
 import org.sysethereum.agents.util.RandomizationCounter;
 
 import java.io.*;
@@ -47,9 +48,10 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             RandomizationCounter randomizationCounter,
             BigInteger superblockTimeout,
             EthAddresses ethAddresses,
-            SyscoinBattleManagerExtended battleManagerGetter
+            SyscoinBattleManagerExtended battleManagerGetter,
+            ChallengeEmailNotifier challengeEmailNotifier
     ) {
-        super("Superblock defender client", systemProperties, agentConstants, syscoinWrapper, ethWrapper, superblockContractApi, claimContractApi, superblockChain);
+        super("Superblock defender client", systemProperties, agentConstants, syscoinWrapper, ethWrapper, superblockContractApi, claimContractApi, superblockChain, challengeEmailNotifier);
         this.battleContractApi = battleContractApi;
         this.randomizationCounter = randomizationCounter;
         this.superblockTimeout = superblockTimeout;
@@ -77,7 +79,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     protected void reactToElapsedTime() {
         try {
             confirmEarliestApprovableSuperblock();
-
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }

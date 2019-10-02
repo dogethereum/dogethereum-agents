@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.sysethereum.agents.core.syscoin.SuperblockChain;
 import org.sysethereum.agents.core.syscoin.SyscoinWrapper;
+import org.sysethereum.agents.service.ChallengeEmailNotifier;
 import org.sysethereum.agents.util.RandomizationCounter;
 
 import java.io.*;
@@ -55,9 +56,10 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             ClaimContractApi claimContractApi,
             BattleContractApi battleContractApi,
             SyscoinBattleManagerExtended battleManagerForChallenges,
-            SyscoinBattleManagerExtended battleManagerForChallengesGetter
+            SyscoinBattleManagerExtended battleManagerForChallengesGetter,
+            ChallengeEmailNotifier challengeEmailNotifier
     ) {
-        super("Superblock challenger client", systemProperties, agentConstants, syscoinWrapper, ethWrapper, superblockContractApi, claimContractApi, superblockChain);
+        super("Superblock challenger client", systemProperties, agentConstants, syscoinWrapper, ethWrapper, superblockContractApi, claimContractApi, superblockChain, challengeEmailNotifier);
 
         this.superblockContractApi = superblockContractApi;
         this.claimContractApi = claimContractApi;

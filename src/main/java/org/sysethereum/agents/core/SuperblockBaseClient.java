@@ -9,10 +9,14 @@ import org.sysethereum.agents.core.syscoin.*;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.sysethereum.agents.service.ChallengeEmailNotifier;
+import org.sysethereum.agents.service.ChallengeReport;
 
+import javax.annotation.Nullable;
 import javax.annotation.PreDestroy;
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Base class to monitor the Ethereum blockchain for superblock-related events
@@ -46,6 +50,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
     protected final File sessionToSuperblockMapFile;
     protected final File superblockToSessionsMapFile;
     private final Timer timer;
+    private final ChallengeEmailNotifier challengeEmailNotifier;
 
     public SuperblockBaseClient(
             String clientName,
@@ -55,7 +60,8 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
             EthWrapper ethWrapper,
             SuperblockContractApi superblockContractApi,
             ClaimContractApi claimContractApi,
-            SuperblockChain superblockChain
+            SuperblockChain superblockChain,
+            ChallengeEmailNotifier challengeEmailNotifier
     ) {
         super(systemProperties.dataDirectory());
 
@@ -68,6 +74,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
         this.claimContractApi = claimContractApi;
         this.superblockChain = superblockChain;
         this.timer = new Timer(clientName, true);
+        this.challengeEmailNotifier = challengeEmailNotifier;
 
         this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() + "/" + getLastEthBlockProcessedFilename());
         this.sessionToSuperblockMapFile = new File(dataDirectory.getAbsolutePath() + "/" + getSessionToSuperblockMapFilename());
@@ -134,7 +141,12 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
                     if (fromBlock > toBlock) return;
 
                     // Maintain data structures and react to events
-                    getNewBattles(fromBlock, toBlock);
+                    ChallengeReport report = getNewBattles(fromBlock, toBlock);
+
+                    if (report != null) {
+                        CompletableFuture.supplyAsync(() -> challengeEmailNotifier.sendIfEnabled(report));
+                    }
+
                     removeApproved(fromBlock, toBlock);
                     removeInvalid(fromBlock, toBlock);
                     deleteFinishedBattles(fromBlock, toBlock);
@@ -155,17 +167,25 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
      * @param fromBlock
      * @param toBlock
      * @throws IOException
+     * @return null when no events were found otherwise a ChallengeReport
      */
-    protected void getNewBattles(long fromBlock, long toBlock) throws IOException {
-        List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
-        for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
-            if (isMine(newBattleEvent)) {
-                Keccak256Hash sessionId = newBattleEvent.sessionId;
-                Keccak256Hash superblockId = newBattleEvent.superblockHash;
-                sessionToSuperblockMap.put(sessionId, superblockId);
-                addToSuperblockToSessionsMap(sessionId, superblockId);
+    @Nullable
+    protected ChallengeReport getNewBattles(long fromBlock, long toBlock) throws IOException {
+        var challenged = new ArrayList<Keccak256Hash>();
+        boolean isAtLeastOneMine = false;
+
+        List<EthWrapper.NewBattleEvent> events = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
+        for (EthWrapper.NewBattleEvent event : events) {
+            if (isMine(event)) {
+                isAtLeastOneMine = true;
+                sessionToSuperblockMap.put(event.sessionId, event.superblockHash);
+                addToSuperblockToSessionsMap(event.sessionId, event.superblockHash);
             }
+
+            challenged.add(event.superblockHash);
         }
+
+        return events.size() == 0 ? null : new ChallengeReport(isAtLeastOneMine, challenged);
     }
 
     protected void addToSuperblockToSessionsMap(Keccak256Hash sessionId, Keccak256Hash superblockId) {
