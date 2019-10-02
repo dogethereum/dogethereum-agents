@@ -307,10 +307,17 @@ public class EthWrapper {
 
         // The parent is either approved or semi approved. We can send the superblock.
         CompletableFuture<TransactionReceipt> futureReceipt = proposeSuperblock(superblock);
+
         logger.info("Sent superblock {}", superblock.getSuperblockId());
-        futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                logger.info("proposeSuperblock receipt {}", receipt.toString())
-        );
+        futureReceipt.handle((receipt, throwable) -> {
+            if (receipt != null) {
+                logger.info("proposeSuperblock receipt {}", receipt.toString());
+            } else {
+                logger.info("proposeSuperblock EXCEPTION:", throwable);
+            }
+            return true;
+        });
+
         Thread.sleep(200);
         return true;
     }
