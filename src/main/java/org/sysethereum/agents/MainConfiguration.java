@@ -71,7 +71,7 @@ public class MainConfiguration {
 
     @Bean
     public Web3jService mainWeb3jService() {
-        return new HttpService(); // defaults to http://localhost:8545/
+        return new HttpService("http://localhost:8645/");
     }
 
     @Bean
