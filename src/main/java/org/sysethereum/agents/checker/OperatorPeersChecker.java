@@ -10,7 +10,6 @@ import org.bitcoinj.core.PeerAddress;
 import org.springframework.stereotype.Component;
 import org.sysethereum.agents.constants.AgentConstants;
 
-import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -35,7 +34,6 @@ public class OperatorPeersChecker {
         this.syscoinPeerFactory = syscoinPeerFactory;
     }
 
-    @PostConstruct
     public void setup() {
         int defaultPort = agentConstants.getSyscoinParams().getPort();
         List<String> peerStrings = List.of("127.0.0.1");

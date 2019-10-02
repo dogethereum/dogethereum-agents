@@ -5,6 +5,7 @@ import com.google.common.primitives.*;
 import org.bitcoinj.core.Utils;
 import org.bouncycastle.jcajce.provider.digest.Keccak;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -55,6 +56,14 @@ public class Keccak256Hash implements Serializable, Comparable<Keccak256Hash> {
      *         hex string, or if it does not represent exactly 32 bytes
      */
     public static Keccak256Hash wrap(String hexString) {
+        return wrap(Utils.HEX.decode(hexString));
+    }
+
+    @Nullable
+    public static Keccak256Hash wrapNullable(@Nullable String hexString) {
+        if (hexString == null)
+            return null;
+
         return wrap(Utils.HEX.decode(hexString));
     }
 

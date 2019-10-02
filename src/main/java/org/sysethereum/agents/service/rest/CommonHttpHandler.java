@@ -3,11 +3,20 @@ package org.sysethereum.agents.service.rest;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.LinkedHashMap;
 
 public abstract class CommonHttpHandler implements HttpHandler {
+
+    @Nullable
+    protected String sanitizeHash(@Nullable String hash) {
+        if (hash != null && hash.startsWith("0x"))
+            hash = hash.substring(2);
+
+        return hash;
+    }
 
     /**
      * @param httpExchange

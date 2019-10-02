@@ -2,8 +2,13 @@ package org.sysethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
 import org.sysethereum.agents.constants.AgentConstants;
+import org.sysethereum.agents.constants.EthAddresses;
 import org.sysethereum.agents.constants.SystemProperties;
+import org.sysethereum.agents.contract.SyscoinBattleManagerExtended;
+import org.sysethereum.agents.core.bridge.BattleContractApi;
+import org.sysethereum.agents.core.bridge.ClaimContractApi;
 import org.sysethereum.agents.core.bridge.Superblock;
+import org.sysethereum.agents.core.bridge.SuperblockContractApi;
 import org.sysethereum.agents.core.syscoin.*;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.slf4j.Logger;
@@ -12,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.sysethereum.agents.util.RandomizationCounter;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.util.*;
 
 /**
@@ -24,23 +30,31 @@ import java.util.*;
 public class SuperblockDefenderClient extends SuperblockBaseClient {
     private static final Logger logger = LoggerFactory.getLogger("SuperblockDefenderClient");
 
+    private final BattleContractApi battleContractApi;
     private final RandomizationCounter randomizationCounter;
+    private final BigInteger superblockTimeout;
+    private final SyscoinBattleManagerExtended battleManagerGetter;
 
     public SuperblockDefenderClient(
             SystemProperties systemProperties,
             AgentConstants agentConstants,
             SyscoinWrapper syscoinWrapper,
             EthWrapper ethWrapper,
+            SuperblockContractApi superblockContractApi,
+            BattleContractApi battleContractApi,
+            ClaimContractApi claimContractApi,
             SuperblockChain superblockChain,
-            RandomizationCounter randomizationCounter
+            RandomizationCounter randomizationCounter,
+            BigInteger superblockTimeout,
+            EthAddresses ethAddresses,
+            SyscoinBattleManagerExtended battleManagerGetter
     ) {
-        super("Superblock defender client", systemProperties, agentConstants, syscoinWrapper, ethWrapper, superblockChain);
+        super("Superblock defender client", systemProperties, agentConstants, syscoinWrapper, ethWrapper, superblockContractApi, claimContractApi, superblockChain);
+        this.battleContractApi = battleContractApi;
         this.randomizationCounter = randomizationCounter;
-    }
-
-    @Override
-    protected void setupClient() {
-        myAddress = ethWrapper.getGeneralPurposeAndSendSuperblocksAddress();
+        this.superblockTimeout = superblockTimeout;
+        this.battleManagerGetter = battleManagerGetter;
+        this.myAddress = ethAddresses.generalPurposeAndSendSuperblocksAddress;
     }
 
     @Override
@@ -82,9 +96,9 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 ethWrapper.getNewRespondHeadersEvents(fromBlock, toBlock);
 
         for (EthWrapper.RespondHeadersEvent respondHeaderEvent : respondHeaderEvents) {
-            if (isMine(respondHeaderEvent) && (ethWrapper.getSessionChallengeState(respondHeaderEvent.sessionId) == EthWrapper.ChallengeState.Challenged)) {
+            if (isMine(respondHeaderEvent) && (battleContractApi.getSessionChallengeState(respondHeaderEvent.sessionId) == EthWrapper.ChallengeState.Challenged)) {
                 // only respond if the event is the one you are looking for (it matches the number of hashes the contract thinks is the latest)
-                if (respondHeaderEvent.merkleHashCount == ethWrapper.getNumMerkleHashesBySession(respondHeaderEvent.sessionId)) {
+                if (respondHeaderEvent.merkleHashCount == battleContractApi.getNumMerkleHashesBySession(respondHeaderEvent.sessionId)) {
                     logger.info("Header response detected for superblock {} session {}. Merkle hash count: {}. Responding with next set now.", respondHeaderEvent.superblockHash, respondHeaderEvent.sessionId, respondHeaderEvent.merkleHashCount);
                     ethWrapper.respondBlockHeaders(respondHeaderEvent.sessionId, respondHeaderEvent.superblockHash, respondHeaderEvent.merkleHashCount);
                 }
@@ -100,7 +114,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      * @throws Exception
      */
     private void confirmEarliestApprovableSuperblock() throws Exception {
-        Keccak256Hash bestSuperblockId = ethWrapper.getBestSuperblockId();
+        Keccak256Hash bestSuperblockId = superblockContractApi.getBestSuperblockId();
         Superblock chainHead = superblockChain.getChainHead();
 
         if (chainHead.getSuperblockId().equals(bestSuperblockId)) {
@@ -131,7 +145,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             logger.info("Confirming semi-approved superblock {} with descendant {}", toConfirmId, highestDescendantId);
             ethWrapper.confirmClaim(toConfirmId, highestDescendantId);
         }
-        else if (ethWrapper.newAndTimeoutPassed(highestDescendantId) || ethWrapper.getInBattleAndSemiApprovable(highestDescendantId)) {
+        else if (ethWrapper.newAndTimeoutPassed(highestDescendantId) || claimContractApi.getInBattleAndSemiApprovable(highestDescendantId)) {
             // Either the superblock is unchallenged or it won all the battles;
             // it will get approved or semi-approved depending on the situation
             // (look at SyscoinClaimManager contract source code for more details)
@@ -152,7 +166,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 ethWrapper.getNewBattleEvents(fromBlock, toBlock);
 
         for (EthWrapper.NewBattleEvent queryBattleEvent : queryBattleEvents) {
-            if (isMine(queryBattleEvent) && (ethWrapper.getSessionChallengeState(queryBattleEvent.sessionId) == EthWrapper.ChallengeState.Challenged)) {
+            if (isMine(queryBattleEvent) && (battleContractApi.getSessionChallengeState(queryBattleEvent.sessionId) == EthWrapper.ChallengeState.Challenged)) {
                 logger.info("Battle detected for superblock {} session {}. Responding now with first set of headers.", queryBattleEvent.superblockHash, queryBattleEvent.sessionId);
                 ethWrapper.respondBlockHeaders(queryBattleEvent.sessionId, queryBattleEvent.superblockHash, 0);
             }
@@ -164,13 +178,13 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
 
     private boolean submittedUnresponsiveTimeoutPassed(Keccak256Hash superblockId) throws Exception {
-        return ethWrapper.getNewEventTimestampDate(superblockId).before(getUnresponsiveTimeoutDate());
+        return claimContractApi.getNewEventTimestampDate(superblockId).before(getUnresponsiveTimeoutDate());
     }
 
-    private Date getUnresponsiveTimeoutDate() throws Exception {
-        double delay = ethWrapper.getSuperblockTimeout().floatValue() * randomizationCounter.getValue();
-        int superblockTimeout = ethWrapper.getSuperblockTimeout().intValue() + (int)delay;
-        return SuperblockUtils.getNSecondsAgo(superblockTimeout);
+    private Date getUnresponsiveTimeoutDate() {
+        double delay = superblockTimeout.floatValue() * randomizationCounter.getValue();
+        int timeout = superblockTimeout.intValue() + (int)delay;
+        return SuperblockUtils.getNSecondsAgo(timeout);
     }
 
     private boolean unresponsiveTimeoutPassed(Keccak256Hash superblockId) throws Exception {
@@ -180,11 +194,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
 
     /* ---- OVERRIDE ABSTRACT METHODS ---- */
-
-    @Override
-    protected void setupFiles() {
-        setupBaseFiles();
-    }
 
     @Override
     protected boolean arePendingTransactions() throws InterruptedException, IOException {
@@ -232,10 +241,10 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      * @throws Exception
      */
     @Override
-    protected void removeSuperblocks(long fromBlock, long toBlock, List<EthWrapper.SuperblockEvent> superblockEvents)
+    protected void removeSuperblocks(long fromBlock, long toBlock, List<SuperblockContractApi.SuperblockEvent> superblockEvents)
             throws Exception {
         boolean removeFromContract = false;
-        for (EthWrapper.SuperblockEvent superblockEvent : superblockEvents) {
+        for (SuperblockContractApi.SuperblockEvent superblockEvent : superblockEvents) {
             if (superblockToSessionsMap.containsKey(superblockEvent.superblockId)) {
                 sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(superblockEvent.superblockId));
                 superblockToSessionsMap.remove(superblockEvent.superblockId);
@@ -244,7 +253,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
         }
         if (removeFromContract && config.isWithdrawFundsEnabled()) {
-            ethWrapper.withdrawAllFundsExceptLimit(myAddress, false);
+            claimContractApi.withdrawAllFundsExceptLimit(myAddress, false);
         }
     }
 
@@ -263,10 +272,10 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      * @throws Exception
      */
     private void removeSemiApprovedDescendants(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
-                ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
+        List<SuperblockContractApi.SuperblockEvent> semiApprovedSuperblockEvents =
+                superblockContractApi.getSemiApprovedSuperblocks(fromBlock, toBlock);
 
-        for (EthWrapper.SuperblockEvent semiApprovedSuperblockEvent : semiApprovedSuperblockEvents) {
+        for (SuperblockContractApi.SuperblockEvent semiApprovedSuperblockEvent : semiApprovedSuperblockEvents) {
             if (superblockToSessionsMap.containsKey(semiApprovedSuperblockEvent.superblockId)) {
                 sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(semiApprovedSuperblockEvent.superblockId));
                 superblockToSessionsMap.remove(semiApprovedSuperblockEvent.superblockId);
@@ -288,7 +297,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     @Override
     protected void deleteSubmitterConvictedBattles(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.SubmitterConvictedEvent> submitterConvictedEvents =
-                ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock, ethWrapper.getBattleManagerGetter());
+                ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock, battleManagerGetter);
 
         for (EthWrapper.SubmitterConvictedEvent submitterConvictedEvent : submitterConvictedEvents) {
             if (submitterConvictedEvent.submitter.equals(myAddress)) {
@@ -312,7 +321,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     @Override
     protected void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception {
         List<EthWrapper.ChallengerConvictedEvent> challengerConvictedEvents =
-                ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock, ethWrapper.getBattleManagerGetter());
+                ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock, battleManagerGetter);
 
         for (EthWrapper.ChallengerConvictedEvent challengerConvictedEvent : challengerConvictedEvents) {
             if (sessionToSuperblockMap.containsKey(challengerConvictedEvent.sessionId)) {

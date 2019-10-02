@@ -28,16 +28,15 @@ public class GetSyscoinRPCHandler extends CommonHttpHandler {
         if (setOriginAndHandleOptionsMethod(httpExchange)) return;
 
         LinkedHashMap<String, String> params = queryToMap(httpExchange.getRequestURI().getQuery());
-        StringBuilder response = new StringBuilder();
+        String response;
         try {
             String method = params.get("method");
             params.remove("method");
             ArrayList<Object> paramList = new ArrayList<>(params.values());
-            response.append(syscoinRPCClient.makeCoreCall(method, paramList));
+            response = syscoinRPCClient.makeCoreCall(method, paramList);
         } catch (Exception e) {
-            RestError error = new RestError(e.toString());
-            response.append(gson.toJson(error));
+            response = gson.toJson(new RestError(e.toString()));
         }
-        writeResponse(httpExchange, response.toString());
+        writeResponse(httpExchange, response);
     }
 }

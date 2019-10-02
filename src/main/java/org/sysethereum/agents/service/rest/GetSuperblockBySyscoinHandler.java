@@ -31,19 +31,15 @@ public class GetSuperblockBySyscoinHandler extends CommonHttpHandler {
         if (setOriginAndHandleOptionsMethod(httpExchange)) return;
 
         LinkedHashMap<String, String> params = queryToMap(httpExchange.getRequestURI().getQuery());
-        StringBuilder response = new StringBuilder();
+        String response;
 
         try {
-            String hash = params.get("hash");
-            if (hash != null && hash.startsWith("0x"))
-                hash = hash.substring(2);
+            String hash = sanitizeHash(params.get("hash"));
             String height = params.get("height");
-            String superblockString = syscoinToEthClient.getSuperblockBySyscoinBlock(hash != null ? Sha256Hash.wrap(hash) : null, height != null ? Integer.decode(height) : -1);
-            response.append(superblockString);
+            response = gson.toJson(syscoinToEthClient.getSuperblockBySyscoinBlock(hash != null ? Sha256Hash.wrap(hash) : null, height != null ? Integer.decode(height) : -1));
         } catch (Exception exception) {
-            RestError error = new RestError("Could not get Superblock, internal error!");
-            response.append(gson.toJson(error));
+            response =  gson.toJson(new RestError("Could not get Superblock, internal error!"));
         }
-        writeResponse(httpExchange, response.toString());
+        writeResponse(httpExchange, response);
     }
 }

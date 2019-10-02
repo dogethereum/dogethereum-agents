@@ -6,8 +6,11 @@
 package org.sysethereum.agents.core;
 
 
-import com.google.gson.Gson;
+import org.sysethereum.agents.constants.EthAddresses;
+import org.sysethereum.agents.core.bridge.ClaimContractApi;
 import org.sysethereum.agents.core.bridge.Superblock;
+import org.sysethereum.agents.core.bridge.SuperblockContractApi;
+import org.sysethereum.agents.core.eth.SPVProof;
 import org.sysethereum.agents.core.syscoin.*;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
@@ -20,10 +23,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
+import javax.annotation.Nullable;
+import javax.annotation.PreDestroy;
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Manages the process of informing Sysethereum Contracts news about the syscoin blockchain
@@ -38,10 +43,13 @@ public class SyscoinToEthClient {
     private final EthWrapper ethWrapper;
     private final SyscoinWrapper syscoinWrapper;
     private final SuperblockChain superblockChain;
-    private final Gson gson;
+    private final SuperblockContractApi superblockContractApi;
+    private final ClaimContractApi claimContractApi;
+    private final EthAddresses ethAddresses;
 
     private final SystemProperties config;
     private final AgentConstants agentConstants;
+    private final Timer timer;
 
     public SyscoinToEthClient(
             SystemProperties systemProperties,
@@ -49,33 +57,43 @@ public class SyscoinToEthClient {
             SuperblockChain superblockChain,
             SyscoinWrapper syscoinWrapper,
             EthWrapper ethWrapper,
-            Gson gson
+            SuperblockContractApi superblockContractApi,
+            ClaimContractApi claimContractApi,
+            EthAddresses ethAddresses
     ) {
         this.config = systemProperties;
         this.agentConstants = agentConstants;
         this.superblockChain = superblockChain;
         this.syscoinWrapper = syscoinWrapper;
         this.ethWrapper = ethWrapper;
-        this.gson = gson;
+        this.superblockContractApi = superblockContractApi;
+        this.claimContractApi = claimContractApi;
+        this.ethAddresses = ethAddresses;
+        this.timer = new Timer("Syscoin to Eth client", true);
     }
 
-    @PostConstruct
-    public void setup() {
-
+    public boolean setup() {
         if (config.isSyscoinSuperblockSubmitterEnabled()) {
-            new Timer("Syscoin to Eth client").scheduleAtFixedRate(new SyscoinToEthClientTimerTask(),
-                    getFirstExecutionDate(), agentConstants.getSyscoinToEthTimerTaskPeriod());
-
+            try {
+                timer.scheduleAtFixedRate(
+                        new SyscoinToEthClientTimerTask(),
+                        20_000, // 20 seconds
+                        agentConstants.getSyscoinToEthTimerTaskPeriod()
+                );
+            } catch (Exception e) {
+                return false;
+            }
         }
+        return true;
     }
 
-    private Date getFirstExecutionDate() {
-        Calendar firstExecution = Calendar.getInstance();
-        firstExecution.add(Calendar.SECOND, 20);
-        return firstExecution.getTime();
+    @PreDestroy
+    public void cleanUp() {
+        timer.cancel();
+        timer.purge();
+        logger.info("cleanUp: Timer was canceled.");
     }
 
-    @SuppressWarnings("unused")
     private class SyscoinToEthClientTimerTask extends TimerTask {
         @Override
         public void run() {
@@ -100,12 +118,13 @@ public class SyscoinToEthClient {
      * @return Number of superblocks sent to the bridge.
      * @throws Exception
      */
+    @SuppressWarnings("UnusedReturnValue")
     public long updateBridgeSuperblockChain() throws Exception {
         if (ethWrapper.arePendingTransactionsForSendSuperblocksAddress()) {
             logger.debug("Skipping sending superblocks, there are pending transaction for the sender address.");
             return 0;
         }
-        Keccak256Hash bestSuperblockId = ethWrapper.getBestSuperblockId();
+        Keccak256Hash bestSuperblockId = superblockContractApi.getBestSuperblockId();
         checkNotNull(bestSuperblockId, "No best chain superblock found");
         logger.debug("Best superblock {}.", bestSuperblockId);
 
@@ -123,13 +142,13 @@ public class SyscoinToEthClient {
             return 0;
         }
 
-        if (!superblockChain.sendingTimePassed(toConfirm) || !ethWrapper.getAbilityToProposeNextSuperblock()) {
+        if (!superblockChain.sendingTimePassed(toConfirm) || !claimContractApi.getAbilityToProposeNextSuperblock()) {
             logger.debug("Too early to send superblock {}, will try again in a few seconds.",
                     toConfirm.getSuperblockId());
             return 0;
         }
 
-        if(!ethWrapper.sendStoreSuperblock(toConfirm, ethWrapper.getGeneralPurposeAndSendSuperblocksAddress())){
+        if(!ethWrapper.sendStoreSuperblock(toConfirm, ethAddresses.generalPurposeAndSendSuperblocksAddress)){
             return 0;
         }
 
@@ -140,7 +159,7 @@ public class SyscoinToEthClient {
      * Relays all unprocessed transactions to Ethereum contracts by calling sendRelayTx.
      * @throws Exception
      */
-    public String getSuperblockSPVProof(Sha256Hash blockHash, int height) throws Exception {
+    public Object getSuperblockSPVProof(Sha256Hash blockHash, int height) throws Exception {
         synchronized (this) {
 
             StoredBlock txStoredBlock;
@@ -149,21 +168,18 @@ public class SyscoinToEthClient {
             else
                 txStoredBlock  = syscoinWrapper.getStoredBlockAtHeight(height);
             if (txStoredBlock == null) {
-                RestError spvProofError = new RestError("Block has not been stored in local database. Block hash: " + blockHash);
-                return gson.toJson(spvProofError);
+                return new RestError("Block has not been stored in local database. Block hash: " + blockHash);
             }
             Superblock txSuperblock = superblockChain.findBySysBlockHash(txStoredBlock.getHeader().getHash());
 
             if (txSuperblock == null) {
-                RestError spvProofError = new RestError("Superblock has not been stored in local database yet. " +
+                return new RestError("Superblock has not been stored in local database yet. " +
                         "Block hash: " + txStoredBlock.getHeader().getHash());
-                return gson.toJson(spvProofError);
             }
 
-            if (!ethWrapper.isSuperblockApproved(txSuperblock.getSuperblockId())) {
-                RestError spvProofError = new RestError("Superblock has not been approved yet. " +
+            if (!superblockContractApi.isApproved(txSuperblock.getSuperblockId())) {
+                return new RestError("Superblock has not been approved yet. " +
                         "Block hash: " + txStoredBlock.getHeader().getHash() + ", superblock ID: " + txSuperblock.getSuperblockId());
-                return gson.toJson(spvProofError);
             }
 
             int syscoinBlockIndex = txSuperblock.getSyscoinBlockLeafIndex(txStoredBlock.getHeader().getHash());
@@ -172,8 +188,25 @@ public class SyscoinToEthClient {
             SuperblockPartialMerkleTree superblockPMT = SuperblockPartialMerkleTree.buildFromLeaves(agentConstants.getSyscoinParams(),
                     includeBits, txSuperblock.getSyscoinBlockHashes());
 
-            return ethWrapper.getSuperblockSPVProof((AltcoinBlock) txStoredBlock.getHeader(), txSuperblock, superblockPMT);
+            return getSuperblockSPVProof((AltcoinBlock) txStoredBlock.getHeader(), txSuperblock, superblockPMT);
         }
+    }
+
+    /**
+     * Returns an SPV Proof to the superblock for a Syscoin transaction to Sysethereum contracts.
+     * @param syscoinBlock Syscoin block that the transaction is in.
+     * @param pmt Partial Merkle tree for constructing an SPV proof
+     *                      of the Syscoin block's existence in the superblock.
+     * @throws Exception
+     */
+    public Object getSuperblockSPVProof(AltcoinBlock syscoinBlock, Superblock superblock, SuperblockPartialMerkleTree pmt) {
+
+        // Construct SPV proof for block
+        int syscoinBlockIndex = pmt.getTransactionIndex(syscoinBlock.getHash());
+        List<String> siblings = pmt.getTransactionPath(syscoinBlock.getHash())
+                .stream().map(Sha256Hash::toString).collect(toList());
+
+        return new SPVProof(syscoinBlockIndex, siblings, superblock.getSuperblockId().toString());
     }
 
     private static class SuperBlockResponse {
@@ -200,44 +233,45 @@ public class SyscoinToEthClient {
         }
     }
 
-    public String getSuperblock(Keccak256Hash superblockId, int height) throws Exception {
+    public Object getSuperblock(@Nullable Keccak256Hash superblockId, int height) throws Exception {
         synchronized (this) {
+            Superblock sb;
 
-            Superblock txSuperblock;
-            if (superblockId != null)
-                txSuperblock =  superblockChain.getSuperblock(superblockId);
-            else
-                txSuperblock =  superblockChain.getSuperblockByHeight(height);
-
-            return getJsonResponse(txSuperblock);
-        }
-    }
-
-    public String getSuperblockBySyscoinBlock(Sha256Hash blockHash, int height) throws Exception {
-        synchronized (this) {
-
-            StoredBlock txStoredBlock;
-            if (blockHash != null)
-                txStoredBlock = syscoinWrapper.getBlock(blockHash);
-            else
-                txStoredBlock = syscoinWrapper.getStoredBlockAtHeight(height);
-            if (txStoredBlock == null) {
-                RestError spvProofError = new RestError("Block has not been stored in local database.");
-                return gson.toJson(spvProofError);
+            if (superblockId != null) {
+                sb = superblockChain.getSuperblock(superblockId);
+            } else {
+                sb = superblockChain.getByHeight(height);
             }
-            Superblock txSuperblock = superblockChain.findBySysBlockHash(txStoredBlock.getHeader().getHash());
 
-            return getJsonResponse(txSuperblock);
+            return handleSuperblock(sb);
         }
     }
 
-    private String getJsonResponse(Superblock txSuperblock) throws Exception {
-        if (txSuperblock == null) {
-            RestError spvProofError = new RestError("Superblock has not been stored in local database yet.");
-            return gson.toJson(spvProofError);
+    public Object getSuperblockBySyscoinBlock(@Nullable Sha256Hash blockHash, int height) throws Exception {
+        synchronized (this) {
+            StoredBlock sb;
+
+            if (blockHash != null) {
+                sb = syscoinWrapper.getBlock(blockHash);
+            } else {
+                sb = syscoinWrapper.getStoredBlockAtHeight(height);
+            }
+
+            if (sb == null) {
+                return new RestError("Block has not been stored in local database.");
+            }
+
+            Superblock txSuperblock = superblockChain.findBySysBlockHash(sb.getHeader().getHash());
+
+            return handleSuperblock(txSuperblock);
         }
-        SuperBlockResponse response = new SuperBlockResponse(txSuperblock, ethWrapper.isSuperblockApproved(txSuperblock.getSuperblockId()));
-        return gson.toJson(response);
+    }
+
+    private Object handleSuperblock(@Nullable Superblock sb) throws Exception {
+        if (sb == null) {
+            return new RestError("Superblock has not been stored in local database yet.");
+        }
+        return new SuperBlockResponse(sb, superblockContractApi.isApproved(sb.getSuperblockId()));
     }
 
 }

@@ -8,15 +8,15 @@ import org.bitcoinj.store.BlockStoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.sysethereum.agents.core.bridge.Superblock;
 import org.sysethereum.agents.core.bridge.SuperblockFactory;
 import org.sysethereum.agents.service.rest.MerkleRootComputer;
 
 import javax.annotation.Nullable;
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
+import java.math.BigInteger;
 import java.util.*;
 
 /**
@@ -24,13 +24,13 @@ import java.util.*;
  * Storage is managed by SuperblockLevelDBBlockStore.
  * @author Catalina Juarros
  */
-@Component
+@Service
 @Slf4j(topic = "SuperblockChain")
 public class SuperblockChain {
 
     private static final Logger logger = LoggerFactory.getLogger("SuperblockChain");
+
     private final SyscoinWrapper syscoinWrapper; // Interface with the Syscoin blockchain
-    private final SuperblockConstantProvider provider; // Interface with the Ethereum blockchain
     private final MerkleRootComputer merkleRootComputer;
     private final SuperblockFactory superblockFactory;
     private final SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
@@ -44,26 +44,18 @@ public class SuperblockChain {
             SyscoinWrapper syscoinWrapper,
             SuperblockFactory superblockFactory,
             SuperblockLevelDBBlockStore superblockLevelDBBlockStore,
-            SuperblockConstantProvider provider,
-            MerkleRootComputer merkleRootComputer
+            MerkleRootComputer merkleRootComputer,
+            BigInteger superblockDuration,
+            BigInteger superblockDelay
     ) {
         this.syscoinWrapper = syscoinWrapper;
         this.superblockFactory = superblockFactory;
         this.superblockStorage = superblockLevelDBBlockStore;
-        this.provider = provider;
         this.merkleRootComputer = merkleRootComputer;
-    }
 
-    /**
-     * Sets up variables and initialises chain.
-     * @throws Exception if superblock duration or delay cannot be retrieved from SuperblockConstantProvider.
-     * @throws BlockStoreException if superblockStorage is not properly initialized.
-     */
-    @PostConstruct
-    private void setup() throws Exception {
-        this.SUPERBLOCK_DURATION = provider.getSuperblockDuration().intValue();
-        this.SUPERBLOCK_DELAY = provider.getSuperblockDelay().intValue();
-        this.SUPERBLOCK_STORING_WINDOW = 7200; // store superblocks 2 hr before they should be sent
+        this.SUPERBLOCK_DURATION = superblockDuration.intValue();
+        this.SUPERBLOCK_DELAY = superblockDelay.intValue();
+        this.SUPERBLOCK_STORING_WINDOW = SUPERBLOCK_DELAY * 2/3 ; // store superblocks 2 hr before they should be sent
     }
 
     /**
@@ -201,7 +193,7 @@ public class SuperblockChain {
      * @return Superblock with the given height if said height is less than that of the chain tip,
      *         null otherwise.
      */
-    public Superblock getSuperblockByHeight(long superblockHeight) {
+    public Superblock getByHeight(long superblockHeight) {
         Superblock currentSuperblock = getChainHead();
         if (superblockHeight > currentSuperblock.getSuperblockHeight())
             return null; // Superblock does not exist.
