@@ -70,8 +70,10 @@ public class MainConfiguration {
     }
 
     @Bean
-    public Web3jService mainWeb3jService() {
-        return new HttpService("http://localhost:8645/");
+    public Web3jService mainWeb3jService(SystemProperties config) {
+        String url = config.getStringProperty("geth.rpc.url_and_port");
+        logger.debug("mainWeb3jService: Set to: {}", url);
+        return new HttpService(url);
     }
 
     @Bean
