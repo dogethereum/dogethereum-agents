@@ -76,7 +76,7 @@ public class SystemProperties {
     }
 
     public String constants() {
-        return config.hasPath("constants") ? config.getString("constants") : null;
+        return config.getString("constants");
     }
 
     public String projectVersion() {
@@ -143,15 +143,19 @@ public class SystemProperties {
         return getLongProperty("deposited.funds.limit", 0);
     }
 
-    protected String getStringProperty(String propertyName, String defaultValue) {
+    public String getStringProperty(String propertyName) {
+        return config.getString(propertyName);
+    }
+
+    public String getStringProperty(String propertyName, String defaultValue) {
         return config.hasPath(propertyName) ? config.getString(propertyName) : defaultValue;
     }
 
-    protected long getLongProperty(String propertyName, long defaultValue) {
+    public long getLongProperty(String propertyName, long defaultValue) {
         return config.hasPath(propertyName) ? config.getLong(propertyName) : defaultValue;
     }
 
-    protected boolean getBooleanProperty(String propertyName, boolean defaultValue) {
+    public boolean getBooleanProperty(String propertyName, boolean defaultValue) {
         return config.hasPath(propertyName) ? config.getBoolean(propertyName) : defaultValue;
     }
 
