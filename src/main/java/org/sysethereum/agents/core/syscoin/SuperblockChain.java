@@ -288,6 +288,6 @@ public class SuperblockChain {
      * @return True if superblock can be sent to the bridge, false otherwise.
      */
     public boolean sendingTimePassed(Superblock superblock) {
-        return new Date(superblock.getLastSyscoinBlockTime()).before(getSendingStopTime());
+        return new Date(superblock.getLastSyscoinBlockMedianTime()).before(getSendingStopTime());
     }
 }
