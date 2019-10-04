@@ -1,5 +1,6 @@
 package org.sysethereum.agents.constants;
 
+import com.google.common.base.Charsets;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigRenderOptions;
@@ -7,13 +8,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.InputStream;
-import java.util.Properties;
+import java.io.InputStreamReader;
 
 /**
  * Utility class to retrieve property values from the configuration file
- *
+ * <p>
  * The properties are taken from different sources and merged in the following order
  * (the config option from the next source overrides option from previous):
  * - system property : each config entry might be altered via -D VM option
@@ -24,43 +24,31 @@ import java.util.Properties;
  */
 @Slf4j(topic = "SystemProperties")
 public class SystemProperties {
+
     private static final Logger logger = LoggerFactory.getLogger("SystemProperties");
 
     public static final String LOCAL = "local";
     public static final String INTEGRATION = "integration";
     public static final String ETHGANACHE_SYSCOINMAIN = "ethganachesyscoinmain";
 
-    private static final String YES = "yes";
-    private static final String NO = "no";
+    public static final String YES = "yes";
+    public static final String NO = "no";
 
     private final Config config;
 
     private final String projectVersion;
     private final String projectVersionModifier;
 
-    public SystemProperties() {
-        try {
-            Config javaSystemProperties = ConfigFactory.load("no-such-resource-only-system-props");
-            String file = System.getProperty("sysethereum.agents.conf.file");
-            Config cmdLineConfigFile = file != null ? ConfigFactory.parseFile(new File(file)) : ConfigFactory.empty();
-            logger.info("Config ( {} ): user properties from -Dsysethereum.agents.conf.file file '{}'",
-                    cmdLineConfigFile.entrySet().isEmpty() ? NO : YES, file);
-            this.config = javaSystemProperties
-                    .withFallback(cmdLineConfigFile);
+    public static SystemProperties forTest(InputStream config) {
+        return new SystemProperties(ConfigFactory.parseReader(new InputStreamReader(config, Charsets.UTF_8)), "1.0.0", "DEV");
+    }
 
-            logger.debug("Config trace: " + config.root().render(ConfigRenderOptions.defaults().
-                    setComments(false).setJson(false)));
+    public SystemProperties(Config config, String projectVersion, String projectVersionModifier) {
+        this.config = config;
+        this.projectVersion = projectVersion;
+        this.projectVersionModifier = projectVersionModifier;
 
-            Properties props = new Properties();
-            InputStream is = getClass().getResourceAsStream("/version.properties");
-            props.load(is);
-
-            this.projectVersion = props.getProperty("versionNumber").replaceAll("'", "");
-            this.projectVersionModifier = props.getProperty("modifier").replaceAll("\"", "");
-        } catch (Exception e) {
-            logger.error("Can't read config.", e);
-            throw new RuntimeException(e);
-        }
+        logger.debug("Config trace: " + config.root().render(ConfigRenderOptions.defaults().setComments(false).setJson(false)));
     }
 
     public boolean isSyscoinSuperblockSubmitterEnabled() {
@@ -91,7 +79,7 @@ public class SystemProperties {
         return getStringProperty("general.purpose.and.send.superblocks.address", null);
     }
 
-    public String generalPurposeAndSendSuperblocksUnlockPW(){
+    public String generalPurposeAndSendSuperblocksUnlockPW() {
         return getStringProperty("general.purpose.and.send.superblocks.unlockpw", null);
     }
 
@@ -99,7 +87,7 @@ public class SystemProperties {
         return getStringProperty("syscoin.superblock.challenger.address", null);
     }
 
-    public String syscoinSuperblockChallengerUnlockPW(){
+    public String syscoinSuperblockChallengerUnlockPW() {
         return getStringProperty("syscoin.superblock.challenger.unlockpw", null);
     }
 
@@ -128,7 +116,7 @@ public class SystemProperties {
     }
 
     public long gasPriceMaximum() {
-        return getLongProperty("gas.price.max",  0);
+        return getLongProperty("gas.price.max", 0);
     }
 
     public long gasLimit() {
@@ -151,8 +139,22 @@ public class SystemProperties {
         return config.hasPath(propertyName) ? config.getString(propertyName) : defaultValue;
     }
 
+    public int getIntProperty(String propertyName) {
+        return config.getInt(propertyName);
+    }
+
+    @SuppressWarnings("unused")
+    public long getLongProperty(String propertyName) {
+        return config.getLong(propertyName);
+    }
+
     public long getLongProperty(String propertyName, long defaultValue) {
         return config.hasPath(propertyName) ? config.getLong(propertyName) : defaultValue;
+    }
+
+    @SuppressWarnings("unused")
+    public boolean getBooleanProperty(String propertyName) {
+        return config.getBoolean(propertyName);
     }
 
     public boolean getBooleanProperty(String propertyName, boolean defaultValue) {

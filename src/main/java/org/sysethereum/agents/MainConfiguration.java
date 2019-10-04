@@ -5,6 +5,8 @@ import com.sun.net.httpserver.HttpServer;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.Context;
 import org.bitcoinj.script.Script;
+import org.simplejavamail.mailer.Mailer;
+import org.simplejavamail.mailer.MailerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -14,6 +16,7 @@ import org.sysethereum.agents.contract.SyscoinBattleManagerExtended;
 import org.sysethereum.agents.contract.SyscoinClaimManagerExtended;
 import org.sysethereum.agents.contract.SyscoinSuperblocksExtended;
 import org.sysethereum.agents.core.syscoin.SyscoinWalletAppKit;
+import org.sysethereum.agents.service.MailerFactory;
 import org.sysethereum.agents.service.rest.*;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.protocol.Web3j;
@@ -21,12 +24,14 @@ import org.web3j.protocol.Web3jService;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.tx.ClientTransactionManager;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
 import static org.sysethereum.agents.constants.SystemProperties.*;
 
 @Configuration
@@ -42,8 +47,14 @@ public class MainConfiguration {
     }
 
     @Bean
-    public SystemProperties systemProperties() {
-        return new SystemProperties();
+    public SystemProperties config(SystemPropertiesFactory systemPropertiesFactory) {
+        return systemPropertiesFactory.create();
+    }
+
+    @Nullable
+    @Bean
+    public Mailer mailer(MailerFactory mailerFactory) {
+        return mailerFactory.create();
     }
 
     @Bean
