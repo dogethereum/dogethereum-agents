@@ -247,7 +247,7 @@ public class EthWrapper {
 
         if (superblockChain.getSuperblock(superblockId).getSuperblockHeight() == superblockChain.getChainHeight()) {
             // There's nothing above the tip of the chain.
-            logger.info("Superblock {} is above the tip of the chain. Returning from getHighestSemiApprovedOrApprovedDescendant.", superblockId);
+            logger.info("Superblock {} is the tip of the superblock chain, no descendant exists. Returning from getHighestSemiApprovedOrApprovedDescendant.", superblockId);
             return null;
         }
         Superblock currentSuperblock = superblockChain.getChainHead();
