@@ -126,18 +126,21 @@ public class MainLifecycle {
         Thread.currentThread().setName("spring-pre-destroy-thread");
         logger.debug("cleanUp: Free resources");
 
+        sysSuperblockChainClient.cleanUp();
+
+        restServer.stop();
+        syscoinWrapper.stop();
+
         web3.shutdown();
         web3Secondary.shutdown();
+
         var okHttpClient = (OkHttpClient) ReflectionTestUtils.getField(web3jSecondaryService, "httpClient");
-        restServer.stop();
 
         if (okHttpClient != null) {
             logger.debug("cleanUp: Shutdown okHttpClient");
             okHttpClient.dispatcher().executorService().shutdown();
             okHttpClient.connectionPool().evictAll();
         }
-
-        syscoinWrapper.stop();
 
         logger.debug("cleanUp: Done");
     }
