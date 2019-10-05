@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import static org.sysethereum.agents.constants.AgentRole.CHALLENGER;
+
 /**
  * Utility class to retrieve property values from the configuration file
  * <p>
@@ -51,12 +53,10 @@ public class SystemProperties {
         logger.debug("Config trace: " + config.root().render(ConfigRenderOptions.defaults().setComments(false).setJson(false)));
     }
 
-    public boolean isSyscoinSuperblockSubmitterEnabled() {
-        return getBooleanProperty("syscoin.superblock.submitter.enabled", false);
-    }
-
-    public boolean isSyscoinBlockChallengerEnabled() {
-        return getBooleanProperty("syscoin.superblock.challenger.enabled", false);
+    public boolean isAgentRoleEnabled(AgentRole agentRole) {
+        return agentRole == CHALLENGER
+                ? getBooleanProperty("syscoin.superblock.challenger.enabled", false)
+                : getBooleanProperty("syscoin.superblock.submitter.enabled", false);
     }
 
     public boolean isGanache() {

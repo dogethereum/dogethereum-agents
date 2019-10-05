@@ -29,6 +29,7 @@ import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.toList;
+import static org.sysethereum.agents.constants.AgentRole.SUBMITTER;
 
 /**
  * Manages the process of informing Sysethereum Contracts news about the syscoin blockchain
@@ -73,7 +74,7 @@ public class SyscoinToEthClient {
     }
 
     public boolean setup() {
-        if (config.isSyscoinSuperblockSubmitterEnabled()) {
+        if (config.isAgentRoleEnabled(SUBMITTER)) {
             try {
                 timer.scheduleAtFixedRate(
                         new SyscoinToEthClientTimerTask(),
@@ -101,7 +102,7 @@ public class SyscoinToEthClient {
                 if (!ethWrapper.isEthNodeSyncing()) {
                     logger.debug("SyscoinToEthClientTimerTask");
                     ethWrapper.updateContractFacadesGasPrice();
-                    if (config.isSyscoinSuperblockSubmitterEnabled()) {
+                    if (config.isAgentRoleEnabled(SUBMITTER)) {
                         updateBridgeSuperblockChain();
                     }
                 } else {

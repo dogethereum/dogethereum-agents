@@ -9,7 +9,6 @@ import java.io.*;
 public class PersistentFileStore {
     public final File dataDirectory;
 
-
     public PersistentFileStore(String dataDirectory) {
         this(new File(dataDirectory));
     }

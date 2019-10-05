@@ -1,7 +1,9 @@
 package org.sysethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.sysethereum.agents.constants.AgentConstants;
+import org.sysethereum.agents.constants.AgentRole;
 import org.sysethereum.agents.constants.EthAddresses;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.contract.SyscoinBattleManagerExtended;
@@ -31,15 +33,17 @@ import java.util.*;
 public class SuperblockDefenderClient extends SuperblockBaseClient {
     private static final Logger logger = LoggerFactory.getLogger("SuperblockDefenderClient");
 
+    @NotNull
+    private final SystemProperties config;
     private final BattleContractApi battleContractApi;
+    private final SuperblockChain superblockChain;
     private final RandomizationCounter randomizationCounter;
     private final BigInteger superblockTimeout;
     private final SyscoinBattleManagerExtended battleManagerGetter;
 
     public SuperblockDefenderClient(
-            SystemProperties systemProperties,
+            SystemProperties config,
             AgentConstants agentConstants,
-            SyscoinWrapper syscoinWrapper,
             EthWrapper ethWrapper,
             SuperblockContractApi superblockContractApi,
             BattleContractApi battleContractApi,
@@ -51,8 +55,12 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             SyscoinBattleManagerExtended battleManagerGetter,
             ChallengeEmailNotifier challengeEmailNotifier
     ) {
-        super("Superblock defender client", systemProperties, agentConstants, syscoinWrapper, ethWrapper, superblockContractApi, claimContractApi, superblockChain, challengeEmailNotifier);
+        super(AgentRole.SUBMITTER, agentConstants, ethWrapper, superblockContractApi, claimContractApi,
+                challengeEmailNotifier, config.dataDirectory());
+
+        this.config = config;
         this.battleContractApi = battleContractApi;
+        this.superblockChain = superblockChain;
         this.randomizationCounter = randomizationCounter;
         this.superblockTimeout = superblockTimeout;
         this.battleManagerGetter = battleManagerGetter;
@@ -202,11 +210,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     @Override
-    protected boolean isEnabled() {
-        return config.isSyscoinSuperblockSubmitterEnabled();
-    }
-
-    @Override
     protected String getLastEthBlockProcessedFilename() {
         return "SuperblockDefenderLatestEthBlockProcessedFile.dat";
     }
@@ -228,11 +231,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     private boolean isMine(EthWrapper.RespondHeadersEvent respondHeadersEvent) {
         return respondHeadersEvent.submitter.equals(myAddress);
-    }
-
-    @Override
-    protected long getConfirmations() {
-        return agentConstants.getDefenderConfirmations();
     }
 
     /**
@@ -257,12 +255,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             claimContractApi.withdrawAllFundsExceptLimit(myAddress, false);
         }
     }
-
-    @Override
-    protected long getTimerTaskPeriod() {
-        return agentConstants.getDefenderTimerTaskPeriod();
-    }
-
 
     /* ---- BATTLE MAP METHODS ---- */
 

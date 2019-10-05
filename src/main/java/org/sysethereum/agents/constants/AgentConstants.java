@@ -3,6 +3,8 @@ package org.sysethereum.agents.constants;
 import org.libdohj.params.AbstractSyscoinParams;
 import org.sysethereum.agents.core.bridge.SuperblockData;
 
+import static org.sysethereum.agents.constants.AgentRole.CHALLENGER;
+
 /**
  * Agent and Bridge constants.
  * Subclasses are customizations for each network (syscoin regtest and eth ganache, syscoin mainnet and eth rinkeby, syscoin mainnet and eth prod)
@@ -56,20 +58,16 @@ public class AgentConstants {
         return genesisSuperblock;
     }
 
-    public long getDefenderTimerTaskPeriod() {
-        return defenderTimerTaskPeriod;
+    /**
+     * @param agentRole
+     * @return time in seconds
+     */
+    public long getTimerTaskPeriod(AgentRole agentRole) {
+        return agentRole == CHALLENGER ? challengerTimerTaskPeriod : defenderTimerTaskPeriod;
     }
 
-    public long getChallengerTimerTaskPeriod() {
-        return challengerTimerTaskPeriod;
-    }
-
-    public long getDefenderConfirmations() {
-        return defenderConfirmations;
-    }
-
-    public long getChallengerConfirmations() {
-        return challengerConfirmations;
+    public long getConfirmations(AgentRole agentRole) {
+        return agentRole == CHALLENGER ? challengerConfirmations : defenderConfirmations;
     }
 
     public String getNetworkId() {

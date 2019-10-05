@@ -16,6 +16,9 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.util.*;
 
+import static org.sysethereum.agents.constants.AgentRole.CHALLENGER;
+import static org.sysethereum.agents.constants.AgentRole.SUBMITTER;
+
 /**
  * Runs a SuperblockChain.
  * @author Catalina Juarros
@@ -47,7 +50,7 @@ public class SuperblockChainClient {
     }
 
     public boolean setup() {
-        if (config.isSyscoinSuperblockSubmitterEnabled() || config.isSyscoinBlockChallengerEnabled()) {
+        if (config.isAgentRoleEnabled(CHALLENGER) || config.isAgentRoleEnabled(SUBMITTER)) {
             try {
                 timer.scheduleAtFixedRate(
                         new UpdateSuperblocksTimerTask(),

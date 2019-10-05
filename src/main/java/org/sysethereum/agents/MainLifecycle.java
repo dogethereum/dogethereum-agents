@@ -18,6 +18,9 @@ import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.math.BigInteger;
 
+import static org.sysethereum.agents.constants.AgentRole.CHALLENGER;
+import static org.sysethereum.agents.constants.AgentRole.SUBMITTER;
+
 @Service
 public class MainLifecycle {
 
@@ -69,7 +72,7 @@ public class MainLifecycle {
 
         operatorPeersChecker.setup();
 
-        if (config.isSyscoinSuperblockSubmitterEnabled() || config.isSyscoinBlockChallengerEnabled()) {
+        if (config.isAgentRoleEnabled(CHALLENGER) || config.isAgentRoleEnabled(SUBMITTER)) {
             logger.debug("initialize: [Optional step] Start Syscoin wrapper");
             syscoinWrapper.setupAndStart();
         }
@@ -84,10 +87,14 @@ public class MainLifecycle {
         if (!syscoinToEthClient.setup()) return;
 
         logger.debug("initialize: [Step #5]");
-        if (!superblockChallengerClient.setup()) return;
+        if (config.isAgentRoleEnabled(CHALLENGER)) {
+            if (!superblockChallengerClient.setup()) return;
+        }
 
         logger.debug("initialize: [Step #6]");
-        if (!superblockDefenderClient.setup()) return;
+        if (config.isAgentRoleEnabled(SUBMITTER)) {
+            if (!superblockDefenderClient.setup()) return;
+        }
 
         restServer.start();
         logger.debug("initialize: Done");
@@ -120,16 +127,34 @@ public class MainLifecycle {
         }
     }
 
-
     @PreDestroy
     public void cleanUp() {
         Thread.currentThread().setName("spring-pre-destroy-thread");
         logger.debug("cleanUp: Free resources");
 
+        if (config.isAgentRoleEnabled(CHALLENGER)) {
+            try {
+                superblockChallengerClient.cleanUp();
+            } catch (IOException e) {
+                logger.debug("cleanUp: superblockChallengerClient.cleanUp() failed", e);
+            }
+        }
+
+        if (config.isAgentRoleEnabled(SUBMITTER)) {
+            try {
+                superblockDefenderClient.cleanUp();
+            } catch (IOException e) {
+                logger.debug("cleanUp: superblockDefenderClient.cleanUp() failed", e);
+            }
+        }
+
         sysSuperblockChainClient.cleanUp();
 
         restServer.stop();
-        syscoinWrapper.stop();
+
+        if (config.isAgentRoleEnabled(CHALLENGER) || config.isAgentRoleEnabled(SUBMITTER)) {
+            syscoinWrapper.stop();
+        }
 
         web3.shutdown();
         web3Secondary.shutdown();

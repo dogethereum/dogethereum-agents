@@ -1,7 +1,9 @@
 package org.sysethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.sysethereum.agents.constants.AgentConstants;
+import org.sysethereum.agents.constants.AgentRole;
 import org.sysethereum.agents.constants.EthAddresses;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.contract.SyscoinBattleManagerExtended;
@@ -15,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.sysethereum.agents.core.syscoin.SuperblockChain;
-import org.sysethereum.agents.core.syscoin.SyscoinWrapper;
 import org.sysethereum.agents.service.ChallengeEmailNotifier;
 import org.sysethereum.agents.util.RandomizationCounter;
 
@@ -37,6 +38,9 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     private final RandomizationCounter randomizationCounter;
     private final SyscoinBattleManagerExtended battleManagerForChallenges;
+    @NotNull
+    private final SystemProperties config;
+    private final SuperblockChain superblockChain;
     private final SuperblockContractApi superblockContractApi;
     private final ClaimContractApi claimContractApi;
     private final BattleContractApi battleContractApi;
@@ -46,9 +50,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     private File semiApprovedSetFile;
 
     public SuperblockChallengerClient(
-            SystemProperties systemProperties,
+            SystemProperties config,
             AgentConstants agentConstants,
-            SyscoinWrapper syscoinWrapper,
             EthWrapper ethWrapper,
             SuperblockChain superblockChain,
             EthAddresses ethAddresses,
@@ -59,8 +62,11 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             SyscoinBattleManagerExtended battleManagerForChallengesGetter,
             ChallengeEmailNotifier challengeEmailNotifier
     ) {
-        super("Superblock challenger client", systemProperties, agentConstants, syscoinWrapper, ethWrapper, superblockContractApi, claimContractApi, superblockChain, challengeEmailNotifier);
+        super(AgentRole.CHALLENGER, agentConstants, ethWrapper, superblockContractApi,
+                claimContractApi, challengeEmailNotifier, config.dataDirectory());
 
+        this.config = config;
+        this.superblockChain = superblockChain;
         this.superblockContractApi = superblockContractApi;
         this.claimContractApi = claimContractApi;
         this.battleContractApi = battleContractApi;
@@ -236,11 +242,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     @Override
-    protected boolean isEnabled() {
-        return config.isSyscoinBlockChallengerEnabled();
-    }
-
-    @Override
     protected String getLastEthBlockProcessedFilename() {
         return "SuperblockChallengerLatestEthBlockProcessedFile.dat";
     }
@@ -258,11 +259,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     @Override
     protected boolean isMine(EthWrapper.NewBattleEvent newBattleEvent) {
         return newBattleEvent.challenger.equals(myAddress);
-    }
-
-    @Override
-    protected long getConfirmations() {
-        return agentConstants.getChallengerConfirmations();
     }
 
     protected void callBattleTimeouts() throws Exception {
@@ -304,11 +300,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         if (removeFromContract && config.isWithdrawFundsEnabled()) {
             claimContractApi.withdrawAllFundsExceptLimit(myAddress, true);
         }
-    }
-
-    @Override
-    protected long getTimerTaskPeriod() {
-        return agentConstants.getChallengerTimerTaskPeriod();
     }
 
     /**
