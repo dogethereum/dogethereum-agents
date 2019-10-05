@@ -89,8 +89,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
         if (isEnabled()) {
             restoreFiles();
             try {
-                timer.scheduleAtFixedRate(new SuperblocksBaseClientTimerTask(),
-                        getFirstExecutionDate(), getTimerTaskPeriod());
+                timer.scheduleAtFixedRate(new SuperblocksBaseClientTimerTask(), 0, getTimerTaskPeriod());
             } catch (Exception e) {
                 return false;
             }
@@ -111,11 +110,6 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
 
             logger.info("cleanUp[{}]: finished.", clientName);
         }
-    }
-
-    private Date getFirstExecutionDate() {
-        Calendar firstExecution = Calendar.getInstance();
-        return firstExecution.getTime();
     }
 
     private class SuperblocksBaseClientTimerTask extends TimerTask {
