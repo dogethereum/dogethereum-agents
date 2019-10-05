@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.sysethereum.agents.service.ChallengeEmailNotifier;
+import org.sysethereum.agents.service.PersistentFileStore;
 import org.sysethereum.agents.util.RandomizationCounter;
 
 import java.io.*;

@@ -1,4 +1,4 @@
-package org.sysethereum.agents.core;
+package org.sysethereum.agents.service;
 
 import org.springframework.stereotype.Service;
 
