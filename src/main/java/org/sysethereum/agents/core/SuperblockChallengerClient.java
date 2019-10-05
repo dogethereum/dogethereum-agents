@@ -47,7 +47,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     private final SyscoinBattleManagerExtended battleManagerForChallengesGetter;
 
     private HashSet<Keccak256Hash> semiApprovedSet;
-    private File semiApprovedSetFile;
+    private final File semiApprovedSetFile;
 
     public SuperblockChallengerClient(
             SystemProperties config,

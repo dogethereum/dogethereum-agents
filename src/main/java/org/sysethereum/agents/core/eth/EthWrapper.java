@@ -65,7 +65,7 @@ public class EthWrapper {
     private final SyscoinBattleManagerExtended battleManagerForChallengesGetter;
 
     private BigInteger gasPriceMinimum;
-    private BigInteger gasPriceMaximum;
+    private final BigInteger gasPriceMaximum;
 
     private final SuperblockContractApi superblockContractApi;
     private final BattleContractApi battleContractApi;

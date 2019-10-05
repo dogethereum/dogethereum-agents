@@ -35,9 +35,9 @@ public class SuperblockChain {
     private final SuperblockFactory superblockFactory;
     private final SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
 
-    public int SUPERBLOCK_DURATION; // num blocks in a superblock
-    private int SUPERBLOCK_DELAY; // time to wait before building a superblock
-    private int SUPERBLOCK_STORING_WINDOW; // time window between storing and sending to avoid losing sync
+    public final int SUPERBLOCK_DURATION; // num blocks in a superblock
+    private final int SUPERBLOCK_DELAY; // time to wait before building a superblock
+    private final int SUPERBLOCK_STORING_WINDOW; // time window between storing and sending to avoid losing sync
 
     @Autowired
     public SuperblockChain(

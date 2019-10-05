@@ -16,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.SystemProperties;
-import org.sysethereum.agents.core.syscoin.SyscoinWrapper;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.sysethereum.agents.util.RestError;
 import org.slf4j.Logger;
