@@ -3,6 +3,7 @@ package org.sysethereum.agents.core;
 import lombok.extern.slf4j.Slf4j;
 import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.AgentRole;
+import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.core.bridge.ClaimContractApi;
 import org.sysethereum.agents.core.bridge.SuperblockContractApi;
 import org.sysethereum.agents.core.syscoin.*;
@@ -14,6 +15,7 @@ import org.sysethereum.agents.service.ChallengeReport;
 
 import javax.annotation.Nullable;
 import java.io.*;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -23,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
  * @author Ismael Bejarano
  */
 @Slf4j(topic = "SuperblockBaseClient")
-public abstract class SuperblockBaseClient extends PersistentFileStore {
+public abstract class SuperblockBaseClient {
     private static final Logger logger = LoggerFactory.getLogger("SuperblockBaseClient");
 
     protected final AgentConstants agentConstants;
@@ -50,15 +52,13 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
 
     public SuperblockBaseClient(
             AgentRole agentRole,
+            SystemProperties config,
             AgentConstants agentConstants,
             EthWrapper ethWrapper,
             SuperblockContractApi superblockContractApi,
             ClaimContractApi claimContractApi,
-            ChallengeEmailNotifier challengeEmailNotifier,
-            String dataDirectory
+            ChallengeEmailNotifier challengeEmailNotifier
     ) {
-        super(dataDirectory);
-
         this.agentRole = agentRole;
         this.agentConstants = agentConstants;
         this.ethWrapper = ethWrapper;
@@ -67,9 +67,9 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
         this.timer = new Timer(agentRole.getTimerTaskName(), true);
         this.challengeEmailNotifier = challengeEmailNotifier;
 
-        this.latestEthBlockProcessedFile = new File(this.dataDirectory.getAbsolutePath() + "/" + getLastEthBlockProcessedFilename());
-        this.sessionToSuperblockMapFile = new File(this.dataDirectory.getAbsolutePath() + "/" + getSessionToSuperblockMapFilename());
-        this.superblockToSessionsMapFile = new File(this.dataDirectory.getAbsolutePath() + "/" + getSuperblockToSessionsMapFilename());
+        this.latestEthBlockProcessedFile = Paths.get(config.dataDirectory(), getLastEthBlockProcessedFilename()).toAbsolutePath().toFile();
+        this.sessionToSuperblockMapFile = Paths.get(config.dataDirectory(), getSessionToSuperblockMapFilename()).toAbsolutePath().toFile();
+        this.superblockToSessionsMapFile = Paths.get(config.dataDirectory(), getSuperblockToSessionsMapFilename()).toAbsolutePath().toFile();
 
         this.latestEthBlockProcessed = agentConstants.getEthInitialCheckpoint();
         this.sessionToSuperblockMap = new HashMap<>();

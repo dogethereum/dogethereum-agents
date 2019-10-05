@@ -92,7 +92,7 @@ public class SystemProperties {
     }
 
     public String dataDirectory() {
-        return getStringProperty("data.directory", null);
+        return getStringProperty("data.directory");
     }
 
     public String secondaryURL() {

@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.Context;
 import org.bitcoinj.script.Script;
 import org.simplejavamail.mailer.Mailer;
-import org.simplejavamail.mailer.MailerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -31,7 +30,6 @@ import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.util.List;
 
-import static java.util.Objects.requireNonNull;
 import static org.sysethereum.agents.constants.SystemProperties.*;
 
 @Configuration

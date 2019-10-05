@@ -1,7 +1,6 @@
 package org.sysethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.AgentRole;
 import org.sysethereum.agents.constants.EthAddresses;
@@ -33,8 +32,8 @@ import java.util.*;
 public class SuperblockDefenderClient extends SuperblockBaseClient {
     private static final Logger logger = LoggerFactory.getLogger("SuperblockDefenderClient");
 
-    @NotNull
     private final SystemProperties config;
+    private final PersistentFileStore persistentFileStore;
     private final BattleContractApi battleContractApi;
     private final SuperblockChain superblockChain;
     private final RandomizationCounter randomizationCounter;
@@ -44,6 +43,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     public SuperblockDefenderClient(
             SystemProperties config,
             AgentConstants agentConstants,
+            PersistentFileStore persistentFileStore,
             EthWrapper ethWrapper,
             SuperblockContractApi superblockContractApi,
             BattleContractApi battleContractApi,
@@ -55,10 +55,10 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             SyscoinBattleManagerExtended battleManagerGetter,
             ChallengeEmailNotifier challengeEmailNotifier
     ) {
-        super(AgentRole.SUBMITTER, agentConstants, ethWrapper, superblockContractApi, claimContractApi,
-                challengeEmailNotifier, config.dataDirectory());
+        super(AgentRole.SUBMITTER, config, agentConstants, ethWrapper, superblockContractApi, claimContractApi, challengeEmailNotifier);
 
         this.config = config;
+        this.persistentFileStore = persistentFileStore;
         this.battleContractApi = battleContractApi;
         this.superblockChain = superblockChain;
         this.randomizationCounter = randomizationCounter;
@@ -330,16 +330,16 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     @Override
     protected void restoreFiles() throws ClassNotFoundException, IOException {
-        latestEthBlockProcessed = restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
-        sessionToSuperblockMap = restore(sessionToSuperblockMap, sessionToSuperblockMapFile);
-        superblockToSessionsMap = restore(superblockToSessionsMap, superblockToSessionsMapFile);
+        latestEthBlockProcessed = persistentFileStore.restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
+        sessionToSuperblockMap = persistentFileStore.restore(sessionToSuperblockMap, sessionToSuperblockMapFile);
+        superblockToSessionsMap = persistentFileStore.restore(superblockToSessionsMap, superblockToSessionsMapFile);
     }
 
     @Override
     protected void flushFiles() throws IOException {
-        flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
-        flush(sessionToSuperblockMap, sessionToSuperblockMapFile);
-        flush(superblockToSessionsMap, superblockToSessionsMapFile);
+        persistentFileStore.flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
+        persistentFileStore.flush(sessionToSuperblockMap, sessionToSuperblockMapFile);
+        persistentFileStore.flush(superblockToSessionsMap, superblockToSessionsMapFile);
     }
 
 }

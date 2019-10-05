@@ -1,7 +1,6 @@
 package org.sysethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.AgentRole;
 import org.sysethereum.agents.constants.EthAddresses;
@@ -22,6 +21,7 @@ import org.sysethereum.agents.util.RandomizationCounter;
 
 import java.io.*;
 import java.math.BigInteger;
+import java.nio.file.Paths;
 import java.util.*;
 
 /**
@@ -38,8 +38,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     private final RandomizationCounter randomizationCounter;
     private final SyscoinBattleManagerExtended battleManagerForChallenges;
-    @NotNull
     private final SystemProperties config;
+    private final PersistentFileStore persistentFileStore;
     private final SuperblockChain superblockChain;
     private final SuperblockContractApi superblockContractApi;
     private final ClaimContractApi claimContractApi;
@@ -52,6 +52,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     public SuperblockChallengerClient(
             SystemProperties config,
             AgentConstants agentConstants,
+            PersistentFileStore persistentFileStore,
             EthWrapper ethWrapper,
             SuperblockChain superblockChain,
             EthAddresses ethAddresses,
@@ -62,10 +63,10 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             SyscoinBattleManagerExtended battleManagerForChallengesGetter,
             ChallengeEmailNotifier challengeEmailNotifier
     ) {
-        super(AgentRole.CHALLENGER, agentConstants, ethWrapper, superblockContractApi,
-                claimContractApi, challengeEmailNotifier, config.dataDirectory());
+        super(AgentRole.CHALLENGER, config, agentConstants, ethWrapper, superblockContractApi, claimContractApi, challengeEmailNotifier);
 
         this.config = config;
+        this.persistentFileStore = persistentFileStore;
         this.superblockChain = superblockChain;
         this.superblockContractApi = superblockContractApi;
         this.claimContractApi = claimContractApi;
@@ -77,7 +78,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         this.myAddress = ethAddresses.syscoinSuperblockChallengerAddress;
 
         this.semiApprovedSet = new HashSet<>();
-        this.semiApprovedSetFile = new File(dataDirectory.getAbsolutePath() + "/SemiApprovedSet.dat");
+        this.semiApprovedSetFile = Paths.get(config.dataDirectory(), "SemiApprovedSet.dat").toAbsolutePath().toFile();
     }
 
     @Override
@@ -161,19 +162,20 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             if (superblock == null) {
                 BigInteger height = superblockContractApi.getHeight(newSuperblock.superblockId);
                 Superblock localSuperblock = superblockChain.getByHeight(height.longValue());
+
                 if (localSuperblock == null) {
-                    // local superblockchain should not be out of sync because there is 2 hour descrepency between saving and sending
+                    // local superblockchain should not be out of sync because there is 2 hour discrepancy between saving and sending
                     // this could mean our local syscoin node is out of sync (out of our control) in which case we have no choice but to challenge
                     // we have to assume if your local syscoin node is forked or not synced and we cannot detect difference between bad and good SB in that case we must challenge
                     logger.info("Superblock {} not present in our superblock chain", newSuperblock.superblockId);
-                    toChallenge.add(newSuperblock.superblockId);
                 } else {
                     logger.info("Superblock {} at height {} is replaced by {} in our superblock chain",
                             newSuperblock.superblockId,
                             height,
                             localSuperblock.getSuperblockId());
-                    toChallenge.add(newSuperblock.superblockId);
                 }
+
+                toChallenge.add(newSuperblock.superblockId);
             } else {
                 logger.info("Superblock height: {}... superblock present in our superblock chain", superblock.getSuperblockHeight());
             }
@@ -355,17 +357,17 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     @Override
     protected void restoreFiles() throws ClassNotFoundException, IOException {
-        latestEthBlockProcessed = restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
-        sessionToSuperblockMap = restore(sessionToSuperblockMap, sessionToSuperblockMapFile);
+        latestEthBlockProcessed = persistentFileStore.restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
+        sessionToSuperblockMap = persistentFileStore.restore(sessionToSuperblockMap, sessionToSuperblockMapFile);
 
-        semiApprovedSet = restore(semiApprovedSet, semiApprovedSetFile);
+        semiApprovedSet = persistentFileStore.restore(semiApprovedSet, semiApprovedSetFile);
     }
 
     @Override
     protected void flushFiles() throws IOException {
-        flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
-        flush(sessionToSuperblockMap, sessionToSuperblockMapFile);
-        flush(semiApprovedSet, semiApprovedSetFile);
+        persistentFileStore.flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
+        persistentFileStore.flush(sessionToSuperblockMap, sessionToSuperblockMapFile);
+        persistentFileStore.flush(semiApprovedSet, semiApprovedSetFile);
     }
 
 }

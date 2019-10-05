@@ -17,7 +17,7 @@ class PersistentFileStoreTest {
 
         File file = File.createTempFile("sysagents", ".dat");
 
-        var underTest = new PersistentFileStore(file.getParentFile());
+        var underTest = new PersistentFileStore();
 
         underTest.flush(semiApprovedSet, file);
 
