@@ -19,6 +19,7 @@ import org.sysethereum.agents.util.AgentUtils;
 
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Stack;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -115,4 +116,17 @@ public class SyscoinWrapper {
     public StoredBlock getStoredBlockAtHeight(int height) throws BlockStoreException {
         return agentUtils.getStoredBlockAtHeight(kit.store(), height);
     }
+
+    public Stack<Sha256Hash> getNewerHashesThan(Sha256Hash blockHash) throws BlockStoreException {
+        var hashes = new Stack<Sha256Hash>();
+        StoredBlock cur = getChainHead();
+
+        while (cur != null && !cur.getHeader().getHash().equals(blockHash)) {
+            hashes.push(cur.getHeader().getHash());
+            cur = getBlock(cur.getHeader().getPrevBlockHash());
+        }
+
+        return hashes;
+    }
+
 }
