@@ -1,4 +1,6 @@
-package org.sysethereum.agents.core;
+package org.sysethereum.agents.service;
+
+import org.springframework.stereotype.Service;
 
 import java.io.*;
 
@@ -6,16 +8,10 @@ import java.io.*;
  * Base methods for managing file storage.
  * @author Catalina Juarros
  */
+@Service
 public class PersistentFileStore {
-    public final File dataDirectory;
 
-
-    public PersistentFileStore(String dataDirectory) {
-        this(new File(dataDirectory));
-    }
-
-    public PersistentFileStore(File dataDirectory) {
-        this.dataDirectory = dataDirectory;
+    public PersistentFileStore() {
     }
 
     public <T extends Serializable> T restore(T obj, File file) throws ClassNotFoundException, IOException {
@@ -35,11 +31,14 @@ public class PersistentFileStore {
     }
 
     public void flush(Serializable obj, File file) throws IOException {
-        if (!dataDirectory.exists()) {
-            if (!dataDirectory.mkdirs()) {
-                throw new IOException("Could not create directory " + dataDirectory.getAbsolutePath());
+        File directory = file.getParentFile();
+
+        if (!directory.exists()) {
+            if (!directory.mkdirs()) {
+                throw new IOException("Could not create directory " + directory.getAbsolutePath());
             }
         }
+
         try (
             FileOutputStream fileOutputStream = new FileOutputStream(file);
             ObjectOutputStream objectOutputStream = new ObjectOutputStream(fileOutputStream)

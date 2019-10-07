@@ -2,6 +2,7 @@ package org.sysethereum.agents.core;
 
 import org.junit.jupiter.api.Test;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
+import org.sysethereum.agents.service.PersistentFileStore;
 
 import java.io.*;
 import java.util.HashSet;
@@ -17,7 +18,7 @@ class PersistentFileStoreTest {
 
         File file = File.createTempFile("sysagents", ".dat");
 
-        var underTest = new PersistentFileStore(file.getParentFile());
+        var underTest = new PersistentFileStore();
 
         underTest.flush(semiApprovedSet, file);
 

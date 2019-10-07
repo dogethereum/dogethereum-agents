@@ -14,7 +14,6 @@ import org.sysethereum.agents.core.bridge.SuperblockFactory;
 import org.sysethereum.agents.service.rest.MerkleRootComputer;
 
 import javax.annotation.Nullable;
-import javax.annotation.PreDestroy;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -35,9 +34,9 @@ public class SuperblockChain {
     private final SuperblockFactory superblockFactory;
     private final SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
 
-    public int SUPERBLOCK_DURATION; // num blocks in a superblock
-    private int SUPERBLOCK_DELAY; // time to wait before building a superblock
-    private int SUPERBLOCK_STORING_WINDOW; // time window between storing and sending to avoid losing sync
+    public final int SUPERBLOCK_DURATION; // num blocks in a superblock
+    private final int SUPERBLOCK_DELAY; // time to wait before building a superblock
+    private final int SUPERBLOCK_STORING_WINDOW; // time window between storing and sending to avoid losing sync
 
     @Autowired
     public SuperblockChain(
@@ -56,14 +55,6 @@ public class SuperblockChain {
         this.SUPERBLOCK_DURATION = superblockDuration.intValue();
         this.SUPERBLOCK_DELAY = superblockDelay.intValue();
         this.SUPERBLOCK_STORING_WINDOW = SUPERBLOCK_DELAY * 2/3 ; // store superblocks 2 hr before they should be sent
-    }
-
-    /**
-     * Closes the block storage underlying this blockchain.
-     */
-    @PreDestroy
-    private void close()  {
-        this.superblockStorage.close();
     }
 
     /**
@@ -280,6 +271,6 @@ public class SuperblockChain {
      * @return True if superblock can be sent to the bridge, false otherwise.
      */
     public boolean sendingTimePassed(Superblock superblock) {
-        return new Date(superblock.getLastSyscoinBlockMedianTime()).before(getSendingStopTime());
+        return new Date(superblock.getLastSyscoinBlockMedianTime()*1000L).before(getSendingStopTime());
     }
 }

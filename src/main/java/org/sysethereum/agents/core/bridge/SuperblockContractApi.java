@@ -61,8 +61,8 @@ public class SuperblockContractApi {
     }
 
     public static class SuperblockEvent {
-        public Keccak256Hash superblockId;
-        public String who;
+        public final Keccak256Hash superblockId;
+        public final String who;
 
         public SuperblockEvent(Keccak256Hash superblockId, String who) {
             this.superblockId = superblockId;

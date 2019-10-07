@@ -16,7 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.SystemProperties;
-import org.sysethereum.agents.core.syscoin.SyscoinWrapper;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.sysethereum.agents.util.RestError;
 import org.slf4j.Logger;
@@ -29,6 +28,7 @@ import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.toList;
+import static org.sysethereum.agents.constants.AgentRole.SUBMITTER;
 
 /**
  * Manages the process of informing Sysethereum Contracts news about the syscoin blockchain
@@ -73,7 +73,7 @@ public class SyscoinToEthClient {
     }
 
     public boolean setup() {
-        if (config.isSyscoinSuperblockSubmitterEnabled()) {
+        if (config.isAgentRoleEnabled(SUBMITTER)) {
             try {
                 timer.scheduleAtFixedRate(
                         new SyscoinToEthClientTimerTask(),
@@ -101,7 +101,7 @@ public class SyscoinToEthClient {
                 if (!ethWrapper.isEthNodeSyncing()) {
                     logger.debug("SyscoinToEthClientTimerTask");
                     ethWrapper.updateContractFacadesGasPrice();
-                    if (config.isSyscoinSuperblockSubmitterEnabled()) {
+                    if (config.isAgentRoleEnabled(SUBMITTER)) {
                         updateBridgeSuperblockChain();
                     }
                 } else {

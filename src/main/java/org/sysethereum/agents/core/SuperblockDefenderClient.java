@@ -2,6 +2,7 @@ package org.sysethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
 import org.sysethereum.agents.constants.AgentConstants;
+import org.sysethereum.agents.constants.AgentRole;
 import org.sysethereum.agents.constants.EthAddresses;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.contract.SyscoinBattleManagerExtended;
@@ -15,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.sysethereum.agents.service.ChallengeEmailNotifier;
+import org.sysethereum.agents.service.PersistentFileStore;
 import org.sysethereum.agents.util.RandomizationCounter;
 
 import java.io.*;
@@ -31,15 +33,18 @@ import java.util.*;
 public class SuperblockDefenderClient extends SuperblockBaseClient {
     private static final Logger logger = LoggerFactory.getLogger("SuperblockDefenderClient");
 
+    private final SystemProperties config;
+    private final PersistentFileStore persistentFileStore;
     private final BattleContractApi battleContractApi;
+    private final SuperblockChain superblockChain;
     private final RandomizationCounter randomizationCounter;
     private final BigInteger superblockTimeout;
     private final SyscoinBattleManagerExtended battleManagerGetter;
 
     public SuperblockDefenderClient(
-            SystemProperties systemProperties,
+            SystemProperties config,
             AgentConstants agentConstants,
-            SyscoinWrapper syscoinWrapper,
+            PersistentFileStore persistentFileStore,
             EthWrapper ethWrapper,
             SuperblockContractApi superblockContractApi,
             BattleContractApi battleContractApi,
@@ -51,8 +56,12 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             SyscoinBattleManagerExtended battleManagerGetter,
             ChallengeEmailNotifier challengeEmailNotifier
     ) {
-        super("Superblock defender client", systemProperties, agentConstants, syscoinWrapper, ethWrapper, superblockContractApi, claimContractApi, superblockChain, challengeEmailNotifier);
+        super(AgentRole.SUBMITTER, config, agentConstants, ethWrapper, superblockContractApi, claimContractApi, challengeEmailNotifier);
+
+        this.config = config;
+        this.persistentFileStore = persistentFileStore;
         this.battleContractApi = battleContractApi;
+        this.superblockChain = superblockChain;
         this.randomizationCounter = randomizationCounter;
         this.superblockTimeout = superblockTimeout;
         this.battleManagerGetter = battleManagerGetter;
@@ -174,25 +183,11 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         }
     }
 
-
-    /* ---- HELPER METHODS ---- */
-
-
-    private boolean submittedUnresponsiveTimeoutPassed(Keccak256Hash superblockId) throws Exception {
-        return claimContractApi.getNewEventTimestampDate(superblockId).before(getUnresponsiveTimeoutDate());
-    }
-
-    private Date getUnresponsiveTimeoutDate() {
+    private boolean unresponsiveTimeoutPassed(Keccak256Hash superblockId) throws Exception {
         double delay = superblockTimeout.floatValue() * randomizationCounter.getValue();
         int timeout = superblockTimeout.intValue() + (int)delay;
-        return SuperblockUtils.getNSecondsAgo(timeout);
+        return claimContractApi.getNewEventTimestampDate(superblockId).before(SuperblockUtils.getNSecondsAgo(timeout));
     }
-
-    private boolean unresponsiveTimeoutPassed(Keccak256Hash superblockId) throws Exception {
-        return submittedUnresponsiveTimeoutPassed(superblockId);
-    }
-
-
 
     /* ---- OVERRIDE ABSTRACT METHODS ---- */
 
@@ -202,37 +197,12 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     @Override
-    protected boolean isEnabled() {
-        return config.isSyscoinSuperblockSubmitterEnabled();
-    }
-
-    @Override
-    protected String getLastEthBlockProcessedFilename() {
-        return "SuperblockDefenderLatestEthBlockProcessedFile.dat";
-    }
-
-    @Override
-    protected String getSessionToSuperblockMapFilename() {
-        return "SuperblockDefenderSessionToSuperblockMap.dat";
-    }
-
-    @Override
-    protected String getSuperblockToSessionsMapFilename() {
-        return "SuperblockDefenderSuperblockToSessionsMap.dat";
-    }
-
-    @Override
     protected boolean isMine(EthWrapper.NewBattleEvent newBattleEvent) {
         return newBattleEvent.submitter.equals(myAddress);
     }
 
     private boolean isMine(EthWrapper.RespondHeadersEvent respondHeadersEvent) {
         return respondHeadersEvent.submitter.equals(myAddress);
-    }
-
-    @Override
-    protected long getConfirmations() {
-        return agentConstants.getDefenderConfirmations();
     }
 
     /**
@@ -257,12 +227,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             claimContractApi.withdrawAllFundsExceptLimit(myAddress, false);
         }
     }
-
-    @Override
-    protected long getTimerTaskPeriod() {
-        return agentConstants.getDefenderTimerTaskPeriod();
-    }
-
 
     /* ---- BATTLE MAP METHODS ---- */
 
@@ -338,16 +302,16 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     @Override
     protected void restoreFiles() throws ClassNotFoundException, IOException {
-        latestEthBlockProcessed = restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
-        sessionToSuperblockMap = restore(sessionToSuperblockMap, sessionToSuperblockMapFile);
-        superblockToSessionsMap = restore(superblockToSessionsMap, superblockToSessionsMapFile);
+        latestEthBlockProcessed = persistentFileStore.restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
+        sessionToSuperblockMap = persistentFileStore.restore(sessionToSuperblockMap, sessionToSuperblockMapFile);
+        superblockToSessionsMap = persistentFileStore.restore(superblockToSessionsMap, superblockToSessionsMapFile);
     }
 
     @Override
     protected void flushFiles() throws IOException {
-        flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
-        flush(sessionToSuperblockMap, sessionToSuperblockMapFile);
-        flush(superblockToSessionsMap, superblockToSessionsMapFile);
+        persistentFileStore.flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
+        persistentFileStore.flush(sessionToSuperblockMap, sessionToSuperblockMapFile);
+        persistentFileStore.flush(superblockToSessionsMap, superblockToSessionsMapFile);
     }
 
 }

@@ -15,11 +15,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.util.AgentUtils;
 
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Stack;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -29,19 +29,16 @@ public class SyscoinWrapper {
 
     private static final Logger logger = LoggerFactory.getLogger("SyscoinWrapper");
 
-    private final SystemProperties config;
     private final AgentUtils agentUtils;
     private final Context syscoinContext;
     private final SyscoinWalletAppKit kit;
 
     @Autowired
     public SyscoinWrapper(
-            SystemProperties systemProperties,
             AgentUtils agentUtils,
             Context syscoinContext,
             SyscoinWalletAppKit syscoinWalletAppKit
     ) {
-        this.config = systemProperties;
         this.agentUtils = agentUtils;
         this.syscoinContext = syscoinContext;
         this.kit = syscoinWalletAppKit;
@@ -71,31 +68,27 @@ public class SyscoinWrapper {
     }
 
     public void stop() {
-        if (config.isSyscoinSuperblockSubmitterEnabled() || config.isSyscoinBlockChallengerEnabled()) {
-            logger.info("stop: Starting...");
+        logger.info("stop: Starting...");
 
-            Context.propagate(syscoinContext);
+        Context.propagate(syscoinContext);
 
-            logger.debug("stop: Request WAK to stop");
-            try {
-                kit.stopAsync().awaitTerminated(10, TimeUnit.SECONDS);
-                logger.debug("stop: WAK stopped");
-            } catch (TimeoutException e) {
-                logger.debug("stop: WAK not stopped in 10 seconds, kill the thread instead");
-                // Kill it
-                for (Thread thread : Thread.getAllStackTraces().keySet()) {
-                    if (thread.getName().startsWith(SyscoinWalletAppKit.class.getSimpleName())) {
-                        logger.info("stop: Interrupt thread:{}, isAlive:{}, isInterrupted:{}",
-                                thread.getName(), thread.isAlive(), thread.isInterrupted());
-                        thread.interrupt();
-                    }
+        logger.debug("stop: Request WAK to stop");
+        try {
+            kit.stopAsync().awaitTerminated(10, TimeUnit.SECONDS);
+            logger.debug("stop: WAK stopped");
+        } catch (TimeoutException e) {
+            logger.debug("stop: WAK not stopped in 10 seconds, kill the thread instead");
+            // Kill it
+            for (Thread thread : Thread.getAllStackTraces().keySet()) {
+                if (thread.getName().startsWith(SyscoinWalletAppKit.class.getSimpleName())) {
+                    logger.info("stop: Interrupt thread:{}, isAlive:{}, isInterrupted:{}",
+                            thread.getName(), thread.isAlive(), thread.isInterrupted());
+                    thread.interrupt();
                 }
             }
-
-            logger.info("stop: Finished");
-        } else {
-            logger.debug("stop: No action");
         }
+
+        logger.info("stop: Finished");
     }
 
     public StoredBlock getChainHead() {
@@ -123,4 +116,17 @@ public class SyscoinWrapper {
     public StoredBlock getStoredBlockAtHeight(int height) throws BlockStoreException {
         return agentUtils.getStoredBlockAtHeight(kit.store(), height);
     }
+
+    public Stack<Sha256Hash> getNewerHashesThan(Sha256Hash blockHash) throws BlockStoreException {
+        var hashes = new Stack<Sha256Hash>();
+        StoredBlock cur = getChainHead();
+
+        while (cur != null && !cur.getHeader().getHash().equals(blockHash)) {
+            hashes.push(cur.getHeader().getHash());
+            cur = getBlock(cur.getHeader().getPrevBlockHash());
+        }
+
+        return hashes;
+    }
+
 }

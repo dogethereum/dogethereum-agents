@@ -8,6 +8,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.sysethereum.agents.checker.OperatorPeersChecker;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.core.*;
+import org.sysethereum.agents.core.syscoin.SuperblockLevelDBBlockStore;
 import org.sysethereum.agents.core.syscoin.SyscoinWrapper;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.Web3jService;
@@ -17,6 +18,9 @@ import org.web3j.protocol.admin.methods.response.PersonalUnlockAccount;
 import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.math.BigInteger;
+
+import static org.sysethereum.agents.constants.AgentRole.CHALLENGER;
+import static org.sysethereum.agents.constants.AgentRole.SUBMITTER;
 
 @Service
 public class MainLifecycle {
@@ -35,6 +39,7 @@ public class MainLifecycle {
     private final Web3j web3Secondary;
     private final Web3jService mainWeb3jService;
     private final Web3jService web3jSecondaryService;
+    private final SuperblockLevelDBBlockStore superblockLevelDBBlockStore;
 
     public MainLifecycle(
             SystemProperties config,
@@ -48,7 +53,8 @@ public class MainLifecycle {
             Web3j web3,
             Web3j web3Secondary,
             Web3jService mainWeb3jService,
-            Web3jService web3jSecondaryService
+            Web3jService web3jSecondaryService,
+            SuperblockLevelDBBlockStore superblockLevelDBBlockStore
     ) {
         this.config = config;
         this.operatorPeersChecker = operatorPeersChecker;
@@ -62,6 +68,7 @@ public class MainLifecycle {
         this.web3Secondary = web3Secondary;
         this.mainWeb3jService = mainWeb3jService;
         this.web3jSecondaryService = web3jSecondaryService;
+        this.superblockLevelDBBlockStore = superblockLevelDBBlockStore;
     }
 
     public void initialize() throws Exception {
@@ -69,7 +76,7 @@ public class MainLifecycle {
 
         operatorPeersChecker.setup();
 
-        if (config.isSyscoinSuperblockSubmitterEnabled() || config.isSyscoinBlockChallengerEnabled()) {
+        if (config.isAgentRoleEnabled(CHALLENGER) || config.isAgentRoleEnabled(SUBMITTER)) {
             logger.debug("initialize: [Optional step] Start Syscoin wrapper");
             syscoinWrapper.setupAndStart();
         }
@@ -84,10 +91,14 @@ public class MainLifecycle {
         if (!syscoinToEthClient.setup()) return;
 
         logger.debug("initialize: [Step #5]");
-        if (!superblockChallengerClient.setup()) return;
+        if (config.isAgentRoleEnabled(CHALLENGER)) {
+            if (!superblockChallengerClient.setup()) return;
+        }
 
         logger.debug("initialize: [Step #6]");
-        if (!superblockDefenderClient.setup()) return;
+        if (config.isAgentRoleEnabled(SUBMITTER)) {
+            if (!superblockDefenderClient.setup()) return;
+        }
 
         restServer.start();
         logger.debug("initialize: Done");
@@ -120,16 +131,36 @@ public class MainLifecycle {
         }
     }
 
-
     @PreDestroy
     public void cleanUp() {
         Thread.currentThread().setName("spring-pre-destroy-thread");
         logger.debug("cleanUp: Free resources");
 
+        if (config.isAgentRoleEnabled(CHALLENGER)) {
+            try {
+                superblockChallengerClient.cleanUp();
+            } catch (IOException e) {
+                logger.debug("cleanUp: superblockChallengerClient.cleanUp() failed", e);
+            }
+        }
+
+        if (config.isAgentRoleEnabled(SUBMITTER)) {
+            try {
+                superblockDefenderClient.cleanUp();
+            } catch (IOException e) {
+                logger.debug("cleanUp: superblockDefenderClient.cleanUp() failed", e);
+            }
+        }
+
         sysSuperblockChainClient.cleanUp();
 
         restServer.stop();
-        syscoinWrapper.stop();
+
+        if (config.isAgentRoleEnabled(CHALLENGER) || config.isAgentRoleEnabled(SUBMITTER)) {
+            syscoinWrapper.stop();
+        }
+
+        superblockLevelDBBlockStore.close();
 
         web3.shutdown();
         web3Secondary.shutdown();

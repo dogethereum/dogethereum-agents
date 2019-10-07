@@ -2,7 +2,6 @@ package org.sysethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.Sha256Hash;
-import org.bitcoinj.core.StoredBlock;
 import org.bitcoinj.store.BlockStoreException;
 import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.SystemProperties;
@@ -15,6 +14,9 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.*;
+
+import static org.sysethereum.agents.constants.AgentRole.CHALLENGER;
+import static org.sysethereum.agents.constants.AgentRole.SUBMITTER;
 
 /**
  * Runs a SuperblockChain.
@@ -47,11 +49,11 @@ public class SuperblockChainClient {
     }
 
     public boolean setup() {
-        if (config.isSyscoinSuperblockSubmitterEnabled() || config.isSyscoinBlockChallengerEnabled()) {
+        if (config.isAgentRoleEnabled(CHALLENGER) || config.isAgentRoleEnabled(SUBMITTER)) {
             try {
                 timer.scheduleAtFixedRate(
                         new UpdateSuperblocksTimerTask(),
-                        getFirstExecutionDate(),
+                        1_000,
                         agentConstants.getSyscoinToEthTimerTaskPeriod()
                 );
             } catch (Exception e) {
@@ -68,12 +70,6 @@ public class SuperblockChainClient {
         logger.info("cleanUp: Timer was canceled.");
     }
 
-    private Date getFirstExecutionDate() {
-        Calendar firstExecution = Calendar.getInstance();
-        firstExecution.add(Calendar.SECOND, 1);
-        return firstExecution.getTime();
-    }
-
     /**
      * Builds and maintains a chain of superblocks from the whole Syscoin blockchain.
      * Writes it to disk as specified by SuperblockLevelDBBlockStore.
@@ -84,22 +80,11 @@ public class SuperblockChainClient {
         Superblock bestSuperblock = superblockChain.getChainHead();
         Sha256Hash bestSuperblockLastBlockHash = bestSuperblock.getLastSyscoinBlockHash();
 
-        // get all the Syscoin blocks that haven't yet been hashed into a superblock
-        Stack<Sha256Hash> allSyscoinHashesToHash = getSyscoinBlockHashesNewerThan(bestSuperblockLastBlockHash);
+        // Get all the Syscoin blocks that haven't yet been hashed into a superblock
+        Stack<Sha256Hash> allSyscoinHashesToHash = syscoinWrapper.getNewerHashesThan(bestSuperblockLastBlockHash);
         superblockChain.storeSuperblocks(allSyscoinHashesToHash, bestSuperblock.getSuperblockId()); // group them in superblocks
     }
 
-    private Stack<Sha256Hash> getSyscoinBlockHashesNewerThan(Sha256Hash blockHash) throws BlockStoreException {
-        Stack<Sha256Hash> hashes = new Stack<>();
-        StoredBlock currentStoredBlock = syscoinWrapper.getChainHead();
-
-        while (currentStoredBlock != null && !currentStoredBlock.getHeader().getHash().equals(blockHash)) {
-            hashes.push(currentStoredBlock.getHeader().getHash());
-            currentStoredBlock = syscoinWrapper.getBlock(currentStoredBlock.getHeader().getPrevBlockHash());
-        }
-
-        return hashes;
-    }
 
     /**
      * Task to keep superblock chain updated whenever the agent is running.
