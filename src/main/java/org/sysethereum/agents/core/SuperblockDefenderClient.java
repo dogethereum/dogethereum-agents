@@ -183,25 +183,11 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         }
     }
 
-
-    /* ---- HELPER METHODS ---- */
-
-
-    private boolean submittedUnresponsiveTimeoutPassed(Keccak256Hash superblockId) throws Exception {
-        return claimContractApi.getNewEventTimestampDate(superblockId).before(getUnresponsiveTimeoutDate());
-    }
-
-    private Date getUnresponsiveTimeoutDate() {
+    private boolean unresponsiveTimeoutPassed(Keccak256Hash superblockId) throws Exception {
         double delay = superblockTimeout.floatValue() * randomizationCounter.getValue();
         int timeout = superblockTimeout.intValue() + (int)delay;
-        return SuperblockUtils.getNSecondsAgo(timeout);
+        return claimContractApi.getNewEventTimestampDate(superblockId).before(SuperblockUtils.getNSecondsAgo(timeout));
     }
-
-    private boolean unresponsiveTimeoutPassed(Keccak256Hash superblockId) throws Exception {
-        return submittedUnresponsiveTimeoutPassed(superblockId);
-    }
-
-
 
     /* ---- OVERRIDE ABSTRACT METHODS ---- */
 
