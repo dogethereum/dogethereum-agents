@@ -67,9 +67,9 @@ public abstract class SuperblockBaseClient {
         this.timer = new Timer(agentRole.getTimerTaskName(), true);
         this.challengeEmailNotifier = challengeEmailNotifier;
 
-        this.latestEthBlockProcessedFile = Paths.get(config.dataDirectory(), getLastEthBlockProcessedFilename()).toAbsolutePath().toFile();
-        this.sessionToSuperblockMapFile = Paths.get(config.dataDirectory(), getSessionToSuperblockMapFilename()).toAbsolutePath().toFile();
-        this.superblockToSessionsMapFile = Paths.get(config.dataDirectory(), getSuperblockToSessionsMapFilename()).toAbsolutePath().toFile();
+        this.latestEthBlockProcessedFile = Paths.get(config.dataDirectory(), config.getLastEthBlockProcessedFilename(agentRole)).toAbsolutePath().toFile();
+        this.sessionToSuperblockMapFile = Paths.get(config.dataDirectory(), config.getSessionToSuperblockMapFilename(agentRole)).toAbsolutePath().toFile();
+        this.superblockToSessionsMapFile = Paths.get(config.dataDirectory(), config.getSuperblockToSessionsMapFilename(agentRole)).toAbsolutePath().toFile();
 
         this.latestEthBlockProcessed = agentConstants.getEthInitialCheckpoint();
         this.sessionToSuperblockMap = new HashMap<>();
@@ -185,12 +185,6 @@ public abstract class SuperblockBaseClient {
     protected abstract boolean arePendingTransactions() throws InterruptedException, IOException;
 
     protected abstract long reactToEvents(long fromBlock, long toBlock);
-
-    protected abstract String getLastEthBlockProcessedFilename();
-
-    protected abstract String getSessionToSuperblockMapFilename();
-
-    protected abstract String getSuperblockToSessionsMapFilename();
 
     protected abstract void reactToElapsedTime();
 

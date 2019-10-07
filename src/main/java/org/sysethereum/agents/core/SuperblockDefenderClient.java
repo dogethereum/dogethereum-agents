@@ -197,21 +197,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     @Override
-    protected String getLastEthBlockProcessedFilename() {
-        return "SuperblockDefenderLatestEthBlockProcessedFile.dat";
-    }
-
-    @Override
-    protected String getSessionToSuperblockMapFilename() {
-        return "SuperblockDefenderSessionToSuperblockMap.dat";
-    }
-
-    @Override
-    protected String getSuperblockToSessionsMapFilename() {
-        return "SuperblockDefenderSuperblockToSessionsMap.dat";
-    }
-
-    @Override
     protected boolean isMine(EthWrapper.NewBattleEvent newBattleEvent) {
         return newBattleEvent.submitter.equals(myAddress);
     }

@@ -53,6 +53,24 @@ public class SystemProperties {
         logger.debug("Config trace: " + config.root().render(ConfigRenderOptions.defaults().setComments(false).setJson(false)));
     }
 
+    public String getLastEthBlockProcessedFilename(AgentRole agentRole) {
+        return agentRole == CHALLENGER
+                ? "SuperblockChallengerLatestEthBlockProcessedFile.dat"
+                : "SuperblockDefenderLatestEthBlockProcessedFile.dat";
+    }
+
+    public String getSessionToSuperblockMapFilename(AgentRole agentRole) {
+        return agentRole == CHALLENGER
+                ? "SuperblockChallengerSessionToSuperblockMap.dat"
+                : "SuperblockDefenderSessionToSuperblockMap.dat";
+    }
+
+    public String getSuperblockToSessionsMapFilename(AgentRole agentRole) {
+        return agentRole == CHALLENGER
+                ? "SuperblockChallengerSuperblockToSessionsMap.dat"
+                : "SuperblockDefenderSuperblockToSessionsMap.dat";
+    }
+
     public boolean isAgentRoleEnabled(AgentRole agentRole) {
         return agentRole == CHALLENGER
                 ? getBooleanProperty("syscoin.superblock.challenger.enabled", false)
