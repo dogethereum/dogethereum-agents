@@ -14,7 +14,6 @@ import org.sysethereum.agents.core.bridge.SuperblockFactory;
 import org.sysethereum.agents.service.rest.MerkleRootComputer;
 
 import javax.annotation.Nullable;
-import javax.annotation.PreDestroy;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -56,14 +55,6 @@ public class SuperblockChain {
         this.SUPERBLOCK_DURATION = superblockDuration.intValue();
         this.SUPERBLOCK_DELAY = superblockDelay.intValue();
         this.SUPERBLOCK_STORING_WINDOW = SUPERBLOCK_DELAY * 2/3 ; // store superblocks 2 hr before they should be sent
-    }
-
-    /**
-     * Closes the block storage underlying this blockchain.
-     */
-    @PreDestroy
-    private void close()  {
-        this.superblockStorage.close();
     }
 
     /**

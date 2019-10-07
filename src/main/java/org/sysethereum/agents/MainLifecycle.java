@@ -8,6 +8,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.sysethereum.agents.checker.OperatorPeersChecker;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.core.*;
+import org.sysethereum.agents.core.syscoin.SuperblockLevelDBBlockStore;
 import org.sysethereum.agents.core.syscoin.SyscoinWrapper;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.Web3jService;
@@ -38,6 +39,7 @@ public class MainLifecycle {
     private final Web3j web3Secondary;
     private final Web3jService mainWeb3jService;
     private final Web3jService web3jSecondaryService;
+    private final SuperblockLevelDBBlockStore superblockLevelDBBlockStore;
 
     public MainLifecycle(
             SystemProperties config,
@@ -51,7 +53,8 @@ public class MainLifecycle {
             Web3j web3,
             Web3j web3Secondary,
             Web3jService mainWeb3jService,
-            Web3jService web3jSecondaryService
+            Web3jService web3jSecondaryService,
+            SuperblockLevelDBBlockStore superblockLevelDBBlockStore
     ) {
         this.config = config;
         this.operatorPeersChecker = operatorPeersChecker;
@@ -65,6 +68,7 @@ public class MainLifecycle {
         this.web3Secondary = web3Secondary;
         this.mainWeb3jService = mainWeb3jService;
         this.web3jSecondaryService = web3jSecondaryService;
+        this.superblockLevelDBBlockStore = superblockLevelDBBlockStore;
     }
 
     public void initialize() throws Exception {
@@ -155,6 +159,8 @@ public class MainLifecycle {
         if (config.isAgentRoleEnabled(CHALLENGER) || config.isAgentRoleEnabled(SUBMITTER)) {
             syscoinWrapper.stop();
         }
+
+        superblockLevelDBBlockStore.close();
 
         web3.shutdown();
         web3Secondary.shutdown();

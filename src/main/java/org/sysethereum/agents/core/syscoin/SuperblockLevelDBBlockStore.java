@@ -3,7 +3,6 @@ package org.sysethereum.agents.core.syscoin;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.store.BlockStoreException;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.sysethereum.agents.constants.AgentConstants;
 import org.fusesource.leveldbjni.*;
@@ -14,6 +13,7 @@ import org.sysethereum.agents.core.bridge.SuperblockData;
 import org.sysethereum.agents.core.bridge.SuperblockFactory;
 import org.sysethereum.agents.core.bridge.SuperblockSerializationHelper;
 
+import javax.annotation.concurrent.GuardedBy;
 import java.math.BigInteger;
 import java.io.*;
 import java.nio.*;
@@ -35,55 +35,36 @@ public class SuperblockLevelDBBlockStore {
     private final File path;
     private final SuperblockFactory superblockFactory;
     private final SuperblockSerializationHelper serializationHelper;
+
+    @GuardedBy("this")
     private DB db;
 
-    /**
-     * Constructor.
-     * @throws BlockStoreException
-     */
-    @Autowired
     public SuperblockLevelDBBlockStore(
             AgentConstants agentConstants,
             SystemProperties config,
             SuperblockFactory superblockFactory,
             SuperblockSerializationHelper serializationHelper
     ) {
-        this(
-                agentConstants,
-                Paths.get(config.dataDirectory(), "/SuperblockChain").toFile(),
-                JniDBFactory.factory,
-                superblockFactory,
-                serializationHelper
-        ); // this might not work, ask later
-    }
-
-    /**
-     * Helper for previous constructor.
-     * @param directory Where data is stored.
-     * @param dbFactory Interface for opening and repairing directory if needed.
-     * @param superblockFactory
-     * @param serializationHelper
-     */
-    public SuperblockLevelDBBlockStore(
-            AgentConstants agentConstants,
-            File directory,
-            DBFactory dbFactory,
-            SuperblockFactory superblockFactory,
-            SuperblockSerializationHelper serializationHelper) {
         this.agentConstants = agentConstants;
-        this.path = directory;
+        this.path = Paths.get(config.dataDirectory(), "/SuperblockChain").toFile();
         this.superblockFactory = superblockFactory;
         this.serializationHelper = serializationHelper;
 
+        setup();
+    }
+
+    private void setup() {
         Options options = new Options();
         options.createIfMissing();
 
+        DBFactory dbFactory = JniDBFactory.factory;
+
         try {
-            tryOpen(directory, dbFactory, options);
+            tryOpen(path, dbFactory, options);
         } catch (IOException e) {
             try {
-                dbFactory.repair(directory, options);
-                tryOpen(directory, dbFactory, options);
+                dbFactory.repair(path, options);
+                tryOpen(path, dbFactory, options);
             } catch (IOException e1) {
                 throw new RuntimeException(e1);
             }
@@ -97,8 +78,7 @@ public class SuperblockLevelDBBlockStore {
      * @param options Directory options.
      * @throws IOException
      */
-    private synchronized void tryOpen(File directory, DBFactory dbFactory, Options options)
-            throws IOException {
+    private synchronized void tryOpen(File directory, DBFactory dbFactory, Options options) throws IOException {
         db = dbFactory.open(directory, options);
         initStoreIfNeeded();
     }
@@ -169,19 +149,13 @@ public class SuperblockLevelDBBlockStore {
     @SuppressWarnings("unused")
     public synchronized void reset() throws BlockStoreException {
         try {
-            WriteBatch batch = db.createWriteBatch();
-            try {
-                DBIterator it = db.iterator();
-                try {
+            try (WriteBatch batch = db.createWriteBatch()) {
+                try (DBIterator it = db.iterator()) {
                     it.seekToFirst();
                     while (it.hasNext())
                         batch.delete(it.next().getKey());
                     db.write(batch);
-                } finally {
-                    it.close();
                 }
-            } finally {
-                batch.close();
             }
         } catch (IOException e) {
             throw new BlockStoreException(e);
