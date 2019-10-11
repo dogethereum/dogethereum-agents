@@ -191,7 +191,7 @@ public class MainConfiguration {
     ) throws IOException {
         String contractAddress = SyscoinBattleManagerExtended.getAddress(agentConstants.getNetworkId());
 
-        var result = SyscoinBattleManagerExtended.load(contractAddress, web3,
+        var result = new SyscoinBattleManagerExtended(contractAddress, web3,
                 new ClientTransactionManager(web3, ethAddresses.generalPurposeAndSendSuperblocksAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
@@ -207,7 +207,7 @@ public class MainConfiguration {
     ) throws IOException {
         String contractAddress = SyscoinBattleManagerExtended.getAddress(agentConstants.getNetworkId());
 
-        var result = SyscoinBattleManagerExtended.load(contractAddress, web3Secondary,
+        var result = new SyscoinBattleManagerExtended(contractAddress, web3Secondary,
                 new ClientTransactionManager(web3Secondary, ethAddresses.generalPurposeAndSendSuperblocksAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
@@ -223,7 +223,7 @@ public class MainConfiguration {
     ) throws IOException {
         String contractAddress = SyscoinBattleManagerExtended.getAddress(agentConstants.getNetworkId());
 
-        var result = SyscoinBattleManagerExtended.load(contractAddress, web3,
+        var result = new SyscoinBattleManagerExtended(contractAddress, web3,
                 new ClientTransactionManager(web3, ethAddresses.syscoinSuperblockChallengerAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
@@ -239,7 +239,7 @@ public class MainConfiguration {
     ) throws IOException {
         String contractAddress = SyscoinBattleManagerExtended.getAddress(agentConstants.getNetworkId());
 
-        var result = SyscoinBattleManagerExtended.load(contractAddress, web3Secondary,
+        var result = new SyscoinBattleManagerExtended(contractAddress, web3Secondary,
                 new ClientTransactionManager(web3Secondary, ethAddresses.syscoinSuperblockChallengerAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
