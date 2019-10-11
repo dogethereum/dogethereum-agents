@@ -3,6 +3,7 @@ package org.sysethereum.agents.core.bridge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.sysethereum.agents.constants.AgentRole;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.contract.SyscoinClaimManager;
 import org.sysethereum.agents.contract.SyscoinClaimManagerExtended;
@@ -16,6 +17,8 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import java.math.BigInteger;
 import java.util.Date;
 import java.util.concurrent.CompletableFuture;
+
+import static org.sysethereum.agents.constants.AgentRole.SUBMITTER;
 
 @Service
 public class ClaimContractApi {
@@ -168,11 +171,14 @@ public class ClaimContractApi {
     /**
      * Makes the minimum necessary deposit for reaching a given amount.
      * @param account Caller's address.
-     * @param myClaimManager this.claimManager if proposing/defending, this.claimManagerForChallenges if challenging.
      * @param weiValue Deposit to be reached. This should be the caller's total deposit in the end.
      * @throws Exception
      */
-    public void makeDepositIfNeeded(String account, SyscoinClaimManager myClaimManager, SyscoinClaimManagerExtended myClaimManagerGetter, BigInteger weiValue) throws Exception {
+    public void makeDepositIfNeeded(AgentRole agentRole, String account, BigInteger weiValue) throws Exception {
+
+        SyscoinClaimManager myClaimManager = (agentRole == SUBMITTER) ? claimManager : claimManagerForChallenges;
+        SyscoinClaimManagerExtended myClaimManagerGetter = (agentRole == SUBMITTER) ? claimManagerGetter : claimManagerForChallengesGetter;
+
         BigInteger currentDeposit = getDeposit(account, myClaimManagerGetter);
         if (currentDeposit.compareTo(weiValue) < 0) {
             BigInteger diff = weiValue.subtract(currentDeposit);

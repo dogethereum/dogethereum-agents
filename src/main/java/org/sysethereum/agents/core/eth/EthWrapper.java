@@ -5,6 +5,7 @@ import com.google.common.primitives.Bytes;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.bitcoinj.store.BlockStoreException;
+import org.sysethereum.agents.constants.AgentRole;
 import org.sysethereum.agents.constants.EthAddresses;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.contract.*;
@@ -58,9 +59,7 @@ public class EthWrapper {
 
     // Extensions of contracts generated automatically by web3j
     private final SyscoinClaimManagerExtended claimManager;
-    private final SyscoinClaimManagerExtended claimManagerGetter;
     private final SyscoinClaimManagerExtended claimManagerForChallenges;
-    private final SyscoinClaimManagerExtended claimManagerForChallengesGetter;
     private final SyscoinBattleManagerExtended battleManager;
     private final SyscoinBattleManagerExtended battleManagerForChallengesGetter;
 
@@ -89,7 +88,6 @@ public class EthWrapper {
             SyscoinClaimManagerExtended claimManager,
             SyscoinClaimManagerExtended claimManagerGetter,
             SyscoinClaimManagerExtended claimManagerForChallenges,
-            SyscoinClaimManagerExtended claimManagerForChallengesGetter,
             SuperblockContractApi superblockContractApi,
             BattleContractApi battleContractApi,
             ClaimContractApi claimContractApi,
@@ -104,9 +102,7 @@ public class EthWrapper {
         this.battleManager = battleManager;
         this.battleManagerForChallengesGetter = battleManagerForChallengesGetter;
         this.claimManager = claimManager;
-        this.claimManagerGetter = claimManagerGetter;
         this.claimManagerForChallenges = claimManagerForChallenges;
-        this.claimManagerForChallengesGetter = claimManagerForChallengesGetter;
         this.superblockContractApi = superblockContractApi;
         this.battleContractApi = battleContractApi;
         this.claimContractApi = claimContractApi;
@@ -294,8 +290,7 @@ public class EthWrapper {
         }
 
         // Make any necessary deposits for sending the superblock
-        claimContractApi.makeDepositIfNeeded(account, claimManager, claimManagerGetter, getSuperblockDeposit());
-
+        claimContractApi.makeDepositIfNeeded(AgentRole.SUBMITTER, account, getSuperblockDeposit());
 
         // The parent is either approved or semi approved. We can send the superblock.
         CompletableFuture<TransactionReceipt> futureReceipt = proposeSuperblock(superblock);
@@ -634,7 +629,7 @@ public class EthWrapper {
         }
 
         // Make necessary deposit to cover reward
-        claimContractApi.makeDepositIfNeeded(account, claimManagerForChallenges, claimManagerForChallengesGetter, getChallengeDeposit());
+        claimContractApi.makeDepositIfNeeded(AgentRole.CHALLENGER, account, getChallengeDeposit());
 
         CompletableFuture<TransactionReceipt> futureReceipt =
                 claimManagerForChallenges.challengeSuperblock(new Bytes32(superblockId.getBytes())).sendAsync();
