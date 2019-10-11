@@ -45,6 +45,17 @@ public class ClaimContractApi {
         this.claimManagerForChallengesGetter = claimManagerForChallengesGetter;
     }
 
+    public void updateGasPrice(BigInteger gasPriceMinimum) {
+        //noinspection deprecation
+        claimManager.setGasPrice(gasPriceMinimum);
+        //noinspection deprecation
+        claimManagerForChallenges.setGasPrice(gasPriceMinimum);
+        //noinspection deprecation
+        claimManagerGetter.setGasPrice(gasPriceMinimum);
+        //noinspection deprecation
+        claimManagerForChallengesGetter.setGasPrice(gasPriceMinimum);
+    }
+
     /**
      * Looks up a superblock's submission time in SyscoinClaimManager.
      * @param superblockId Superblock hash.
@@ -161,8 +172,7 @@ public class ClaimContractApi {
      * @param weiValue Deposit to be reached. This should be the caller's total deposit in the end.
      * @throws Exception
      */
-    public void makeDepositIfNeeded(String account, SyscoinClaimManager myClaimManager, SyscoinClaimManagerExtended myClaimManagerGetter, BigInteger weiValue)
-            throws Exception {
+    public void makeDepositIfNeeded(String account, SyscoinClaimManager myClaimManager, SyscoinClaimManagerExtended myClaimManagerGetter, BigInteger weiValue) throws Exception {
         BigInteger currentDeposit = getDeposit(account, myClaimManagerGetter);
         if (currentDeposit.compareTo(weiValue) < 0) {
             BigInteger diff = weiValue.subtract(currentDeposit);

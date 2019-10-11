@@ -164,7 +164,6 @@ public class EthWrapper {
      * Sets gas prices for all contract instances.
      * @throws IOException
      */
-    @SuppressWarnings("deprecation")
     public void updateContractFacadesGasPrice() throws IOException {
         BigInteger gasPriceSuggestedByEthNode = web3Secondary.ethGasPrice().send().getGasPrice();
         if (gasPriceSuggestedByEthNode.compareTo(gasPriceMinimum) > 0) {
@@ -174,15 +173,8 @@ public class EthWrapper {
             if(!gasPriceMinimum.equals(gasPriceSuggestedByEthNode)) {
                 gasPriceMinimum = gasPriceSuggestedByEthNode;
                 logger.info("setting new min gas price to " + gasPriceMinimum);
-                if (claimManager != null)
-                    claimManager.setGasPrice(gasPriceMinimum);
-                if (claimManagerForChallenges != null)
-                    claimManagerForChallenges.setGasPrice(gasPriceMinimum);
-                if (claimManagerGetter != null)
-                    claimManagerGetter.setGasPrice(gasPriceMinimum);
-                if (claimManagerForChallengesGetter != null)
-                    claimManagerForChallengesGetter.setGasPrice(gasPriceMinimum);
 
+                claimContractApi.updateGasPrice(gasPriceMinimum);
                 battleContractApi.updateGasPrice(gasPriceMinimum);
                 superblockContractApi.updateGasPrice(gasPriceMinimum);
             }
