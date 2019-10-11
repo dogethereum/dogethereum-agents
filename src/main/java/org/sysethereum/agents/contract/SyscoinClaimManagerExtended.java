@@ -16,15 +16,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SyscoinClaimManagerExtended extends SyscoinClaimManager {
-    protected SyscoinClaimManagerExtended(String contractAddress, Web3j web3j, TransactionManager transactionManager,
+    public SyscoinClaimManagerExtended(String contractAddress, Web3j web3j, TransactionManager transactionManager,
                                           BigInteger gasPrice, BigInteger gasLimit) {
         super(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
-    }
-
-    public static SyscoinClaimManagerExtended load(String contractAddress, Web3j web3j,
-                                                   TransactionManager transactionManager, BigInteger gasPrice,
-                                                   BigInteger gasLimit) {
-        return new SyscoinClaimManagerExtended(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
 
     public static String getAddress(String networkId) {
