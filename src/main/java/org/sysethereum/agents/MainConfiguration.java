@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.sysethereum.agents.constants.*;
 import org.sysethereum.agents.contract.SyscoinBattleManagerExtended;
+import org.sysethereum.agents.contract.SyscoinClaimManager;
 import org.sysethereum.agents.contract.SyscoinClaimManagerExtended;
 import org.sysethereum.agents.contract.SyscoinSuperblocksExtended;
 import org.sysethereum.agents.core.syscoin.SyscoinWalletAppKit;
@@ -125,7 +126,7 @@ public class MainConfiguration {
             SystemProperties config, AgentConstants agentConstants,
             Web3j web3, EthAddresses ethAddresses
     ) throws IOException {
-        String contractAddress = SyscoinClaimManagerExtended.getAddress(agentConstants.getNetworkId());
+        String contractAddress = SyscoinClaimManager.getPreviouslyDeployedAddress(agentConstants.getNetworkId());
 
         var result = new SyscoinClaimManagerExtended(contractAddress, web3,
                 new ClientTransactionManager(web3, ethAddresses.generalPurposeAndSendSuperblocksAddress),
@@ -141,7 +142,7 @@ public class MainConfiguration {
             SystemProperties config, AgentConstants agentConstants,
             Web3j web3, EthAddresses ethAddresses
     ) throws IOException {
-        String contractAddress = SyscoinClaimManagerExtended.getAddress(agentConstants.getNetworkId());
+        String contractAddress = SyscoinClaimManager.getPreviouslyDeployedAddress(agentConstants.getNetworkId());
 
         var result = new SyscoinClaimManagerExtended(contractAddress, web3,
                 new ClientTransactionManager(web3, ethAddresses.syscoinSuperblockChallengerAddress),
@@ -157,7 +158,7 @@ public class MainConfiguration {
             SystemProperties config, AgentConstants agentConstants,
             Web3j web3Secondary, EthAddresses ethAddresses
     ) throws IOException {
-        String contractAddress = SyscoinClaimManagerExtended.getAddress(agentConstants.getNetworkId());
+        String contractAddress = SyscoinClaimManager.getPreviouslyDeployedAddress(agentConstants.getNetworkId());
 
         var result = new SyscoinClaimManagerExtended(contractAddress, web3Secondary,
                 new ClientTransactionManager(web3Secondary, ethAddresses.syscoinSuperblockChallengerAddress),
@@ -173,7 +174,7 @@ public class MainConfiguration {
             SystemProperties config, AgentConstants agentConstants,
             Web3j web3Secondary, EthAddresses ethAddresses
     ) throws IOException {
-        String contractAddress = SyscoinClaimManagerExtended.getAddress(agentConstants.getNetworkId());
+        String contractAddress = SyscoinClaimManager.getPreviouslyDeployedAddress(agentConstants.getNetworkId());
 
         var result = new SyscoinClaimManagerExtended(contractAddress, web3Secondary,
                 new ClientTransactionManager(web3Secondary, ethAddresses.generalPurposeAndSendSuperblocksAddress),
