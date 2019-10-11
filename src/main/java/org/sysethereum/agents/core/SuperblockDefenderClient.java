@@ -56,7 +56,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             SyscoinBattleManagerExtended battleManagerGetter,
             ChallengeEmailNotifier challengeEmailNotifier
     ) {
-        super(AgentRole.SUBMITTER, config, agentConstants, ethWrapper, superblockContractApi, claimContractApi, challengeEmailNotifier);
+        super(AgentRole.SUBMITTER, config, agentConstants, ethWrapper, superblockContractApi, battleContractApi, claimContractApi, challengeEmailNotifier);
 
         this.config = config;
         this.persistentFileStore = persistentFileStore;
@@ -170,10 +170,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     /* - Reacting to events - */
 
-    private void respondToNewBattles(long fromBlock, long toBlock)
-            throws Exception {
-        List<EthWrapper.NewBattleEvent> queryBattleEvents =
-                ethWrapper.getNewBattleEvents(fromBlock, toBlock);
+    private void respondToNewBattles(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.NewBattleEvent> queryBattleEvents = battleContractApi.getNewBattleEvents(fromBlock, toBlock);
 
         for (EthWrapper.NewBattleEvent queryBattleEvent : queryBattleEvents) {
             if (isMine(queryBattleEvent) && (battleContractApi.getSessionChallengeState(queryBattleEvent.sessionId) == EthWrapper.ChallengeState.Challenged)) {

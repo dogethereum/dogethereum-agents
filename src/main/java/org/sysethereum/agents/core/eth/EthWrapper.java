@@ -86,12 +86,12 @@ public class EthWrapper {
             SyscoinBattleManagerExtended battleManager,
             SyscoinBattleManagerExtended battleManagerForChallengesGetter,
             SyscoinClaimManagerExtended claimManager,
-            SyscoinClaimManagerExtended claimManagerGetter,
             SyscoinClaimManagerExtended claimManagerForChallenges,
             SuperblockContractApi superblockContractApi,
             BattleContractApi battleContractApi,
             ClaimContractApi claimContractApi,
-            BigInteger superblockDuration
+            BigInteger superblockDuration,
+            BigInteger minProposalDeposit
     ) throws Exception {
 
         this.superblockChain = superblockChain;
@@ -107,12 +107,12 @@ public class EthWrapper {
         this.battleContractApi = battleContractApi;
         this.claimContractApi = claimContractApi;
         this.superblockDuration = superblockDuration;
+        this.minProposalDeposit = minProposalDeposit;
 
-        gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
-        gasPriceMaximum = BigInteger.valueOf(config.gasPriceMaximum());
+        this.gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
+        this.gasPriceMaximum = BigInteger.valueOf(config.gasPriceMaximum());
+
         updateContractFacadesGasPrice();
-
-        minProposalDeposit = claimManagerGetter.minProposalDeposit().send().getValue();
     }
 
 
@@ -408,35 +408,6 @@ public class EthWrapper {
         );
     }
 
-
-    /* ---- BATTLE EVENT RETRIEVAL METHODS AND CLASSES ---- */
-
-    /**
-     * Listens to NewBattle events from SyscoinBattleManager contract within a given block window
-     * and parses web3j-generated instances into easier to manage NewBattleEvent objects.
-     * @param startBlock First Ethereum block to poll.
-     * @param endBlock Last Ethereum block to poll.
-     * @return All NewBattle events from SyscoinBattleManager as NewBattleEvent objects.
-     * @throws IOException
-     */
-    public List<NewBattleEvent> getNewBattleEvents(long startBlock, long endBlock) throws IOException {
-        List<NewBattleEvent> result = new ArrayList<>();
-        List<SyscoinBattleManager.NewBattleEventResponse> newBattleEvents =
-                battleManagerForChallengesGetter.getNewBattleEventResponses(
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
-
-        for (SyscoinBattleManager.NewBattleEventResponse response : newBattleEvents) {
-            NewBattleEvent newBattleEvent = new NewBattleEvent();
-            newBattleEvent.superblockHash = Keccak256Hash.wrap(response.superblockHash.getValue());
-            newBattleEvent.sessionId = Keccak256Hash.wrap(response.sessionId.getValue());
-            newBattleEvent.submitter = response.submitter.getValue();
-            newBattleEvent.challenger = response.challenger.getValue();
-            result.add(newBattleEvent);
-        }
-
-        return result;
-    }
     /**
      * Listens to RespondBlockHeaders events from SyscoinBattleManager contract within a given block window
      * and parses web3j-generated instances into easier to manage RespondBlockHeaders objects.

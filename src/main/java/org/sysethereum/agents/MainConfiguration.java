@@ -291,6 +291,11 @@ public class MainConfiguration {
     }
 
     @Bean
+    public BigInteger minProposalDeposit(SyscoinClaimManagerExtended claimManagerGetter) throws Exception {
+        return claimManagerGetter.minProposalDeposit().send().getValue();
+    }
+
+    @Bean
     public HttpServer httpServer(
             GetSPVHandler getSPVHandler,
             GetSuperblockBySyscoinHandler getSuperblockBySyscoinHandler,
