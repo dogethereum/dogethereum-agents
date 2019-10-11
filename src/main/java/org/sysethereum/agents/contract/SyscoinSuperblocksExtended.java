@@ -25,16 +25,10 @@ import java.util.List;
  */
 public class SyscoinSuperblocksExtended extends SyscoinSuperblocks {
 
-    protected SyscoinSuperblocksExtended(String contractAddress, Web3j web3j, TransactionManager transactionManager,
+    public SyscoinSuperblocksExtended(String contractAddress, Web3j web3j, TransactionManager transactionManager,
                                          BigInteger gasPrice, BigInteger gasLimit) {
         //noinspection deprecation
         super(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
-    }
-
-    public static SyscoinSuperblocksExtended load(String contractAddress, Web3j web3j,
-                                                  TransactionManager transactionManager, BigInteger gasPrice,
-                                                  BigInteger gasLimit) {
-        return new SyscoinSuperblocksExtended(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
 
     public static String getAddress(String networkId) {
