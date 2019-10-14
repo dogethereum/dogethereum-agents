@@ -72,7 +72,7 @@ public class EthWrapper {
     private final BigInteger superblockDuration;
 
     private final BigInteger minProposalDeposit;
-    private final SuperblockChain superblockChain;
+    private final SuperblockChain localSuperblockChain;
     private final SyscoinWrapper syscoinWrapper;
 
     @Autowired
@@ -94,7 +94,7 @@ public class EthWrapper {
             BigInteger minProposalDeposit
     ) throws Exception {
 
-        this.superblockChain = superblockChain;
+        this.localSuperblockChain = superblockChain;
         this.syscoinWrapper = syscoinWrapper;
         this.web3 = web3;
         this.web3Secondary = web3Secondary;
@@ -193,24 +193,24 @@ public class EthWrapper {
      */
     public Superblock getHighestApprovableOrNewDescendant(Superblock toConfirm, Keccak256Hash superblockId)
             throws BlockStoreException, IOException, Exception {
-        if (superblockChain.getSuperblock(superblockId) == null) {
+        if (localSuperblockChain.getSuperblock(superblockId) == null) {
             // The superblock isn't in the main chain.
             logger.info("Superblock {} is not in the main chain. Returning from getHighestApprovableOrNewDescendant.", superblockId);
             return null;
         }
 
-        if (superblockChain.getSuperblock(superblockId).getSuperblockHeight() == superblockChain.getChainHeight()) {
+        if (localSuperblockChain.getSuperblock(superblockId).getSuperblockHeight() == localSuperblockChain.getChainHeight()) {
             // There's nothing above the tip of the chain.
             logger.info("Superblock {} is above the tip of the chain. Returning from getHighestApprovableOrNewDescendant.", superblockId);
             return null;
         }
-        Superblock currentSuperblock = superblockChain.getChainHead();
+        Superblock currentSuperblock = localSuperblockChain.getChainHead();
         while (currentSuperblock != null &&
                 !currentSuperblock.getSuperblockId().equals(superblockId) &&
                 !newAndTimeoutPassed(currentSuperblock.getSuperblockId()) &&
                 !claimContractApi.getInBattleAndSemiApprovable(currentSuperblock.getSuperblockId()) &&
                 !semiApprovedAndApprovable(toConfirm, currentSuperblock)) {
-            currentSuperblock = superblockChain.getSuperblock(currentSuperblock.getParentId());
+            currentSuperblock = localSuperblockChain.getSuperblock(currentSuperblock.getParentId());
         }
         return currentSuperblock;
     }
@@ -227,23 +227,23 @@ public class EthWrapper {
      */
     public Superblock getHighestSemiApprovedOrApprovedDescendant(Keccak256Hash superblockId)
             throws BlockStoreException, IOException, Exception {
-        if (superblockChain.getSuperblock(superblockId) == null) {
+        if (localSuperblockChain.getSuperblock(superblockId) == null) {
             // The superblock isn't in the main chain.
             logger.info("Superblock {} is not in the main chain. Returning from getHighestSemiApprovedOrApprovedDescendant.", superblockId);
             return null;
         }
 
-        if (superblockChain.getSuperblock(superblockId).getSuperblockHeight() == superblockChain.getChainHeight()) {
+        if (localSuperblockChain.getSuperblock(superblockId).getSuperblockHeight() == localSuperblockChain.getChainHeight()) {
             // There's nothing above the tip of the chain.
             logger.info("Superblock {} is the tip of the superblock chain, no descendant exists. Returning from getHighestSemiApprovedOrApprovedDescendant.", superblockId);
             return null;
         }
-        Superblock currentSuperblock = superblockChain.getChainHead();
+        Superblock currentSuperblock = localSuperblockChain.getChainHead();
         while (currentSuperblock != null
                 && !currentSuperblock.getSuperblockId().equals(superblockId)
                 && !superblockContractApi.isSemiApproved(currentSuperblock.getSuperblockId())
                 && !superblockContractApi.isApproved(currentSuperblock.getSuperblockId())) {
-            currentSuperblock = superblockChain.getSuperblock(currentSuperblock.getParentId());
+            currentSuperblock = localSuperblockChain.getSuperblock(currentSuperblock.getParentId());
         }
 
         return currentSuperblock;
@@ -545,7 +545,7 @@ public class EthWrapper {
         int endIndex = startIndex + numHashesRequired;
         if(startIndex > 48)
             throw new Exception("Skipping respondBlockHeader, startIndex cannot be > 48.");
-        Superblock superblock = superblockChain.getSuperblock(superblockId);
+        Superblock superblock = localSuperblockChain.getSuperblock(superblockId);
         List<Sha256Hash> listHashes = superblock.getSyscoinBlockHashes();
         if(!superblockDuration.equals(BigInteger.valueOf(listHashes.size())))
             throw new Exception("Skipping respondBlockHeader, superblock hash array list is incorrect length.");

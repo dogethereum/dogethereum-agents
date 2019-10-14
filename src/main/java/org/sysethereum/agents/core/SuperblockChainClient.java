@@ -22,7 +22,6 @@ import static org.sysethereum.agents.constants.AgentRole.SUBMITTER;
  * Runs a SuperblockChain.
  * @author Catalina Juarros
  */
-
 @Service
 @Slf4j(topic = "SuperblockChainClient")
 public class SuperblockChainClient {
@@ -31,7 +30,7 @@ public class SuperblockChainClient {
 
     private final SystemProperties config;
     private final AgentConstants agentConstants;
-    private final SuperblockChain superblockChain;
+    private final SuperblockChain localSuperblockChain;
     private final SyscoinWrapper syscoinWrapper;
     private final Timer timer;
 
@@ -43,7 +42,7 @@ public class SuperblockChainClient {
     ) {
         this.config = systemProperties;
         this.agentConstants = agentConstants;
-        this.superblockChain = superblockChain;
+        this.localSuperblockChain = superblockChain;
         this.syscoinWrapper = syscoinWrapper;
         this.timer = new Timer("SuperblockChainClient", true);
     }
@@ -77,12 +76,12 @@ public class SuperblockChainClient {
      * @throws IOException
      */
     public void updateChain() throws Exception, BlockStoreException, IOException {
-        Superblock bestSuperblock = superblockChain.getChainHead();
+        Superblock bestSuperblock = localSuperblockChain.getChainHead();
         Sha256Hash bestSuperblockLastBlockHash = bestSuperblock.getLastSyscoinBlockHash();
 
         // Get all the Syscoin blocks that haven't yet been hashed into a superblock
         Stack<Sha256Hash> allSyscoinHashesToHash = syscoinWrapper.getNewerHashesThan(bestSuperblockLastBlockHash);
-        superblockChain.storeSuperblocks(allSyscoinHashesToHash, bestSuperblock.getSuperblockId()); // group them in superblocks
+        localSuperblockChain.storeSuperblocks(allSyscoinHashesToHash, bestSuperblock.getSuperblockId()); // group them in superblocks
     }
 
 

@@ -41,7 +41,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     private final SyscoinBattleManagerExtended battleManagerForChallenges;
     private final SystemProperties config;
     private final PersistentFileStore persistentFileStore;
-    private final SuperblockChain superblockChain;
+    private final SuperblockChain localSuperblockChain;
     private final SuperblockContractApi superblockContractApi;
     private final ClaimContractApi claimContractApi;
     private final BattleContractApi battleContractApi;
@@ -68,7 +68,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
         this.config = config;
         this.persistentFileStore = persistentFileStore;
-        this.superblockChain = superblockChain;
+        this.localSuperblockChain = superblockChain;
         this.superblockContractApi = superblockContractApi;
         this.claimContractApi = claimContractApi;
         this.battleContractApi = battleContractApi;
@@ -116,7 +116,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     private void invalidateNonMainChainSuperblocks() throws Exception {
         for (Keccak256Hash superblockId : semiApprovedSet) {
             long semiApprovedHeight = superblockContractApi.getHeight(superblockId).longValue();
-            Superblock mainChainSuperblock = superblockChain.getByHeight(semiApprovedHeight);
+            Superblock mainChainSuperblock = localSuperblockChain.getByHeight(semiApprovedHeight);
             if (mainChainSuperblock != null) {
                 long confirmations = claimContractApi.getSuperblockConfirmations();
                 if (!mainChainSuperblock.getSuperblockId().equals(superblockId) &&
@@ -130,7 +130,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     private void invalidateLoserSuperblocks() throws Exception {
         for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
-            // decided is set to true inside of checkclaimfinished and thus only allows it to call once
+            // decided is set to true inside of checkClaimFinished and thus only allows it to call once
             if (claimContractApi.getClaimInvalid(superblockId) && claimContractApi.getClaimExists(superblockId) && !claimContractApi.getClaimDecided(superblockId)) {
                 logger.info("Superblock {} lost a battle. Invalidating.", superblockId);
                 ethWrapper.checkClaimFinished(superblockId, true);
@@ -159,10 +159,10 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         for (SuperblockContractApi.SuperblockEvent newSuperblock : newSuperblockEvents) {
             logger.info("NewSuperblock {}. Validating...", newSuperblock.superblockId);
 
-            Superblock superblock = superblockChain.getSuperblock(newSuperblock.superblockId);
+            Superblock superblock = localSuperblockChain.getSuperblock(newSuperblock.superblockId);
             if (superblock == null) {
                 BigInteger height = superblockContractApi.getHeight(newSuperblock.superblockId);
-                Superblock localSuperblock = superblockChain.getByHeight(height.longValue());
+                Superblock localSuperblock = localSuperblockChain.getByHeight(height.longValue());
 
                 if (localSuperblock == null) {
                     // local superblockchain should not be out of sync because there is 2 hour discrepancy between saving and sending

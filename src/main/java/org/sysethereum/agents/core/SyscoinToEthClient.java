@@ -39,7 +39,7 @@ public class SyscoinToEthClient {
 
     private final EthWrapper ethWrapper;
     private final SyscoinWrapper syscoinWrapper;
-    private final SuperblockChain superblockChain;
+    private final SuperblockChain localSuperblockChain;
     private final SuperblockContractApi superblockContractApi;
     private final ClaimContractApi claimContractApi;
     private final EthAddresses ethAddresses;
@@ -57,7 +57,7 @@ public class SyscoinToEthClient {
             EthAddresses ethAddresses
     ) {
         this.agentConstants = agentConstants;
-        this.superblockChain = superblockChain;
+        this.localSuperblockChain = superblockChain;
         this.syscoinWrapper = syscoinWrapper;
         this.ethWrapper = ethWrapper;
         this.superblockContractApi = superblockContractApi;
@@ -126,13 +126,13 @@ public class SyscoinToEthClient {
         else
             highestDescendantId = highestDescendant.getSuperblockId();
 
-        Superblock toConfirm = superblockChain.getFirstDescendant(highestDescendantId);
+        Superblock toConfirm = localSuperblockChain.getFirstDescendant(highestDescendantId);
         if (toConfirm == null) {
             logger.info("No new superblock to submit found in local database. Last processed superblockId {}. Stopping.", highestDescendantId);
             return 0;
         }
 
-        if (!superblockChain.sendingTimePassed(toConfirm) || !claimContractApi.getAbilityToProposeNextSuperblock()) {
+        if (!localSuperblockChain.sendingTimePassed(toConfirm) || !claimContractApi.getAbilityToProposeNextSuperblock()) {
             logger.debug("Too early to send superblock {}, will try again in a few seconds.", toConfirm.getSuperblockId());
             return 0;
         }
@@ -159,7 +159,7 @@ public class SyscoinToEthClient {
             if (txStoredBlock == null) {
                 return new RestError("Block has not been stored in local database. Block hash: " + blockHash);
             }
-            Superblock txSuperblock = superblockChain.findBySysBlockHash(txStoredBlock.getHeader().getHash());
+            Superblock txSuperblock = localSuperblockChain.findBySysBlockHash(txStoredBlock.getHeader().getHash());
 
             if (txSuperblock == null) {
                 return new RestError("Superblock has not been stored in local database yet. " +
@@ -227,9 +227,9 @@ public class SyscoinToEthClient {
             Superblock sb;
 
             if (superblockId != null) {
-                sb = superblockChain.getSuperblock(superblockId);
+                sb = localSuperblockChain.getSuperblock(superblockId);
             } else {
-                sb = superblockChain.getByHeight(height);
+                sb = localSuperblockChain.getByHeight(height);
             }
 
             return handleSuperblock(sb);
@@ -250,7 +250,7 @@ public class SyscoinToEthClient {
                 return new RestError("Block has not been stored in local database.");
             }
 
-            Superblock txSuperblock = superblockChain.findBySysBlockHash(sb.getHeader().getHash());
+            Superblock txSuperblock = localSuperblockChain.findBySysBlockHash(sb.getHeader().getHash());
 
             return handleSuperblock(txSuperblock);
         }

@@ -36,7 +36,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     private final SystemProperties config;
     private final PersistentFileStore persistentFileStore;
     private final BattleContractApi battleContractApi;
-    private final SuperblockChain superblockChain;
+    private final SuperblockChain localSuperblockChain;
     private final RandomizationCounter randomizationCounter;
     private final BigInteger superblockTimeout;
     private final SyscoinBattleManagerExtended battleManagerGetter;
@@ -61,7 +61,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         this.config = config;
         this.persistentFileStore = persistentFileStore;
         this.battleContractApi = battleContractApi;
-        this.superblockChain = superblockChain;
+        this.localSuperblockChain = superblockChain;
         this.randomizationCounter = randomizationCounter;
         this.superblockTimeout = superblockTimeout;
         this.battleManagerGetter = battleManagerGetter;
@@ -125,7 +125,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      */
     private void confirmEarliestApprovableSuperblock() throws Exception {
         Keccak256Hash bestSuperblockId = superblockContractApi.getBestSuperblockId();
-        Superblock chainHead = superblockChain.getChainHead();
+        Superblock chainHead = localSuperblockChain.getChainHead();
 
         if (chainHead.getSuperblockId().equals(bestSuperblockId)) {
             // Contract and local db best superblocks are the same, do nothing.
@@ -133,7 +133,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         }
 
 
-        Superblock toConfirm = superblockChain.getFirstDescendant(bestSuperblockId);
+        Superblock toConfirm = localSuperblockChain.getFirstDescendant(bestSuperblockId);
         if (toConfirm == null) {
             logger.info("Best superblock from contracts, {}, not found in local database. Stopping.", bestSuperblockId);
             return;
