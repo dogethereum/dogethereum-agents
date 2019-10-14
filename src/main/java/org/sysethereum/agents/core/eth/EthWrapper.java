@@ -259,25 +259,30 @@ public class EthWrapper {
         // Check if the parent has been approved before sending this superblock.
         Keccak256Hash parentId = superblock.getParentId();
         if (!(superblockContractApi.isApproved(parentId) || superblockContractApi.isSemiApproved(parentId))) {
-            logger.info("Superblock {} not sent because its parent was neither approved nor semi approved.",
-                    superblock.getSuperblockId());
+            logger.info("Superblock {} not sent because its parent was neither approved nor semi approved.", superblock.getSuperblockId());
             return false;
         }
         // if claim exists we check to ensure the superblock chain isn't "stuck" and can be re-approved to be built even if it exists
-        if (claimContractApi.getClaimExists(superblock.getSuperblockId())){
+        if (claimContractApi.getClaimExists(superblock.getSuperblockId())) {
             boolean allowed = claimContractApi.getClaimInvalid(superblock.getSuperblockId())
                     && claimContractApi.getClaimDecided(superblock.getSuperblockId())
                     && !claimContractApi.getClaimSubmitter(superblock.getSuperblockId()).equals(account);
 
-            if(allowed){
-                if(superblockContractApi.isApproved(parentId)){
-                    allowed = superblockContractApi.getBestSuperblockId().equals(parentId);
-                }
-                else allowed = superblockContractApi.isSemiApproved(parentId);
+            if (!allowed) {
+                logger.info("Superblock {} has already been sent. Returning.", superblock.getSuperblockId());
+                return false;
             }
-           if(!allowed){
-               logger.info("Superblock {} has already been sent. Returning.", superblock.getSuperblockId());
-               return false;
+
+            if (superblockContractApi.isApproved(parentId)) {
+                if (!superblockContractApi.getBestSuperblockId().equals(parentId)) {
+                    logger.info("Superblock {} parent is approved but not best. Returning.", superblock.getSuperblockId());
+                    return false;
+                }
+            } else {
+                if (!superblockContractApi.isSemiApproved(parentId)) {
+                    logger.info("Superblock {} parent is neither approved nor semi-approved. Returning.", superblock.getSuperblockId());
+                    return false;
+                }
             }
         }
 

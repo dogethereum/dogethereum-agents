@@ -138,13 +138,12 @@ public class SyscoinToEthClient {
 
         Superblock toConfirm = superblockChain.getFirstDescendant(highestDescendantId);
         if (toConfirm == null) {
-            logger.info("Best superblock from contracts, {}, not found in local database. Stopping.", highestDescendantId);
+            logger.info("No new superblock to submit found in local database. Last processed superblockId {}. Stopping.", highestDescendantId);
             return 0;
         }
 
         if (!superblockChain.sendingTimePassed(toConfirm) || !claimContractApi.getAbilityToProposeNextSuperblock()) {
-            logger.debug("Too early to send superblock {}, will try again in a few seconds.",
-                    toConfirm.getSuperblockId());
+            logger.debug("Too early to send superblock {}, will try again in a few seconds.", toConfirm.getSuperblockId());
             return 0;
         }
 
