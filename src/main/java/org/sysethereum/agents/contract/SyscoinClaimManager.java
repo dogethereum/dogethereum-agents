@@ -36,7 +36,7 @@ import org.web3j.tx.gas.ContractGasProvider;
  * <p>Auto generated code.
  * <p><strong>Do not modify!</strong>
  * <p>Please use the <a href="https://docs.web3j.io/command_line.html">web3j command line tools</a>,
- * or the org.web3j.codegen.SolidityFunctionWrapperGenerator in the 
+ * or the org.web3j.codegen.SolidityFunctionWrapperGenerator in the
  * <a href="https://github.com/web3j/web3j/tree/master/codegen">codegen module</a> to update.
  *
  * <p>Generated with web3j version 4.5.4.
@@ -103,51 +103,51 @@ public class SyscoinClaimManager extends Contract {
 
     public static final String FUNC_GETABILITYTOPROPOSENEXTSUPERBLOCK = "getAbilityToProposeNextSuperblock";
 
-    public static final Event DEPOSITBONDED_EVENT = new Event("DepositBonded", 
+    public static final Event DEPOSITBONDED_EVENT = new Event("DepositBonded",
             Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Uint256>() {}));
     ;
 
-    public static final Event DEPOSITUNBONDED_EVENT = new Event("DepositUnbonded", 
+    public static final Event DEPOSITUNBONDED_EVENT = new Event("DepositUnbonded",
             Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Uint256>() {}));
     ;
 
-    public static final Event SUPERBLOCKCLAIMCREATED_EVENT = new Event("SuperblockClaimCreated", 
+    public static final Event SUPERBLOCKCLAIMCREATED_EVENT = new Event("SuperblockClaimCreated",
             Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
     ;
 
-    public static final Event SUPERBLOCKCLAIMCHALLENGED_EVENT = new Event("SuperblockClaimChallenged", 
+    public static final Event SUPERBLOCKCLAIMCHALLENGED_EVENT = new Event("SuperblockClaimChallenged",
             Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
     ;
 
-    public static final Event SUPERBLOCKBATTLEDECIDED_EVENT = new Event("SuperblockBattleDecided", 
+    public static final Event SUPERBLOCKBATTLEDECIDED_EVENT = new Event("SuperblockBattleDecided",
             Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Address>() {}));
     ;
 
-    public static final Event SUPERBLOCKCLAIMSUCCESSFUL_EVENT = new Event("SuperblockClaimSuccessful", 
+    public static final Event SUPERBLOCKCLAIMSUCCESSFUL_EVENT = new Event("SuperblockClaimSuccessful",
             Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
     ;
 
-    public static final Event SUPERBLOCKCLAIMPENDING_EVENT = new Event("SuperblockClaimPending", 
+    public static final Event SUPERBLOCKCLAIMPENDING_EVENT = new Event("SuperblockClaimPending",
             Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
     ;
 
-    public static final Event SUPERBLOCKCLAIMFAILED_EVENT = new Event("SuperblockClaimFailed", 
+    public static final Event SUPERBLOCKCLAIMFAILED_EVENT = new Event("SuperblockClaimFailed",
             Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
     ;
 
-    public static final Event VERIFICATIONGAMESTARTED_EVENT = new Event("VerificationGameStarted", 
+    public static final Event VERIFICATIONGAMESTARTED_EVENT = new Event("VerificationGameStarted",
             Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Address>() {}, new TypeReference<Bytes32>() {}));
     ;
 
-    public static final Event ERRORCLAIM_EVENT = new Event("ErrorClaim", 
+    public static final Event ERRORCLAIM_EVENT = new Event("ErrorClaim",
             Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Uint256>() {}));
     ;
 
-    public static final Event DEPOSITMADE_EVENT = new Event("DepositMade", 
+    public static final Event DEPOSITMADE_EVENT = new Event("DepositMade",
             Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}, new TypeReference<Uint256>() {}));
     ;
 
-    public static final Event DEPOSITWITHDRAWN_EVENT = new Event("DepositWithdrawn", 
+    public static final Event DEPOSITWITHDRAWN_EVENT = new Event("DepositWithdrawn",
             Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}, new TypeReference<Uint256>() {}));
     ;
 
@@ -177,66 +177,66 @@ public class SyscoinClaimManager extends Contract {
     }
 
     public RemoteFunctionCall<Uint256> superblockTimeout() {
-        final Function function = new Function(FUNC_SUPERBLOCKTIMEOUT, 
-                Arrays.<Type>asList(), 
+        final Function function = new Function(FUNC_SUPERBLOCKTIMEOUT,
+                Arrays.<Type>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function);
     }
 
     public RemoteFunctionCall<Uint256> superblockConfirmations() {
-        final Function function = new Function(FUNC_SUPERBLOCKCONFIRMATIONS, 
-                Arrays.<Type>asList(), 
+        final Function function = new Function(FUNC_SUPERBLOCKCONFIRMATIONS,
+                Arrays.<Type>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function);
     }
 
     public RemoteFunctionCall<Address> trustedSyscoinBattleManager() {
-        final Function function = new Function(FUNC_TRUSTEDSYSCOINBATTLEMANAGER, 
-                Arrays.<Type>asList(), 
+        final Function function = new Function(FUNC_TRUSTEDSYSCOINBATTLEMANAGER,
+                Arrays.<Type>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}));
         return executeRemoteCallSingleValueReturn(function);
     }
 
     public RemoteFunctionCall<TransactionReceipt> withdrawDeposit(Uint256 amount) {
         final Function function = new Function(
-                FUNC_WITHDRAWDEPOSIT, 
-                Arrays.<Type>asList(amount), 
+                FUNC_WITHDRAWDEPOSIT,
+                Arrays.<Type>asList(amount),
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
     public RemoteFunctionCall<TransactionReceipt> makeDeposit(BigInteger weiValue) {
         final Function function = new Function(
-                FUNC_MAKEDEPOSIT, 
-                Arrays.<Type>asList(), 
+                FUNC_MAKEDEPOSIT,
+                Arrays.<Type>asList(),
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function, weiValue);
     }
 
     public RemoteFunctionCall<Uint256> minProposalDeposit() {
-        final Function function = new Function(FUNC_MINPROPOSALDEPOSIT, 
-                Arrays.<Type>asList(), 
+        final Function function = new Function(FUNC_MINPROPOSALDEPOSIT,
+                Arrays.<Type>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function);
     }
 
     public RemoteFunctionCall<Uint256> superblockDelay() {
-        final Function function = new Function(FUNC_SUPERBLOCKDELAY, 
-                Arrays.<Type>asList(), 
+        final Function function = new Function(FUNC_SUPERBLOCKDELAY,
+                Arrays.<Type>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function);
     }
 
     public RemoteFunctionCall<Address> trustedSuperblocks() {
-        final Function function = new Function(FUNC_TRUSTEDSUPERBLOCKS, 
-                Arrays.<Type>asList(), 
+        final Function function = new Function(FUNC_TRUSTEDSUPERBLOCKS,
+                Arrays.<Type>asList(),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}));
         return executeRemoteCallSingleValueReturn(function);
     }
 
     public RemoteFunctionCall<Tuple9<Bytes32, Address, Address, Uint256, Bytes32, Uint256, Bool, Bool, Bool>> claims(Bytes32 param0) {
-        final Function function = new Function(FUNC_CLAIMS, 
-                Arrays.<Type>asList(param0), 
+        final Function function = new Function(FUNC_CLAIMS,
+                Arrays.<Type>asList(param0),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Address>() {}, new TypeReference<Uint256>() {}, new TypeReference<Bytes32>() {}, new TypeReference<Uint256>() {}, new TypeReference<Bool>() {}, new TypeReference<Bool>() {}, new TypeReference<Bool>() {}));
         return new RemoteFunctionCall<Tuple9<Bytes32, Address, Address, Uint256, Bytes32, Uint256, Bool, Bool, Bool>>(function,
                 new Callable<Tuple9<Bytes32, Address, Address, Uint256, Bytes32, Uint256, Bool, Bool, Bool>>() {
@@ -244,22 +244,22 @@ public class SyscoinClaimManager extends Contract {
                     public Tuple9<Bytes32, Address, Address, Uint256, Bytes32, Uint256, Bool, Bool, Bool> call() throws Exception {
                         List<Type> results = executeCallMultipleValueReturn(function);
                         return new Tuple9<Bytes32, Address, Address, Uint256, Bytes32, Uint256, Bool, Bool, Bool>(
-                                (Bytes32) results.get(0), 
-                                (Address) results.get(1), 
-                                (Address) results.get(2), 
-                                (Uint256) results.get(3), 
-                                (Bytes32) results.get(4), 
-                                (Uint256) results.get(5), 
-                                (Bool) results.get(6), 
-                                (Bool) results.get(7), 
+                                (Bytes32) results.get(0),
+                                (Address) results.get(1),
+                                (Address) results.get(2),
+                                (Uint256) results.get(3),
+                                (Bytes32) results.get(4),
+                                (Uint256) results.get(5),
+                                (Bool) results.get(6),
+                                (Bool) results.get(7),
                                 (Bool) results.get(8));
                     }
                 });
     }
 
     public RemoteFunctionCall<Uint256> deposits(Address param0) {
-        final Function function = new Function(FUNC_DEPOSITS, 
-                Arrays.<Type>asList(param0), 
+        final Function function = new Function(FUNC_DEPOSITS,
+                Arrays.<Type>asList(param0),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function);
     }
@@ -672,142 +672,135 @@ public class SyscoinClaimManager extends Contract {
 
     public RemoteFunctionCall<TransactionReceipt> init(Address _superblocks, Address _syscoinBattleManager, Uint256 _superblockDelay, Uint256 _superblockTimeout, Uint256 _superblockConfirmations) {
         final Function function = new Function(
-                FUNC_INIT, 
-                Arrays.<Type>asList(_superblocks, _syscoinBattleManager, _superblockDelay, _superblockTimeout, _superblockConfirmations), 
+                FUNC_INIT,
+                Arrays.<Type>asList(_superblocks, _syscoinBattleManager, _superblockDelay, _superblockTimeout, _superblockConfirmations),
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
     public RemoteFunctionCall<TransactionReceipt> bondDeposit(Bytes32 superblockHash, Address account, Uint256 amount) {
         final Function function = new Function(
-                FUNC_BONDDEPOSIT, 
-                Arrays.<Type>asList(superblockHash, account, amount), 
+                FUNC_BONDDEPOSIT,
+                Arrays.<Type>asList(superblockHash, account, amount),
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
     public RemoteFunctionCall<Uint256> getBondedDeposit(Bytes32 superblockHash, Address account) {
-        final Function function = new Function(FUNC_GETBONDEDDEPOSIT, 
-                Arrays.<Type>asList(superblockHash, account), 
+        final Function function = new Function(FUNC_GETBONDEDDEPOSIT,
+                Arrays.<Type>asList(superblockHash, account),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function);
     }
 
     public RemoteFunctionCall<Uint256> getDeposit(Address account) {
-        final Function function = new Function(FUNC_GETDEPOSIT, 
-                Arrays.<Type>asList(account), 
+        final Function function = new Function(FUNC_GETDEPOSIT,
+                Arrays.<Type>asList(account),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function);
     }
 
     public RemoteFunctionCall<TransactionReceipt> proposeSuperblock(Bytes32 _blocksMerkleRoot, Uint256 _accumulatedWork, Uint256 _timestamp, Uint256 _mtpTimestamp, Bytes32 _lastHash, Uint32 _lastBits, Bytes32 _parentHash) {
         final Function function = new Function(
-                FUNC_PROPOSESUPERBLOCK, 
-                Arrays.<Type>asList(_blocksMerkleRoot, _accumulatedWork, _timestamp, _mtpTimestamp, _lastHash, _lastBits, _parentHash), 
+                FUNC_PROPOSESUPERBLOCK,
+                Arrays.<Type>asList(_blocksMerkleRoot, _accumulatedWork, _timestamp, _mtpTimestamp, _lastHash, _lastBits, _parentHash),
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
     public RemoteFunctionCall<TransactionReceipt> challengeSuperblock(Bytes32 superblockHash) {
         final Function function = new Function(
-                FUNC_CHALLENGESUPERBLOCK, 
-                Arrays.<Type>asList(superblockHash), 
+                FUNC_CHALLENGESUPERBLOCK,
+                Arrays.<Type>asList(superblockHash),
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
     public RemoteFunctionCall<TransactionReceipt> checkClaimFinished(Bytes32 superblockHash) {
         final Function function = new Function(
-                FUNC_CHECKCLAIMFINISHED, 
-                Arrays.<Type>asList(superblockHash), 
+                FUNC_CHECKCLAIMFINISHED,
+                Arrays.<Type>asList(superblockHash),
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
     public RemoteFunctionCall<TransactionReceipt> confirmClaim(Bytes32 superblockHash, Bytes32 descendantId) {
         final Function function = new Function(
-                FUNC_CONFIRMCLAIM, 
-                Arrays.<Type>asList(superblockHash, descendantId), 
+                FUNC_CONFIRMCLAIM,
+                Arrays.<Type>asList(superblockHash, descendantId),
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
     public RemoteFunctionCall<TransactionReceipt> rejectClaim(Bytes32 superblockHash) {
         final Function function = new Function(
-                FUNC_REJECTCLAIM, 
-                Arrays.<Type>asList(superblockHash), 
+                FUNC_REJECTCLAIM,
+                Arrays.<Type>asList(superblockHash),
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
     public RemoteFunctionCall<TransactionReceipt> sessionDecided(Bytes32 sessionId, Bytes32 superblockHash, Address winner, Address loser) {
         final Function function = new Function(
-                FUNC_SESSIONDECIDED, 
-                Arrays.<Type>asList(sessionId, superblockHash, winner, loser), 
+                FUNC_SESSIONDECIDED,
+                Arrays.<Type>asList(sessionId, superblockHash, winner, loser),
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
     public RemoteFunctionCall<Bool> getInBattleAndSemiApprovable(Bytes32 superblockHash) {
-        final Function function = new Function(FUNC_GETINBATTLEANDSEMIAPPROVABLE, 
-                Arrays.<Type>asList(superblockHash), 
+        final Function function = new Function(FUNC_GETINBATTLEANDSEMIAPPROVABLE,
+                Arrays.<Type>asList(superblockHash),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bool>() {}));
         return executeRemoteCallSingleValueReturn(function);
     }
 
     public RemoteFunctionCall<Address> getClaimSubmitter(Bytes32 superblockHash) {
-        final Function function = new Function(FUNC_GETCLAIMSUBMITTER, 
-                Arrays.<Type>asList(superblockHash), 
+        final Function function = new Function(FUNC_GETCLAIMSUBMITTER,
+                Arrays.<Type>asList(superblockHash),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}));
         return executeRemoteCallSingleValueReturn(function);
     }
 
     public RemoteFunctionCall<Uint256> getNewSuperblockEventTimestamp(Bytes32 superblockHash) {
-        final Function function = new Function(FUNC_GETNEWSUPERBLOCKEVENTTIMESTAMP, 
-                Arrays.<Type>asList(superblockHash), 
+        final Function function = new Function(FUNC_GETNEWSUPERBLOCKEVENTTIMESTAMP,
+                Arrays.<Type>asList(superblockHash),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function);
     }
 
     public RemoteFunctionCall<Bool> getClaimExists(Bytes32 superblockHash) {
-        final Function function = new Function(FUNC_GETCLAIMEXISTS, 
-                Arrays.<Type>asList(superblockHash), 
+        final Function function = new Function(FUNC_GETCLAIMEXISTS,
+                Arrays.<Type>asList(superblockHash),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bool>() {}));
         return executeRemoteCallSingleValueReturn(function);
     }
 
     public RemoteFunctionCall<Bool> getClaimDecided(Bytes32 superblockHash) {
-        final Function function = new Function(FUNC_GETCLAIMDECIDED, 
-                Arrays.<Type>asList(superblockHash), 
+        final Function function = new Function(FUNC_GETCLAIMDECIDED,
+                Arrays.<Type>asList(superblockHash),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bool>() {}));
         return executeRemoteCallSingleValueReturn(function);
     }
 
     public RemoteFunctionCall<Bool> getClaimInvalid(Bytes32 superblockHash) {
-        final Function function = new Function(FUNC_GETCLAIMINVALID, 
-                Arrays.<Type>asList(superblockHash), 
+        final Function function = new Function(FUNC_GETCLAIMINVALID,
+                Arrays.<Type>asList(superblockHash),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bool>() {}));
         return executeRemoteCallSingleValueReturn(function);
     }
 
     public RemoteFunctionCall<Bytes32> getSession(Bytes32 superblockHash) {
-        final Function function = new Function(FUNC_GETSESSION, 
-                Arrays.<Type>asList(superblockHash), 
+        final Function function = new Function(FUNC_GETSESSION,
+                Arrays.<Type>asList(superblockHash),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}));
         return executeRemoteCallSingleValueReturn(function);
     }
 
     public RemoteFunctionCall<Address> getClaimChallenger(Bytes32 superblockHash) {
-        final Function function = new Function(FUNC_GETCLAIMCHALLENGER, 
-                Arrays.<Type>asList(superblockHash), 
+        final Function function = new Function(FUNC_GETCLAIMCHALLENGER,
+                Arrays.<Type>asList(superblockHash),
                 Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}));
-        return executeRemoteCallSingleValueReturn(function);
-    }
-
-    public RemoteFunctionCall<Bool> getAbilityToProposeNextSuperblock(Uint256 timestamp) {
-        final Function function = new Function(FUNC_GETABILITYTOPROPOSENEXTSUPERBLOCK, 
-                Arrays.<Type>asList(timestamp), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bool>() {}));
         return executeRemoteCallSingleValueReturn(function);
     }
 

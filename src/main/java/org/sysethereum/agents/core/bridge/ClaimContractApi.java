@@ -70,10 +70,6 @@ public class ClaimContractApi {
         return new Date(getNewEventTimestampBigInteger(superblockId).longValue() * 1000);
     }
 
-    public boolean getAbilityToProposeNextSuperblock() throws Exception {
-        return claimManagerGetter.getAbilityToProposeNextSuperblock(new Uint256(System.currentTimeMillis()/1000)).send().getValue();
-    }
-
     public boolean submittedTimeoutPassed(Keccak256Hash superblockId) throws Exception {
         Date timeoutDate = SuperblockUtils.getNSecondsAgo(superblockTimeout.intValue());
 
