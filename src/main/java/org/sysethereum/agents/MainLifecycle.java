@@ -88,7 +88,9 @@ public class MainLifecycle {
         if (!sysSuperblockChainClient.setup()) return;
 
         logger.debug("initialize: [Step #4]");
-        if (!syscoinToEthClient.setup()) return;
+        if (config.isAgentRoleEnabled(SUBMITTER)) {
+            if (!syscoinToEthClient.setup()) return;
+        }
 
         logger.debug("initialize: [Step #5]");
         if (config.isAgentRoleEnabled(CHALLENGER)) {
@@ -150,6 +152,10 @@ public class MainLifecycle {
             } catch (IOException e) {
                 logger.debug("cleanUp: superblockDefenderClient.cleanUp() failed", e);
             }
+        }
+
+        if (config.isAgentRoleEnabled(SUBMITTER)) {
+            syscoinToEthClient.cleanUp();
         }
 
         sysSuperblockChainClient.cleanUp();

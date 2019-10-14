@@ -15,7 +15,6 @@ import org.sysethereum.agents.core.syscoin.*;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.sysethereum.agents.constants.AgentConstants;
-import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.sysethereum.agents.util.RestError;
 import org.slf4j.Logger;
@@ -23,12 +22,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
-import javax.annotation.PreDestroy;
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.toList;
-import static org.sysethereum.agents.constants.AgentRole.SUBMITTER;
 
 /**
  * Manages the process of informing Sysethereum Contracts news about the syscoin blockchain
@@ -47,12 +44,10 @@ public class SyscoinToEthClient {
     private final ClaimContractApi claimContractApi;
     private final EthAddresses ethAddresses;
 
-    private final SystemProperties config;
     private final AgentConstants agentConstants;
     private final Timer timer;
 
     public SyscoinToEthClient(
-            SystemProperties systemProperties,
             AgentConstants agentConstants,
             SuperblockChain superblockChain,
             SyscoinWrapper syscoinWrapper,
@@ -61,7 +56,6 @@ public class SyscoinToEthClient {
             ClaimContractApi claimContractApi,
             EthAddresses ethAddresses
     ) {
-        this.config = systemProperties;
         this.agentConstants = agentConstants;
         this.superblockChain = superblockChain;
         this.syscoinWrapper = syscoinWrapper;
@@ -73,21 +67,19 @@ public class SyscoinToEthClient {
     }
 
     public boolean setup() {
-        if (config.isAgentRoleEnabled(SUBMITTER)) {
-            try {
-                timer.scheduleAtFixedRate(
-                        new SyscoinToEthClientTimerTask(),
-                        20_000, // 20 seconds
-                        agentConstants.getSyscoinToEthTimerTaskPeriod()
-                );
-            } catch (Exception e) {
-                return false;
-            }
+        try {
+            timer.scheduleAtFixedRate(
+                    new SyscoinToEthClientTimerTask(),
+                    20_000, // 20 seconds
+                    agentConstants.getSyscoinToEthTimerTaskPeriod()
+            );
+        } catch (Exception e) {
+            return false;
         }
+
         return true;
     }
 
-    @PreDestroy
     public void cleanUp() {
         timer.cancel();
         timer.purge();
@@ -101,9 +93,7 @@ public class SyscoinToEthClient {
                 if (!ethWrapper.isEthNodeSyncing()) {
                     logger.debug("SyscoinToEthClientTimerTask");
                     ethWrapper.updateContractFacadesGasPrice();
-                    if (config.isAgentRoleEnabled(SUBMITTER)) {
-                        updateBridgeSuperblockChain();
-                    }
+                    updateBridgeSuperblockChain();
                 } else {
                     logger.warn("SyscoinToEthClientTimerTask skipped because the eth node is syncing blocks");
                 }
