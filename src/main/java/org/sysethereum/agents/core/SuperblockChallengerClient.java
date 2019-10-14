@@ -122,7 +122,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 if (!mainChainSuperblock.getSuperblockId().equals(superblockId) &&
                         superblockContractApi.getChainHeight().longValue() >= semiApprovedHeight + confirmations) {
                     logger.info("Semi-approved superblock {} not found in main chain. Invalidating.", superblockId);
-                    ethWrapper.rejectClaim(superblockId);
+                    claimContractApi.rejectClaim(superblockId);
                 }
             }
         }
@@ -133,10 +133,9 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             // decided is set to true inside of checkClaimFinished and thus only allows it to call once
             if (claimContractApi.getClaimInvalid(superblockId) && claimContractApi.getClaimExists(superblockId) && !claimContractApi.getClaimDecided(superblockId)) {
                 logger.info("Superblock {} lost a battle. Invalidating.", superblockId);
-                ethWrapper.checkClaimFinished(superblockId, true);
+                claimContractApi.checkClaimFinished(superblockId, true);
                 sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(superblockId));
                 superblockToSessionsMap.remove(superblockId);
-
             }
         }
     }
@@ -165,7 +164,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 Superblock localSuperblock = localSuperblockChain.getByHeight(height.longValue());
 
                 if (localSuperblock == null) {
-                    // local superblockchain should not be out of sync because there is 2 hour discrepancy between saving and sending
+                    // local superblock chain should not be out of sync because there is 2 hour discrepancy between saving and sending
                     // this could mean our local syscoin node is out of sync (out of our control) in which case we have no choice but to challenge
                     // we have to assume if your local syscoin node is forked or not synced and we cannot detect difference between bad and good SB in that case we must challenge
                     logger.info("Superblock {} not present in our superblock chain", newSuperblock.superblockId);
@@ -182,7 +181,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             }
         }
         // check for pending if we have superblocks to challenge
-        if(toChallenge.size() > 0) {
+        if (toChallenge.size() > 0) {
             Thread.sleep(500); // in case the transaction takes some time to complete
             if (ethWrapper.arePendingTransactionsForChallengerAddress()) {
                 throw new Exception("Skipping challenging superblocks, there are pending transaction for the challenger address.");
@@ -211,8 +210,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
-
-
     /**
      * Adds new semi-approved superblocks to a data structure that keeps track of them
      * so that they can be invalidated if they turn out not to be in the main chain.
@@ -229,9 +226,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
-
     /* ---- HELPER METHODS ---- */
-
 
     private boolean challengedByMe(SuperblockContractApi.SuperblockEvent superblockEvent) throws Exception {
         return claimContractApi.getClaimChallenger(superblockEvent.superblockId).getValue().equals(myAddress);
@@ -267,8 +262,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @throws Exception
      */
     @Override
-    protected void removeSuperblocks(long fromBlock, long toBlock, List<SuperblockContractApi.SuperblockEvent> superblockEvents)
-            throws Exception {
+    protected void removeSuperblocks(long fromBlock, long toBlock, List<SuperblockContractApi.SuperblockEvent> superblockEvents) throws Exception {
         boolean removeFromContract = false;
         for (SuperblockContractApi.SuperblockEvent superblockEvent : superblockEvents) {
             Keccak256Hash superblockId = superblockEvent.superblockId;

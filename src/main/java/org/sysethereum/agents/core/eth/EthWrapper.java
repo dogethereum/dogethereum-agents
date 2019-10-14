@@ -23,7 +23,6 @@ import org.web3j.abi.datatypes.DynamicBytes;
 import org.web3j.abi.datatypes.generated.Bytes32;
 
 import org.web3j.abi.datatypes.generated.Uint256;
-import org.web3j.abi.datatypes.generated.Uint32;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.DefaultBlockParameterName;
@@ -58,7 +57,6 @@ public class EthWrapper {
     }
 
     // Extensions of contracts generated automatically by web3j
-    private final SyscoinClaimManagerExtended claimManager;
     private final SyscoinClaimManagerExtended claimManagerForChallenges;
     private final SyscoinBattleManagerExtended battleManager;
     private final SyscoinBattleManagerExtended battleManagerForChallengesGetter;
@@ -85,7 +83,6 @@ public class EthWrapper {
             EthAddresses ethAddresses,
             SyscoinBattleManagerExtended battleManager,
             SyscoinBattleManagerExtended battleManagerForChallengesGetter,
-            SyscoinClaimManagerExtended claimManager,
             SyscoinClaimManagerExtended claimManagerForChallenges,
             SuperblockContractApi superblockContractApi,
             BattleContractApi battleContractApi,
@@ -101,7 +98,6 @@ public class EthWrapper {
         this.ethAddresses = ethAddresses;
         this.battleManager = battleManager;
         this.battleManagerForChallengesGetter = battleManagerForChallengesGetter;
-        this.claimManager = claimManager;
         this.claimManagerForChallenges = claimManagerForChallenges;
         this.superblockContractApi = superblockContractApi;
         this.battleContractApi = battleContractApi;
@@ -238,15 +234,16 @@ public class EthWrapper {
             logger.info("Superblock {} is the tip of the superblock chain, no descendant exists. Returning from getHighestSemiApprovedOrApprovedDescendant.", superblockId);
             return null;
         }
-        Superblock currentSuperblock = localSuperblockChain.getChainHead();
-        while (currentSuperblock != null
-                && !currentSuperblock.getSuperblockId().equals(superblockId)
-                && !superblockContractApi.isSemiApproved(currentSuperblock.getSuperblockId())
-                && !superblockContractApi.isApproved(currentSuperblock.getSuperblockId())) {
-            currentSuperblock = localSuperblockChain.getSuperblock(currentSuperblock.getParentId());
+
+        Superblock head = localSuperblockChain.getChainHead();
+        while (head != null
+                && !head.getSuperblockId().equals(superblockId)
+                && !superblockContractApi.isSemiApproved(head.getSuperblockId())
+                && !superblockContractApi.isApproved(head.getSuperblockId())) {
+            head = localSuperblockChain.getSuperblock(head.getParentId());
         }
 
-        return currentSuperblock;
+        return head;
     }
     /**
      * Proposes a superblock to SyscoinClaimManager in order to keep the Sysethereum contracts updated.
@@ -298,7 +295,7 @@ public class EthWrapper {
         claimContractApi.makeDepositIfNeeded(AgentRole.SUBMITTER, account, getSuperblockDeposit());
 
         // The parent is either approved or semi approved. We can send the superblock.
-        CompletableFuture<TransactionReceipt> futureReceipt = proposeSuperblock(superblock);
+        CompletableFuture<TransactionReceipt> futureReceipt = claimContractApi.proposeSuperblock(superblock);
 
         logger.info("Sent superblock {}", superblock.getSuperblockId());
         futureReceipt.handle((receipt, throwable) -> {
@@ -312,23 +309,6 @@ public class EthWrapper {
 
         Thread.sleep(200);
         return true;
-    }
-
-    /**
-     * Proposes a superblock to SyscoinClaimManager. To be called from sendStoreSuperblock.
-     * @param superblock Superblock to be proposed.
-     * @return
-     */
-    private CompletableFuture<TransactionReceipt> proposeSuperblock(Superblock superblock) {
-        return claimManager.proposeSuperblock(
-                new Bytes32(superblock.getMerkleRoot().getBytes()),
-                new Uint256(superblock.getChainWork()),
-                new Uint256(superblock.getLastSyscoinBlockTime()),
-                new Uint256(superblock.getLastSyscoinBlockMedianTime()),
-                new Bytes32(superblock.getLastSyscoinBlockHash().getBytes()),
-                new Uint32(superblock.getlastSyscoinBlockBits()),
-                new Bytes32(superblock.getParentId().getBytes())
-            ).sendAsync();
     }
 
 
@@ -358,60 +338,6 @@ public class EthWrapper {
     /* ---------------------------------- */
     /* ---- SyscoinClaimManager section ---- */
     /* ---------------------------------- */
-
-
-    /* ---- CONFIRMING/REJECTING ---- */
-
-    /**
-     * Approves, semi-approves or invalidates a superblock depending on its situation.
-     * See SyscoinClaimManager source code for further reference.
-     * @param superblockId Superblock to be approved, semi-approved or invalidated.
-     * @param isChallenger Whether the caller is challenging. Used to determine
-     *                     which SyscoinClaimManager should be used for withdrawing funds.
-     */
-    public void checkClaimFinished(Keccak256Hash superblockId, boolean isChallenger) {
-        SyscoinClaimManagerExtended myClaimManager;
-        if (isChallenger) {
-            myClaimManager = claimManagerForChallenges;
-        } else {
-            myClaimManager = claimManager;
-        }
-
-        CompletableFuture<TransactionReceipt> futureReceipt =
-                myClaimManager.checkClaimFinished(new Bytes32(superblockId.getBytes())).sendAsync();
-        futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                logger.info("checkClaimFinished receipt {}", receipt.toString())
-        );
-    }
-
-    /**
-     * Confirms a semi-approved superblock with a high enough semi-approved descendant;
-     * 'high enough' means that superblock.height - descendant.height is greater than or equal
-     * to the number of confirmations necessary for appoving a superblock.
-     * See SyscoinClaimManager source code for further reference.
-     * @param superblockId Superblock to be confirmed.
-     * @param descendantId Its highest semi-approved descendant.
-     */
-    public void confirmClaim(Keccak256Hash superblockId, Keccak256Hash descendantId) {
-        CompletableFuture<TransactionReceipt> futureReceipt =
-                claimManager.confirmClaim(new Bytes32(superblockId.getBytes()), new Bytes32(descendantId.getBytes())).sendAsync();
-        futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                logger.info("confirmClaim receipt {}", receipt.toString())
-        );
-    }
-
-    /**
-     * Rejects a claim.
-     * See SyscoinClaimManager source code for further reference.
-     * @param superblockId ID of superblock to be rejected.
-     */
-    public void rejectClaim(Keccak256Hash superblockId) {
-        CompletableFuture<TransactionReceipt> futureReceipt =
-                claimManager.rejectClaim(new Bytes32(superblockId.getBytes())).sendAsync();
-        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
-                logger.info("rejectClaim receipt {}", receipt.toString())
-        );
-    }
 
     /**
      * Listens to RespondBlockHeaders events from SyscoinBattleManager contract within a given block window

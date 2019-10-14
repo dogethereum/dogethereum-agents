@@ -12,6 +12,7 @@ import org.sysethereum.agents.core.syscoin.SuperblockUtils;
 import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.abi.datatypes.generated.Uint256;
+import org.web3j.abi.datatypes.generated.Uint32;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 
 import java.math.BigInteger;
@@ -200,5 +201,74 @@ public class ClaimContractApi {
                 logger.info("makeClaimDeposit receipt {}", receipt.toString())
         );
         Thread.sleep(200); // in case the transaction takes some time to complete
+    }
+
+    /**
+     * Proposes a superblock to SyscoinClaimManager. To be called from sendStoreSuperblock.
+     * @param superblock Superblock to be proposed.
+     * @return
+     */
+    public CompletableFuture<TransactionReceipt> proposeSuperblock(Superblock superblock) {
+        return claimManager.proposeSuperblock(
+                new Bytes32(superblock.getMerkleRoot().getBytes()),
+                new Uint256(superblock.getChainWork()),
+                new Uint256(superblock.getLastSyscoinBlockTime()),
+                new Uint256(superblock.getLastSyscoinBlockMedianTime()),
+                new Bytes32(superblock.getLastSyscoinBlockHash().getBytes()),
+                new Uint32(superblock.getlastSyscoinBlockBits()),
+                new Bytes32(superblock.getParentId().getBytes())
+        ).sendAsync();
+    }
+
+
+    /**
+     * Approves, semi-approves or invalidates a superblock depending on its situation.
+     * See SyscoinClaimManager source code for further reference.
+     * @param superblockId Superblock to be approved, semi-approved or invalidated.
+     * @param isChallenger Whether the caller is challenging. Used to determine
+     *                     which SyscoinClaimManager should be used for withdrawing funds.
+     */
+    public void checkClaimFinished(Keccak256Hash superblockId, boolean isChallenger) {
+        SyscoinClaimManagerExtended myClaimManager;
+        if (isChallenger) {
+            myClaimManager = claimManagerForChallenges;
+        } else {
+            myClaimManager = claimManager;
+        }
+
+        CompletableFuture<TransactionReceipt> futureReceipt =
+                myClaimManager.checkClaimFinished(new Bytes32(superblockId.getBytes())).sendAsync();
+        futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
+                logger.info("checkClaimFinished receipt {}", receipt.toString())
+        );
+    }
+
+    /**
+     * Confirms a semi-approved superblock with a high enough semi-approved descendant;
+     * 'high enough' means that superblock.height - descendant.height is greater than or equal
+     * to the number of confirmations necessary for appoving a superblock.
+     * See SyscoinClaimManager source code for further reference.
+     * @param superblockId Superblock to be confirmed.
+     * @param descendantId Its highest semi-approved descendant.
+     */
+    public void confirmClaim(Keccak256Hash superblockId, Keccak256Hash descendantId) {
+        CompletableFuture<TransactionReceipt> futureReceipt =
+                claimManager.confirmClaim(new Bytes32(superblockId.getBytes()), new Bytes32(descendantId.getBytes())).sendAsync();
+        futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
+                logger.info("confirmClaim receipt {}", receipt.toString())
+        );
+    }
+
+    /**
+     * Rejects a claim.
+     * See SyscoinClaimManager source code for further reference.
+     * @param superblockId ID of superblock to be rejected.
+     */
+    public void rejectClaim(Keccak256Hash superblockId) {
+        CompletableFuture<TransactionReceipt> futureReceipt =
+                claimManager.rejectClaim(new Bytes32(superblockId.getBytes())).sendAsync();
+        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
+                logger.info("rejectClaim receipt {}", receipt.toString())
+        );
     }
 }

@@ -153,14 +153,14 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         if (ethWrapper.semiApprovedAndApprovable(toConfirm, highestDescendant)) {
             // The superblock is semi approved and it can be approved if it has enough confirmations
             logger.info("Confirming semi-approved superblock {} with descendant {}", toConfirmId, highestDescendantId);
-            ethWrapper.confirmClaim(toConfirmId, highestDescendantId);
+            claimContractApi.confirmClaim(toConfirmId, highestDescendantId);
         }
         else if (ethWrapper.newAndTimeoutPassed(highestDescendantId) || claimContractApi.getInBattleAndSemiApprovable(highestDescendantId)) {
             // Either the superblock is unchallenged or it won all the battles;
             // it will get approved or semi-approved depending on the situation
             // (look at SyscoinClaimManager contract source code for more details)
             logger.info("Confirming superblock {}", highestDescendantId);
-            ethWrapper.checkClaimFinished(highestDescendantId, false);
+            claimContractApi.checkClaimFinished(highestDescendantId, false);
 
         }
 
