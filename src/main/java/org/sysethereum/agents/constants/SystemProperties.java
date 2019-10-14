@@ -73,8 +73,8 @@ public class SystemProperties {
 
     public boolean isAgentRoleEnabled(AgentRole agentRole) {
         return agentRole == CHALLENGER
-                ? getBooleanProperty("syscoin.superblock.challenger.enabled", false)
-                : getBooleanProperty("syscoin.superblock.submitter.enabled", false);
+                ? getBooleanProperty("syscoin.superblock.challenger.enabled")
+                : getBooleanProperty("syscoin.superblock.submitter.enabled");
     }
 
     public boolean isGanache() {
