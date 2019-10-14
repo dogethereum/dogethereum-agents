@@ -24,8 +24,7 @@ public class SuperblockSerializationHelper {
 
     // Offsets for deserializing a Superblock object
     private static final int MERKLE_ROOT_PAYLOAD_OFFSET = 0;
-    private static final int CHAIN_WORK_PAYLOAD_OFFSET = MERKLE_ROOT_PAYLOAD_OFFSET + HASH_BYTES_LENGTH;
-    private static final int LAST_BLOCK_TIME_PAYLOAD_OFFSET = CHAIN_WORK_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
+    private static final int LAST_BLOCK_TIME_PAYLOAD_OFFSET = MERKLE_ROOT_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
     private static final int LAST_BLOCK_TIME_MTP_PAYLOAD_OFFSET = LAST_BLOCK_TIME_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
     private static final int LAST_BLOCK_HASH_PAYLOAD_OFFSET =
             LAST_BLOCK_TIME_MTP_PAYLOAD_OFFSET + BIG_INTEGER_LENGTH;
@@ -46,8 +45,6 @@ public class SuperblockSerializationHelper {
     public SuperblockData fromBytes(byte[] payload) {
         Sha256Hash merkleRoot = Sha256Hash.wrapReversed(SuperblockUtils.readBytes(
                 payload, MERKLE_ROOT_PAYLOAD_OFFSET, HASH_BYTES_LENGTH));
-        BigInteger chainWork = new BigInteger(Utils.reverseBytes(SuperblockUtils.readBytes(
-                payload, CHAIN_WORK_PAYLOAD_OFFSET, BIG_INTEGER_LENGTH)));
         long lastSyscoinBlockTime = new BigInteger(Utils.reverseBytes(SuperblockUtils.readBytes(
                 payload, LAST_BLOCK_TIME_PAYLOAD_OFFSET, BIG_INTEGER_LENGTH))).longValue();
         long lastSyscoinBlockTimeMTP = new BigInteger(Utils.reverseBytes(SuperblockUtils.readBytes(
@@ -63,7 +60,7 @@ public class SuperblockSerializationHelper {
         long numberOfSyscoinBlockHashes = Utils.readUint32(payload, NUMBER_OF_HASHES_PAYLOAD_OFFSET);
         List<Sha256Hash> syscoinBlockHashes = deserializeHashesLE(payload, SYSCOIN_BLOCK_HASHES_PAYLOAD_OFFSET, numberOfSyscoinBlockHashes);
 
-        return new SuperblockData(merkleRoot, syscoinBlockHashes, chainWork, lastSyscoinBlockTime, lastSyscoinBlockTimeMTP, lastSyscoinBlockBits, lastSyscoinBlockHash, parentId, height);
+        return new SuperblockData(merkleRoot, syscoinBlockHashes, lastSyscoinBlockTime, lastSyscoinBlockTimeMTP, lastSyscoinBlockBits, lastSyscoinBlockHash, parentId, height);
     }
 
     /**
@@ -78,7 +75,6 @@ public class SuperblockSerializationHelper {
      */
     public void serializeLE(SuperblockData sbd, OutputStream stream) throws IOException {
         stream.write(sbd.merkleRoot.getReversedBytes()); // 32
-        stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(sbd.chainWork))); // 32
         stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(sbd.lastSyscoinBlockTime))); // 32
         stream.write(Utils.reverseBytes(SuperblockUtils.toBytes32(sbd.lastSyscoinBlockTimeMTP))); // 32
         stream.write(sbd.lastSyscoinBlockHash.getReversedBytes()); // 32
@@ -94,7 +90,6 @@ public class SuperblockSerializationHelper {
      */
     public void serializeBE(SuperblockData sb, OutputStream stream) throws IOException {
         stream.write(sb.merkleRoot.getBytes());
-        stream.write(SuperblockUtils.toBytes32(sb.chainWork));
         stream.write(SuperblockUtils.toBytes32(sb.lastSyscoinBlockTime));
         stream.write(SuperblockUtils.toBytes32(sb.lastSyscoinBlockTimeMTP));
         stream.write(sb.lastSyscoinBlockHash.getBytes());

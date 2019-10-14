@@ -33,7 +33,7 @@ public class LocalAgentConstantsFactory {
         var genesisSuperblock = new SuperblockData(
                 MerkleRootComputer.computeMerkleRoot(syscoinParams, sysHashes),
                 sysHashes,
-                BigInteger.valueOf(0), syscoinParams.getGenesisBlock().getTimeSeconds(),0,0,
+                syscoinParams.getGenesisBlock().getTimeSeconds(),0,0,
                 Keccak256Hash.wrap(new byte[32]), // initialised with 0s
                 1
         );

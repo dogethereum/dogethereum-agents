@@ -90,7 +90,6 @@ public class SuperblockChain {
             Superblock newSuperblock = superblockFactory.make(
                     merkleRootComputer.computeMerkleRoot(nextSuperblockSyscoinHashes),
                     nextSuperblockSyscoinHashes,
-                    nextSuperblockLastBlock.getChainWork(),
                     nextSuperblockLastBlock.getHeader().getTimeSeconds(),
                     syscoinWrapper.getMedianTimestamp(nextSuperblockLastBlock),
                     nextSuperblockLastBlock.getHeader().getDifficultyTarget(),
@@ -99,10 +98,8 @@ public class SuperblockChain {
             );
 
             superblockStorage.put(newSuperblock);
-            if (newSuperblock.getChainWork().compareTo(superblockStorage.getChainHeadWork()) > 0) {
-                superblockStorage.setChainHead(newSuperblock);
-                logger.info("New superblock chain head {}", newSuperblock);
-            }
+            superblockStorage.setChainHead(newSuperblock);
+            logger.info("New superblock chain head {}", newSuperblock);
 
             // set prev hash and end time for next superblock
             if (!allSyscoinHashesToHash.empty()) {

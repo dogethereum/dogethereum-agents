@@ -194,12 +194,4 @@ public class SuperblockLevelDBBlockStore {
         db.put(CHAIN_HEAD_KEY, chainHead.getSuperblockId().getBytes());
     }
 
-    /**
-     * Returns tip work.
-     * @return Chain head's accumulated work.
-     */
-    public synchronized BigInteger getChainHeadWork() {
-        return getChainHead().getChainWork();
-    }
-
 }

@@ -207,7 +207,6 @@ public class ClaimContractApi {
     public CompletableFuture<TransactionReceipt> proposeSuperblock(Superblock superblock) {
         return claimManager.proposeSuperblock(
                 new Bytes32(superblock.getMerkleRoot().getBytes()),
-                new Uint256(superblock.getChainWork()),
                 new Uint256(superblock.getLastSyscoinBlockTime()),
                 new Uint256(superblock.getLastSyscoinBlockMedianTime()),
                 new Bytes32(superblock.getLastSyscoinBlockHash().getBytes()),

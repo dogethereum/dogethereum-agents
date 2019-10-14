@@ -33,7 +33,7 @@ public class IntegrationAgentConstantsFactory {
         var genesisSuperblock = new SuperblockData(
                 MerkleRootComputer.computeMerkleRoot(syscoinParams, sysHashes),
                 sysHashes,
-                new BigInteger("377487720"), 1566534575, 1566534575, 504365055,
+                 1566534575, 1566534575, 504365055,
                 Keccak256Hash.wrap(new byte[32]), // initialised with 0s
                 1
         );

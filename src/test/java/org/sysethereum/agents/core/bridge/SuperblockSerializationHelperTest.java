@@ -7,7 +7,6 @@ import org.libdohj.params.SyscoinRegTestParams;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.sysethereum.agents.service.rest.MerkleRootComputer;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -16,12 +15,12 @@ class SuperblockSerializationHelperTest {
 
     public static final BaseEncoding BASE_ENCODING = BaseEncoding.base16().lowerCase();
 
-    private static final String EXPECTED_RESULT = "a6a9566cbc61a9f6b28583025061403117fba5e9ef9d4f362521dfc02a2670d239977d2e091d9851ea5a0b00" +
-            "0000000000000000000000000000000000000000327a1a5d00000000000000000000000000000000000000000" +
-            "0000000000000006ffca8ce7e7f295c2adfbaf0d4895525299bb566d16ef22903c3fd4355cb7ca00000000000" +
-            "00000000000000000000000000000000000000000000000000000000000000000000000300000068adb3be861" +
-            "f0eec10b62fea72e5d92ea5c6a5084b6642953445fec716502add1ec0859bcde1d91ce0d62faf47fe666525b5" +
-            "070d616eb9660d44f2929f0f53426ffca8ce7e7f295c2adfbaf0d4895525299bb566d16ef22903c3fd4355cb7ca0";
+    private static final String EXPECTED_RESULT = "a6a9566cbc61a9f6b28583025061403117fba5e9ef9d4f362521dfc02a26" +
+            "70d2327a1a5d00000000000000000000000000000000000000000000000000000000327a1a5d0000000000000000000000" +
+            "00000000000000000000000000000000006ffca8ce7e7f295c2adfbaf0d4895525299bb566d16ef22903c3fd4355cb7ca0" +
+            "000000000000000000000000000000000000000000000000000000000000000000000000000000000300000068adb3be86" +
+            "1f0eec10b62fea72e5d92ea5c6a5084b6642953445fec716502add1ec0859bcde1d91ce0d62faf47fe666525b5070d616e" +
+            "b9660d44f2929f0f53426ffca8ce7e7f295c2adfbaf0d4895525299bb566d16ef22903c3fd4355cb7ca0";
 
     private static final String SYS_HASH_1 = "dd2a5016c7fe45349542664b08a5c6a52ed9e572ea2fb610ec0e1f86beb3ad68";
     private static final String SYS_HASH_2 = "42530f9f92f2440d66b96e610d07b5256566fe47af2fd6e01cd9e1cd9b85c01e";
@@ -38,7 +37,6 @@ class SuperblockSerializationHelperTest {
         SuperblockData data = new SuperblockData(
                 MerkleRootComputer.computeMerkleRoot(SyscoinRegTestParams.get(), hashes),
                 hashes,
-                new BigInteger("b5aea51981d092e7d9739", 16),
                 1562016306,
                 1562016306,
                 0,
@@ -60,7 +58,6 @@ class SuperblockSerializationHelperTest {
 
         SuperblockData data = underTest.fromBytes(bytes);
         assertEquals(0, data.superblockHeight);
-        assertEquals(new BigInteger("b5aea51981d092e7d9739", 16), data.chainWork);
         assertEquals(1562016306, data.lastSyscoinBlockTime);
         assertEquals(0, data.lastSyscoinBlockBits);
         assertEquals(Keccak256Hash.ZERO_HASH, data.parentId);
