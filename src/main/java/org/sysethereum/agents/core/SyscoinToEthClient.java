@@ -101,14 +101,12 @@ public class SyscoinToEthClient {
 
     /**
      * Updates bridge with all the superblocks that the agent has but the bridge doesn't.
-     * @return Number of superblocks sent to the bridge.
      * @throws Exception
      */
-    @SuppressWarnings("UnusedReturnValue")
-    public long updateBridgeSuperblockChain() throws Exception {
+    public void updateBridgeSuperblockChain() throws Exception {
         if (ethWrapper.arePendingTransactionsForSendSuperblocksAddress()) {
             logger.debug("Skipping sending superblocks, there are pending transaction for the sender address.");
-            return 0;
+            return;
         }
         Keccak256Hash bestSuperblockId = superblockContractApi.getBestSuperblockId();
         checkNotNull(bestSuperblockId, "No best chain superblock found");
@@ -125,19 +123,15 @@ public class SyscoinToEthClient {
         Superblock toConfirm = localSuperblockChain.getFirstDescendant(highestDescendantId);
         if (toConfirm == null) {
             logger.info("No new superblock to submit found in local database. Last processed superblockId {}. Stopping.", highestDescendantId);
-            return 0;
+            return;
         }
 
         if (!localSuperblockChain.sendingTimePassed(toConfirm)) {
             logger.debug("Too early to send superblock {}, will try again in a few seconds.", toConfirm.getSuperblockId());
-            return 0;
+            return;
         }
 
-        if(!ethWrapper.sendStoreSuperblock(toConfirm, ethAddresses.generalPurposeAndSendSuperblocksAddress)){
-            return 0;
-        }
-
-        return toConfirm.getSuperblockHeight();
+        ethWrapper.sendStoreSuperblock(toConfirm, ethAddresses.generalPurposeAndSendSuperblocksAddress);
     }
 
     /**
