@@ -95,7 +95,7 @@ public class Superblock {
      * Accesses height attribute.
      * @return Superblock height within superblock chain.
      */
-    public long getSuperblockHeight() {
+    public long getHeight() {
         return data.superblockHeight;
     }
 

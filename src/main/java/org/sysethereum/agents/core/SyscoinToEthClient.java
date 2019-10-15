@@ -207,7 +207,7 @@ public class SyscoinToEthClient {
             this.lastSyscoinBlockBits = sbIn.getlastSyscoinBlockBits();
             this.parentId = sbIn.getParentId().toString();
             this.superblockId = sbIn.getSuperblockId().toString();
-            this.superblockHeight = sbIn.getSuperblockHeight();
+            this.superblockHeight = sbIn.getHeight();
             this.approved = approvedIn;
         }
     }

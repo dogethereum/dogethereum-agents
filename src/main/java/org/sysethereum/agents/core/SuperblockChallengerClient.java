@@ -177,7 +177,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
                 toChallenge.add(newSuperblock.superblockId);
             } else {
-                logger.info("Superblock height: {}... superblock present in our superblock chain", superblock.getSuperblockHeight());
+                logger.info("Superblock height: {}... superblock present in our superblock chain", superblock.getHeight());
             }
         }
         // check for pending if we have superblocks to challenge

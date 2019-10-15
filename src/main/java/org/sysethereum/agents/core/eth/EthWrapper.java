@@ -195,7 +195,7 @@ public class EthWrapper {
             return null;
         }
 
-        if (localSuperblockChain.getSuperblock(superblockId).getSuperblockHeight() == localSuperblockChain.getChainHeight()) {
+        if (localSuperblockChain.getSuperblock(superblockId).getHeight() == localSuperblockChain.getChainHeight()) {
             // There's nothing above the tip of the chain.
             logger.info("Superblock {} is above the tip of the chain. Returning from getHighestApprovableOrNewDescendant.", superblockId);
             return null;
@@ -229,7 +229,7 @@ public class EthWrapper {
             return null;
         }
 
-        if (localSuperblockChain.getSuperblock(superblockId).getSuperblockHeight() == localSuperblockChain.getChainHeight()) {
+        if (localSuperblockChain.getSuperblock(superblockId).getHeight() == localSuperblockChain.getChainHeight()) {
             // There's nothing above the tip of the chain.
             logger.info("Superblock {} is the tip of the superblock chain, no descendant exists. Returning from getHighestSemiApprovedOrApprovedDescendant.", superblockId);
             return null;
@@ -251,6 +251,7 @@ public class EthWrapper {
      *                   but still hasn't been submitted to Sysethereum Contracts.
      * @throws Exception If superblock hash cannot be calculated.
      */
+    @SuppressWarnings("UnusedReturnValue")
     public boolean sendStoreSuperblock(Superblock superblock, String account) throws Exception {
 
         // Check if the parent has been approved before sending this superblock.
@@ -551,7 +552,7 @@ public class EthWrapper {
     public boolean semiApprovedAndApprovable(Superblock superblock, Superblock descendant) throws Exception {
         Keccak256Hash superblockId = superblock.getSuperblockId();
         Keccak256Hash descendantId = descendant.getSuperblockId();
-        return (descendant.getSuperblockHeight() - superblock.getSuperblockHeight() >=
+        return (descendant.getHeight() - superblock.getHeight() >=
                 claimContractApi.getSuperblockConfirmations() &&
                 superblockContractApi.isSemiApproved(descendantId) &&
                 superblockContractApi.isSemiApproved(superblockId));

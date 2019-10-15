@@ -162,7 +162,7 @@ public class SuperblockChain {
      * @throws BlockStoreException
      */
     public long getChainHeight() {
-        return getChainHead().getSuperblockHeight();
+        return getChainHead().getHeight();
     }
 
     /**
@@ -183,11 +183,11 @@ public class SuperblockChain {
      */
     public Superblock getByHeight(long superblockHeight) {
         Superblock currentSuperblock = getChainHead();
-        if (superblockHeight > currentSuperblock.getSuperblockHeight())
+        if (superblockHeight > currentSuperblock.getHeight())
             return null; // Superblock does not exist.
 
         // Superblock exists.
-        while (currentSuperblock.getSuperblockHeight() > superblockHeight)
+        while (currentSuperblock.getHeight() > superblockHeight)
             currentSuperblock = getSuperblock(currentSuperblock.getParentId());
 
         return currentSuperblock;
@@ -206,7 +206,7 @@ public class SuperblockChain {
             return null;
         }
 
-        if (getSuperblock(parentId).getSuperblockHeight() == getChainHeight()) {
+        if (getSuperblock(parentId).getHeight() == getChainHeight()) {
             // There's nothing above the tip of the chain.
             return null;
         }
