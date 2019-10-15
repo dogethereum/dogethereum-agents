@@ -41,7 +41,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     private final SyscoinBattleManagerExtended battleManagerForChallenges;
     private final SystemProperties config;
     private final PersistentFileStore persistentFileStore;
-    private final SuperblockChain superblockChain;
+    private final SuperblockChain localSuperblockChain;
     private final SuperblockContractApi superblockContractApi;
     private final ClaimContractApi claimContractApi;
     private final BattleContractApi battleContractApi;
@@ -64,11 +64,11 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             SyscoinBattleManagerExtended battleManagerForChallengesGetter,
             ChallengeEmailNotifier challengeEmailNotifier
     ) {
-        super(AgentRole.CHALLENGER, config, agentConstants, ethWrapper, superblockContractApi, claimContractApi, challengeEmailNotifier);
+        super(AgentRole.CHALLENGER, config, agentConstants, ethWrapper, superblockContractApi, battleContractApi, claimContractApi, challengeEmailNotifier);
 
         this.config = config;
         this.persistentFileStore = persistentFileStore;
-        this.superblockChain = superblockChain;
+        this.localSuperblockChain = superblockChain;
         this.superblockContractApi = superblockContractApi;
         this.claimContractApi = claimContractApi;
         this.battleContractApi = battleContractApi;
@@ -116,13 +116,13 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     private void invalidateNonMainChainSuperblocks() throws Exception {
         for (Keccak256Hash superblockId : semiApprovedSet) {
             long semiApprovedHeight = superblockContractApi.getHeight(superblockId).longValue();
-            Superblock mainChainSuperblock = superblockChain.getByHeight(semiApprovedHeight);
+            Superblock mainChainSuperblock = localSuperblockChain.getByHeight(semiApprovedHeight);
             if (mainChainSuperblock != null) {
                 long confirmations = claimContractApi.getSuperblockConfirmations();
                 if (!mainChainSuperblock.getSuperblockId().equals(superblockId) &&
                         superblockContractApi.getChainHeight().longValue() >= semiApprovedHeight + confirmations) {
                     logger.info("Semi-approved superblock {} not found in main chain. Invalidating.", superblockId);
-                    ethWrapper.rejectClaim(superblockId);
+                    claimContractApi.rejectClaim(superblockId);
                 }
             }
         }
@@ -130,13 +130,12 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     private void invalidateLoserSuperblocks() throws Exception {
         for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
-            // decided is set to true inside of checkclaimfinished and thus only allows it to call once
+            // decided is set to true inside of checkClaimFinished and thus only allows it to call once
             if (claimContractApi.getClaimInvalid(superblockId) && claimContractApi.getClaimExists(superblockId) && !claimContractApi.getClaimDecided(superblockId)) {
                 logger.info("Superblock {} lost a battle. Invalidating.", superblockId);
-                ethWrapper.checkClaimFinished(superblockId, true);
+                claimContractApi.checkClaimFinished(superblockId, true);
                 sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(superblockId));
                 superblockToSessionsMap.remove(superblockId);
-
             }
         }
     }
@@ -159,13 +158,13 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         for (SuperblockContractApi.SuperblockEvent newSuperblock : newSuperblockEvents) {
             logger.info("NewSuperblock {}. Validating...", newSuperblock.superblockId);
 
-            Superblock superblock = superblockChain.getSuperblock(newSuperblock.superblockId);
+            Superblock superblock = localSuperblockChain.getSuperblock(newSuperblock.superblockId);
             if (superblock == null) {
                 BigInteger height = superblockContractApi.getHeight(newSuperblock.superblockId);
-                Superblock localSuperblock = superblockChain.getByHeight(height.longValue());
+                Superblock localSuperblock = localSuperblockChain.getByHeight(height.longValue());
 
                 if (localSuperblock == null) {
-                    // local superblockchain should not be out of sync because there is 2 hour discrepancy between saving and sending
+                    // local superblock chain should not be out of sync because there is 2 hour discrepancy between saving and sending
                     // this could mean our local syscoin node is out of sync (out of our control) in which case we have no choice but to challenge
                     // we have to assume if your local syscoin node is forked or not synced and we cannot detect difference between bad and good SB in that case we must challenge
                     logger.info("Superblock {} not present in our superblock chain", newSuperblock.superblockId);
@@ -182,7 +181,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             }
         }
         // check for pending if we have superblocks to challenge
-        if(toChallenge.size() > 0) {
+        if (toChallenge.size() > 0) {
             Thread.sleep(500); // in case the transaction takes some time to complete
             if (ethWrapper.arePendingTransactionsForChallengerAddress()) {
                 throw new Exception("Skipping challenging superblocks, there are pending transaction for the challenger address.");
@@ -201,7 +200,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @throws Exception
      */
     private void respondToNewBattles(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
+        List<EthWrapper.NewBattleEvent> newBattleEvents = battleContractApi.getNewBattleEvents(fromBlock, toBlock);
 
         for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
             if (isMine(newBattleEvent) && battleContractApi.getSessionChallengeState(newBattleEvent.sessionId) == EthWrapper.ChallengeState.Challenged) {
@@ -210,8 +209,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             }
         }
     }
-
-
 
     /**
      * Adds new semi-approved superblocks to a data structure that keeps track of them
@@ -229,9 +226,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
 
-
     /* ---- HELPER METHODS ---- */
-
 
     private boolean challengedByMe(SuperblockContractApi.SuperblockEvent superblockEvent) throws Exception {
         return claimContractApi.getClaimChallenger(superblockEvent.superblockId).getValue().equals(myAddress);
@@ -267,8 +262,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @throws Exception
      */
     @Override
-    protected void removeSuperblocks(long fromBlock, long toBlock, List<SuperblockContractApi.SuperblockEvent> superblockEvents)
-            throws Exception {
+    protected void removeSuperblocks(long fromBlock, long toBlock, List<SuperblockContractApi.SuperblockEvent> superblockEvents) throws Exception {
         boolean removeFromContract = false;
         for (SuperblockContractApi.SuperblockEvent superblockEvent : superblockEvents) {
             Keccak256Hash superblockId = superblockEvent.superblockId;

@@ -5,6 +5,7 @@ import com.google.common.primitives.Bytes;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.bitcoinj.store.BlockStoreException;
+import org.sysethereum.agents.constants.AgentRole;
 import org.sysethereum.agents.constants.EthAddresses;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.contract.*;
@@ -22,7 +23,6 @@ import org.web3j.abi.datatypes.DynamicBytes;
 import org.web3j.abi.datatypes.generated.Bytes32;
 
 import org.web3j.abi.datatypes.generated.Uint256;
-import org.web3j.abi.datatypes.generated.Uint32;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.DefaultBlockParameterName;
@@ -57,10 +57,7 @@ public class EthWrapper {
     }
 
     // Extensions of contracts generated automatically by web3j
-    private final SyscoinClaimManagerExtended claimManager;
-    private final SyscoinClaimManagerExtended claimManagerGetter;
     private final SyscoinClaimManagerExtended claimManagerForChallenges;
-    private final SyscoinClaimManagerExtended claimManagerForChallengesGetter;
     private final SyscoinBattleManagerExtended battleManager;
     private final SyscoinBattleManagerExtended battleManagerForChallengesGetter;
 
@@ -73,7 +70,7 @@ public class EthWrapper {
     private final BigInteger superblockDuration;
 
     private final BigInteger minProposalDeposit;
-    private final SuperblockChain superblockChain;
+    private final SuperblockChain localSuperblockChain;
     private final SyscoinWrapper syscoinWrapper;
 
     @Autowired
@@ -86,37 +83,32 @@ public class EthWrapper {
             EthAddresses ethAddresses,
             SyscoinBattleManagerExtended battleManager,
             SyscoinBattleManagerExtended battleManagerForChallengesGetter,
-            SyscoinClaimManagerExtended claimManager,
-            SyscoinClaimManagerExtended claimManagerGetter,
             SyscoinClaimManagerExtended claimManagerForChallenges,
-            SyscoinClaimManagerExtended claimManagerForChallengesGetter,
             SuperblockContractApi superblockContractApi,
             BattleContractApi battleContractApi,
             ClaimContractApi claimContractApi,
-            BigInteger superblockDuration
+            BigInteger superblockDuration,
+            BigInteger minProposalDeposit
     ) throws Exception {
 
-        this.superblockChain = superblockChain;
+        this.localSuperblockChain = superblockChain;
         this.syscoinWrapper = syscoinWrapper;
         this.web3 = web3;
         this.web3Secondary = web3Secondary;
         this.ethAddresses = ethAddresses;
         this.battleManager = battleManager;
         this.battleManagerForChallengesGetter = battleManagerForChallengesGetter;
-        this.claimManager = claimManager;
-        this.claimManagerGetter = claimManagerGetter;
         this.claimManagerForChallenges = claimManagerForChallenges;
-        this.claimManagerForChallengesGetter = claimManagerForChallengesGetter;
         this.superblockContractApi = superblockContractApi;
         this.battleContractApi = battleContractApi;
         this.claimContractApi = claimContractApi;
         this.superblockDuration = superblockDuration;
+        this.minProposalDeposit = minProposalDeposit;
 
-        gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
-        gasPriceMaximum = BigInteger.valueOf(config.gasPriceMaximum());
+        this.gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
+        this.gasPriceMaximum = BigInteger.valueOf(config.gasPriceMaximum());
+
         updateContractFacadesGasPrice();
-
-        minProposalDeposit = claimManagerGetter.minProposalDeposit().send().getValue();
     }
 
 
@@ -164,7 +156,6 @@ public class EthWrapper {
      * Sets gas prices for all contract instances.
      * @throws IOException
      */
-    @SuppressWarnings("deprecation")
     public void updateContractFacadesGasPrice() throws IOException {
         BigInteger gasPriceSuggestedByEthNode = web3Secondary.ethGasPrice().send().getGasPrice();
         if (gasPriceSuggestedByEthNode.compareTo(gasPriceMinimum) > 0) {
@@ -174,15 +165,8 @@ public class EthWrapper {
             if(!gasPriceMinimum.equals(gasPriceSuggestedByEthNode)) {
                 gasPriceMinimum = gasPriceSuggestedByEthNode;
                 logger.info("setting new min gas price to " + gasPriceMinimum);
-                if (claimManager != null)
-                    claimManager.setGasPrice(gasPriceMinimum);
-                if (claimManagerForChallenges != null)
-                    claimManagerForChallenges.setGasPrice(gasPriceMinimum);
-                if (claimManagerGetter != null)
-                    claimManagerGetter.setGasPrice(gasPriceMinimum);
-                if (claimManagerForChallengesGetter != null)
-                    claimManagerForChallengesGetter.setGasPrice(gasPriceMinimum);
 
+                claimContractApi.updateGasPrice(gasPriceMinimum);
                 battleContractApi.updateGasPrice(gasPriceMinimum);
                 superblockContractApi.updateGasPrice(gasPriceMinimum);
             }
@@ -205,24 +189,24 @@ public class EthWrapper {
      */
     public Superblock getHighestApprovableOrNewDescendant(Superblock toConfirm, Keccak256Hash superblockId)
             throws BlockStoreException, IOException, Exception {
-        if (superblockChain.getSuperblock(superblockId) == null) {
+        if (localSuperblockChain.getSuperblock(superblockId) == null) {
             // The superblock isn't in the main chain.
             logger.info("Superblock {} is not in the main chain. Returning from getHighestApprovableOrNewDescendant.", superblockId);
             return null;
         }
 
-        if (superblockChain.getSuperblock(superblockId).getSuperblockHeight() == superblockChain.getChainHeight()) {
+        if (localSuperblockChain.getSuperblock(superblockId).getSuperblockHeight() == localSuperblockChain.getChainHeight()) {
             // There's nothing above the tip of the chain.
             logger.info("Superblock {} is above the tip of the chain. Returning from getHighestApprovableOrNewDescendant.", superblockId);
             return null;
         }
-        Superblock currentSuperblock = superblockChain.getChainHead();
+        Superblock currentSuperblock = localSuperblockChain.getChainHead();
         while (currentSuperblock != null &&
                 !currentSuperblock.getSuperblockId().equals(superblockId) &&
                 !newAndTimeoutPassed(currentSuperblock.getSuperblockId()) &&
                 !claimContractApi.getInBattleAndSemiApprovable(currentSuperblock.getSuperblockId()) &&
                 !semiApprovedAndApprovable(toConfirm, currentSuperblock)) {
-            currentSuperblock = superblockChain.getSuperblock(currentSuperblock.getParentId());
+            currentSuperblock = localSuperblockChain.getSuperblock(currentSuperblock.getParentId());
         }
         return currentSuperblock;
     }
@@ -239,26 +223,27 @@ public class EthWrapper {
      */
     public Superblock getHighestSemiApprovedOrApprovedDescendant(Keccak256Hash superblockId)
             throws BlockStoreException, IOException, Exception {
-        if (superblockChain.getSuperblock(superblockId) == null) {
+        if (localSuperblockChain.getSuperblock(superblockId) == null) {
             // The superblock isn't in the main chain.
             logger.info("Superblock {} is not in the main chain. Returning from getHighestSemiApprovedOrApprovedDescendant.", superblockId);
             return null;
         }
 
-        if (superblockChain.getSuperblock(superblockId).getSuperblockHeight() == superblockChain.getChainHeight()) {
+        if (localSuperblockChain.getSuperblock(superblockId).getSuperblockHeight() == localSuperblockChain.getChainHeight()) {
             // There's nothing above the tip of the chain.
             logger.info("Superblock {} is the tip of the superblock chain, no descendant exists. Returning from getHighestSemiApprovedOrApprovedDescendant.", superblockId);
             return null;
         }
-        Superblock currentSuperblock = superblockChain.getChainHead();
-        while (currentSuperblock != null
-                && !currentSuperblock.getSuperblockId().equals(superblockId)
-                && !superblockContractApi.isSemiApproved(currentSuperblock.getSuperblockId())
-                && !superblockContractApi.isApproved(currentSuperblock.getSuperblockId())) {
-            currentSuperblock = superblockChain.getSuperblock(currentSuperblock.getParentId());
+
+        Superblock head = localSuperblockChain.getChainHead();
+        while (head != null
+                && !head.getSuperblockId().equals(superblockId)
+                && !superblockContractApi.isSemiApproved(head.getSuperblockId())
+                && !superblockContractApi.isApproved(head.getSuperblockId())) {
+            head = localSuperblockChain.getSuperblock(head.getParentId());
         }
 
-        return currentSuperblock;
+        return head;
     }
     /**
      * Proposes a superblock to SyscoinClaimManager in order to keep the Sysethereum contracts updated.
@@ -271,25 +256,30 @@ public class EthWrapper {
         // Check if the parent has been approved before sending this superblock.
         Keccak256Hash parentId = superblock.getParentId();
         if (!(superblockContractApi.isApproved(parentId) || superblockContractApi.isSemiApproved(parentId))) {
-            logger.info("Superblock {} not sent because its parent was neither approved nor semi approved.",
-                    superblock.getSuperblockId());
+            logger.info("Superblock {} not sent because its parent was neither approved nor semi approved.", superblock.getSuperblockId());
             return false;
         }
         // if claim exists we check to ensure the superblock chain isn't "stuck" and can be re-approved to be built even if it exists
-        if (claimContractApi.getClaimExists(superblock.getSuperblockId())){
+        if (claimContractApi.getClaimExists(superblock.getSuperblockId())) {
             boolean allowed = claimContractApi.getClaimInvalid(superblock.getSuperblockId())
                     && claimContractApi.getClaimDecided(superblock.getSuperblockId())
                     && !claimContractApi.getClaimSubmitter(superblock.getSuperblockId()).equals(account);
 
-            if(allowed){
-                if(superblockContractApi.isApproved(parentId)){
-                    allowed = superblockContractApi.getBestSuperblockId().equals(parentId);
-                }
-                else allowed = superblockContractApi.isSemiApproved(parentId);
+            if (!allowed) {
+                logger.info("Superblock {} has already been sent. Returning.", superblock.getSuperblockId());
+                return false;
             }
-           if(!allowed){
-               logger.info("Superblock {} has already been sent. Returning.", superblock.getSuperblockId());
-               return false;
+
+            if (superblockContractApi.isApproved(parentId)) {
+                if (!superblockContractApi.getBestSuperblockId().equals(parentId)) {
+                    logger.info("Superblock {} parent is approved but not best. Returning.", superblock.getSuperblockId());
+                    return false;
+                }
+            } else {
+                if (!superblockContractApi.isSemiApproved(parentId)) {
+                    logger.info("Superblock {} parent is neither approved nor semi-approved. Returning.", superblock.getSuperblockId());
+                    return false;
+                }
             }
         }
 
@@ -302,11 +292,10 @@ public class EthWrapper {
         }
 
         // Make any necessary deposits for sending the superblock
-        claimContractApi.makeDepositIfNeeded(account, claimManager, claimManagerGetter, getSuperblockDeposit());
-
+        claimContractApi.makeDepositIfNeeded(AgentRole.SUBMITTER, account, getSuperblockDeposit());
 
         // The parent is either approved or semi approved. We can send the superblock.
-        CompletableFuture<TransactionReceipt> futureReceipt = proposeSuperblock(superblock);
+        CompletableFuture<TransactionReceipt> futureReceipt = claimContractApi.proposeSuperblock(superblock);
 
         logger.info("Sent superblock {}", superblock.getSuperblockId());
         futureReceipt.handle((receipt, throwable) -> {
@@ -320,23 +309,6 @@ public class EthWrapper {
 
         Thread.sleep(200);
         return true;
-    }
-
-    /**
-     * Proposes a superblock to SyscoinClaimManager. To be called from sendStoreSuperblock.
-     * @param superblock Superblock to be proposed.
-     * @return
-     */
-    private CompletableFuture<TransactionReceipt> proposeSuperblock(Superblock superblock) {
-        return claimManager.proposeSuperblock(
-                new Bytes32(superblock.getMerkleRoot().getBytes()),
-                new Uint256(superblock.getChainWork()),
-                new Uint256(superblock.getLastSyscoinBlockTime()),
-                new Uint256(superblock.getLastSyscoinBlockMedianTime()),
-                new Bytes32(superblock.getLastSyscoinBlockHash().getBytes()),
-                new Uint32(superblock.getlastSyscoinBlockBits()),
-                new Bytes32(superblock.getParentId().getBytes())
-            ).sendAsync();
     }
 
 
@@ -367,89 +339,6 @@ public class EthWrapper {
     /* ---- SyscoinClaimManager section ---- */
     /* ---------------------------------- */
 
-
-    /* ---- CONFIRMING/REJECTING ---- */
-
-    /**
-     * Approves, semi-approves or invalidates a superblock depending on its situation.
-     * See SyscoinClaimManager source code for further reference.
-     * @param superblockId Superblock to be approved, semi-approved or invalidated.
-     * @param isChallenger Whether the caller is challenging. Used to determine
-     *                     which SyscoinClaimManager should be used for withdrawing funds.
-     */
-    public void checkClaimFinished(Keccak256Hash superblockId, boolean isChallenger) {
-        SyscoinClaimManagerExtended myClaimManager;
-        if (isChallenger) {
-            myClaimManager = claimManagerForChallenges;
-        } else {
-            myClaimManager = claimManager;
-        }
-
-        CompletableFuture<TransactionReceipt> futureReceipt =
-                myClaimManager.checkClaimFinished(new Bytes32(superblockId.getBytes())).sendAsync();
-        futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                logger.info("checkClaimFinished receipt {}", receipt.toString())
-        );
-    }
-
-    /**
-     * Confirms a semi-approved superblock with a high enough semi-approved descendant;
-     * 'high enough' means that superblock.height - descendant.height is greater than or equal
-     * to the number of confirmations necessary for appoving a superblock.
-     * See SyscoinClaimManager source code for further reference.
-     * @param superblockId Superblock to be confirmed.
-     * @param descendantId Its highest semi-approved descendant.
-     */
-    public void confirmClaim(Keccak256Hash superblockId, Keccak256Hash descendantId) {
-        CompletableFuture<TransactionReceipt> futureReceipt =
-                claimManager.confirmClaim(new Bytes32(superblockId.getBytes()), new Bytes32(descendantId.getBytes())).sendAsync();
-        futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                logger.info("confirmClaim receipt {}", receipt.toString())
-        );
-    }
-
-    /**
-     * Rejects a claim.
-     * See SyscoinClaimManager source code for further reference.
-     * @param superblockId ID of superblock to be rejected.
-     */
-    public void rejectClaim(Keccak256Hash superblockId) {
-        CompletableFuture<TransactionReceipt> futureReceipt =
-                claimManager.rejectClaim(new Bytes32(superblockId.getBytes())).sendAsync();
-        futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
-                logger.info("rejectClaim receipt {}", receipt.toString())
-        );
-    }
-
-
-    /* ---- BATTLE EVENT RETRIEVAL METHODS AND CLASSES ---- */
-
-    /**
-     * Listens to NewBattle events from SyscoinBattleManager contract within a given block window
-     * and parses web3j-generated instances into easier to manage NewBattleEvent objects.
-     * @param startBlock First Ethereum block to poll.
-     * @param endBlock Last Ethereum block to poll.
-     * @return All NewBattle events from SyscoinBattleManager as NewBattleEvent objects.
-     * @throws IOException
-     */
-    public List<NewBattleEvent> getNewBattleEvents(long startBlock, long endBlock) throws IOException {
-        List<NewBattleEvent> result = new ArrayList<>();
-        List<SyscoinBattleManager.NewBattleEventResponse> newBattleEvents =
-                battleManagerForChallengesGetter.getNewBattleEventResponses(
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
-
-        for (SyscoinBattleManager.NewBattleEventResponse response : newBattleEvents) {
-            NewBattleEvent newBattleEvent = new NewBattleEvent();
-            newBattleEvent.superblockHash = Keccak256Hash.wrap(response.superblockHash.getValue());
-            newBattleEvent.sessionId = Keccak256Hash.wrap(response.sessionId.getValue());
-            newBattleEvent.submitter = response.submitter.getValue();
-            newBattleEvent.challenger = response.challenger.getValue();
-            result.add(newBattleEvent);
-        }
-
-        return result;
-    }
     /**
      * Listens to RespondBlockHeaders events from SyscoinBattleManager contract within a given block window
      * and parses web3j-generated instances into easier to manage RespondBlockHeaders objects.
@@ -582,7 +471,7 @@ public class EthWrapper {
         int endIndex = startIndex + numHashesRequired;
         if(startIndex > 48)
             throw new Exception("Skipping respondBlockHeader, startIndex cannot be > 48.");
-        Superblock superblock = superblockChain.getSuperblock(superblockId);
+        Superblock superblock = localSuperblockChain.getSuperblock(superblockId);
         List<Sha256Hash> listHashes = superblock.getSyscoinBlockHashes();
         if(!superblockDuration.equals(BigInteger.valueOf(listHashes.size())))
             throw new Exception("Skipping respondBlockHeader, superblock hash array list is incorrect length.");
@@ -642,7 +531,7 @@ public class EthWrapper {
         }
 
         // Make necessary deposit to cover reward
-        claimContractApi.makeDepositIfNeeded(account, claimManagerForChallenges, claimManagerForChallengesGetter, getChallengeDeposit());
+        claimContractApi.makeDepositIfNeeded(AgentRole.CHALLENGER, account, getChallengeDeposit());
 
         CompletableFuture<TransactionReceipt> futureReceipt =
                 claimManagerForChallenges.challengeSuperblock(new Bytes32(superblockId.getBytes())).sendAsync();

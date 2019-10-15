@@ -17,15 +17,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
-    protected SyscoinBattleManagerExtended(String contractAddress, Web3j web3j, TransactionManager transactionManager,
+    public SyscoinBattleManagerExtended(String contractAddress, Web3j web3j, TransactionManager transactionManager,
                                            BigInteger gasPrice, BigInteger gasLimit) {
         super(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
-    public static SyscoinBattleManagerExtended load(String contractAddress, Web3j web3j,
-                                                    TransactionManager transactionManager, BigInteger gasPrice,
-                                                    BigInteger gasLimit) {
-        return new SyscoinBattleManagerExtended(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
-    }
+
     public static String getAddress(String networkId) {
         return getPreviouslyDeployedAddress(networkId);
     }

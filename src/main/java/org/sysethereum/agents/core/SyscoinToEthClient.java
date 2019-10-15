@@ -7,7 +7,6 @@ package org.sysethereum.agents.core;
 
 
 import org.sysethereum.agents.constants.EthAddresses;
-import org.sysethereum.agents.core.bridge.ClaimContractApi;
 import org.sysethereum.agents.core.bridge.Superblock;
 import org.sysethereum.agents.core.bridge.SuperblockContractApi;
 import org.sysethereum.agents.core.eth.SPVProof;
@@ -15,7 +14,6 @@ import org.sysethereum.agents.core.syscoin.*;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.sysethereum.agents.constants.AgentConstants;
-import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.sysethereum.agents.util.RestError;
 import org.slf4j.Logger;
@@ -23,12 +21,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
-import javax.annotation.PreDestroy;
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.toList;
-import static org.sysethereum.agents.constants.AgentRole.SUBMITTER;
 
 /**
  * Manages the process of informing Sysethereum Contracts news about the syscoin blockchain
@@ -42,52 +38,44 @@ public class SyscoinToEthClient {
 
     private final EthWrapper ethWrapper;
     private final SyscoinWrapper syscoinWrapper;
-    private final SuperblockChain superblockChain;
+    private final SuperblockChain localSuperblockChain;
     private final SuperblockContractApi superblockContractApi;
-    private final ClaimContractApi claimContractApi;
     private final EthAddresses ethAddresses;
 
-    private final SystemProperties config;
     private final AgentConstants agentConstants;
     private final Timer timer;
 
     public SyscoinToEthClient(
-            SystemProperties systemProperties,
             AgentConstants agentConstants,
             SuperblockChain superblockChain,
             SyscoinWrapper syscoinWrapper,
             EthWrapper ethWrapper,
             SuperblockContractApi superblockContractApi,
-            ClaimContractApi claimContractApi,
             EthAddresses ethAddresses
     ) {
-        this.config = systemProperties;
         this.agentConstants = agentConstants;
-        this.superblockChain = superblockChain;
+        this.localSuperblockChain = superblockChain;
         this.syscoinWrapper = syscoinWrapper;
         this.ethWrapper = ethWrapper;
         this.superblockContractApi = superblockContractApi;
-        this.claimContractApi = claimContractApi;
         this.ethAddresses = ethAddresses;
         this.timer = new Timer("Syscoin to Eth client", true);
     }
 
     public boolean setup() {
-        if (config.isAgentRoleEnabled(SUBMITTER)) {
-            try {
-                timer.scheduleAtFixedRate(
-                        new SyscoinToEthClientTimerTask(),
-                        20_000, // 20 seconds
-                        agentConstants.getSyscoinToEthTimerTaskPeriod()
-                );
-            } catch (Exception e) {
-                return false;
-            }
+        try {
+            timer.scheduleAtFixedRate(
+                    new SyscoinToEthClientTimerTask(),
+                    20_000, // 20 seconds
+                    agentConstants.getSyscoinToEthTimerTaskPeriod()
+            );
+        } catch (Exception e) {
+            return false;
         }
+
         return true;
     }
 
-    @PreDestroy
     public void cleanUp() {
         timer.cancel();
         timer.purge();
@@ -101,9 +89,7 @@ public class SyscoinToEthClient {
                 if (!ethWrapper.isEthNodeSyncing()) {
                     logger.debug("SyscoinToEthClientTimerTask");
                     ethWrapper.updateContractFacadesGasPrice();
-                    if (config.isAgentRoleEnabled(SUBMITTER)) {
-                        updateBridgeSuperblockChain();
-                    }
+                    updateBridgeSuperblockChain();
                 } else {
                     logger.warn("SyscoinToEthClientTimerTask skipped because the eth node is syncing blocks");
                 }
@@ -136,15 +122,14 @@ public class SyscoinToEthClient {
         else
             highestDescendantId = highestDescendant.getSuperblockId();
 
-        Superblock toConfirm = superblockChain.getFirstDescendant(highestDescendantId);
+        Superblock toConfirm = localSuperblockChain.getFirstDescendant(highestDescendantId);
         if (toConfirm == null) {
-            logger.info("Best superblock from contracts, {}, not found in local database. Stopping.", highestDescendantId);
+            logger.info("No new superblock to submit found in local database. Last processed superblockId {}. Stopping.", highestDescendantId);
             return 0;
         }
 
-        if (!superblockChain.sendingTimePassed(toConfirm) || !claimContractApi.getAbilityToProposeNextSuperblock()) {
-            logger.debug("Too early to send superblock {}, will try again in a few seconds.",
-                    toConfirm.getSuperblockId());
+        if (!localSuperblockChain.sendingTimePassed(toConfirm)) {
+            logger.debug("Too early to send superblock {}, will try again in a few seconds.", toConfirm.getSuperblockId());
             return 0;
         }
 
@@ -170,7 +155,7 @@ public class SyscoinToEthClient {
             if (txStoredBlock == null) {
                 return new RestError("Block has not been stored in local database. Block hash: " + blockHash);
             }
-            Superblock txSuperblock = superblockChain.findBySysBlockHash(txStoredBlock.getHeader().getHash());
+            Superblock txSuperblock = localSuperblockChain.findBySysBlockHash(txStoredBlock.getHeader().getHash());
 
             if (txSuperblock == null) {
                 return new RestError("Superblock has not been stored in local database yet. " +
@@ -238,9 +223,9 @@ public class SyscoinToEthClient {
             Superblock sb;
 
             if (superblockId != null) {
-                sb = superblockChain.getSuperblock(superblockId);
+                sb = localSuperblockChain.getSuperblock(superblockId);
             } else {
-                sb = superblockChain.getByHeight(height);
+                sb = localSuperblockChain.getByHeight(height);
             }
 
             return handleSuperblock(sb);
@@ -261,7 +246,7 @@ public class SyscoinToEthClient {
                 return new RestError("Block has not been stored in local database.");
             }
 
-            Superblock txSuperblock = superblockChain.findBySysBlockHash(sb.getHeader().getHash());
+            Superblock txSuperblock = localSuperblockChain.findBySysBlockHash(sb.getHeader().getHash());
 
             return handleSuperblock(txSuperblock);
         }

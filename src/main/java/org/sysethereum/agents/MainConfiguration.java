@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.sysethereum.agents.constants.*;
 import org.sysethereum.agents.contract.SyscoinBattleManagerExtended;
+import org.sysethereum.agents.contract.SyscoinClaimManager;
 import org.sysethereum.agents.contract.SyscoinClaimManagerExtended;
 import org.sysethereum.agents.contract.SyscoinSuperblocksExtended;
 import org.sysethereum.agents.core.syscoin.SyscoinWalletAppKit;
@@ -125,9 +126,9 @@ public class MainConfiguration {
             SystemProperties config, AgentConstants agentConstants,
             Web3j web3, EthAddresses ethAddresses
     ) throws IOException {
-        String contractAddress = SyscoinClaimManagerExtended.getAddress(agentConstants.getNetworkId());
+        String contractAddress = SyscoinClaimManager.getPreviouslyDeployedAddress(agentConstants.getNetworkId());
 
-        var result = SyscoinClaimManagerExtended.load(contractAddress, web3,
+        var result = new SyscoinClaimManagerExtended(contractAddress, web3,
                 new ClientTransactionManager(web3, ethAddresses.generalPurposeAndSendSuperblocksAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
@@ -141,9 +142,9 @@ public class MainConfiguration {
             SystemProperties config, AgentConstants agentConstants,
             Web3j web3, EthAddresses ethAddresses
     ) throws IOException {
-        String contractAddress = SyscoinClaimManagerExtended.getAddress(agentConstants.getNetworkId());
+        String contractAddress = SyscoinClaimManager.getPreviouslyDeployedAddress(agentConstants.getNetworkId());
 
-        var result = SyscoinClaimManagerExtended.load(contractAddress, web3,
+        var result = new SyscoinClaimManagerExtended(contractAddress, web3,
                 new ClientTransactionManager(web3, ethAddresses.syscoinSuperblockChallengerAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
@@ -157,9 +158,9 @@ public class MainConfiguration {
             SystemProperties config, AgentConstants agentConstants,
             Web3j web3Secondary, EthAddresses ethAddresses
     ) throws IOException {
-        String contractAddress = SyscoinClaimManagerExtended.getAddress(agentConstants.getNetworkId());
+        String contractAddress = SyscoinClaimManager.getPreviouslyDeployedAddress(agentConstants.getNetworkId());
 
-        var result = SyscoinClaimManagerExtended.load(contractAddress, web3Secondary,
+        var result = new SyscoinClaimManagerExtended(contractAddress, web3Secondary,
                 new ClientTransactionManager(web3Secondary, ethAddresses.syscoinSuperblockChallengerAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
@@ -173,9 +174,9 @@ public class MainConfiguration {
             SystemProperties config, AgentConstants agentConstants,
             Web3j web3Secondary, EthAddresses ethAddresses
     ) throws IOException {
-        String contractAddress = SyscoinClaimManagerExtended.getAddress(agentConstants.getNetworkId());
+        String contractAddress = SyscoinClaimManager.getPreviouslyDeployedAddress(agentConstants.getNetworkId());
 
-        var result = SyscoinClaimManagerExtended.load(contractAddress, web3Secondary,
+        var result = new SyscoinClaimManagerExtended(contractAddress, web3Secondary,
                 new ClientTransactionManager(web3Secondary, ethAddresses.generalPurposeAndSendSuperblocksAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
@@ -191,7 +192,7 @@ public class MainConfiguration {
     ) throws IOException {
         String contractAddress = SyscoinBattleManagerExtended.getAddress(agentConstants.getNetworkId());
 
-        var result = SyscoinBattleManagerExtended.load(contractAddress, web3,
+        var result = new SyscoinBattleManagerExtended(contractAddress, web3,
                 new ClientTransactionManager(web3, ethAddresses.generalPurposeAndSendSuperblocksAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
@@ -207,7 +208,7 @@ public class MainConfiguration {
     ) throws IOException {
         String contractAddress = SyscoinBattleManagerExtended.getAddress(agentConstants.getNetworkId());
 
-        var result = SyscoinBattleManagerExtended.load(contractAddress, web3Secondary,
+        var result = new SyscoinBattleManagerExtended(contractAddress, web3Secondary,
                 new ClientTransactionManager(web3Secondary, ethAddresses.generalPurposeAndSendSuperblocksAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
@@ -223,7 +224,7 @@ public class MainConfiguration {
     ) throws IOException {
         String contractAddress = SyscoinBattleManagerExtended.getAddress(agentConstants.getNetworkId());
 
-        var result = SyscoinBattleManagerExtended.load(contractAddress, web3,
+        var result = new SyscoinBattleManagerExtended(contractAddress, web3,
                 new ClientTransactionManager(web3, ethAddresses.syscoinSuperblockChallengerAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
@@ -239,7 +240,7 @@ public class MainConfiguration {
     ) throws IOException {
         String contractAddress = SyscoinBattleManagerExtended.getAddress(agentConstants.getNetworkId());
 
-        var result = SyscoinBattleManagerExtended.load(contractAddress, web3Secondary,
+        var result = new SyscoinBattleManagerExtended(contractAddress, web3Secondary,
                 new ClientTransactionManager(web3Secondary, ethAddresses.syscoinSuperblockChallengerAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
@@ -255,7 +256,7 @@ public class MainConfiguration {
     ) throws IOException {
         String contractAddress = SyscoinSuperblocksExtended.getAddress(agentConstants.getNetworkId());
 
-        var result = SyscoinSuperblocksExtended.load(contractAddress, web3,
+        var result = new SyscoinSuperblocksExtended(contractAddress, web3,
                 new ClientTransactionManager(web3, ethAddresses.generalPurposeAndSendSuperblocksAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
@@ -271,7 +272,7 @@ public class MainConfiguration {
     ) throws IOException {
         String contractAddress = SyscoinSuperblocksExtended.getAddress(agentConstants.getNetworkId());
 
-        var result = SyscoinSuperblocksExtended.load(contractAddress, web3Secondary,
+        var result = new SyscoinSuperblocksExtended(contractAddress, web3Secondary,
                 new ClientTransactionManager(web3Secondary, ethAddresses.generalPurposeAndSendSuperblocksAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
@@ -288,6 +289,11 @@ public class MainConfiguration {
     @Bean
     public BigInteger superblockTimeout(SyscoinClaimManagerExtended claimManagerGetter) throws Exception {
         return claimManagerGetter.superblockTimeout().send().getValue();
+    }
+
+    @Bean
+    public BigInteger minProposalDeposit(SyscoinClaimManagerExtended claimManagerGetter) throws Exception {
+        return claimManagerGetter.minProposalDeposit().send().getValue();
     }
 
     @Bean

@@ -36,7 +36,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     private final SystemProperties config;
     private final PersistentFileStore persistentFileStore;
     private final BattleContractApi battleContractApi;
-    private final SuperblockChain superblockChain;
+    private final SuperblockChain localSuperblockChain;
     private final RandomizationCounter randomizationCounter;
     private final BigInteger superblockTimeout;
     private final SyscoinBattleManagerExtended battleManagerGetter;
@@ -56,12 +56,12 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             SyscoinBattleManagerExtended battleManagerGetter,
             ChallengeEmailNotifier challengeEmailNotifier
     ) {
-        super(AgentRole.SUBMITTER, config, agentConstants, ethWrapper, superblockContractApi, claimContractApi, challengeEmailNotifier);
+        super(AgentRole.SUBMITTER, config, agentConstants, ethWrapper, superblockContractApi, battleContractApi, claimContractApi, challengeEmailNotifier);
 
         this.config = config;
         this.persistentFileStore = persistentFileStore;
         this.battleContractApi = battleContractApi;
-        this.superblockChain = superblockChain;
+        this.localSuperblockChain = superblockChain;
         this.randomizationCounter = randomizationCounter;
         this.superblockTimeout = superblockTimeout;
         this.battleManagerGetter = battleManagerGetter;
@@ -125,7 +125,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      */
     private void confirmEarliestApprovableSuperblock() throws Exception {
         Keccak256Hash bestSuperblockId = superblockContractApi.getBestSuperblockId();
-        Superblock chainHead = superblockChain.getChainHead();
+        Superblock chainHead = localSuperblockChain.getChainHead();
 
         if (chainHead.getSuperblockId().equals(bestSuperblockId)) {
             // Contract and local db best superblocks are the same, do nothing.
@@ -133,7 +133,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         }
 
 
-        Superblock toConfirm = superblockChain.getFirstDescendant(bestSuperblockId);
+        Superblock toConfirm = localSuperblockChain.getFirstDescendant(bestSuperblockId);
         if (toConfirm == null) {
             logger.info("Best superblock from contracts, {}, not found in local database. Stopping.", bestSuperblockId);
             return;
@@ -153,14 +153,14 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         if (ethWrapper.semiApprovedAndApprovable(toConfirm, highestDescendant)) {
             // The superblock is semi approved and it can be approved if it has enough confirmations
             logger.info("Confirming semi-approved superblock {} with descendant {}", toConfirmId, highestDescendantId);
-            ethWrapper.confirmClaim(toConfirmId, highestDescendantId);
+            claimContractApi.confirmClaim(toConfirmId, highestDescendantId);
         }
         else if (ethWrapper.newAndTimeoutPassed(highestDescendantId) || claimContractApi.getInBattleAndSemiApprovable(highestDescendantId)) {
             // Either the superblock is unchallenged or it won all the battles;
             // it will get approved or semi-approved depending on the situation
             // (look at SyscoinClaimManager contract source code for more details)
             logger.info("Confirming superblock {}", highestDescendantId);
-            ethWrapper.checkClaimFinished(highestDescendantId, false);
+            claimContractApi.checkClaimFinished(highestDescendantId, false);
 
         }
 
@@ -170,10 +170,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     /* - Reacting to events - */
 
-    private void respondToNewBattles(long fromBlock, long toBlock)
-            throws Exception {
-        List<EthWrapper.NewBattleEvent> queryBattleEvents =
-                ethWrapper.getNewBattleEvents(fromBlock, toBlock);
+    private void respondToNewBattles(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.NewBattleEvent> queryBattleEvents = battleContractApi.getNewBattleEvents(fromBlock, toBlock);
 
         for (EthWrapper.NewBattleEvent queryBattleEvent : queryBattleEvents) {
             if (isMine(queryBattleEvent) && (battleContractApi.getSessionChallengeState(queryBattleEvent.sessionId) == EthWrapper.ChallengeState.Challenged)) {

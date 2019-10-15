@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.AgentRole;
 import org.sysethereum.agents.constants.SystemProperties;
+import org.sysethereum.agents.core.bridge.BattleContractApi;
 import org.sysethereum.agents.core.bridge.ClaimContractApi;
 import org.sysethereum.agents.core.bridge.SuperblockContractApi;
 import org.sysethereum.agents.core.syscoin.*;
@@ -31,6 +32,7 @@ public abstract class SuperblockBaseClient {
     protected final AgentConstants agentConstants;
     protected final EthWrapper ethWrapper;
     protected final SuperblockContractApi superblockContractApi;
+    private final BattleContractApi battleContractApi;
     protected final ClaimContractApi claimContractApi;
     protected final AgentRole agentRole;
     protected String myAddress;
@@ -56,6 +58,7 @@ public abstract class SuperblockBaseClient {
             AgentConstants agentConstants,
             EthWrapper ethWrapper,
             SuperblockContractApi superblockContractApi,
+            BattleContractApi battleContractApi,
             ClaimContractApi claimContractApi,
             ChallengeEmailNotifier challengeEmailNotifier
     ) {
@@ -63,6 +66,7 @@ public abstract class SuperblockBaseClient {
         this.agentConstants = agentConstants;
         this.ethWrapper = ethWrapper;
         this.superblockContractApi = superblockContractApi;
+        this.battleContractApi = battleContractApi;
         this.claimContractApi = claimContractApi;
         this.timer = new Timer(agentRole.getTimerTaskName(), true);
         this.challengeEmailNotifier = challengeEmailNotifier;
@@ -155,7 +159,7 @@ public abstract class SuperblockBaseClient {
         var challenged = new ArrayList<Keccak256Hash>();
         boolean isAtLeastOneMine = false;
 
-        List<EthWrapper.NewBattleEvent> events = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
+        List<EthWrapper.NewBattleEvent> events = battleContractApi.getNewBattleEvents(fromBlock, toBlock);
         for (EthWrapper.NewBattleEvent event : events) {
             if (isMine(event)) {
                 isAtLeastOneMine = true;
