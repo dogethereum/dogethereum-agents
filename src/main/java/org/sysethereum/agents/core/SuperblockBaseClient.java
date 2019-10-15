@@ -161,7 +161,7 @@ public abstract class SuperblockBaseClient {
 
         List<EthWrapper.NewBattleEvent> events = battleContractApi.getNewBattleEvents(fromBlock, toBlock);
         for (EthWrapper.NewBattleEvent event : events) {
-            if (isMine(event)) {
+            if (isMyBattleEvent(event)) {
                 isAtLeastOneMine = true;
                 sessionToSuperblockMap.put(event.sessionId, event.superblockHash);
                 addToSuperblockToSessionsMap(event.sessionId, event.superblockHash);
@@ -183,6 +183,9 @@ public abstract class SuperblockBaseClient {
         }
     }
 
+    protected boolean isMyBattleEvent(EthWrapper.NewBattleEvent newBattleEvent) {
+        return newBattleEvent.getAddressByRole(agentRole).equals(myAddress);
+    }
 
     /* ---- ABSTRACT METHODS ---- */
 
@@ -191,8 +194,6 @@ public abstract class SuperblockBaseClient {
     protected abstract long reactToEvents(long fromBlock, long toBlock);
 
     protected abstract void reactToElapsedTime();
-
-    protected abstract boolean isMine(EthWrapper.NewBattleEvent newBattleEvent);
 
     protected abstract void deleteSubmitterConvictedBattles(long fromBlock, long toBlock) throws Exception;
 

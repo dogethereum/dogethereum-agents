@@ -174,7 +174,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         List<EthWrapper.NewBattleEvent> queryBattleEvents = battleContractApi.getNewBattleEvents(fromBlock, toBlock);
 
         for (EthWrapper.NewBattleEvent queryBattleEvent : queryBattleEvents) {
-            if (isMine(queryBattleEvent) && (battleContractApi.getSessionChallengeState(queryBattleEvent.sessionId) == EthWrapper.ChallengeState.Challenged)) {
+            if (isMyBattleEvent(queryBattleEvent) && (battleContractApi.getSessionChallengeState(queryBattleEvent.sessionId) == EthWrapper.ChallengeState.Challenged)) {
                 logger.info("Battle detected for superblock {} session {}. Responding now with first set of headers.", queryBattleEvent.superblockHash, queryBattleEvent.sessionId);
                 ethWrapper.respondBlockHeaders(queryBattleEvent.sessionId, queryBattleEvent.superblockHash, 0);
             }
@@ -192,11 +192,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     @Override
     protected boolean arePendingTransactions() throws InterruptedException, IOException {
         return ethWrapper.arePendingTransactionsForSendSuperblocksAddress();
-    }
-
-    @Override
-    protected boolean isMine(EthWrapper.NewBattleEvent newBattleEvent) {
-        return newBattleEvent.submitter.equals(myAddress);
     }
 
     private boolean isMine(EthWrapper.RespondHeadersEvent respondHeadersEvent) {

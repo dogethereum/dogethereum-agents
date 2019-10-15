@@ -35,6 +35,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import static org.sysethereum.agents.constants.AgentRole.CHALLENGER;
+
 /**
  * Helps the agent communication with the Eth blockchain.
  * @author Oscar Guindzberg
@@ -433,6 +435,10 @@ public class EthWrapper {
         public Keccak256Hash sessionId;
         public String submitter;
         public String challenger;
+
+        public String getAddressByRole(AgentRole agentRole) {
+            return agentRole == CHALLENGER ? challenger : submitter;
+        }
     }
 
     public static class ChallengerConvictedEvent {
@@ -532,7 +538,7 @@ public class EthWrapper {
         }
 
         // Make necessary deposit to cover reward
-        claimContractApi.makeDepositIfNeeded(AgentRole.CHALLENGER, account, getChallengeDeposit());
+        claimContractApi.makeDepositIfNeeded(CHALLENGER, account, getChallengeDeposit());
 
         CompletableFuture<TransactionReceipt> futureReceipt =
                 claimManagerForChallenges.challengeSuperblock(new Bytes32(superblockId.getBytes())).sendAsync();

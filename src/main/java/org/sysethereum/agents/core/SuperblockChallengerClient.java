@@ -203,7 +203,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         List<EthWrapper.NewBattleEvent> newBattleEvents = battleContractApi.getNewBattleEvents(fromBlock, toBlock);
 
         for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
-            if (isMine(newBattleEvent) && battleContractApi.getSessionChallengeState(newBattleEvent.sessionId) == EthWrapper.ChallengeState.Challenged) {
+            if (isMyBattleEvent(newBattleEvent) && battleContractApi.getSessionChallengeState(newBattleEvent.sessionId) == EthWrapper.ChallengeState.Challenged) {
                 sessionToSuperblockMap.put(newBattleEvent.sessionId, newBattleEvent.superblockHash);
                 addToSuperblockToSessionsMap(newBattleEvent.sessionId, newBattleEvent.superblockHash);
             }
@@ -237,11 +237,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     @Override
     protected boolean arePendingTransactions() throws InterruptedException, IOException {
         return ethWrapper.arePendingTransactionsForChallengerAddress();
-    }
-
-    @Override
-    protected boolean isMine(EthWrapper.NewBattleEvent newBattleEvent) {
-        return newBattleEvent.challenger.equals(myAddress);
     }
 
     protected void callBattleTimeouts() throws Exception {
