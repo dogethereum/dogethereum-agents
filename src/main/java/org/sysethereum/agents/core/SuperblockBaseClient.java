@@ -187,9 +187,13 @@ public abstract class SuperblockBaseClient {
         return newBattleEvent.getAddressByRole(agentRole).equals(myAddress);
     }
 
-    /* ---- ABSTRACT METHODS ---- */
+    protected final boolean arePendingTransactions() throws InterruptedException, IOException {
+        return agentRole == AgentRole.SUBMITTER
+                ? ethWrapper.arePendingTransactionsForSendSuperblocksAddress()
+                : ethWrapper.arePendingTransactionsForChallengerAddress();
+    }
 
-    protected abstract boolean arePendingTransactions() throws InterruptedException, IOException;
+    /* ---- ABSTRACT METHODS ---- */
 
     protected abstract long reactToEvents(long fromBlock, long toBlock);
 

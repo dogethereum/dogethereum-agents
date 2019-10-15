@@ -232,13 +232,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         return claimContractApi.getClaimChallenger(superblockEvent.superblockId).getValue().equals(myAddress);
     }
 
-    /* ---- OVERRIDE ABSTRACT METHODS ---- */
-
-    @Override
-    protected boolean arePendingTransactions() throws InterruptedException, IOException {
-        return ethWrapper.arePendingTransactionsForChallengerAddress();
-    }
-
     protected void callBattleTimeouts() throws Exception {
         for (Keccak256Hash sessionId : sessionToSuperblockMap.keySet()) {
             if (battleContractApi.getSubmitterHitTimeout(sessionId)) {

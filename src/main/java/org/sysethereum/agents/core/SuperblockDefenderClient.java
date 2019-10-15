@@ -187,13 +187,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         return claimContractApi.getNewEventTimestampDate(superblockId).before(SuperblockUtils.getNSecondsAgo(timeout));
     }
 
-    /* ---- OVERRIDE ABSTRACT METHODS ---- */
-
-    @Override
-    protected boolean arePendingTransactions() throws InterruptedException, IOException {
-        return ethWrapper.arePendingTransactionsForSendSuperblocksAddress();
-    }
-
     private boolean isMine(EthWrapper.RespondHeadersEvent respondHeadersEvent) {
         return respondHeadersEvent.submitter.equals(myAddress);
     }
