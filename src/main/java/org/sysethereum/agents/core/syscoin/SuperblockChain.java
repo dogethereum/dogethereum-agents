@@ -170,7 +170,8 @@ public class SuperblockChain {
      * @param superblockHash Keccak-256 hash of a superblock.
      * @return Superblock with given hash if it's found in the database, null otherwise.
      */
-    public Superblock getSuperblock(Keccak256Hash superblockHash) {
+    @Nullable
+    public Superblock getByHash(Keccak256Hash superblockHash) {
         return superblockStorage.get(superblockHash);
     }
 
@@ -188,7 +189,7 @@ public class SuperblockChain {
 
         // Superblock exists.
         while (currentSuperblock.getHeight() > superblockHeight)
-            currentSuperblock = getSuperblock(currentSuperblock.getParentId());
+            currentSuperblock = getByHash(currentSuperblock.getParentId());
 
         return currentSuperblock;
     }
@@ -200,20 +201,22 @@ public class SuperblockChain {
      *         null otherwise.
      */
     public Superblock getFirstDescendant(Keccak256Hash parentId) {
-        if (getSuperblock(parentId) == null) {
+        Superblock sb = getByHash(parentId);
+
+        if (sb == null) {
             // The superblock isn't in the main chain.
             logger.info("Superblock {} is not in the main chain. Returning from getFirstDescendant.", parentId);
             return null;
         }
 
-        if (getSuperblock(parentId).getHeight() == getChainHeight()) {
+        if (sb.getHeight() == getChainHeight()) {
             // There's nothing above the tip of the chain.
             return null;
         }
         Superblock currentSuperblock = getChainHead();
 
         while (currentSuperblock != null && !currentSuperblock.getParentId().equals(parentId)) {
-            currentSuperblock = getSuperblock(currentSuperblock.getParentId());
+            currentSuperblock = getByHash(currentSuperblock.getParentId());
         }
 
         return currentSuperblock;
@@ -231,7 +234,7 @@ public class SuperblockChain {
         while (sb != null) {
             if (sb.hasSyscoinBlock(blockHash))
                 return sb;
-            sb = getSuperblock(sb.getParentId());
+            sb = getByHash(sb.getParentId());
         }
 
         // current superblock is null

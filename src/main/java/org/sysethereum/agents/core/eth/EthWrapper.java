@@ -191,13 +191,13 @@ public class EthWrapper {
      */
     public Superblock getHighestApprovableOrNewDescendant(Superblock toConfirm, Keccak256Hash superblockId)
             throws BlockStoreException, IOException, Exception {
-        if (localSuperblockChain.getSuperblock(superblockId) == null) {
+        if (localSuperblockChain.getByHash(superblockId) == null) {
             // The superblock isn't in the main chain.
             logger.info("Superblock {} is not in the main chain. Returning from getHighestApprovableOrNewDescendant.", superblockId);
             return null;
         }
 
-        if (localSuperblockChain.getSuperblock(superblockId).getHeight() == localSuperblockChain.getChainHeight()) {
+        if (localSuperblockChain.getByHash(superblockId).getHeight() == localSuperblockChain.getChainHeight()) {
             // There's nothing above the tip of the chain.
             logger.info("Superblock {} is above the tip of the chain. Returning from getHighestApprovableOrNewDescendant.", superblockId);
             return null;
@@ -208,7 +208,7 @@ public class EthWrapper {
                 !newAndTimeoutPassed(sb.getHash()) &&
                 !claimContractApi.getInBattleAndSemiApprovable(sb.getHash()) &&
                 !semiApprovedAndApprovable(toConfirm, sb)) {
-            sb = localSuperblockChain.getSuperblock(sb.getParentId());
+            sb = localSuperblockChain.getByHash(sb.getParentId());
         }
         return sb;
     }
@@ -225,13 +225,13 @@ public class EthWrapper {
      */
     public Superblock getHighestSemiApprovedOrApprovedDescendant(Keccak256Hash superblockId)
             throws BlockStoreException, IOException, Exception {
-        if (localSuperblockChain.getSuperblock(superblockId) == null) {
+        if (localSuperblockChain.getByHash(superblockId) == null) {
             // The superblock isn't in the main chain.
             logger.info("Superblock {} is not in the main chain. Returning from getHighestSemiApprovedOrApprovedDescendant.", superblockId);
             return null;
         }
 
-        if (localSuperblockChain.getSuperblock(superblockId).getHeight() == localSuperblockChain.getChainHeight()) {
+        if (localSuperblockChain.getByHash(superblockId).getHeight() == localSuperblockChain.getChainHeight()) {
             // There's nothing above the tip of the chain.
             logger.info("Superblock {} is the tip of the superblock chain, no descendant exists. Returning from getHighestSemiApprovedOrApprovedDescendant.", superblockId);
             return null;
@@ -242,7 +242,7 @@ public class EthWrapper {
                 && !head.getHash().equals(superblockId)
                 && !superblockContractApi.isSemiApproved(head.getHash())
                 && !superblockContractApi.isApproved(head.getHash())) {
-            head = localSuperblockChain.getSuperblock(head.getParentId());
+            head = localSuperblockChain.getByHash(head.getParentId());
         }
 
         return head;
@@ -388,7 +388,7 @@ public class EthWrapper {
         int endIndex = startIndex + numHashesRequired;
         if(startIndex > 48)
             throw new Exception("Skipping respondBlockHeader, startIndex cannot be > 48.");
-        Superblock superblock = localSuperblockChain.getSuperblock(superblockId);
+        Superblock superblock = localSuperblockChain.getByHash(superblockId);
         List<Sha256Hash> listHashes = superblock.getSyscoinBlockHashes();
         if(!superblockDuration.equals(BigInteger.valueOf(listHashes.size())))
             throw new Exception("Skipping respondBlockHeader, superblock hash array list is incorrect length.");

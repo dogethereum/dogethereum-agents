@@ -158,7 +158,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         for (SuperblockContractApi.SuperblockEvent newSuperblock : newSuperblockEvents) {
             logger.info("NewSuperblock {}. Validating...", newSuperblock.superblockId);
 
-            Superblock superblock = localSuperblockChain.getSuperblock(newSuperblock.superblockId);
+            Superblock superblock = localSuperblockChain.getByHash(newSuperblock.superblockId);
             if (superblock == null) {
                 BigInteger height = superblockContractApi.getHeight(newSuperblock.superblockId);
                 Superblock localSuperblock = localSuperblockChain.getByHeight(height.longValue());

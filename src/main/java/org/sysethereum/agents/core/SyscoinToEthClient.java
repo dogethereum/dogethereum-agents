@@ -217,7 +217,7 @@ public class SyscoinToEthClient {
             Superblock sb;
 
             if (superblockId != null) {
-                sb = localSuperblockChain.getSuperblock(superblockId);
+                sb = localSuperblockChain.getByHash(superblockId);
             } else {
                 sb = localSuperblockChain.getByHeight(height);
             }
