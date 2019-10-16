@@ -369,36 +369,6 @@ public class EthWrapper {
         return result;
     }
 
-
-    /**
-     * Listens to ChallengerConvicted events from a given SyscoinBattleManager contract within a given block window
-     * and parses web3j-generated instances into easier to manage ChallengerConvictedEvent objects.
-     * @param startBlock First Ethereum block to poll.
-     * @param endBlock Last Ethereum block to poll.
-     * @param myBattleManager SyscoinBattleManager contract that the caller is using to handle its battles.
-     * @return All ChallengerConvicted events from SyscoinBattleManager as ChallengerConvictedEvent objects.
-     * @throws IOException
-     */
-    public List<ChallengerConvictedEvent> getChallengerConvictedEvents(long startBlock, long endBlock,
-                                                                       SyscoinBattleManagerExtended myBattleManager)
-            throws IOException {
-        List<ChallengerConvictedEvent> result = new ArrayList<>();
-        List<SyscoinBattleManager.ChallengerConvictedEventResponse> challengerConvictedEvents =
-                myBattleManager.getChallengerConvictedEventResponses(
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
-
-        for (SyscoinBattleManager.ChallengerConvictedEventResponse response : challengerConvictedEvents) {
-            ChallengerConvictedEvent challengerConvictedEvent = new ChallengerConvictedEvent();
-            challengerConvictedEvent.superblockHash = Keccak256Hash.wrap(response.superblockHash.getValue());
-            challengerConvictedEvent.sessionId = Keccak256Hash.wrap(response.sessionId.getValue());
-            challengerConvictedEvent.challenger = response.challenger.getValue();
-            result.add(challengerConvictedEvent);
-        }
-
-        return result;
-    }
-
     // Event wrapper classes
 
     public static class NewBattleEvent {
@@ -410,12 +380,6 @@ public class EthWrapper {
         public String getAddressByRole(AgentRole agentRole) {
             return agentRole == CHALLENGER ? challenger : submitter;
         }
-    }
-
-    public static class ChallengerConvictedEvent {
-        public Keccak256Hash superblockHash;
-        public Keccak256Hash sessionId;
-        public String challenger;
     }
 
     public static class RespondHeadersEvent {

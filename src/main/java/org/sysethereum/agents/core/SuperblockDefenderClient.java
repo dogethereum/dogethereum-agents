@@ -5,11 +5,11 @@ import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.AgentRole;
 import org.sysethereum.agents.constants.EthAddresses;
 import org.sysethereum.agents.constants.SystemProperties;
-import org.sysethereum.agents.contract.SyscoinBattleManagerExtended;
 import org.sysethereum.agents.core.bridge.BattleContractApi;
 import org.sysethereum.agents.core.bridge.ClaimContractApi;
 import org.sysethereum.agents.core.bridge.Superblock;
 import org.sysethereum.agents.core.bridge.SuperblockContractApi;
+import org.sysethereum.agents.core.bridge.battle.ChallengerConvictedEvent;
 import org.sysethereum.agents.core.bridge.battle.SubmitterConvictedEvent;
 import org.sysethereum.agents.core.syscoin.*;
 import org.sysethereum.agents.core.eth.EthWrapper;
@@ -40,7 +40,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     private final SuperblockChain localSuperblockChain;
     private final RandomizationCounter randomizationCounter;
     private final BigInteger superblockTimeout;
-    private final SyscoinBattleManagerExtended battleManagerGetter;
 
     public SuperblockDefenderClient(
             SystemProperties config,
@@ -54,7 +53,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             RandomizationCounter randomizationCounter,
             BigInteger superblockTimeout,
             EthAddresses ethAddresses,
-            SyscoinBattleManagerExtended battleManagerGetter,
             ChallengeEmailNotifier challengeEmailNotifier
     ) {
         super(AgentRole.SUBMITTER, config, agentConstants, ethWrapper, superblockContractApi, battleContractApi, claimContractApi, challengeEmailNotifier);
@@ -65,7 +63,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         this.localSuperblockChain = superblockChain;
         this.randomizationCounter = randomizationCounter;
         this.superblockTimeout = superblockTimeout;
-        this.battleManagerGetter = battleManagerGetter;
         this.myAddress = ethAddresses.generalPurposeAndSendSuperblocksAddress;
     }
 
@@ -269,13 +266,11 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      */
     @Override
     protected void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.ChallengerConvictedEvent> challengerConvictedEvents =
-                ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock, battleManagerGetter);
+        List<ChallengerConvictedEvent> events = battleContractApi.getChallengerConvictedEvents(agentRole, fromBlock, toBlock);
 
-        for (EthWrapper.ChallengerConvictedEvent event : challengerConvictedEvents) {
+        for (ChallengerConvictedEvent event : events) {
             if (sessionToSuperblockMap.containsKey(event.sessionId)) {
-                logger.info("Challenger convicted on session {}, superblock {}. Battle won!",
-                        event.sessionId, event.superblockHash);
+                logger.info("Challenger convicted on session {}, superblock {}. Battle won!", event.sessionId, event.superblockHash);
                 sessionToSuperblockMap.remove(event.sessionId);
             }
             if (superblockToSessionsMap.containsKey(event.superblockHash)) {

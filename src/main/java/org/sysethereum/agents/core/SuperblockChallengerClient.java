@@ -9,6 +9,7 @@ import org.sysethereum.agents.contract.SyscoinBattleManagerExtended;
 import org.sysethereum.agents.core.bridge.BattleContractApi;
 import org.sysethereum.agents.core.bridge.ClaimContractApi;
 import org.sysethereum.agents.core.bridge.SuperblockContractApi;
+import org.sysethereum.agents.core.bridge.battle.ChallengerConvictedEvent;
 import org.sysethereum.agents.core.bridge.battle.SubmitterConvictedEvent;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
@@ -46,7 +47,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     private final SuperblockContractApi superblockContractApi;
     private final ClaimContractApi claimContractApi;
     private final BattleContractApi battleContractApi;
-    private final SyscoinBattleManagerExtended battleManagerForChallengesGetter;
 
     private HashSet<Keccak256Hash> semiApprovedSet;
     private final File semiApprovedSetFile;
@@ -62,7 +62,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             ClaimContractApi claimContractApi,
             BattleContractApi battleContractApi,
             SyscoinBattleManagerExtended battleManagerForChallenges,
-            SyscoinBattleManagerExtended battleManagerForChallengesGetter,
             ChallengeEmailNotifier challengeEmailNotifier
     ) {
         super(AgentRole.CHALLENGER, config, agentConstants, ethWrapper, superblockContractApi, battleContractApi, claimContractApi, challengeEmailNotifier);
@@ -73,7 +72,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         this.superblockContractApi = superblockContractApi;
         this.claimContractApi = claimContractApi;
         this.battleContractApi = battleContractApi;
-        this.battleManagerForChallengesGetter = battleManagerForChallengesGetter;
 
         this.randomizationCounter = new RandomizationCounter();
         this.battleManagerForChallenges = battleManagerForChallenges;
@@ -308,16 +306,15 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      */
     @Override
     protected void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.ChallengerConvictedEvent> challengerConvictedEvents =
-                ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock, battleManagerForChallengesGetter);
+        List<ChallengerConvictedEvent> events = battleContractApi.getChallengerConvictedEvents(agentRole, fromBlock, toBlock);
 
-        for (EthWrapper.ChallengerConvictedEvent challengerConvictedEvent : challengerConvictedEvents) {
-            if (challengerConvictedEvent.challenger.equals(myAddress)) {
-                logger.info("Challenger convicted on session {}, superblock {}. Battle lost!",
-                        challengerConvictedEvent.sessionId, challengerConvictedEvent.superblockHash);
-                sessionToSuperblockMap.remove(challengerConvictedEvent.sessionId);
-                if (superblockToSessionsMap.containsKey(challengerConvictedEvent.superblockHash)) {
-                    superblockToSessionsMap.get(challengerConvictedEvent.superblockHash).remove(challengerConvictedEvent.sessionId);
+        for (ChallengerConvictedEvent event : events) {
+            if (event.challenger.equals(myAddress)) {
+                logger.info("Challenger convicted on session {}, superblock {}. Battle lost!", event.sessionId, event.superblockHash);
+                sessionToSuperblockMap.remove(event.sessionId);
+
+                if (superblockToSessionsMap.containsKey(event.superblockHash)) {
+                    superblockToSessionsMap.get(event.superblockHash).remove(event.sessionId);
                 }
             }
         }
