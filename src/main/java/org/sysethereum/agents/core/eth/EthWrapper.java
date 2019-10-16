@@ -202,15 +202,15 @@ public class EthWrapper {
             logger.info("Superblock {} is above the tip of the chain. Returning from getHighestApprovableOrNewDescendant.", superblockId);
             return null;
         }
-        Superblock currentSuperblock = localSuperblockChain.getChainHead();
-        while (currentSuperblock != null &&
-                !currentSuperblock.getSuperblockId().equals(superblockId) &&
-                !newAndTimeoutPassed(currentSuperblock.getSuperblockId()) &&
-                !claimContractApi.getInBattleAndSemiApprovable(currentSuperblock.getSuperblockId()) &&
-                !semiApprovedAndApprovable(toConfirm, currentSuperblock)) {
-            currentSuperblock = localSuperblockChain.getSuperblock(currentSuperblock.getParentId());
+        Superblock sb = localSuperblockChain.getChainHead();
+        while (sb != null &&
+                !sb.getSuperblockId().equals(superblockId) &&
+                !newAndTimeoutPassed(sb.getSuperblockId()) &&
+                !claimContractApi.getInBattleAndSemiApprovable(sb.getSuperblockId()) &&
+                !semiApprovedAndApprovable(toConfirm, sb)) {
+            sb = localSuperblockChain.getSuperblock(sb.getParentId());
         }
-        return currentSuperblock;
+        return sb;
     }
     /**
      * Helper method for confirming a semi-approved/approved superblock.
@@ -521,17 +521,14 @@ public class EthWrapper {
      * @throws Exception
      */
     public boolean semiApprovedAndApprovable(Superblock superblock, Superblock descendant) throws Exception {
-        Keccak256Hash superblockId = superblock.getSuperblockId();
-        Keccak256Hash descendantId = descendant.getSuperblockId();
-        return (descendant.getHeight() - superblock.getHeight() >=
-                claimContractApi.getSuperblockConfirmations() &&
-                superblockContractApi.isSemiApproved(descendantId) &&
-                superblockContractApi.isSemiApproved(superblockId));
+        return descendant.getHeight() - superblock.getHeight() >= claimContractApi.getSuperblockConfirmations()
+                && superblockContractApi.isSemiApproved(descendant.getSuperblockId())
+                && superblockContractApi.isSemiApproved(superblock.getSuperblockId());
     }
 
 
     public boolean newAndTimeoutPassed(Keccak256Hash superblockId) throws Exception {
-        return (superblockContractApi.isNew(superblockId) && claimContractApi.submittedTimeoutPassed(superblockId));
+        return superblockContractApi.isNew(superblockId) && claimContractApi.submittedTimeoutPassed(superblockId);
     }
 
 }
