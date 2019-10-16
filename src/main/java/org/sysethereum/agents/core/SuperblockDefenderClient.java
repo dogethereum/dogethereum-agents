@@ -128,7 +128,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         Keccak256Hash bestSuperblockId = superblockContractApi.getBestSuperblockId();
         Superblock chainHead = localSuperblockChain.getChainHead();
 
-        if (chainHead.getSuperblockId().equals(bestSuperblockId)) {
+        if (chainHead.getHash().equals(bestSuperblockId)) {
             // Contract and local db best superblocks are the same, do nothing.
             return;
         }
@@ -139,13 +139,13 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             logger.info("Best superblock from contracts, {}, not found in local database. Stopping.", bestSuperblockId);
             return;
         }
-        Keccak256Hash toConfirmId = toConfirm.getSuperblockId();
+        Keccak256Hash toConfirmId = toConfirm.getHash();
         Superblock highestDescendant = ethWrapper.getHighestApprovableOrNewDescendant(toConfirm, bestSuperblockId);
         if (highestDescendant == null) {
             logger.info("Highest descendent from contracts, {}, not found in local database. Stopping.", bestSuperblockId);
             return;
         }
-        Keccak256Hash highestDescendantId = highestDescendant.getSuperblockId();
+        Keccak256Hash highestDescendantId = highestDescendant.getHash();
 
 
         // deal with your own superblock claims or if it has become unresponsive we allow someone else to check the claim or confirm it

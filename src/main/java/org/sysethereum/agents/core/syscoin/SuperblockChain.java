@@ -103,7 +103,7 @@ public class SuperblockChain {
 
             // set prev hash and end time for next superblock
             if (!allSyscoinHashesToHash.empty()) {
-                nextSuperblockPrevHash = newSuperblock.getSuperblockId();
+                nextSuperblockPrevHash = newSuperblock.getHash();
                 nextSuperblockHeight++;
             }
 

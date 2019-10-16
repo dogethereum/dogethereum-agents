@@ -120,7 +120,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             Superblock mainChainSuperblock = localSuperblockChain.getByHeight(semiApprovedHeight);
             if (mainChainSuperblock != null) {
                 long confirmations = claimContractApi.getSuperblockConfirmations();
-                if (!mainChainSuperblock.getSuperblockId().equals(superblockId) &&
+                if (!mainChainSuperblock.getHash().equals(superblockId) &&
                         superblockContractApi.getChainHeight().longValue() >= semiApprovedHeight + confirmations) {
                     logger.info("Semi-approved superblock {} not found in main chain. Invalidating.", superblockId);
                     claimContractApi.rejectClaim(superblockId);
@@ -173,7 +173,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                     logger.info("Superblock {} at height {} is replaced by {} in our superblock chain",
                             newSuperblock.superblockId,
                             height,
-                            localSuperblock.getSuperblockId());
+                            localSuperblock.getHash());
                 }
 
                 toChallenge.add(newSuperblock.superblockId);

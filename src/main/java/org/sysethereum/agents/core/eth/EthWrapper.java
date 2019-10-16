@@ -204,9 +204,9 @@ public class EthWrapper {
         }
         Superblock sb = localSuperblockChain.getChainHead();
         while (sb != null &&
-                !sb.getSuperblockId().equals(superblockId) &&
-                !newAndTimeoutPassed(sb.getSuperblockId()) &&
-                !claimContractApi.getInBattleAndSemiApprovable(sb.getSuperblockId()) &&
+                !sb.getHash().equals(superblockId) &&
+                !newAndTimeoutPassed(sb.getHash()) &&
+                !claimContractApi.getInBattleAndSemiApprovable(sb.getHash()) &&
                 !semiApprovedAndApprovable(toConfirm, sb)) {
             sb = localSuperblockChain.getSuperblock(sb.getParentId());
         }
@@ -239,9 +239,9 @@ public class EthWrapper {
 
         Superblock head = localSuperblockChain.getChainHead();
         while (head != null
-                && !head.getSuperblockId().equals(superblockId)
-                && !superblockContractApi.isSemiApproved(head.getSuperblockId())
-                && !superblockContractApi.isApproved(head.getSuperblockId())) {
+                && !head.getHash().equals(superblockId)
+                && !superblockContractApi.isSemiApproved(head.getHash())
+                && !superblockContractApi.isApproved(head.getHash())) {
             head = localSuperblockChain.getSuperblock(head.getParentId());
         }
 
@@ -259,35 +259,35 @@ public class EthWrapper {
         // Check if the parent has been approved before sending this superblock.
         Keccak256Hash parentId = superblock.getParentId();
         if (!(superblockContractApi.isApproved(parentId) || superblockContractApi.isSemiApproved(parentId))) {
-            logger.info("Superblock {} not sent because its parent was neither approved nor semi approved.", superblock.getSuperblockId());
+            logger.info("Superblock {} not sent because its parent was neither approved nor semi approved.", superblock.getHash());
             return false;
         }
         // if claim exists we check to ensure the superblock chain isn't "stuck" and can be re-approved to be built even if it exists
-        if (claimContractApi.getClaimExists(superblock.getSuperblockId())) {
-            boolean allowed = claimContractApi.getClaimInvalid(superblock.getSuperblockId())
-                    && claimContractApi.getClaimDecided(superblock.getSuperblockId())
-                    && !claimContractApi.getClaimSubmitter(superblock.getSuperblockId()).equals(account);
+        if (claimContractApi.getClaimExists(superblock.getHash())) {
+            boolean allowed = claimContractApi.getClaimInvalid(superblock.getHash())
+                    && claimContractApi.getClaimDecided(superblock.getHash())
+                    && !claimContractApi.getClaimSubmitter(superblock.getHash()).equals(account);
 
             if (!allowed) {
-                logger.info("Superblock {} has already been sent. Returning.", superblock.getSuperblockId());
+                logger.info("Superblock {} has already been sent. Returning.", superblock.getHash());
                 return false;
             }
 
             if (superblockContractApi.isApproved(parentId)) {
                 if (!superblockContractApi.getBestSuperblockId().equals(parentId)) {
-                    logger.info("Superblock {} parent is approved but not best. Returning.", superblock.getSuperblockId());
+                    logger.info("Superblock {} parent is approved but not best. Returning.", superblock.getHash());
                     return false;
                 }
             } else {
                 if (!superblockContractApi.isSemiApproved(parentId)) {
-                    logger.info("Superblock {} parent is neither approved nor semi-approved. Returning.", superblock.getSuperblockId());
+                    logger.info("Superblock {} parent is neither approved nor semi-approved. Returning.", superblock.getHash());
                     return false;
                 }
             }
         }
 
 
-        logger.info("About to send superblock {} to the bridge.", superblock.getSuperblockId());
+        logger.info("About to send superblock {} to the bridge.", superblock.getHash());
         Thread.sleep(500);
         if (arePendingTransactionsForSendSuperblocksAddress()) {
             logger.debug("Skipping sending superblocks, there are pending transaction for the sender address.");
@@ -300,7 +300,7 @@ public class EthWrapper {
         // The parent is either approved or semi approved. We can send the superblock.
         CompletableFuture<TransactionReceipt> futureReceipt = claimContractApi.proposeSuperblock(superblock);
 
-        logger.info("Sent superblock {}", superblock.getSuperblockId());
+        logger.info("Sent superblock {}", superblock.getHash());
         futureReceipt.handle((receipt, throwable) -> {
             if (receipt != null) {
                 logger.info("proposeSuperblock receipt {}", receipt.toString());
@@ -522,8 +522,8 @@ public class EthWrapper {
      */
     public boolean semiApprovedAndApprovable(Superblock superblock, Superblock descendant) throws Exception {
         return descendant.getHeight() - superblock.getHeight() >= claimContractApi.getSuperblockConfirmations()
-                && superblockContractApi.isSemiApproved(descendant.getSuperblockId())
-                && superblockContractApi.isSemiApproved(superblock.getSuperblockId());
+                && superblockContractApi.isSemiApproved(descendant.getHash())
+                && superblockContractApi.isSemiApproved(superblock.getHash());
     }
 
 

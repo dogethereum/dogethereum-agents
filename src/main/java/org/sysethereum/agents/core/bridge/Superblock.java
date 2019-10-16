@@ -24,7 +24,7 @@ public class Superblock {
     @SuppressWarnings("unused")
     public static final BigInteger STATUS_INVALID = BigInteger.valueOf(5);
 
-    private final Keccak256Hash superblockId;
+    private final Keccak256Hash hash;
     public final SuperblockData data;
 
     /**
@@ -32,15 +32,15 @@ public class Superblock {
      */
     public Superblock(SuperblockData data, Keccak256Hash superblockId) {
         this.data = data;
-        this.superblockId = superblockId;
+        this.hash = superblockId;
     }
 
     /**
      * Accesses superblock hash attribute if already calculated, calculates it otherwise.
      * @return Superblock hash.
      */
-    public Keccak256Hash getSuperblockId() {
-        return superblockId;
+    public Keccak256Hash getHash() {
+        return hash;
     }
 
     /**
@@ -130,7 +130,7 @@ public class Superblock {
     @Override
     public String toString() {
         return "Superblock{" +
-                "superblockId=" + superblockId +
+                "hash=" + hash +
                 ", data=" + data +
                 '}';
     }

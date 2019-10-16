@@ -14,7 +14,6 @@ import org.sysethereum.agents.core.bridge.SuperblockFactory;
 import org.sysethereum.agents.core.bridge.SuperblockSerializationHelper;
 
 import javax.annotation.concurrent.GuardedBy;
-import java.math.BigInteger;
 import java.io.*;
 import java.nio.*;
 import java.nio.file.Paths;
@@ -112,7 +111,7 @@ public class SuperblockLevelDBBlockStore {
 
         ByteBuffer buffer = ByteBuffer.allocate(stream.size());
         buffer.put(stream.toByteArray());
-        db.put(sb.getSuperblockId().getBytes(), buffer.array());
+        db.put(sb.getHash().getBytes(), buffer.array());
     }
 
     /**
@@ -191,7 +190,7 @@ public class SuperblockLevelDBBlockStore {
      * @param chainHead Superblock with the highest chain work.
      */
     public synchronized void setChainHead(Superblock chainHead) {
-        db.put(CHAIN_HEAD_KEY, chainHead.getSuperblockId().getBytes());
+        db.put(CHAIN_HEAD_KEY, chainHead.getHash().getBytes());
     }
 
 }
