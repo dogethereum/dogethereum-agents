@@ -7,6 +7,7 @@ import org.sysethereum.agents.constants.AgentRole;
 import org.sysethereum.agents.contract.SyscoinBattleManager;
 import org.sysethereum.agents.contract.SyscoinBattleManagerExtended;
 import org.sysethereum.agents.core.bridge.battle.ChallengerConvictedEvent;
+import org.sysethereum.agents.core.bridge.battle.NewBattleEvent;
 import org.sysethereum.agents.core.bridge.battle.SubmitterConvictedEvent;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
@@ -78,15 +79,15 @@ public class BattleContractApi {
      * @return All NewBattle events from SyscoinBattleManager as NewBattleEvent objects.
      * @throws IOException
      */
-    public List<EthWrapper.NewBattleEvent> getNewBattleEvents(long startBlock, long endBlock) throws IOException {
-        List<EthWrapper.NewBattleEvent> result = new ArrayList<>();
+    public List<NewBattleEvent> getNewBattleEvents(long startBlock, long endBlock) throws IOException {
+        List<NewBattleEvent> result = new ArrayList<>();
         List<SyscoinBattleManager.NewBattleEventResponse> newBattleEvents =
                 challengesGetter.getNewBattleEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
         for (SyscoinBattleManager.NewBattleEventResponse response : newBattleEvents) {
-            EthWrapper.NewBattleEvent newBattleEvent = new EthWrapper.NewBattleEvent();
+            NewBattleEvent newBattleEvent = new NewBattleEvent();
             newBattleEvent.superblockHash = Keccak256Hash.wrap(response.superblockHash.getValue());
             newBattleEvent.sessionId = Keccak256Hash.wrap(response.sessionId.getValue());
             newBattleEvent.submitter = response.submitter.getValue();

@@ -336,12 +336,6 @@ public class EthWrapper {
         return minProposalDeposit;
     }
 
-
-
-    /* ---------------------------------- */
-    /* ---- SyscoinClaimManager section ---- */
-    /* ---------------------------------- */
-
     /**
      * Listens to RespondBlockHeaders events from SyscoinBattleManager contract within a given block window
      * and parses web3j-generated instances into easier to manage RespondBlockHeaders objects.
@@ -367,19 +361,6 @@ public class EthWrapper {
         }
 
         return result;
-    }
-
-    // Event wrapper classes
-
-    public static class NewBattleEvent {
-        public Keccak256Hash superblockHash;
-        public Keccak256Hash sessionId;
-        public String submitter;
-        public String challenger;
-
-        public String getAddressByRole(AgentRole agentRole) {
-            return agentRole == CHALLENGER ? challenger : submitter;
-        }
     }
 
     public static class RespondHeadersEvent {

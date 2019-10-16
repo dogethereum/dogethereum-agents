@@ -7,6 +7,7 @@ import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.core.bridge.BattleContractApi;
 import org.sysethereum.agents.core.bridge.ClaimContractApi;
 import org.sysethereum.agents.core.bridge.SuperblockContractApi;
+import org.sysethereum.agents.core.bridge.battle.NewBattleEvent;
 import org.sysethereum.agents.core.syscoin.*;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.slf4j.Logger;
@@ -159,8 +160,8 @@ public abstract class SuperblockBaseClient {
         var challenged = new ArrayList<Keccak256Hash>();
         boolean isAtLeastOneMine = false;
 
-        List<EthWrapper.NewBattleEvent> events = battleContractApi.getNewBattleEvents(fromBlock, toBlock);
-        for (EthWrapper.NewBattleEvent event : events) {
+        List<NewBattleEvent> events = battleContractApi.getNewBattleEvents(fromBlock, toBlock);
+        for (NewBattleEvent event : events) {
             if (isMyBattleEvent(event)) {
                 isAtLeastOneMine = true;
                 sessionToSuperblockMap.put(event.sessionId, event.superblockHash);
@@ -183,7 +184,7 @@ public abstract class SuperblockBaseClient {
         }
     }
 
-    protected boolean isMyBattleEvent(EthWrapper.NewBattleEvent newBattleEvent) {
+    protected boolean isMyBattleEvent(NewBattleEvent newBattleEvent) {
         return newBattleEvent.getAddressByRole(agentRole).equals(myAddress);
     }
 
