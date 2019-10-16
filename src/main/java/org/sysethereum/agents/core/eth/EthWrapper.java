@@ -399,35 +399,6 @@ public class EthWrapper {
         return result;
     }
 
-    /**
-     * Listens to SubmitterConvicted events from a given SyscoinBattleManager contract within a given block window
-     * and parses web3j-generated instances into easier to manage SubmitterConvictedEvent objects.
-     * @param startBlock First Ethereum block to poll.
-     * @param endBlock Last Ethereum block to poll.
-     * @param myBattleManager SyscoinBattleManager contract that the caller is using to handle its battles.
-     * @return All SubmitterConvicted events from SyscoinBattleManager as SubmitterConvictedEvent objects.
-     * @throws IOException
-     */
-    public List<SubmitterConvictedEvent> getSubmitterConvictedEvents(long startBlock, long endBlock,
-                                                                     SyscoinBattleManagerExtended myBattleManager)
-            throws IOException {
-        List<SubmitterConvictedEvent> result = new ArrayList<>();
-        List<SyscoinBattleManager.SubmitterConvictedEventResponse> submitterConvictedEvents =
-                myBattleManager.getSubmitterConvictedEventResponses(
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
-
-        for (SyscoinBattleManager.SubmitterConvictedEventResponse response : submitterConvictedEvents) {
-            SubmitterConvictedEvent submitterConvictedEvent = new SubmitterConvictedEvent();
-            submitterConvictedEvent.superblockHash = Keccak256Hash.wrap(response.superblockHash.getValue());
-            submitterConvictedEvent.sessionId = Keccak256Hash.wrap(response.sessionId.getValue());
-            submitterConvictedEvent.submitter = response.submitter.getValue();
-            result.add(submitterConvictedEvent);
-        }
-
-        return result;
-    }
-
     // Event wrapper classes
 
     public static class NewBattleEvent {
@@ -445,12 +416,6 @@ public class EthWrapper {
         public Keccak256Hash superblockHash;
         public Keccak256Hash sessionId;
         public String challenger;
-    }
-
-    public static class SubmitterConvictedEvent {
-        public Keccak256Hash superblockHash;
-        public Keccak256Hash sessionId;
-        public String submitter;
     }
 
     public static class RespondHeadersEvent {

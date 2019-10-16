@@ -9,6 +9,7 @@ import org.sysethereum.agents.contract.SyscoinBattleManagerExtended;
 import org.sysethereum.agents.core.bridge.BattleContractApi;
 import org.sysethereum.agents.core.bridge.ClaimContractApi;
 import org.sysethereum.agents.core.bridge.SuperblockContractApi;
+import org.sysethereum.agents.core.bridge.battle.SubmitterConvictedEvent;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.sysethereum.agents.core.bridge.Superblock;
@@ -282,17 +283,16 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      */
     @Override
     protected void deleteSubmitterConvictedBattles(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SubmitterConvictedEvent> submitterConvictedEvents =
-                ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock, battleManagerForChallengesGetter);
+        List<SubmitterConvictedEvent> events = battleContractApi.getSubmitterConvictedEvents(agentRole, fromBlock, toBlock);
 
-        for (EthWrapper.SubmitterConvictedEvent submitterConvictedEvent : submitterConvictedEvents) {
-            if (sessionToSuperblockMap.containsKey(submitterConvictedEvent.sessionId)) {
+        for (SubmitterConvictedEvent event : events) {
+            if (sessionToSuperblockMap.containsKey(event.sessionId)) {
                 logger.info("Submitter convicted on session {}, superblock {}. Battle won!",
-                        submitterConvictedEvent.sessionId, submitterConvictedEvent.superblockHash);
-                sessionToSuperblockMap.remove(submitterConvictedEvent.sessionId);
+                        event.sessionId, event.superblockHash);
+                sessionToSuperblockMap.remove(event.sessionId);
             }
-            if (superblockToSessionsMap.containsKey(submitterConvictedEvent.superblockHash)) {
-                superblockToSessionsMap.get(submitterConvictedEvent.superblockHash).remove(submitterConvictedEvent.sessionId);
+            if (superblockToSessionsMap.containsKey(event.superblockHash)) {
+                superblockToSessionsMap.get(event.superblockHash).remove(event.sessionId);
             }
         }
     }
