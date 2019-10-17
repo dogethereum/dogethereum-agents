@@ -35,8 +35,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static org.sysethereum.agents.constants.AgentRole.CHALLENGER;
-
 /**
  * Helps the agent communication with the Eth blockchain.
  * @author Oscar Guindzberg
@@ -59,7 +57,6 @@ public class EthWrapper {
     }
 
     // Extensions of contracts generated automatically by web3j
-    private final SyscoinClaimManagerExtended claimManagerForChallenges;
     private final SyscoinBattleManagerExtended battleManager;
     private final SyscoinBattleManagerExtended battleManagerForChallengesGetter;
 
@@ -85,7 +82,6 @@ public class EthWrapper {
             EthAddresses ethAddresses,
             SyscoinBattleManagerExtended battleManager,
             SyscoinBattleManagerExtended battleManagerForChallengesGetter,
-            SyscoinClaimManagerExtended claimManagerForChallenges,
             SuperblockContractApi superblockContractApi,
             BattleContractApi battleContractApi,
             ClaimContractApi claimContractApi,
@@ -100,7 +96,6 @@ public class EthWrapper {
         this.ethAddresses = ethAddresses;
         this.battleManager = battleManager;
         this.battleManagerForChallengesGetter = battleManagerForChallengesGetter;
-        this.claimManagerForChallenges = claimManagerForChallenges;
         this.superblockContractApi = superblockContractApi;
         this.battleContractApi = battleContractApi;
         this.claimContractApi = claimContractApi;
@@ -197,6 +192,7 @@ public class EthWrapper {
             return null;
         }
 
+        //noinspection ConstantConditions
         if (localSuperblockChain.getByHash(superblockId).getHeight() == localSuperblockChain.getChainHeight()) {
             // There's nothing above the tip of the chain.
             logger.info("Superblock {} is above the tip of the chain. Returning from getHighestApprovableOrNewDescendant.", superblockId);
@@ -231,6 +227,7 @@ public class EthWrapper {
             return null;
         }
 
+        //noinspection ConstantConditions
         if (localSuperblockChain.getByHash(superblockId).getHeight() == localSuperblockChain.getChainHeight()) {
             // There's nothing above the tip of the chain.
             logger.info("Superblock {} is the tip of the superblock chain, no descendant exists. Returning from getHighestSemiApprovedOrApprovedDescendant.", superblockId);
@@ -328,15 +325,6 @@ public class EthWrapper {
     }
 
     /**
-     * Returns the initial deposit for challenging a superblock, just a best guess based on
-     * 60 requests max for block headers and the final verify superblock cost
-     * @return Initial deposit for covering single battle during a challenge.
-     */
-    private BigInteger getChallengeDeposit() {
-        return minProposalDeposit;
-    }
-
-    /**
      * Listens to RespondBlockHeaders events from SyscoinBattleManager contract within a given block window
      * and parses web3j-generated instances into easier to manage RespondBlockHeaders objects.
      * @param startBlock First Ethereum block to poll.
@@ -389,6 +377,7 @@ public class EthWrapper {
         if(startIndex > 48)
             throw new Exception("Skipping respondBlockHeader, startIndex cannot be >48.");
         Superblock superblock = localSuperblockChain.getByHash(superblockId);
+        assert superblock != null;
         List<Sha256Hash> listHashes = superblock.getSyscoinBlockHashes();
         if(!superblockDuration.equals(BigInteger.valueOf(listHashes.size())))
             throw new Exception("Skipping respondBlockHeader, superblock hash array list is incorrect length.");
@@ -424,37 +413,6 @@ public class EthWrapper {
         CompletableFuture<TransactionReceipt> futureReceipt = myBattleManager.timeout(new Bytes32(sessionId.getBytes())).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 logger.info("Called timeout for session {}", sessionId));
-    }
-
-
-    /* ---- CHALLENGER ---- */
-
-    /**
-     * Challenges a superblock.
-     * @param superblockId Hash of superblock to be challenged.
-     * @param account Caller's address.
-     * @throws Exception
-     */
-    @SuppressWarnings("UnusedReturnValue")
-    public boolean challengeSuperblock(Keccak256Hash superblockId, String account) throws Exception {
-        if(!claimContractApi.getClaimExists(superblockId) || claimContractApi.getClaimDecided(superblockId)) {
-            logger.info("Superblock has already been decided upon or claim doesn't exist, skipping...{}", superblockId.toString());
-            return false;
-        }
-
-        if(claimContractApi.getClaimSubmitter(superblockId).equals(ethAddresses.challengerAddress)){
-            logger.info("You cannot challenge a superblock you have submitted yourself, skipping...{}", superblockId.toString());
-            return false;
-        }
-
-        // Make necessary deposit to cover reward
-        claimContractApi.makeDepositIfNeeded(CHALLENGER, account, getChallengeDeposit());
-
-        CompletableFuture<TransactionReceipt> futureReceipt =
-                claimManagerForChallenges.challengeSuperblock(new Bytes32(superblockId.getBytes())).sendAsync();
-        futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                logger.info("challengeSuperblock receipt {}", receipt.toString()));
-        return true;
     }
 
     /**
