@@ -159,13 +159,13 @@ public class EthWrapper {
      * @throws IOException
      */
     public void updateContractFacadesGasPrice() throws IOException {
-        BigInteger gasPriceSuggestedByEthNode = web3Secondary.ethGasPrice().send().getGasPrice();
-        if (gasPriceSuggestedByEthNode.compareTo(gasPriceMinimum) > 0) {
-            if (gasPriceSuggestedByEthNode.compareTo(gasPriceMaximum) > 0) {
-                gasPriceSuggestedByEthNode = gasPriceMaximum;
+        BigInteger suggestedGasPrice = web3Secondary.ethGasPrice().send().getGasPrice();
+        if (suggestedGasPrice.compareTo(gasPriceMinimum) > 0) {
+            if (suggestedGasPrice.compareTo(gasPriceMaximum) > 0) {
+                suggestedGasPrice = gasPriceMaximum;
             }
-            if(!gasPriceMinimum.equals(gasPriceSuggestedByEthNode)) {
-                gasPriceMinimum = gasPriceSuggestedByEthNode;
+            if(!gasPriceMinimum.equals(suggestedGasPrice)) {
+                gasPriceMinimum = suggestedGasPrice;
                 logger.info("setting new min gas price to " + gasPriceMinimum);
 
                 claimContractApi.updateGasPrice(gasPriceMinimum);
@@ -387,7 +387,7 @@ public class EthWrapper {
         int startIndex = merkleHashCount*16;
         int endIndex = startIndex + numHashesRequired;
         if(startIndex > 48)
-            throw new Exception("Skipping respondBlockHeader, startIndex cannot be > 48.");
+            throw new Exception("Skipping respondBlockHeader, startIndex cannot be >48.");
         Superblock superblock = localSuperblockChain.getByHash(superblockId);
         List<Sha256Hash> listHashes = superblock.getSyscoinBlockHashes();
         if(!superblockDuration.equals(BigInteger.valueOf(listHashes.size())))
