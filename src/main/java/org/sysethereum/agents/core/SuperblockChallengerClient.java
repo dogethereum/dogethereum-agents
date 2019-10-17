@@ -76,7 +76,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
         this.randomizationCounter = new RandomizationCounter();
         this.battleManagerForChallenges = battleManagerForChallenges;
-        this.myAddress = ethAddresses.syscoinSuperblockChallengerAddress;
+        this.myAddress = ethAddresses.challengerAddress;
 
         this.semiApprovedSet = new HashSet<>();
         this.semiApprovedSetFile = Paths.get(config.dataDirectory(), "SemiApprovedSet.dat").toAbsolutePath().toFile();

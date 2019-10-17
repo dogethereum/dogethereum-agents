@@ -64,7 +64,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         this.localSuperblockChain = superblockChain;
         this.randomizationCounter = randomizationCounter;
         this.superblockTimeout = superblockTimeout;
-        this.myAddress = ethAddresses.generalPurposeAndSendSuperblocksAddress;
+        this.myAddress = ethAddresses.generalPurposeAddress;
     }
 
     @Override

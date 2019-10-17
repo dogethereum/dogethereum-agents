@@ -131,7 +131,7 @@ public class SyscoinToEthClient {
             return;
         }
 
-        ethWrapper.sendStoreSuperblock(toConfirm, ethAddresses.generalPurposeAndSendSuperblocksAddress);
+        ethWrapper.sendStoreSuperblock(toConfirm, ethAddresses.generalPurposeAddress);
     }
 
     /**

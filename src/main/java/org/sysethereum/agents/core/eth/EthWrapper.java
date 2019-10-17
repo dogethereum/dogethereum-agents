@@ -128,11 +128,11 @@ public class EthWrapper {
     }
 
     public boolean arePendingTransactionsForSendSuperblocksAddress() throws InterruptedException,IOException {
-        return arePendingTransactionsFor(ethAddresses.generalPurposeAndSendSuperblocksAddress);
+        return arePendingTransactionsFor(ethAddresses.generalPurposeAddress);
     }
 
     public boolean arePendingTransactionsForChallengerAddress() throws InterruptedException, IOException {
-        return arePendingTransactionsFor(ethAddresses.syscoinSuperblockChallengerAddress);
+        return arePendingTransactionsFor(ethAddresses.challengerAddress);
     }
 
     /**
@@ -442,7 +442,7 @@ public class EthWrapper {
             return false;
         }
 
-        if(claimContractApi.getClaimSubmitter(superblockId).equals(ethAddresses.syscoinSuperblockChallengerAddress)){
+        if(claimContractApi.getClaimSubmitter(superblockId).equals(ethAddresses.challengerAddress)){
             logger.info("You cannot challenge a superblock you have submitted yourself, skipping...{}", superblockId.toString());
             return false;
         }
