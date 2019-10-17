@@ -76,7 +76,6 @@ public class GenesisSuperblockGeneratorMain {
         return new SuperblockData(
                 MerkleRootComputer.computeMerkleRoot(params, syscoinBlockHashes),
                 syscoinBlockHashes,
-                lastSyscoinBlock.getChainWork(),
                 lastSyscoinBlock.getHeader().getTimeSeconds(),
                 syscoinWrapper.getMedianTimestamp(lastSyscoinBlock),
                 0,

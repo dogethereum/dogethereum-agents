@@ -5,7 +5,6 @@ import org.bitcoinj.core.Sha256Hash;
 import org.springframework.stereotype.Service;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 
-import java.math.BigInteger;
 import java.util.List;
 
 @Service
@@ -26,7 +25,6 @@ public class SuperblockFactory {
     public Superblock make(
             Sha256Hash merkleRoot,
             List<Sha256Hash> syscoinBlockHashes,
-            BigInteger chainWork,
             long lastSyscoinBlockTime,
             long lastSyscoinBlockTimeMTP,
             long lastSyscoinBlockBits,
@@ -38,7 +36,6 @@ public class SuperblockFactory {
         SuperblockData data = new SuperblockData(
                 merkleRoot,
                 syscoinBlockHashes,
-                chainWork,
                 lastSyscoinBlockTime,
                 lastSyscoinBlockTimeMTP,
                 lastSyscoinBlockBits,

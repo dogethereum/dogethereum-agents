@@ -32,7 +32,6 @@ public class EthGanacheSyscoinMainAgentConstantsFactory {
         var genesisSuperblock = new SuperblockData(
                 MerkleRootComputer.computeMerkleRoot(syscoinParams, sysHashes),
                 sysHashes,
-                new BigInteger("0x0000000000000000000000000000000000000000000b5aea51981d092e7d9739"),
                 1562016306,
                 1562016306,
                 0,

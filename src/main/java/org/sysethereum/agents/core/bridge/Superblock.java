@@ -52,14 +52,6 @@ public class Superblock {
     }
 
     /**
-     * Accesses chain work attribute.
-     * @return Superblock Merkle root.
-     */
-    public BigInteger getChainWork() {
-        return data.chainWork;
-    }
-
-    /**
      * Accesses last Syscoin block time attribute.
      * @return Superblock last Syscoin block time.
      */

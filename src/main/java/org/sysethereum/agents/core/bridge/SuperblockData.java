@@ -3,7 +3,6 @@ package org.sysethereum.agents.core.bridge;
 import org.bitcoinj.core.Sha256Hash;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,9 +10,6 @@ public class SuperblockData {
 
     // Root of a Merkle tree comprised of Syscoin block hashes. 32 bytes.
     public final Sha256Hash merkleRoot;
-
-    // Total chain work put into this superblock -- same as total chain work put into last block. 32 bytes.
-    public final BigInteger chainWork;
 
     // Timestamp of last mined Syscoin block in the superblock. 32 bytes to comply with Solidity version.
     public final long lastSyscoinBlockTime;
@@ -39,17 +35,15 @@ public class SuperblockData {
      * @param merkleRoot MerkleRoot computed from syscoinBlockHashes parameter
      * @param syscoinBlockHashes List of hashes belonging to all Syscoin blocks
      *                        mined within the one hour lapse corresponding to this superblock.
-     * @param chainWork Last Syscoin block's accumulated ChainWork.
      * @param lastSyscoinBlockTime Last Syscoin block's timestamp.
      * @param lastSyscoinBlockTimeMTP Last Syscoin block's median timestamp.
-     * @param lastSyscoinBlockBits Difficulty bits of the last block in the superblock bits used to verify accumulatedWork through difficulty calculation
+     * @param lastSyscoinBlockBits Difficulty bits of the last block in the superblock bits.
      * @param parentId Previous superblock's SHA-256 hash.
      * @param superblockHeight Height of this superblock within superblock chain.
      */
     public SuperblockData(
             Sha256Hash merkleRoot,
             List<Sha256Hash> syscoinBlockHashes,
-            BigInteger chainWork,
             long lastSyscoinBlockTime,
             long lastSyscoinBlockTimeMTP,
             long lastSyscoinBlockBits,
@@ -58,7 +52,6 @@ public class SuperblockData {
             long superblockHeight
     ) {
         this.merkleRoot = merkleRoot;
-        this.chainWork = chainWork;
         this.lastSyscoinBlockTime = lastSyscoinBlockTime;
         this.lastSyscoinBlockTimeMTP = lastSyscoinBlockTimeMTP;
         this.lastSyscoinBlockBits = lastSyscoinBlockBits;
@@ -73,17 +66,15 @@ public class SuperblockData {
      * @param merkleRoot MerkleRoot computed from syscoinBlockHashes parameter
      * @param syscoinBlockHashes List of hashes belonging to all Syscoin blocks
      *                        mined within the one hour lapse corresponding to this superblock.
-     * @param chainWork Last Syscoin block's accumulated ChainWork.
      * @param lastSyscoinBlockTime Last Syscoin block's timestamp.
      * @param lastSyscoinBlockTimeMTP Last Syscoin block's median timestamp.
-     * @param lastSyscoinBlockBits Difficulty bits of the last block in the superblock bits used to verify accumulatedWork through difficulty calculation
+     * @param lastSyscoinBlockBits Difficulty bits of the last block in the superblock bits.
      * @param parentId Previous superblock's SHA-256 hash.
      * @param superblockHeight Height of this superblock within superblock chain.
      */
     public SuperblockData(
             Sha256Hash merkleRoot,
             List<Sha256Hash> syscoinBlockHashes,
-            BigInteger chainWork,
             long lastSyscoinBlockTime,
             long lastSyscoinBlockTimeMTP,
             long lastSyscoinBlockBits,
@@ -92,7 +83,6 @@ public class SuperblockData {
     ) {
         this(merkleRoot,
                 syscoinBlockHashes,
-                chainWork,
                 lastSyscoinBlockTime,
                 lastSyscoinBlockTimeMTP,
                 lastSyscoinBlockBits,
@@ -119,7 +109,6 @@ public class SuperblockData {
     public String toString() {
         return "SuperblockData{" +
                 "merkleRoot=" + merkleRoot +
-                ", chainWork=" + chainWork +
                 ", lastSyscoinBlockTime=" + lastSyscoinBlockTime +
                 ", lastSyscoinBlockTimeMTP=" + lastSyscoinBlockTimeMTP +
                 ", lastSyscoinBlockHash=" + lastSyscoinBlockHash +

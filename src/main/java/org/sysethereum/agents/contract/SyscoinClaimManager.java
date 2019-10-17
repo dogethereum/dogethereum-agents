@@ -700,10 +700,10 @@ public class SyscoinClaimManager extends Contract {
         return executeRemoteCallSingleValueReturn(function);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> proposeSuperblock(Bytes32 _blocksMerkleRoot, Uint256 _accumulatedWork, Uint256 _timestamp, Uint256 _mtpTimestamp, Bytes32 _lastHash, Uint32 _lastBits, Bytes32 _parentHash) {
+    public RemoteFunctionCall<TransactionReceipt> proposeSuperblock(Bytes32 _blocksMerkleRoot, Uint256 _timestamp, Uint256 _mtpTimestamp, Bytes32 _lastHash, Uint32 _lastBits, Bytes32 _parentHash) {
         final Function function = new Function(
                 FUNC_PROPOSESUPERBLOCK,
-                Arrays.<Type>asList(_blocksMerkleRoot, _accumulatedWork, _timestamp, _mtpTimestamp, _lastHash, _lastBits, _parentHash),
+                Arrays.<Type>asList(_blocksMerkleRoot, _timestamp, _mtpTimestamp, _lastHash, _lastBits, _parentHash),
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
