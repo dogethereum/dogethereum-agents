@@ -10,13 +10,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.Context;
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.StoredBlock;
+import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.sysethereum.agents.util.AgentUtils;
 
+import javax.annotation.Nullable;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Stack;
@@ -29,17 +30,14 @@ public class SyscoinWrapper {
 
     private static final Logger logger = LoggerFactory.getLogger("SyscoinWrapper");
 
-    private final AgentUtils agentUtils;
     private final Context syscoinContext;
     private final SyscoinWalletAppKit kit;
 
     @Autowired
     public SyscoinWrapper(
-            AgentUtils agentUtils,
             Context syscoinContext,
             SyscoinWalletAppKit syscoinWalletAppKit
     ) {
-        this.agentUtils = agentUtils;
         this.syscoinContext = syscoinContext;
         this.kit = syscoinWalletAppKit;
     }
@@ -113,8 +111,30 @@ public class SyscoinWrapper {
         return kit.store().get(hash);
     }
 
+    @Nullable
     public StoredBlock getStoredBlockAtHeight(int height) throws BlockStoreException {
-        return agentUtils.getStoredBlockAtHeight(kit.store(), height);
+        BlockStore blockStore = kit.store();
+        StoredBlock storedBlock = blockStore.getChainHead();
+        int headHeight = storedBlock.getHeight();
+        if (height > headHeight) {
+            return null;
+        }
+        for (int i = 0; i < (headHeight - height); i++) {
+            if (storedBlock == null) {
+                return null;
+            }
+
+            Sha256Hash prevBlockHash = storedBlock.getHeader().getPrevBlockHash();
+            storedBlock = blockStore.get(prevBlockHash);
+        }
+        if (storedBlock != null) {
+            if (storedBlock.getHeight() != height) {
+                throw new IllegalStateException("Block height is " + storedBlock.getHeight() + " but should be " + headHeight);
+            }
+            return storedBlock;
+        } else {
+            return null;
+        }
     }
 
     public Stack<Sha256Hash> getNewerHashesThan(Sha256Hash blockHash) throws BlockStoreException {

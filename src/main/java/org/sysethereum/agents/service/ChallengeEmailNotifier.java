@@ -16,7 +16,6 @@ import static java.util.stream.Collectors.joining;
 @Service
 public class ChallengeEmailNotifier {
 
-    @SuppressWarnings("unused")
     private static final Logger logger = LoggerFactory.getLogger("ChallengeEmailNotifier");
 
     private final SystemProperties config;
