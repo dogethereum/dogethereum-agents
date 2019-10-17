@@ -268,7 +268,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
         }
         if (removeFromContract && config.isWithdrawFundsEnabled()) {
-            claimContractApi.withdrawAllFundsExceptLimit(myAddress, true);
+            claimContractApi.withdrawAllFundsExceptLimit(AgentRole.CHALLENGER, myAddress);
         }
     }
 

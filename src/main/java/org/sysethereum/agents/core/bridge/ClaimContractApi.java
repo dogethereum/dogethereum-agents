@@ -19,6 +19,7 @@ import java.math.BigInteger;
 import java.util.Date;
 import java.util.concurrent.CompletableFuture;
 
+import static org.sysethereum.agents.constants.AgentRole.CHALLENGER;
 import static org.sysethereum.agents.constants.AgentRole.SUBMITTER;
 
 @Service
@@ -147,14 +148,14 @@ public class ClaimContractApi {
      * Withdraw deposits so that only the maximum amount of funds (as determined by user configuration)
      * is left in the contract.
      * To be called after battles or when a superblock is approved/invalidated.
+     * @param agentRole Agent role
      * @param account Caller's address.
-     * @param isChallenger true if challenging, false if proposing/defending.
      * @throws Exception
      */
-    public void withdrawAllFundsExceptLimit(String account, boolean isChallenger) throws Exception {
+    public void withdrawAllFundsExceptLimit(AgentRole agentRole, String account) throws Exception {
         SyscoinClaimManager myClaimManager;
         SyscoinClaimManagerExtended myClaimManagerGetter;
-        if (isChallenger) {
+        if (agentRole == CHALLENGER) {
             myClaimManager = claimManagerForChallenges;
             myClaimManagerGetter = claimManagerForChallengesGetter;
         } else {

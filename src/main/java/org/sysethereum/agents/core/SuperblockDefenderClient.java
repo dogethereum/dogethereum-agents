@@ -209,11 +209,9 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
         }
         if (removeFromContract && config.isWithdrawFundsEnabled()) {
-            claimContractApi.withdrawAllFundsExceptLimit(myAddress, false);
+            claimContractApi.withdrawAllFundsExceptLimit(AgentRole.SUBMITTER, myAddress);
         }
     }
-
-    /* ---- BATTLE MAP METHODS ---- */
 
     /**
      * Removes semi-approved superblocks from superblock to session map.
