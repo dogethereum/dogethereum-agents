@@ -81,7 +81,7 @@ public class SuperblockChainClient {
 
         // Get all the Syscoin blocks that haven't yet been hashed into a superblock
         Stack<Sha256Hash> allSyscoinHashesToHash = syscoinWrapper.getNewerHashesThan(bestSuperblockLastBlockHash);
-        localSuperblockChain.storeSuperblocks(allSyscoinHashesToHash, bestSuperblock.getSuperblockId()); // group them in superblocks
+        localSuperblockChain.storeSuperblocks(allSyscoinHashesToHash, bestSuperblock.getHash()); // group them in superblocks
     }
 
 

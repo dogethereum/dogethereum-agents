@@ -2,11 +2,11 @@ package org.sysethereum.agents.constants;
 
 public class EthAddresses {
 
-    public final String generalPurposeAndSendSuperblocksAddress;
-    public final String syscoinSuperblockChallengerAddress;
+    public final String generalPurposeAddress;
+    public final String challengerAddress;
 
-    public EthAddresses(String generalPurposeAndSendSuperblocksAddress, String syscoinSuperblockChallengerAddress) {
-        this.generalPurposeAndSendSuperblocksAddress = generalPurposeAndSendSuperblocksAddress;
-        this.syscoinSuperblockChallengerAddress = syscoinSuperblockChallengerAddress;
+    public EthAddresses(String generalPurposeAddress, String challengerAddress) {
+        this.generalPurposeAddress = generalPurposeAddress;
+        this.challengerAddress = challengerAddress;
     }
 }

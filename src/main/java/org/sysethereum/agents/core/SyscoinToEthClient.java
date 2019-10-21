@@ -101,14 +101,12 @@ public class SyscoinToEthClient {
 
     /**
      * Updates bridge with all the superblocks that the agent has but the bridge doesn't.
-     * @return Number of superblocks sent to the bridge.
      * @throws Exception
      */
-    @SuppressWarnings("UnusedReturnValue")
-    public long updateBridgeSuperblockChain() throws Exception {
+    public void updateBridgeSuperblockChain() throws Exception {
         if (ethWrapper.arePendingTransactionsForSendSuperblocksAddress()) {
             logger.debug("Skipping sending superblocks, there are pending transaction for the sender address.");
-            return 0;
+            return;
         }
         Keccak256Hash bestSuperblockId = superblockContractApi.getBestSuperblockId();
         checkNotNull(bestSuperblockId, "No best chain superblock found");
@@ -120,24 +118,20 @@ public class SyscoinToEthClient {
             highestDescendantId = bestSuperblockId;
         }
         else
-            highestDescendantId = highestDescendant.getSuperblockId();
+            highestDescendantId = highestDescendant.getHash();
 
         Superblock toConfirm = localSuperblockChain.getFirstDescendant(highestDescendantId);
         if (toConfirm == null) {
             logger.info("No new superblock to submit found in local database. Last processed superblockId {}. Stopping.", highestDescendantId);
-            return 0;
+            return;
         }
 
         if (!localSuperblockChain.sendingTimePassed(toConfirm)) {
-            logger.debug("Too early to send superblock {}, will try again in a few seconds.", toConfirm.getSuperblockId());
-            return 0;
+            logger.debug("Too early to send superblock {}, will try again in a few seconds.", toConfirm.getHash());
+            return;
         }
 
-        if(!ethWrapper.sendStoreSuperblock(toConfirm, ethAddresses.generalPurposeAndSendSuperblocksAddress)){
-            return 0;
-        }
-
-        return toConfirm.getSuperblockHeight();
+        ethWrapper.sendStoreSuperblock(toConfirm, ethAddresses.generalPurposeAddress);
     }
 
     /**
@@ -162,9 +156,9 @@ public class SyscoinToEthClient {
                         "Block hash: " + txStoredBlock.getHeader().getHash());
             }
 
-            if (!superblockContractApi.isApproved(txSuperblock.getSuperblockId())) {
+            if (!superblockContractApi.isApproved(txSuperblock.getHash())) {
                 return new RestError("Superblock has not been approved yet. " +
-                        "Block hash: " + txStoredBlock.getHeader().getHash() + ", superblock ID: " + txSuperblock.getSuperblockId());
+                        "Block hash: " + txStoredBlock.getHeader().getHash() + ", superblock ID: " + txSuperblock.getHash());
             }
 
             int syscoinBlockIndex = txSuperblock.getSyscoinBlockLeafIndex(txStoredBlock.getHeader().getHash());
@@ -191,7 +185,7 @@ public class SyscoinToEthClient {
         List<String> siblings = pmt.getTransactionPath(syscoinBlock.getHash())
                 .stream().map(Sha256Hash::toString).collect(toList());
 
-        return new SPVProof(syscoinBlockIndex, siblings, superblock.getSuperblockId().toString());
+        return new SPVProof(syscoinBlockIndex, siblings, superblock.getHash().toString());
     }
 
     private static class SuperBlockResponse {
@@ -212,8 +206,8 @@ public class SyscoinToEthClient {
             this.lastSyscoinBlockHash = sbIn.getLastSyscoinBlockHash().toString();
             this.lastSyscoinBlockBits = sbIn.getlastSyscoinBlockBits();
             this.parentId = sbIn.getParentId().toString();
-            this.superblockId = sbIn.getSuperblockId().toString();
-            this.superblockHeight = sbIn.getSuperblockHeight();
+            this.superblockId = sbIn.getHash().toString();
+            this.superblockHeight = sbIn.getHeight();
             this.approved = approvedIn;
         }
     }
@@ -223,7 +217,7 @@ public class SyscoinToEthClient {
             Superblock sb;
 
             if (superblockId != null) {
-                sb = localSuperblockChain.getSuperblock(superblockId);
+                sb = localSuperblockChain.getByHash(superblockId);
             } else {
                 sb = localSuperblockChain.getByHeight(height);
             }
@@ -256,7 +250,7 @@ public class SyscoinToEthClient {
         if (sb == null) {
             return new RestError("Superblock has not been stored in local database yet.");
         }
-        return new SuperBlockResponse(sb, superblockContractApi.isApproved(sb.getSuperblockId()));
+        return new SuperBlockResponse(sb, superblockContractApi.isApproved(sb.getHash()));
     }
 
 }

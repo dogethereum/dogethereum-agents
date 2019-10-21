@@ -5,11 +5,13 @@ import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.AgentRole;
 import org.sysethereum.agents.constants.EthAddresses;
 import org.sysethereum.agents.constants.SystemProperties;
-import org.sysethereum.agents.contract.SyscoinBattleManagerExtended;
 import org.sysethereum.agents.core.bridge.BattleContractApi;
 import org.sysethereum.agents.core.bridge.ClaimContractApi;
 import org.sysethereum.agents.core.bridge.Superblock;
 import org.sysethereum.agents.core.bridge.SuperblockContractApi;
+import org.sysethereum.agents.core.bridge.battle.ChallengerConvictedEvent;
+import org.sysethereum.agents.core.bridge.battle.NewBattleEvent;
+import org.sysethereum.agents.core.bridge.battle.SubmitterConvictedEvent;
 import org.sysethereum.agents.core.syscoin.*;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.slf4j.Logger;
@@ -39,7 +41,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     private final SuperblockChain localSuperblockChain;
     private final RandomizationCounter randomizationCounter;
     private final BigInteger superblockTimeout;
-    private final SyscoinBattleManagerExtended battleManagerGetter;
 
     public SuperblockDefenderClient(
             SystemProperties config,
@@ -53,7 +54,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             RandomizationCounter randomizationCounter,
             BigInteger superblockTimeout,
             EthAddresses ethAddresses,
-            SyscoinBattleManagerExtended battleManagerGetter,
             ChallengeEmailNotifier challengeEmailNotifier
     ) {
         super(AgentRole.SUBMITTER, config, agentConstants, ethWrapper, superblockContractApi, battleContractApi, claimContractApi, challengeEmailNotifier);
@@ -64,8 +64,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         this.localSuperblockChain = superblockChain;
         this.randomizationCounter = randomizationCounter;
         this.superblockTimeout = superblockTimeout;
-        this.battleManagerGetter = battleManagerGetter;
-        this.myAddress = ethAddresses.generalPurposeAndSendSuperblocksAddress;
+        this.myAddress = ethAddresses.generalPurposeAddress;
     }
 
     @Override
@@ -127,7 +126,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         Keccak256Hash bestSuperblockId = superblockContractApi.getBestSuperblockId();
         Superblock chainHead = localSuperblockChain.getChainHead();
 
-        if (chainHead.getSuperblockId().equals(bestSuperblockId)) {
+        if (chainHead.getHash().equals(bestSuperblockId)) {
             // Contract and local db best superblocks are the same, do nothing.
             return;
         }
@@ -138,13 +137,13 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             logger.info("Best superblock from contracts, {}, not found in local database. Stopping.", bestSuperblockId);
             return;
         }
-        Keccak256Hash toConfirmId = toConfirm.getSuperblockId();
+        Keccak256Hash toConfirmId = toConfirm.getHash();
         Superblock highestDescendant = ethWrapper.getHighestApprovableOrNewDescendant(toConfirm, bestSuperblockId);
         if (highestDescendant == null) {
             logger.info("Highest descendent from contracts, {}, not found in local database. Stopping.", bestSuperblockId);
             return;
         }
-        Keccak256Hash highestDescendantId = highestDescendant.getSuperblockId();
+        Keccak256Hash highestDescendantId = highestDescendant.getHash();
 
 
         // deal with your own superblock claims or if it has become unresponsive we allow someone else to check the claim or confirm it
@@ -171,10 +170,10 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     /* - Reacting to events - */
 
     private void respondToNewBattles(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.NewBattleEvent> queryBattleEvents = battleContractApi.getNewBattleEvents(fromBlock, toBlock);
+        List<NewBattleEvent> queryBattleEvents = battleContractApi.getNewBattleEvents(fromBlock, toBlock);
 
-        for (EthWrapper.NewBattleEvent queryBattleEvent : queryBattleEvents) {
-            if (isMine(queryBattleEvent) && (battleContractApi.getSessionChallengeState(queryBattleEvent.sessionId) == EthWrapper.ChallengeState.Challenged)) {
+        for (NewBattleEvent queryBattleEvent : queryBattleEvents) {
+            if (isMyBattleEvent(queryBattleEvent) && (battleContractApi.getSessionChallengeState(queryBattleEvent.sessionId) == EthWrapper.ChallengeState.Challenged)) {
                 logger.info("Battle detected for superblock {} session {}. Responding now with first set of headers.", queryBattleEvent.superblockHash, queryBattleEvent.sessionId);
                 ethWrapper.respondBlockHeaders(queryBattleEvent.sessionId, queryBattleEvent.superblockHash, 0);
             }
@@ -185,18 +184,6 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         double delay = superblockTimeout.floatValue() * randomizationCounter.getValue();
         int timeout = superblockTimeout.intValue() + (int)delay;
         return claimContractApi.getNewEventTimestampDate(superblockId).before(SuperblockUtils.getNSecondsAgo(timeout));
-    }
-
-    /* ---- OVERRIDE ABSTRACT METHODS ---- */
-
-    @Override
-    protected boolean arePendingTransactions() throws InterruptedException, IOException {
-        return ethWrapper.arePendingTransactionsForSendSuperblocksAddress();
-    }
-
-    @Override
-    protected boolean isMine(EthWrapper.NewBattleEvent newBattleEvent) {
-        return newBattleEvent.submitter.equals(myAddress);
     }
 
     private boolean isMine(EthWrapper.RespondHeadersEvent respondHeadersEvent) {
@@ -213,20 +200,18 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     protected void removeSuperblocks(long fromBlock, long toBlock, List<SuperblockContractApi.SuperblockEvent> superblockEvents)
             throws Exception {
         boolean removeFromContract = false;
-        for (SuperblockContractApi.SuperblockEvent superblockEvent : superblockEvents) {
-            if (superblockToSessionsMap.containsKey(superblockEvent.superblockId)) {
-                sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(superblockEvent.superblockId));
-                superblockToSessionsMap.remove(superblockEvent.superblockId);
+        for (SuperblockContractApi.SuperblockEvent event : superblockEvents) {
+            if (superblockToSessionsMap.containsKey(event.superblockId)) {
+                sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(event.superblockId));
+                superblockToSessionsMap.remove(event.superblockId);
                 removeFromContract = true;
             }
 
         }
         if (removeFromContract && config.isWithdrawFundsEnabled()) {
-            claimContractApi.withdrawAllFundsExceptLimit(myAddress, false);
+            claimContractApi.withdrawAllFundsExceptLimit(AgentRole.SUBMITTER, myAddress);
         }
     }
-
-    /* ---- BATTLE MAP METHODS ---- */
 
     /**
      * Removes semi-approved superblocks from superblock to session map.
@@ -238,15 +223,13 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         List<SuperblockContractApi.SuperblockEvent> semiApprovedSuperblockEvents =
                 superblockContractApi.getSemiApprovedSuperblocks(fromBlock, toBlock);
 
-        for (SuperblockContractApi.SuperblockEvent semiApprovedSuperblockEvent : semiApprovedSuperblockEvents) {
-            if (superblockToSessionsMap.containsKey(semiApprovedSuperblockEvent.superblockId)) {
-                sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(semiApprovedSuperblockEvent.superblockId));
-                superblockToSessionsMap.remove(semiApprovedSuperblockEvent.superblockId);
+        for (SuperblockContractApi.SuperblockEvent event : semiApprovedSuperblockEvents) {
+            if (superblockToSessionsMap.containsKey(event.superblockId)) {
+                sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(event.superblockId));
+                superblockToSessionsMap.remove(event.superblockId);
             }
         }
     }
-
-
 
     // TODO: see if this should have some fault tolerance for battles that were erroneously not added to set
     // TODO: look into refactoring this and moving it to the base class
@@ -259,16 +242,15 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      */
     @Override
     protected void deleteSubmitterConvictedBattles(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SubmitterConvictedEvent> submitterConvictedEvents =
-                ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock, battleManagerGetter);
+        List<SubmitterConvictedEvent> events = battleContractApi.getSubmitterConvictedEvents(agentRole, fromBlock, toBlock);
 
-        for (EthWrapper.SubmitterConvictedEvent submitterConvictedEvent : submitterConvictedEvents) {
-            if (submitterConvictedEvent.submitter.equals(myAddress)) {
+        for (SubmitterConvictedEvent event : events) {
+            if (event.submitter.equals(myAddress)) {
                 logger.info("Submitter convicted on session {}, superblock {}. Battle lost!",
-                        submitterConvictedEvent.sessionId, submitterConvictedEvent.superblockHash);
-                sessionToSuperblockMap.remove(submitterConvictedEvent.sessionId);
-                if (superblockToSessionsMap.containsKey(submitterConvictedEvent.superblockHash)) {
-                    superblockToSessionsMap.get(submitterConvictedEvent.superblockHash).remove(submitterConvictedEvent.sessionId);
+                        event.sessionId, event.superblockHash);
+                sessionToSuperblockMap.remove(event.sessionId);
+                if (superblockToSessionsMap.containsKey(event.superblockHash)) {
+                    superblockToSessionsMap.get(event.superblockHash).remove(event.sessionId);
                 }
             }
         }
@@ -283,17 +265,15 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      */
     @Override
     protected void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.ChallengerConvictedEvent> challengerConvictedEvents =
-                ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock, battleManagerGetter);
+        List<ChallengerConvictedEvent> events = battleContractApi.getChallengerConvictedEvents(agentRole, fromBlock, toBlock);
 
-        for (EthWrapper.ChallengerConvictedEvent challengerConvictedEvent : challengerConvictedEvents) {
-            if (sessionToSuperblockMap.containsKey(challengerConvictedEvent.sessionId)) {
-                logger.info("Challenger convicted on session {}, superblock {}. Battle won!",
-                        challengerConvictedEvent.sessionId, challengerConvictedEvent.superblockHash);
-                sessionToSuperblockMap.remove(challengerConvictedEvent.sessionId);
+        for (ChallengerConvictedEvent event : events) {
+            if (sessionToSuperblockMap.containsKey(event.sessionId)) {
+                logger.info("Challenger convicted on session {}, superblock {}. Battle won!", event.sessionId, event.superblockHash);
+                sessionToSuperblockMap.remove(event.sessionId);
             }
-            if (superblockToSessionsMap.containsKey(challengerConvictedEvent.superblockHash)) {
-                superblockToSessionsMap.get(challengerConvictedEvent.superblockHash).remove(challengerConvictedEvent.sessionId);
+            if (superblockToSessionsMap.containsKey(event.superblockHash)) {
+                superblockToSessionsMap.get(event.superblockHash).remove(event.sessionId);
             }
         }
     }

@@ -7,6 +7,7 @@ import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.core.bridge.BattleContractApi;
 import org.sysethereum.agents.core.bridge.ClaimContractApi;
 import org.sysethereum.agents.core.bridge.SuperblockContractApi;
+import org.sysethereum.agents.core.bridge.battle.NewBattleEvent;
 import org.sysethereum.agents.core.syscoin.*;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.slf4j.Logger;
@@ -159,9 +160,9 @@ public abstract class SuperblockBaseClient {
         var challenged = new ArrayList<Keccak256Hash>();
         boolean isAtLeastOneMine = false;
 
-        List<EthWrapper.NewBattleEvent> events = battleContractApi.getNewBattleEvents(fromBlock, toBlock);
-        for (EthWrapper.NewBattleEvent event : events) {
-            if (isMine(event)) {
+        List<NewBattleEvent> events = battleContractApi.getNewBattleEvents(fromBlock, toBlock);
+        for (NewBattleEvent event : events) {
+            if (isMyBattleEvent(event)) {
                 isAtLeastOneMine = true;
                 sessionToSuperblockMap.put(event.sessionId, event.superblockHash);
                 addToSuperblockToSessionsMap(event.sessionId, event.superblockHash);
@@ -183,16 +184,21 @@ public abstract class SuperblockBaseClient {
         }
     }
 
+    protected boolean isMyBattleEvent(NewBattleEvent newBattleEvent) {
+        return newBattleEvent.getAddressByRole(agentRole).equals(myAddress);
+    }
+
+    protected final boolean arePendingTransactions() throws InterruptedException, IOException {
+        return agentRole == AgentRole.SUBMITTER
+                ? ethWrapper.arePendingTransactionsForSendSuperblocksAddress()
+                : ethWrapper.arePendingTransactionsForChallengerAddress();
+    }
 
     /* ---- ABSTRACT METHODS ---- */
-
-    protected abstract boolean arePendingTransactions() throws InterruptedException, IOException;
 
     protected abstract long reactToEvents(long fromBlock, long toBlock);
 
     protected abstract void reactToElapsedTime();
-
-    protected abstract boolean isMine(EthWrapper.NewBattleEvent newBattleEvent);
 
     protected abstract void deleteSubmitterConvictedBattles(long fromBlock, long toBlock) throws Exception;
 

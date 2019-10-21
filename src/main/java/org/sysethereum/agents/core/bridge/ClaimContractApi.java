@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.sysethereum.agents.constants.AgentRole;
+import org.sysethereum.agents.constants.EthAddresses;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.contract.SyscoinClaimManager;
 import org.sysethereum.agents.contract.SyscoinClaimManagerExtended;
@@ -19,6 +20,7 @@ import java.math.BigInteger;
 import java.util.Date;
 import java.util.concurrent.CompletableFuture;
 
+import static org.sysethereum.agents.constants.AgentRole.CHALLENGER;
 import static org.sysethereum.agents.constants.AgentRole.SUBMITTER;
 
 @Service
@@ -27,6 +29,8 @@ public class ClaimContractApi {
     private static final Logger logger = LoggerFactory.getLogger("ClaimContractApi");
 
     private final SystemProperties config;
+    private final EthAddresses ethAddresses;
+    private final BigInteger minProposalDeposit;
     private final BigInteger superblockTimeout;
     private final SyscoinClaimManagerExtended claimManager;
     private final SyscoinClaimManagerExtended claimManagerGetter;
@@ -35,6 +39,8 @@ public class ClaimContractApi {
 
     public ClaimContractApi(
             SystemProperties config,
+            EthAddresses ethAddresses,
+            BigInteger minProposalDeposit,
             BigInteger superblockTimeout,
             SyscoinClaimManagerExtended claimManager,
             SyscoinClaimManagerExtended claimManagerGetter,
@@ -42,6 +48,8 @@ public class ClaimContractApi {
             SyscoinClaimManagerExtended claimManagerForChallengesGetter
     ) {
         this.config = config;
+        this.ethAddresses = ethAddresses;
+        this.minProposalDeposit = minProposalDeposit;
         this.superblockTimeout = superblockTimeout;
         this.claimManager = claimManager;
         this.claimManagerGetter = claimManagerGetter;
@@ -147,14 +155,14 @@ public class ClaimContractApi {
      * Withdraw deposits so that only the maximum amount of funds (as determined by user configuration)
      * is left in the contract.
      * To be called after battles or when a superblock is approved/invalidated.
+     * @param agentRole Agent role
      * @param account Caller's address.
-     * @param isChallenger true if challenging, false if proposing/defending.
      * @throws Exception
      */
-    public void withdrawAllFundsExceptLimit(String account, boolean isChallenger) throws Exception {
+    public void withdrawAllFundsExceptLimit(AgentRole agentRole, String account) throws Exception {
         SyscoinClaimManager myClaimManager;
         SyscoinClaimManagerExtended myClaimManagerGetter;
-        if (isChallenger) {
+        if (agentRole == CHALLENGER) {
             myClaimManager = claimManagerForChallenges;
             myClaimManagerGetter = claimManagerForChallengesGetter;
         } else {
@@ -265,5 +273,32 @@ public class ClaimContractApi {
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
                 logger.info("rejectClaim receipt {}", receipt.toString())
         );
+    }
+
+    /**
+     * Challenges a superblock.
+     * @param superblockId Hash of superblock to be challenged.
+     * @throws Exception
+     */
+    public void challengeSuperblock(Keccak256Hash superblockId) throws Exception {
+        if(!getClaimExists(superblockId) || getClaimDecided(superblockId)) {
+            logger.info("Superblock has already been decided upon or claim doesn't exist, skipping...{}", superblockId.toString());
+            return;
+        }
+
+        if(getClaimSubmitter(superblockId).equals(ethAddresses.challengerAddress)){
+            logger.info("You cannot challenge a superblock you have submitted yourself, skipping...{}", superblockId.toString());
+            return;
+        }
+
+        // Make necessary deposit to cover reward
+        // Note: initial deposit for challenging a superblock, just a best guess based on
+        //       60 requests max for block headers and the final verify superblock cost
+        makeDepositIfNeeded(CHALLENGER, ethAddresses.challengerAddress, minProposalDeposit);
+
+        CompletableFuture<TransactionReceipt> futureReceipt =
+                claimManagerForChallenges.challengeSuperblock(new Bytes32(superblockId.getBytes())).sendAsync();
+        futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
+                logger.info("challengeSuperblock receipt {}", receipt.toString()));
     }
 }

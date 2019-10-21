@@ -129,7 +129,7 @@ public class MainConfiguration {
         String contractAddress = SyscoinClaimManager.getPreviouslyDeployedAddress(agentConstants.getNetworkId());
 
         var result = new SyscoinClaimManagerExtended(contractAddress, web3,
-                new ClientTransactionManager(web3, ethAddresses.generalPurposeAndSendSuperblocksAddress),
+                new ClientTransactionManager(web3, ethAddresses.generalPurposeAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
         );
@@ -145,7 +145,7 @@ public class MainConfiguration {
         String contractAddress = SyscoinClaimManager.getPreviouslyDeployedAddress(agentConstants.getNetworkId());
 
         var result = new SyscoinClaimManagerExtended(contractAddress, web3,
-                new ClientTransactionManager(web3, ethAddresses.syscoinSuperblockChallengerAddress),
+                new ClientTransactionManager(web3, ethAddresses.challengerAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
         );
@@ -161,7 +161,7 @@ public class MainConfiguration {
         String contractAddress = SyscoinClaimManager.getPreviouslyDeployedAddress(agentConstants.getNetworkId());
 
         var result = new SyscoinClaimManagerExtended(contractAddress, web3Secondary,
-                new ClientTransactionManager(web3Secondary, ethAddresses.syscoinSuperblockChallengerAddress),
+                new ClientTransactionManager(web3Secondary, ethAddresses.challengerAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
         );
@@ -177,7 +177,7 @@ public class MainConfiguration {
         String contractAddress = SyscoinClaimManager.getPreviouslyDeployedAddress(agentConstants.getNetworkId());
 
         var result = new SyscoinClaimManagerExtended(contractAddress, web3Secondary,
-                new ClientTransactionManager(web3Secondary, ethAddresses.generalPurposeAndSendSuperblocksAddress),
+                new ClientTransactionManager(web3Secondary, ethAddresses.generalPurposeAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
         );
@@ -193,7 +193,7 @@ public class MainConfiguration {
         String contractAddress = SyscoinBattleManagerExtended.getAddress(agentConstants.getNetworkId());
 
         var result = new SyscoinBattleManagerExtended(contractAddress, web3,
-                new ClientTransactionManager(web3, ethAddresses.generalPurposeAndSendSuperblocksAddress),
+                new ClientTransactionManager(web3, ethAddresses.generalPurposeAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
         );
@@ -209,7 +209,7 @@ public class MainConfiguration {
         String contractAddress = SyscoinBattleManagerExtended.getAddress(agentConstants.getNetworkId());
 
         var result = new SyscoinBattleManagerExtended(contractAddress, web3Secondary,
-                new ClientTransactionManager(web3Secondary, ethAddresses.generalPurposeAndSendSuperblocksAddress),
+                new ClientTransactionManager(web3Secondary, ethAddresses.generalPurposeAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
         );
@@ -225,7 +225,7 @@ public class MainConfiguration {
         String contractAddress = SyscoinBattleManagerExtended.getAddress(agentConstants.getNetworkId());
 
         var result = new SyscoinBattleManagerExtended(contractAddress, web3,
-                new ClientTransactionManager(web3, ethAddresses.syscoinSuperblockChallengerAddress),
+                new ClientTransactionManager(web3, ethAddresses.challengerAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
         );
@@ -241,7 +241,7 @@ public class MainConfiguration {
         String contractAddress = SyscoinBattleManagerExtended.getAddress(agentConstants.getNetworkId());
 
         var result = new SyscoinBattleManagerExtended(contractAddress, web3Secondary,
-                new ClientTransactionManager(web3Secondary, ethAddresses.syscoinSuperblockChallengerAddress),
+                new ClientTransactionManager(web3Secondary, ethAddresses.challengerAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
         );
@@ -257,7 +257,7 @@ public class MainConfiguration {
         String contractAddress = SyscoinSuperblocksExtended.getAddress(agentConstants.getNetworkId());
 
         var result = new SyscoinSuperblocksExtended(contractAddress, web3,
-                new ClientTransactionManager(web3, ethAddresses.generalPurposeAndSendSuperblocksAddress),
+                new ClientTransactionManager(web3, ethAddresses.generalPurposeAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
         );
@@ -273,7 +273,7 @@ public class MainConfiguration {
         String contractAddress = SyscoinSuperblocksExtended.getAddress(agentConstants.getNetworkId());
 
         var result = new SyscoinSuperblocksExtended(contractAddress, web3Secondary,
-                new ClientTransactionManager(web3Secondary, ethAddresses.generalPurposeAndSendSuperblocksAddress),
+                new ClientTransactionManager(web3Secondary, ethAddresses.generalPurposeAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
         );

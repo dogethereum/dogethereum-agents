@@ -9,6 +9,9 @@ import org.sysethereum.agents.contract.SyscoinBattleManagerExtended;
 import org.sysethereum.agents.core.bridge.BattleContractApi;
 import org.sysethereum.agents.core.bridge.ClaimContractApi;
 import org.sysethereum.agents.core.bridge.SuperblockContractApi;
+import org.sysethereum.agents.core.bridge.battle.ChallengerConvictedEvent;
+import org.sysethereum.agents.core.bridge.battle.NewBattleEvent;
+import org.sysethereum.agents.core.bridge.battle.SubmitterConvictedEvent;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.sysethereum.agents.core.bridge.Superblock;
@@ -45,7 +48,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     private final SuperblockContractApi superblockContractApi;
     private final ClaimContractApi claimContractApi;
     private final BattleContractApi battleContractApi;
-    private final SyscoinBattleManagerExtended battleManagerForChallengesGetter;
 
     private HashSet<Keccak256Hash> semiApprovedSet;
     private final File semiApprovedSetFile;
@@ -61,7 +63,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             ClaimContractApi claimContractApi,
             BattleContractApi battleContractApi,
             SyscoinBattleManagerExtended battleManagerForChallenges,
-            SyscoinBattleManagerExtended battleManagerForChallengesGetter,
             ChallengeEmailNotifier challengeEmailNotifier
     ) {
         super(AgentRole.CHALLENGER, config, agentConstants, ethWrapper, superblockContractApi, battleContractApi, claimContractApi, challengeEmailNotifier);
@@ -72,11 +73,10 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         this.superblockContractApi = superblockContractApi;
         this.claimContractApi = claimContractApi;
         this.battleContractApi = battleContractApi;
-        this.battleManagerForChallengesGetter = battleManagerForChallengesGetter;
 
         this.randomizationCounter = new RandomizationCounter();
         this.battleManagerForChallenges = battleManagerForChallenges;
-        this.myAddress = ethAddresses.syscoinSuperblockChallengerAddress;
+        this.myAddress = ethAddresses.challengerAddress;
 
         this.semiApprovedSet = new HashSet<>();
         this.semiApprovedSetFile = Paths.get(config.dataDirectory(), "SemiApprovedSet.dat").toAbsolutePath().toFile();
@@ -119,7 +119,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             Superblock mainChainSuperblock = localSuperblockChain.getByHeight(semiApprovedHeight);
             if (mainChainSuperblock != null) {
                 long confirmations = claimContractApi.getSuperblockConfirmations();
-                if (!mainChainSuperblock.getSuperblockId().equals(superblockId) &&
+                if (!mainChainSuperblock.getHash().equals(superblockId) &&
                         superblockContractApi.getChainHeight().longValue() >= semiApprovedHeight + confirmations) {
                     logger.info("Semi-approved superblock {} not found in main chain. Invalidating.", superblockId);
                     claimContractApi.rejectClaim(superblockId);
@@ -158,7 +158,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         for (SuperblockContractApi.SuperblockEvent newSuperblock : newSuperblockEvents) {
             logger.info("NewSuperblock {}. Validating...", newSuperblock.superblockId);
 
-            Superblock superblock = localSuperblockChain.getSuperblock(newSuperblock.superblockId);
+            Superblock superblock = localSuperblockChain.getByHash(newSuperblock.superblockId);
             if (superblock == null) {
                 BigInteger height = superblockContractApi.getHeight(newSuperblock.superblockId);
                 Superblock localSuperblock = localSuperblockChain.getByHeight(height.longValue());
@@ -172,12 +172,12 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                     logger.info("Superblock {} at height {} is replaced by {} in our superblock chain",
                             newSuperblock.superblockId,
                             height,
-                            localSuperblock.getSuperblockId());
+                            localSuperblock.getHash());
                 }
 
                 toChallenge.add(newSuperblock.superblockId);
             } else {
-                logger.info("Superblock height: {}... superblock present in our superblock chain", superblock.getSuperblockHeight());
+                logger.info("Superblock height: {}... superblock present in our superblock chain", superblock.getHeight());
             }
         }
         // check for pending if we have superblocks to challenge
@@ -188,7 +188,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             }
         }
         for (Keccak256Hash superblockId : toChallenge) {
-            ethWrapper.challengeSuperblock(superblockId, myAddress);
+            claimContractApi.challengeSuperblock(superblockId);
         }
     }
 
@@ -200,10 +200,10 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @throws Exception
      */
     private void respondToNewBattles(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.NewBattleEvent> newBattleEvents = battleContractApi.getNewBattleEvents(fromBlock, toBlock);
+        List<NewBattleEvent> newBattleEvents = battleContractApi.getNewBattleEvents(fromBlock, toBlock);
 
-        for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
-            if (isMine(newBattleEvent) && battleContractApi.getSessionChallengeState(newBattleEvent.sessionId) == EthWrapper.ChallengeState.Challenged) {
+        for (NewBattleEvent newBattleEvent : newBattleEvents) {
+            if (isMyBattleEvent(newBattleEvent) && battleContractApi.getSessionChallengeState(newBattleEvent.sessionId) == EthWrapper.ChallengeState.Challenged) {
                 sessionToSuperblockMap.put(newBattleEvent.sessionId, newBattleEvent.superblockHash);
                 addToSuperblockToSessionsMap(newBattleEvent.sessionId, newBattleEvent.superblockHash);
             }
@@ -230,18 +230,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     private boolean challengedByMe(SuperblockContractApi.SuperblockEvent superblockEvent) throws Exception {
         return claimContractApi.getClaimChallenger(superblockEvent.superblockId).getValue().equals(myAddress);
-    }
-
-    /* ---- OVERRIDE ABSTRACT METHODS ---- */
-
-    @Override
-    protected boolean arePendingTransactions() throws InterruptedException, IOException {
-        return ethWrapper.arePendingTransactionsForChallengerAddress();
-    }
-
-    @Override
-    protected boolean isMine(EthWrapper.NewBattleEvent newBattleEvent) {
-        return newBattleEvent.challenger.equals(myAddress);
     }
 
     protected void callBattleTimeouts() throws Exception {
@@ -280,7 +268,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
         }
         if (removeFromContract && config.isWithdrawFundsEnabled()) {
-            claimContractApi.withdrawAllFundsExceptLimit(myAddress, true);
+            claimContractApi.withdrawAllFundsExceptLimit(AgentRole.CHALLENGER, myAddress);
         }
     }
 
@@ -294,17 +282,16 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      */
     @Override
     protected void deleteSubmitterConvictedBattles(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SubmitterConvictedEvent> submitterConvictedEvents =
-                ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock, battleManagerForChallengesGetter);
+        List<SubmitterConvictedEvent> events = battleContractApi.getSubmitterConvictedEvents(agentRole, fromBlock, toBlock);
 
-        for (EthWrapper.SubmitterConvictedEvent submitterConvictedEvent : submitterConvictedEvents) {
-            if (sessionToSuperblockMap.containsKey(submitterConvictedEvent.sessionId)) {
+        for (SubmitterConvictedEvent event : events) {
+            if (sessionToSuperblockMap.containsKey(event.sessionId)) {
                 logger.info("Submitter convicted on session {}, superblock {}. Battle won!",
-                        submitterConvictedEvent.sessionId, submitterConvictedEvent.superblockHash);
-                sessionToSuperblockMap.remove(submitterConvictedEvent.sessionId);
+                        event.sessionId, event.superblockHash);
+                sessionToSuperblockMap.remove(event.sessionId);
             }
-            if (superblockToSessionsMap.containsKey(submitterConvictedEvent.superblockHash)) {
-                superblockToSessionsMap.get(submitterConvictedEvent.superblockHash).remove(submitterConvictedEvent.sessionId);
+            if (superblockToSessionsMap.containsKey(event.superblockHash)) {
+                superblockToSessionsMap.get(event.superblockHash).remove(event.sessionId);
             }
         }
     }
@@ -320,16 +307,15 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      */
     @Override
     protected void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.ChallengerConvictedEvent> challengerConvictedEvents =
-                ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock, battleManagerForChallengesGetter);
+        List<ChallengerConvictedEvent> events = battleContractApi.getChallengerConvictedEvents(agentRole, fromBlock, toBlock);
 
-        for (EthWrapper.ChallengerConvictedEvent challengerConvictedEvent : challengerConvictedEvents) {
-            if (challengerConvictedEvent.challenger.equals(myAddress)) {
-                logger.info("Challenger convicted on session {}, superblock {}. Battle lost!",
-                        challengerConvictedEvent.sessionId, challengerConvictedEvent.superblockHash);
-                sessionToSuperblockMap.remove(challengerConvictedEvent.sessionId);
-                if (superblockToSessionsMap.containsKey(challengerConvictedEvent.superblockHash)) {
-                    superblockToSessionsMap.get(challengerConvictedEvent.superblockHash).remove(challengerConvictedEvent.sessionId);
+        for (ChallengerConvictedEvent event : events) {
+            if (event.challenger.equals(myAddress)) {
+                logger.info("Challenger convicted on session {}, superblock {}. Battle lost!", event.sessionId, event.superblockHash);
+                sessionToSuperblockMap.remove(event.sessionId);
+
+                if (superblockToSessionsMap.containsKey(event.superblockHash)) {
+                    superblockToSessionsMap.get(event.superblockHash).remove(event.sessionId);
                 }
             }
         }
