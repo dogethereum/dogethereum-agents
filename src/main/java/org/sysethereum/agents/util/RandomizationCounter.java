@@ -27,6 +27,9 @@ public class RandomizationCounter {
         updateRandomValue();
     }
 
+    /**
+     * @return A random value between 0.1 to 1.0 (both inclusive)
+     */
     public double getValue() {
         return value.get();
     }

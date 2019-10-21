@@ -29,6 +29,7 @@ import org.web3j.protocol.core.DefaultBlockParameterName;
 
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -176,7 +177,9 @@ public class EthWrapper {
     /**
      * Helper method for confirming a semi-approved superblock.
      * Finds the highest semi-approved or new superblock in the main chain that comes after a given semi-approved superblock.
-     * @param superblockId Superblsock to be confirmed.
+     *
+     * @param toConfirm Superblock to be confirmed.
+     * @param bestContractSuperblockId Hash of the best superblock from contract.
      * @return Highest superblock in main chain that's newer than the given superblock
      *         if such a superblock exists, null otherwise (i.e. given superblock isn't in main chain
      *         or has no semi-approved descendants).
@@ -184,23 +187,24 @@ public class EthWrapper {
      * @throws IOException
      * @throws Exception
      */
-    public Superblock getHighestApprovableOrNewDescendant(Superblock toConfirm, Keccak256Hash superblockId)
+    @Nullable
+    public Superblock getHighestApprovableOrNewDescendant(Superblock toConfirm, Keccak256Hash bestContractSuperblockId)
             throws BlockStoreException, IOException, Exception {
-        if (localSuperblockChain.getByHash(superblockId) == null) {
+        if (localSuperblockChain.getByHash(bestContractSuperblockId) == null) {
             // The superblock isn't in the main chain.
-            logger.info("Superblock {} is not in the main chain. Returning from getHighestApprovableOrNewDescendant.", superblockId);
+            logger.info("Superblock {} is not in the main chain. Returning from getHighestApprovableOrNewDescendant.", bestContractSuperblockId);
             return null;
         }
 
         //noinspection ConstantConditions
-        if (localSuperblockChain.getByHash(superblockId).getHeight() == localSuperblockChain.getChainHeight()) {
+        if (localSuperblockChain.getByHash(bestContractSuperblockId).getHeight() == localSuperblockChain.getChainHeight()) {
             // There's nothing above the tip of the chain.
-            logger.info("Superblock {} is above the tip of the chain. Returning from getHighestApprovableOrNewDescendant.", superblockId);
+            logger.info("Superblock {} is above the tip of the chain. Returning from getHighestApprovableOrNewDescendant.", bestContractSuperblockId);
             return null;
         }
         Superblock sb = localSuperblockChain.getChainHead();
         while (sb != null &&
-                !sb.getHash().equals(superblockId) &&
+                !sb.getHash().equals(bestContractSuperblockId) &&
                 !newAndTimeoutPassed(sb.getHash()) &&
                 !claimContractApi.getInBattleAndSemiApprovable(sb.getHash()) &&
                 !semiApprovedAndApprovable(toConfirm, sb)) {
