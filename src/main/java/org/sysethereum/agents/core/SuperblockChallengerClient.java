@@ -118,9 +118,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             long semiApprovedHeight = superblockContractApi.getHeight(superblockId).longValue();
             Superblock mainChainSuperblock = localSuperblockChain.getByHeight(semiApprovedHeight);
             if (mainChainSuperblock != null) {
-                long confirmations = claimContractApi.getSuperblockConfirmations();
-                if (!mainChainSuperblock.getHash().equals(superblockId) &&
-                        superblockContractApi.getChainHeight().longValue() >= semiApprovedHeight + confirmations) {
+                if (!mainChainSuperblock.getHash().equals(superblockId) && superblockContractApi.getChainHeight().longValue() >= semiApprovedHeight) {
                     logger.info("Semi-approved superblock {} not found in main chain. Invalidating.", superblockId);
                     claimContractApi.rejectClaim(superblockId);
                 }
@@ -203,7 +201,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         List<NewBattleEvent> newBattleEvents = battleContractApi.getNewBattleEvents(fromBlock, toBlock);
 
         for (NewBattleEvent newBattleEvent : newBattleEvents) {
-            if (isMyBattleEvent(newBattleEvent) && battleContractApi.getSessionChallengeState(newBattleEvent.sessionId) == EthWrapper.ChallengeState.Challenged) {
+            if (isMyBattleEvent(newBattleEvent) && battleContractApi.sessionExists(newBattleEvent.sessionId)) {
                 sessionToSuperblockMap.put(newBattleEvent.sessionId, newBattleEvent.superblockHash);
                 addToSuperblockToSessionsMap(newBattleEvent.sessionId, newBattleEvent.superblockHash);
             }
