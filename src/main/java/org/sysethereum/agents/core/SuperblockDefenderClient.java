@@ -105,9 +105,12 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 ethWrapper.getNewRespondHeadersEvents(fromBlock, toBlock);
 
         for (EthWrapper.RespondHeadersEvent respondHeaderEvent : respondHeaderEvents) {
-            if (isMine(respondHeaderEvent) && (battleContractApi.getSessionChallengeState(respondHeaderEvent.sessionId) == EthWrapper.ChallengeState.Challenged)) {
+            if (isMine(respondHeaderEvent) && battleContractApi.sessionExists(respondHeaderEvent.sessionId)) {
+                int numMerkleHashesBySession = battleContractApi.getNumMerkleHashesBySession(respondHeaderEvent.sessionId);
+
                 // only respond if the event is the one you are looking for (it matches the number of hashes the contract thinks is the latest)
-                if (respondHeaderEvent.merkleHashCount == battleContractApi.getNumMerkleHashesBySession(respondHeaderEvent.sessionId)) {
+
+                if (respondHeaderEvent.merkleHashCount == numMerkleHashesBySession) {
                     logger.info("Header response detected for superblock {} session {}. Merkle hash count: {}. Responding with next set now.", respondHeaderEvent.superblockHash, respondHeaderEvent.sessionId, respondHeaderEvent.merkleHashCount);
                     ethWrapper.respondBlockHeaders(respondHeaderEvent.sessionId, respondHeaderEvent.superblockHash, respondHeaderEvent.merkleHashCount);
                 }
@@ -173,7 +176,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         List<NewBattleEvent> queryBattleEvents = battleContractApi.getNewBattleEvents(fromBlock, toBlock);
 
         for (NewBattleEvent queryBattleEvent : queryBattleEvents) {
-            if (isMyBattleEvent(queryBattleEvent) && (battleContractApi.getSessionChallengeState(queryBattleEvent.sessionId) == EthWrapper.ChallengeState.Challenged)) {
+            if (isMyBattleEvent(queryBattleEvent) && battleContractApi.sessionExists(queryBattleEvent.sessionId)) {
                 logger.info("Battle detected for superblock {} session {}. Responding now with first set of headers.", queryBattleEvent.superblockHash, queryBattleEvent.sessionId);
                 ethWrapper.respondBlockHeaders(queryBattleEvent.sessionId, queryBattleEvent.superblockHash, 0);
             }

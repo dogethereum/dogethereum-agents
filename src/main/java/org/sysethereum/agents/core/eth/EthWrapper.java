@@ -51,12 +51,6 @@ public class EthWrapper {
     private final Web3j web3Secondary;
     private final EthAddresses ethAddresses;
 
-    public enum ChallengeState {
-        @SuppressWarnings("unused")
-        Unchallenged,            // Unchallenged submission
-        Challenged               // Claims was challenged
-    }
-
     // Extensions of contracts generated automatically by web3j
     private final SyscoinBattleManagerExtended battleManager;
     private final SyscoinBattleManagerExtended battleManagerForChallengesGetter;

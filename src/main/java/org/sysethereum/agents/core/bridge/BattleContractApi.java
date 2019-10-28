@@ -9,7 +9,6 @@ import org.sysethereum.agents.contract.SyscoinBattleManagerExtended;
 import org.sysethereum.agents.core.bridge.battle.ChallengerConvictedEvent;
 import org.sysethereum.agents.core.bridge.battle.NewBattleEvent;
 import org.sysethereum.agents.core.bridge.battle.SubmitterConvictedEvent;
-import org.sysethereum.agents.core.eth.EthWrapper;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.protocol.core.DefaultBlockParameter;
@@ -65,9 +64,8 @@ public class BattleContractApi {
         return ret.intValue();
     }
 
-    public EthWrapper.ChallengeState getSessionChallengeState(Keccak256Hash sessionId) throws Exception {
-        BigInteger ret = getter.getSessionChallengeState(new Bytes32(sessionId.getBytes())).send().getValue();
-        return EthWrapper.ChallengeState.values()[ret.intValue()];
+    public boolean sessionExists(Keccak256Hash sessionId) throws Exception {
+        return getter.sessionExists(new Bytes32(sessionId.getBytes())).send().getValue();
     }
 
     /**
