@@ -7,72 +7,42 @@ package org.sysethereum.agents.core.syscoin;
 
 
 import lombok.extern.slf4j.Slf4j;
-import org.bitcoinj.core.*;
-import org.bitcoinj.kits.WalletAppKit;
-import org.bitcoinj.script.Script;
+import org.bitcoinj.core.Context;
+import org.bitcoinj.core.Sha256Hash;
+import org.bitcoinj.core.StoredBlock;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
-import org.sysethereum.agents.constants.SystemProperties;
-import org.sysethereum.agents.util.AgentUtils;
-import org.sysethereum.agents.constants.AgentConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-import javax.annotation.PreDestroy;
-import java.io.*;
+import javax.annotation.Nullable;
+import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Stack;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-@Component
+@Service
 @Slf4j(topic = "SyscoinWrapper")
 public class SyscoinWrapper {
 
     private static final Logger logger = LoggerFactory.getLogger("SyscoinWrapper");
-    SystemProperties config;
-    private WalletAppKit kit;
-    private Context syscoinContext;
-    private AgentConstants agentConstants;
-    private File dataDirectory;
 
-
+    private final Context syscoinContext;
+    private final SyscoinWalletAppKit kit;
 
     @Autowired
-    public SyscoinWrapper() throws Exception {
-        this.config = SystemProperties.CONFIG;
-        if (config.isSyscoinSuperblockSubmitterEnabled() ||
-                 config.isSyscoinBlockChallengerEnabled()) {
-            this.agentConstants = config.getAgentConstants();
-            this.syscoinContext = new Context(agentConstants.getSyscoinParams());
-            this.dataDirectory = new File(config.dataDirectory() + "/SyscoinWrapper");
-            setup();
-            start();
-        }
+    public SyscoinWrapper(
+            Context syscoinContext,
+            SyscoinWalletAppKit syscoinWalletAppKit
+    ) {
+        this.syscoinContext = syscoinContext;
+        this.kit = syscoinWalletAppKit;
     }
 
-
-    public void setup() {
-        kit = new WalletAppKit(syscoinContext, Script.ScriptType.P2WPKH, null, dataDirectory, "sysethereumAgentLibdohj") {
-            @Override
-            protected void onSetupCompleted() {
-                Context.propagate(syscoinContext);
-                vPeerGroup.setDownloadTxDependencies(0);
-            }
-
-
-
-            @Override
-            protected BlockStore provideBlockStore(File file) throws BlockStoreException {
-                return new AltcoinLevelDBBlockStore(syscoinContext, getChainFile());
-            }
-
-
-            protected File getChainFile() {
-                return new File(directory, "chain");
-            }
-
-        };
-
+    public void setupAndStart() {
         // TODO: Make the syscoin peer list configurable
         // if (!peerAddresses.isEmpty()) {
         //    kit.setPeerNodes(peerAddresses.toArray(new PeerAddress[]{}));
@@ -83,25 +53,46 @@ public class SyscoinWrapper {
         if (checkpoints != null) {
             kit.setCheckpoints(checkpoints);
         }
-    }
 
-    public void start() {
+        logger.debug("About to start WalletAppKit");
+
         Context.propagate(syscoinContext);
-        kit.startAsync().awaitRunning();
+        try {
+            kit.startAsync().awaitRunning();
+            logger.debug("WalletAppKit is running");
+        } catch (IllegalStateException e) {
+            logger.error("SyscoinWrapper failed to initialize");
+        }
     }
 
     public void stop() {
-        Context.propagate(syscoinContext);
-        kit.stopAsync().awaitTerminated();
-    }
+        logger.info("stop: Starting...");
 
-    public int getBestChainHeight() {
-        return kit.chain().getBestChainHeight();
+        Context.propagate(syscoinContext);
+
+        logger.debug("stop: Request WAK to stop");
+        try {
+            kit.stopAsync().awaitTerminated(10, TimeUnit.SECONDS);
+            logger.debug("stop: WAK stopped");
+        } catch (TimeoutException e) {
+            logger.debug("stop: WAK not stopped in 10 seconds, kill the thread instead");
+            // Kill it
+            for (Thread thread : Thread.getAllStackTraces().keySet()) {
+                if (thread.getName().startsWith(SyscoinWalletAppKit.class.getSimpleName())) {
+                    logger.info("stop: Interrupt thread:{}, isAlive:{}, isInterrupted:{}",
+                            thread.getName(), thread.isAlive(), thread.isInterrupted());
+                    thread.interrupt();
+                }
+            }
+        }
+
+        logger.info("stop: Finished");
     }
 
     public StoredBlock getChainHead() {
         return kit.chain().getChainHead();
     }
+
     /**
      * Gets the median timestamp of the last 11 blocks
      */
@@ -112,48 +103,50 @@ public class SyscoinWrapper {
         while (unused >= 0 && (storedBlock = storedBlock.getPrev(kit.store())) != null)
             timestamps[unused--] = storedBlock.getHeader().getTimeSeconds();
 
-        Arrays.sort(timestamps, unused+1, 11);
-        return timestamps[unused + (11-unused)/2];
+        Arrays.sort(timestamps, unused + 1, 11);
+        return timestamps[unused + (11 - unused) / 2];
     }
+
     public StoredBlock getBlock(Sha256Hash hash) throws BlockStoreException {
         return kit.store().get(hash);
     }
-    public StoredBlock getBlockByHeight(Sha256Hash hash, int height) throws BlockStoreException {
-        if(height < 0)
-            height = 0;
-        StoredBlock currentBlock = kit.store().get(hash);
-        if(currentBlock == null)
-            return null;
-        while(true){
-            if(currentBlock.getHeight() <= height)
-                break;
-            currentBlock = kit.store().get(currentBlock.getHeader().getPrevBlockHash());
-            if(currentBlock == null)
-                return null;
-        }
-        return currentBlock;
-    }
+
+    @Nullable
     public StoredBlock getStoredBlockAtHeight(int height) throws BlockStoreException {
-        return AgentUtils.getStoredBlockAtHeight(kit.store(), height);
-    }
+        BlockStore blockStore = kit.store();
+        StoredBlock storedBlock = blockStore.getChainHead();
+        int headHeight = storedBlock.getHeight();
+        if (height > headHeight) {
+            return null;
+        }
+        for (int i = 0; i < (headHeight - height); i++) {
+            if (storedBlock == null) {
+                return null;
+            }
 
-
-
-
-    @PreDestroy
-    public void tearDown() throws BlockStoreException, IOException {
-        if (config.isSyscoinSuperblockSubmitterEnabled() ||
-                 config.isSyscoinBlockChallengerEnabled()) {
-            logger.info("SyscoinToEthClient tearDown starting...");
-            stop();
-
-            logger.info("SyscoinToEthClient tearDown finished.");
+            Sha256Hash prevBlockHash = storedBlock.getHeader().getPrevBlockHash();
+            storedBlock = blockStore.get(prevBlockHash);
+        }
+        if (storedBlock != null) {
+            if (storedBlock.getHeight() != height) {
+                throw new IllegalStateException("Block height is " + storedBlock.getHeight() + " but should be " + headHeight);
+            }
+            return storedBlock;
+        } else {
+            return null;
         }
     }
 
+    public Stack<Sha256Hash> getNewerHashesThan(Sha256Hash blockHash) throws BlockStoreException {
+        var hashes = new Stack<Sha256Hash>();
+        StoredBlock cur = getChainHead();
 
+        while (cur != null && !cur.getHeader().getHash().equals(blockHash)) {
+            hashes.push(cur.getHeader().getHash());
+            cur = getBlock(cur.getHeader().getPrevBlockHash());
+        }
 
-    public void broadcastSyscoinTransaction(Transaction tx) {
-        kit.peerGroup().broadcastTransaction(tx);
+        return hashes;
     }
+
 }

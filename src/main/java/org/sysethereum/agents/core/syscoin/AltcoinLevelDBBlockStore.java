@@ -57,13 +57,12 @@ public class AltcoinLevelDBBlockStore implements BlockStore {
         }
     }
 
-    private synchronized void tryOpen(File directory, DBFactory dbFactory, Options options)
-            throws IOException, BlockStoreException {
+    private synchronized void tryOpen(File directory, DBFactory dbFactory, Options options) throws IOException {
         db = dbFactory.open(directory, options);
         initStoreIfNeeded();
     }
 
-    private synchronized void initStoreIfNeeded() throws BlockStoreException {
+    private synchronized void initStoreIfNeeded() {
         if (db.get(CHAIN_HEAD_KEY) != null)
             return;   // Already initialised.
         Block genesis = context.getParams().getGenesisBlock().cloneAsHeader();
@@ -73,7 +72,7 @@ public class AltcoinLevelDBBlockStore implements BlockStore {
     }
 
     @Override
-    public synchronized void put(StoredBlock block) throws BlockStoreException {
+    public synchronized void put(StoredBlock block) {
         buffer.clear();
         serializeCompact(block, buffer);
         int arraySize = buffer.position();
@@ -100,7 +99,7 @@ public class AltcoinLevelDBBlockStore implements BlockStore {
 
 
     @Override @Nullable
-    public synchronized StoredBlock get(Sha256Hash hash) throws BlockStoreException {
+    public synchronized StoredBlock get(Sha256Hash hash) {
         byte[] bits = db.get(hash.getBytes());
         if (bits == null)
             return null;
@@ -121,12 +120,12 @@ public class AltcoinLevelDBBlockStore implements BlockStore {
 
 
     @Override
-    public synchronized StoredBlock getChainHead() throws BlockStoreException {
+    public synchronized StoredBlock getChainHead() {
         return get(Sha256Hash.wrap(db.get(CHAIN_HEAD_KEY)));
     }
 
     @Override
-    public synchronized void setChainHead(StoredBlock chainHead) throws BlockStoreException {
+    public synchronized void setChainHead(StoredBlock chainHead) {
         db.put(CHAIN_HEAD_KEY, chainHead.getHeader().getHash().getBytes());
     }
 

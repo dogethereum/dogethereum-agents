@@ -27,3 +27,7 @@ defenderstorage/
 challengerstorage/
 maliciousstorage/
 fakesubmitterstorage/
+/.settings/
+/.classpath
+/.factorypath
+/.project

@@ -5,75 +5,56 @@ import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.bitcoinj.store.BlockStoreException;
 
-import org.sysethereum.agents.constants.SystemProperties;
-import org.sysethereum.agents.constants.*;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
+import org.sysethereum.agents.core.bridge.Superblock;
+import org.sysethereum.agents.core.bridge.SuperblockFactory;
+import org.sysethereum.agents.service.rest.MerkleRootComputer;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import java.io.*;
+import javax.annotation.Nullable;
 
+import java.math.BigInteger;
 import java.util.*;
-
-
-
 
 /**
  * Provides methods for interacting with a superblock chain.
  * Storage is managed by SuperblockLevelDBBlockStore.
  * @author Catalina Juarros
  */
-
-@Component
+@Service
 @Slf4j(topic = "SuperblockChain")
 public class SuperblockChain {
-    @Autowired
-    private SyscoinWrapper syscoinWrapper; // Interface with the Syscoin blockchain
-    @Autowired
-    private SuperblockConstantProvider provider; // Interface with the Ethereum blockchain
-    private NetworkParameters params;
-    private SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
 
-    public int SUPERBLOCK_DURATION; // num blocks in a superblock
-    private int SUPERBLOCK_DELAY; // time to wait before building a superblock
-    private int SUPERBLOCK_STORING_WINDOW; // small time window between storing and sending to avoid losing sync
     private static final Logger logger = LoggerFactory.getLogger("SuperblockChain");
 
-    /* ---- CONSTRUCTION METHODS ---- */
+    private final SyscoinWrapper syscoinWrapper; // Interface with the Syscoin blockchain
+    private final MerkleRootComputer merkleRootComputer;
+    private final SuperblockFactory superblockFactory;
+    private final SuperblockLevelDBBlockStore superblockStorage; // database for storing superblocks
+
+    public final int SUPERBLOCK_DURATION; // num blocks in a superblock
+    private final int SUPERBLOCK_DELAY; // time to wait before building a superblock
+    private final int SUPERBLOCK_STORING_WINDOW; // time window between storing and sending to avoid losing sync
 
     @Autowired
-    public SuperblockChain() throws Exception, BlockStoreException {}
+    public SuperblockChain(
+            SyscoinWrapper syscoinWrapper,
+            SuperblockFactory superblockFactory,
+            SuperblockLevelDBBlockStore superblockLevelDBBlockStore,
+            MerkleRootComputer merkleRootComputer,
+            BigInteger superblockDuration,
+            BigInteger superblockDelay
+    ) {
+        this.syscoinWrapper = syscoinWrapper;
+        this.superblockFactory = superblockFactory;
+        this.superblockStorage = superblockLevelDBBlockStore;
+        this.merkleRootComputer = merkleRootComputer;
 
-    /**
-     * Sets up variables and initialises chain.
-     * @throws Exception if superblock duration or delay cannot be retrieved from SuperblockConstantProvider.
-     * @throws BlockStoreException if superblockStorage is not properly initialized.
-     */
-    @PostConstruct
-    private void setup() throws Exception, BlockStoreException {
-        SystemProperties config = SystemProperties.CONFIG;
-        AgentConstants agentConstants = config.getAgentConstants();
-        Context context = new Context(agentConstants.getSyscoinParams());
-        File directory = new File(config.dataDirectory());
-        File chainFile = new File(directory.getAbsolutePath() + "/SuperblockChain");
-        this.params = agentConstants.getSyscoinParams();
-        this.superblockStorage = new SuperblockLevelDBBlockStore(context, chainFile, params);
-        this.SUPERBLOCK_DURATION = provider.getSuperblockDuration().intValue();
-        this.SUPERBLOCK_DELAY = provider.getSuperblockDelay().intValue();
-        this.SUPERBLOCK_STORING_WINDOW = 60; // store superblocks one minute before they should be sent
-    }
-
-    /**
-     * Closes the block storage underlying this blockchain.
-     * @throws BlockStoreException if an exception is thrown during closing.
-     */
-    @PreDestroy
-    private void close() throws BlockStoreException {
-        this.superblockStorage.close();
+        this.SUPERBLOCK_DURATION = superblockDuration.intValue();
+        this.SUPERBLOCK_DELAY = superblockDelay.intValue();
+        this.SUPERBLOCK_STORING_WINDOW = SUPERBLOCK_DELAY * 2/3 ; // store superblocks 2 hr before they should be sent
     }
 
     /**
@@ -99,25 +80,30 @@ public class SuperblockChain {
         while (!allSyscoinHashesToHash.empty()) {
             // Modify allSyscoinHashesToHash and get hashes for next superblock.
             nextSuperblockSyscoinHashes = popBlocksBeforeTime(allSyscoinHashesToHash, getStoringStopTime());
-            // if we don't have a collection of 60 blocks that are atleast 3 hours old we exit
+            // if we don't have a collection of 60 blocks that are at least 1 hour old we exit
             if(nextSuperblockSyscoinHashes.isEmpty()){
                 break;
             }
             StoredBlock nextSuperblockLastBlock = syscoinWrapper.getBlock(
                     nextSuperblockSyscoinHashes.get(nextSuperblockSyscoinHashes.size() - 1));
 
-            Superblock newSuperblock = new Superblock(this.params, nextSuperblockSyscoinHashes,
-                    nextSuperblockLastBlock.getChainWork(), nextSuperblockLastBlock.getHeader().getTimeSeconds(),nextSuperblockLastBlock.getHeader().getDifficultyTarget(),
-                    nextSuperblockPrevHash, nextSuperblockHeight);
+            Superblock newSuperblock = superblockFactory.make(
+                    merkleRootComputer.computeMerkleRoot(nextSuperblockSyscoinHashes),
+                    nextSuperblockSyscoinHashes,
+                    nextSuperblockLastBlock.getHeader().getTimeSeconds(),
+                    syscoinWrapper.getMedianTimestamp(nextSuperblockLastBlock),
+                    nextSuperblockLastBlock.getHeader().getDifficultyTarget(),
+                    nextSuperblockPrevHash,
+                    nextSuperblockHeight
+            );
+
             superblockStorage.put(newSuperblock);
-            if (newSuperblock.getChainWork().compareTo(superblockStorage.getChainHeadWork()) > 0) {
-                superblockStorage.setChainHead(newSuperblock);
-                logger.info("New superblock chain head {}", newSuperblock);
-            }
+            superblockStorage.setChainHead(newSuperblock);
+            logger.info("New superblock chain head {}", newSuperblock);
 
             // set prev hash and end time for next superblock
             if (!allSyscoinHashesToHash.empty()) {
-                nextSuperblockPrevHash = newSuperblock.getSuperblockId();
+                nextSuperblockPrevHash = newSuperblock.getHash();
                 nextSuperblockHeight++;
             }
 
@@ -166,7 +152,7 @@ public class SuperblockChain {
      * @return Tip of superblock chain as saved on disk.
      * @throws BlockStoreException
      */
-    public Superblock getChainHead() throws BlockStoreException, IOException {
+    public Superblock getChainHead() {
         return superblockStorage.getChainHead();
     }
 
@@ -175,8 +161,8 @@ public class SuperblockChain {
      * @return Height of tip of superblock chain as saved on disk.
      * @throws BlockStoreException
      */
-    public long getChainHeight() throws BlockStoreException, IOException {
-        return getChainHead().getSuperblockHeight();
+    public long getChainHeight() {
+        return getChainHead().getHeight();
     }
 
     /**
@@ -184,7 +170,8 @@ public class SuperblockChain {
      * @param superblockHash Keccak-256 hash of a superblock.
      * @return Superblock with given hash if it's found in the database, null otherwise.
      */
-    public Superblock getSuperblock(Keccak256Hash superblockHash) throws IOException {
+    @Nullable
+    public Superblock getByHash(Keccak256Hash superblockHash) {
         return superblockStorage.get(superblockHash);
     }
 
@@ -194,17 +181,15 @@ public class SuperblockChain {
      * @param superblockHeight Height of a superblock
      * @return Superblock with the given height if said height is less than that of the chain tip,
      *         null otherwise.
-     * @throws BlockStoreException
-     * @throws IOException If a superblock hash cannot be calculated.
      */
-    public Superblock getSuperblockByHeight(long superblockHeight) throws BlockStoreException, IOException {
+    public Superblock getByHeight(long superblockHeight) {
         Superblock currentSuperblock = getChainHead();
-        if (superblockHeight > currentSuperblock.getSuperblockHeight())
+        if (superblockHeight > currentSuperblock.getHeight())
             return null; // Superblock does not exist.
 
         // Superblock exists.
-        while (currentSuperblock.getSuperblockHeight() > superblockHeight)
-            currentSuperblock = getSuperblock(currentSuperblock.getParentId());
+        while (currentSuperblock.getHeight() > superblockHeight)
+            currentSuperblock = getByHash(currentSuperblock.getParentId());
 
         return currentSuperblock;
     }
@@ -214,33 +199,49 @@ public class SuperblockChain {
      * @param parentId parentId of desired superblock.
      * @return Best superblock in main chain with superblockId as its parentId if said superblock exists,
      *         null otherwise.
-     * @throws BlockStoreException
      */
-    public Superblock getFirstDescendant(Keccak256Hash parentId) throws BlockStoreException, IOException {
-        if (getSuperblock(parentId) == null) {
+    public Superblock getFirstDescendant(Keccak256Hash parentId) {
+        Superblock sb = getByHash(parentId);
+
+        if (sb == null) {
             // The superblock isn't in the main chain.
             logger.info("Superblock {} is not in the main chain. Returning from getFirstDescendant.", parentId);
             return null;
         }
 
-        if (getSuperblock(parentId).getSuperblockHeight() == getChainHeight()) {
+        if (sb.getHeight() == getChainHeight()) {
             // There's nothing above the tip of the chain.
             return null;
         }
         Superblock currentSuperblock = getChainHead();
 
         while (currentSuperblock != null && !currentSuperblock.getParentId().equals(parentId)) {
-            currentSuperblock = getSuperblock(currentSuperblock.getParentId());
+            currentSuperblock = getByHash(currentSuperblock.getParentId());
         }
 
         return currentSuperblock;
     }
 
+    /**
+     * Finds the superblock in the superblock main chain that contains the block identified by `blockHash`.
+     * @param blockHash SHA-256 hash of a block that we want to find.
+     * @return Superblock where the block can be found.
+     */
+    @Nullable
+    public Superblock findBySysBlockHash(Sha256Hash blockHash) {
+        Superblock sb = getChainHead();
+
+        while (sb != null) {
+            if (sb.hasSyscoinBlock(blockHash))
+                return sb;
+            sb = getByHash(sb.getParentId());
+        }
+
+        // current superblock is null
+        return null;
+    }
 
     /* ---- HELPER METHODS AND CLASSES ---- */
-
-
-
 
     /**
      * To be used when building a superblock.
@@ -270,17 +271,6 @@ public class SuperblockChain {
      * @return True if superblock can be sent to the bridge, false otherwise.
      */
     public boolean sendingTimePassed(Superblock superblock) {
-        return new Date(superblock.getLastSyscoinBlockTime()).before(getSendingStopTime());
+        return new Date(superblock.getLastSyscoinBlockMedianTime()*1000L).before(getSendingStopTime());
     }
-
-    /**
-     * Returns a superblock's parent by ID if it's in the main chain.
-     * @param superblock Superblock.
-     * @return Superblock parent if said parent is part of the main chain, null otherwise.
-     * @throws IOException
-     */
-    public Superblock getParent(Superblock superblock) throws IOException {
-        return getSuperblock(superblock.getParentId());
-    }
-
 }

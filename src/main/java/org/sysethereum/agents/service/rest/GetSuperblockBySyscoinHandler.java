@@ -1,0 +1,45 @@
+package org.sysethereum.agents.service.rest;
+
+import com.google.gson.Gson;
+import com.sun.net.httpserver.HttpExchange;
+import lombok.extern.slf4j.Slf4j;
+import org.bitcoinj.core.Sha256Hash;
+import org.springframework.stereotype.Service;
+import org.sysethereum.agents.core.SyscoinToEthClient;
+import org.sysethereum.agents.util.RestError;
+
+import java.io.IOException;
+import java.util.LinkedHashMap;
+
+@Service
+@Slf4j(topic = "GetSuperblockBySyscoinHandler")
+public class GetSuperblockBySyscoinHandler extends CommonHttpHandler {
+
+    private final Gson gson;
+    private final SyscoinToEthClient syscoinToEthClient;
+
+    public GetSuperblockBySyscoinHandler(
+            Gson gson,
+            SyscoinToEthClient syscoinToEthClient
+    ) {
+        this.gson = gson;
+        this.syscoinToEthClient = syscoinToEthClient;
+    }
+
+    @Override
+    public void handle(HttpExchange httpExchange) throws IOException {
+        if (setOriginAndHandleOptionsMethod(httpExchange)) return;
+
+        LinkedHashMap<String, String> params = queryToMap(httpExchange.getRequestURI().getQuery());
+        String response;
+
+        try {
+            String hash = sanitizeHash(params.get("hash"));
+            String height = params.get("height");
+            response = gson.toJson(syscoinToEthClient.getSuperblockBySyscoinBlock(hash != null ? Sha256Hash.wrap(hash) : null, height != null ? Integer.decode(height) : -1));
+        } catch (Exception exception) {
+            response =  gson.toJson(new RestError("Could not get Superblock, internal error!"));
+        }
+        writeResponse(httpExchange, response);
+    }
+}
