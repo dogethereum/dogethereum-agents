@@ -28,12 +28,12 @@ public class IntegrationAgentConstantsFactory {
 
         var syscoinToEthTimerTaskPeriod = 15 * 1000;
 
-        List<Sha256Hash> sysHashes = List.of(Sha256Hash.wrap("000004fd0a684f4ce4d5e254f7230e7a620b3d5dc88a3facf555b8bab0a63f4b"));
+        List<Sha256Hash> sysHashes = List.of(Sha256Hash.wrap("00000da80b8d7df5fae756f81315341a25f1e73c4760e10cbddacd9d3da05402"));
 
         var genesisSuperblock = new SuperblockData(
                 MerkleRootComputer.computeMerkleRoot(syscoinParams, sysHashes),
                 sysHashes,
-                 1566534575, 1566534575, 504365055,
+                1572308963, 1572308958, 504365055,
                 Keccak256Hash.wrap(new byte[32]), // initialised with 0s
                 1
         );
@@ -43,7 +43,7 @@ public class IntegrationAgentConstantsFactory {
         var defenderConfirmations = 2;
         var challengerConfirmations = 2;
 
-        var ethInitialCheckpoint = 4959851;
+        var ethInitialCheckpoint = 5349025;
         var networkId = "4"; // eth rinkeby 4; eth mainnet 1
 
         logger.info("genesisSuperblock " + genesisSuperblock.toString());
