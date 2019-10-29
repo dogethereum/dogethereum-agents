@@ -26,18 +26,17 @@ public class EthGanacheSyscoinMainAgentConstantsFactory {
     public AgentConstants create() {
         var syscoinParams = SyscoinMainNetParams.get();
         var syscoinToEthTimerTaskPeriod = 10 * 1000;
-
-        List<Sha256Hash> sysHashes = List.of(syscoinParams.getGenesisBlock().getHash());
+        
+        List<Sha256Hash> sysHashes = List.of(Sha256Hash.wrap("00000da80b8d7df5fae756f81315341a25f1e73c4760e10cbddacd9d3da05402"));
 
         var genesisSuperblock = new SuperblockData(
                 MerkleRootComputer.computeMerkleRoot(syscoinParams, sysHashes),
                 sysHashes,
-                1562016306,
-                1562016306,
-                0,
+                1572308963, 1572308958, 504365055,
                 Keccak256Hash.wrap(new byte[32]), // initialised with 0s
                 1
         );
+
 
         var defenderTimerTaskPeriod = 15 * 1000;
         var challengerTimerTaskPeriod = 15 * 1000;
