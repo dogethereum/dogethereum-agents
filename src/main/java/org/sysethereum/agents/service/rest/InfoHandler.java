@@ -1,6 +1,7 @@
 package org.sysethereum.agents.service.rest;
 
 import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpsExchange;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +13,7 @@ public class InfoHandler extends CommonHttpHandler {
 
     @Override
     public void handle(HttpExchange httpExchange) throws IOException {
+        HttpsExchange httpsExchange = (HttpsExchange) httpExchange;
         String response = "Valid Superblock calls: " + System.lineSeparator() +
                 "\t/spvproof?hash=<blockhash>" + System.lineSeparator() +
                 "\t/spvproof?height=<blockheight>" + System.lineSeparator() +
@@ -21,6 +23,6 @@ public class InfoHandler extends CommonHttpHandler {
                 "\t/superblock?height=<superblockheight>" + System.lineSeparator() + System.lineSeparator() +
                 "Valid Syscoin RPC calls: " + System.lineSeparator() +
                 "\t/syscoinrpc?method=<methodname>&param1name=<param1value>&paramNname=<paramNvalue>...";
-        writeResponse(httpExchange, response);
+        writeResponse(httpsExchange, response);
     }
 }

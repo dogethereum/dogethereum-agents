@@ -2,6 +2,7 @@ package org.sysethereum.agents.service.rest;
 
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpsExchange;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.Sha256Hash;
 import org.springframework.stereotype.Service;
@@ -28,9 +29,10 @@ public class GetSuperblockBySyscoinHandler extends CommonHttpHandler {
 
     @Override
     public void handle(HttpExchange httpExchange) throws IOException {
-        if (setOriginAndHandleOptionsMethod(httpExchange)) return;
+        HttpsExchange httpsExchange = (HttpsExchange) httpExchange;
+        if (setOriginAndHandleOptionsMethod(httpsExchange)) return;
 
-        LinkedHashMap<String, String> params = queryToMap(httpExchange.getRequestURI().getQuery());
+        LinkedHashMap<String, String> params = queryToMap(httpsExchange.getRequestURI().getQuery());
         String response;
 
         try {
@@ -40,6 +42,6 @@ public class GetSuperblockBySyscoinHandler extends CommonHttpHandler {
         } catch (Exception exception) {
             response =  gson.toJson(new RestError("Could not get Superblock, internal error!"));
         }
-        writeResponse(httpExchange, response);
+        writeResponse(httpsExchange, response);
     }
 }

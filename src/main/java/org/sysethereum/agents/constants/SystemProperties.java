@@ -109,6 +109,14 @@ public class SystemProperties {
         return getStringProperty("syscoin.superblock.challenger.unlockpw", null);
     }
 
+    public String sslFile() {
+        return getStringProperty("server.ssl.key-store");
+    }
+
+    public String sslFilePassword() {
+        return getStringProperty("server.ssl.key-store-password");
+    }
+
     public String dataDirectory() {
         return getStringProperty("data.directory");
     }
@@ -160,6 +168,7 @@ public class SystemProperties {
     public int getIntProperty(String propertyName) {
         return config.getInt(propertyName);
     }
+
 
     @SuppressWarnings("unused")
     public long getLongProperty(String propertyName) {

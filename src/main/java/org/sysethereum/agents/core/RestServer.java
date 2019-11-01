@@ -1,6 +1,6 @@
 package org.sysethereum.agents.core;
 
-import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsServer;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,19 +17,19 @@ public class RestServer {
 
     @SuppressWarnings("unused")
     private static final Logger logger = LoggerFactory.getLogger("RestServer");
-    private final HttpServer httpServer;
+    private final HttpsServer httpsServer;
 
-    public RestServer(HttpServer httpServer) {
-        this.httpServer = httpServer;
+    public RestServer(HttpsServer httpServer) {
+        this.httpsServer = httpServer;
     }
 
     public void start() {
-        httpServer.start();
+        httpsServer.start();
     }
 
     public void stop() {
         try {
-            httpServer.stop(10); // seconds
+            httpsServer.stop(10); // seconds
             logger.debug("stop: HTTP server was stopped");
         } catch (Exception e) {
             logger.error("HTTP server stop method raised an exception", e);

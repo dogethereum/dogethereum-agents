@@ -1,7 +1,12 @@
 package org.sysethereum.agents;
 
 import com.google.gson.Gson;
-import com.sun.net.httpserver.HttpServer;
+
+import javax.net.ssl.*;
+
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsParameters;
+import com.sun.net.httpserver.HttpsServer;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.Context;
 import org.bitcoinj.script.Script;
@@ -26,9 +31,12 @@ import org.web3j.tx.ClientTransactionManager;
 
 import javax.annotation.Nullable;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.InetSocketAddress;
+import java.security.*;
+import java.security.cert.CertificateException;
 import java.util.List;
 
 import static org.sysethereum.agents.constants.SystemProperties.*;
@@ -297,21 +305,62 @@ public class MainConfiguration {
     }
 
     @Bean
-    public HttpServer httpServer(
+    public HttpsServer httpsServer(
+            SystemProperties config,
             GetSPVHandler getSPVHandler,
             GetSuperblockBySyscoinHandler getSuperblockBySyscoinHandler,
             GetSuperblockHandler getSuperblockHandler,
             GetSyscoinRPCHandler getSyscoinRPCHandler,
             InfoHandler infoHandler
-    ) throws IOException {
-        HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
-        server.createContext("/", infoHandler);
-        server.createContext("/spvproof", getSPVHandler);
-        server.createContext("/superblockbysyscoinblock", getSuperblockBySyscoinHandler);
-        server.createContext("/superblock", getSuperblockHandler);
-        server.createContext("/syscoinrpc", getSyscoinRPCHandler);
-        server.setExecutor(null); // creates a default executor
-        return server;
+    ) throws IOException, KeyManagementException, NoSuchAlgorithmException, KeyStoreException, CertificateException, UnrecoverableKeyException {
+        HttpsServer httpsServer = HttpsServer.create(new InetSocketAddress(8443), 0);
+
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+
+        // initialise the keystore
+        char[] password = config.sslFilePassword().toCharArray();
+        KeyStore ks = KeyStore.getInstance("JKS");
+        FileInputStream fis = new FileInputStream(config.sslFile());
+        ks.load(fis, password);
+
+        // setup the key manager factory
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        kmf.init(ks, password);
+
+        // setup the trust manager factory
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+        tmf.init(ks);
+
+        // setup the HTTPS context and parameters
+        sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+        httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext) {
+            public void configure(HttpsParameters params) {
+                try {
+                    // initialise the SSL context
+                    SSLContext context = getSSLContext();
+                    SSLEngine engine = context.createSSLEngine();
+                    params.setNeedClientAuth(false);
+                    params.setCipherSuites(engine.getEnabledCipherSuites());
+                    params.setProtocols(engine.getEnabledProtocols());
+
+                    // Set the SSL parameters
+                    SSLParameters sslParameters = context.getSupportedSSLParameters();
+                    params.setSSLParameters(sslParameters);
+
+                } catch (Exception ex) {
+                    System.out.println("Failed to create HTTPS port");
+                }
+            }
+        });
+
+
+        httpsServer.createContext("/", infoHandler);
+        httpsServer.createContext("/spvproof", getSPVHandler);
+        httpsServer.createContext("/superblockbysyscoinblock", getSuperblockBySyscoinHandler);
+        httpsServer.createContext("/superblock", getSuperblockHandler);
+        httpsServer.createContext("/syscoinrpc", getSyscoinRPCHandler);
+        httpsServer.setExecutor(null); // creates a default executor
+        return httpsServer;
     }
 
     @Bean

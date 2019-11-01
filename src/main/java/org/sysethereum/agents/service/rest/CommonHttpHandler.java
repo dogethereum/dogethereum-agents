@@ -1,6 +1,6 @@
 package org.sysethereum.agents.service.rest;
 
-import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpsExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 import javax.annotation.Nullable;
@@ -19,16 +19,16 @@ public abstract class CommonHttpHandler implements HttpHandler {
     }
 
     /**
-     * @param httpExchange
+     * @param httpsExchange
      * @return is HTTP request handled?
      */
-    protected boolean setOriginAndHandleOptionsMethod(HttpExchange httpExchange) throws IOException {
-        httpExchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+    protected boolean setOriginAndHandleOptionsMethod(HttpsExchange httpsExchange) throws IOException {
+        httpsExchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
 
-        if (httpExchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) {
-            httpExchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, OPTIONS");
-            httpExchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type,Authorization");
-            httpExchange.sendResponseHeaders(204, -1);
+        if (httpsExchange.getRequestMethod().equalsIgnoreCase("OPTIONS")) {
+            httpsExchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, OPTIONS");
+            httpsExchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type,Authorization");
+            httpsExchange.sendResponseHeaders(204, -1);
             return true;
         }
 
@@ -54,9 +54,9 @@ public abstract class CommonHttpHandler implements HttpHandler {
         return result;
     }
 
-    protected void writeResponse(HttpExchange httpExchange, String response) throws IOException {
-        httpExchange.sendResponseHeaders(200, response.length());
-        OutputStream os = httpExchange.getResponseBody();
+    protected void writeResponse(HttpsExchange httpsExchange, String response) throws IOException {
+        httpsExchange.sendResponseHeaders(200, response.length());
+        OutputStream os = httpsExchange.getResponseBody();
         os.write(response.getBytes());
         os.close();
     }
