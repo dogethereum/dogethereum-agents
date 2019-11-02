@@ -38,6 +38,7 @@ import java.net.InetSocketAddress;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 import static org.sysethereum.agents.constants.SystemProperties.*;
 
@@ -359,7 +360,7 @@ public class MainConfiguration {
         httpsServer.createContext("/superblockbysyscoinblock", getSuperblockBySyscoinHandler);
         httpsServer.createContext("/superblock", getSuperblockHandler);
         httpsServer.createContext("/syscoinrpc", getSyscoinRPCHandler);
-        httpsServer.setExecutor(null); // creates a default executor
+        httpsServer.setExecutor(Executors.newFixedThreadPool(256));
         return httpsServer;
     }
 
