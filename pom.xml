@@ -146,7 +146,7 @@
         <dependency>
             <groupId>org.libdohj</groupId>
             <artifactId>libdohj-core</artifactId>
-            <version>0.15.22-R</version>
+            <version>0.15.23-R</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
