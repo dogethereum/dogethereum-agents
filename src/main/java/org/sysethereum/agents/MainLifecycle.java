@@ -112,7 +112,7 @@ public class MainLifecycle {
             String generalAddress = config.generalPurposeAndSendSuperblocksAddress();
             if (generalAddress.length() > 0) {
                 PersonalUnlockAccount personalUnlockAccount = admin.personalUnlockAccount(generalAddress, config.generalPurposeAndSendSuperblocksUnlockPW(), BigInteger.ZERO).send();
-                if (personalUnlockAccount != null && personalUnlockAccount.accountUnlocked()) {
+                if (personalUnlockAccount != null && personalUnlockAccount.getResult() != null && personalUnlockAccount.accountUnlocked()) {
                     logger.info("general.purpose.and.send.superblocks.address is unlocked and ready to use!");
                 } else {
                     logger.warn("general.purpose.and.send.superblocks.address could not be unlocked, please check the password you set in the configuration file");
@@ -121,7 +121,7 @@ public class MainLifecycle {
             String challengerAddress = config.syscoinSuperblockChallengerAddress();
             if (challengerAddress.length() > 0 && !generalAddress.equals(challengerAddress)) {
                 PersonalUnlockAccount personalUnlockAccount = admin.personalUnlockAccount(challengerAddress, config.syscoinSuperblockChallengerUnlockPW(), BigInteger.ZERO).send();
-                if (personalUnlockAccount != null && personalUnlockAccount.accountUnlocked()) {
+                if (personalUnlockAccount != null && personalUnlockAccount.getResult() != null && personalUnlockAccount.accountUnlocked()) {
                     logger.info("syscoin.superblock.challenger.address is unlocked and ready to use!");
                 } else {
                     logger.warn("syscoin.superblock.challenger.address could not be unlocked, please check the password you set in the configuration file");
