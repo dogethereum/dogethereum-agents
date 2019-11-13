@@ -1,10 +1,9 @@
 package org.sysethereum.agents.constants;
 
-import org.bitcoinj.core.Coin;
-import org.sysethereum.agents.core.syscoin.Superblock;
 import org.libdohj.params.AbstractSyscoinParams;
+import org.sysethereum.agents.core.bridge.SuperblockData;
 
-import java.math.BigInteger;
+import static org.sysethereum.agents.constants.AgentRole.CHALLENGER;
 
 /**
  * Agent and Bridge constants.
@@ -12,49 +11,71 @@ import java.math.BigInteger;
  */
 public class AgentConstants {
 
+    protected final AbstractSyscoinParams syscoinParams;
 
-    protected AbstractSyscoinParams syscoinParams;
-
-    protected long syscoinToEthTimerTaskPeriod;
+    protected final long syscoinToEthTimerTaskPeriod;
     // Minimum number of confirmations a tx has to have in order to EVALUATE relaying it to eth
-    protected Superblock genesisSuperblock;
-    protected long defenderTimerTaskPeriod;
-    protected long challengerTimerTaskPeriod;
-    protected long defenderConfirmations;
-    protected long challengerConfirmations;
+    protected final SuperblockData genesisSuperblock;
+    protected final long defenderTimerTaskPeriod;
+    protected final long challengerTimerTaskPeriod;
+    protected final long defenderConfirmations;
+    protected final long challengerConfirmations;
 
-    protected int ethInitialCheckpoint;
-    protected String networkId;
+    protected final int ethInitialCheckpoint;
+    protected final String networkId;
 
+    public AgentConstants(
+            AbstractSyscoinParams syscoinParams,
+            long syscoinToEthTimerTaskPeriod,
+            SuperblockData genesisSuperblock,
+            long defenderTimerTaskPeriod,
+            long challengerTimerTaskPeriod,
+            long defenderConfirmations,
+            long challengerConfirmations,
+            int ethInitialCheckpoint,
+            String networkId
+    ) {
+        this.syscoinParams = syscoinParams;
+        this.syscoinToEthTimerTaskPeriod = syscoinToEthTimerTaskPeriod;
+        this.genesisSuperblock = genesisSuperblock;
+        this.defenderTimerTaskPeriod = defenderTimerTaskPeriod;
+        this.challengerTimerTaskPeriod = challengerTimerTaskPeriod;
+        this.defenderConfirmations = defenderConfirmations;
+        this.challengerConfirmations = challengerConfirmations;
+        this.ethInitialCheckpoint = ethInitialCheckpoint;
+        this.networkId = networkId;
+    }
 
     public AbstractSyscoinParams getSyscoinParams() {
         return syscoinParams;
     }
 
-    public long getSyscoinToEthTimerTaskPeriod() { return syscoinToEthTimerTaskPeriod; }
-    public Superblock getGenesisSuperblock() {
+    public long getSyscoinToEthTimerTaskPeriod() {
+        return syscoinToEthTimerTaskPeriod;
+    }
+
+    public SuperblockData getGenesisSuperblock() {
         return genesisSuperblock;
     }
 
-    public long getDefenderTimerTaskPeriod() {
-        return defenderTimerTaskPeriod;
+    /**
+     * @param agentRole
+     * @return time in seconds
+     */
+    public long getTimerTaskPeriod(AgentRole agentRole) {
+        return agentRole == CHALLENGER ? challengerTimerTaskPeriod : defenderTimerTaskPeriod;
     }
-    public long getChallengerTimerTaskPeriod() {
-        return challengerTimerTaskPeriod;
-    }
-    public long getDefenderConfirmations() {
-        return defenderConfirmations;
-    }
-    public long getChallengerConfirmations() {
-        return challengerConfirmations;
+
+    public long getConfirmations(AgentRole agentRole) {
+        return agentRole == CHALLENGER ? challengerConfirmations : defenderConfirmations;
     }
 
     public String getNetworkId() {
         return networkId;
     }
+
     public int getEthInitialCheckpoint() {
         return ethInitialCheckpoint;
     }
-
 
 }

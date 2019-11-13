@@ -1,17 +1,28 @@
 package org.sysethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
-import org.bitcoinj.core.AltcoinBlock;
-import org.bitcoinj.core.StoredBlock;
-import org.bitcoinj.store.BlockStoreException;
-import org.bitcoinj.core.Sha256Hash;
+import org.sysethereum.agents.constants.AgentConstants;
+import org.sysethereum.agents.constants.AgentRole;
+import org.sysethereum.agents.constants.EthAddresses;
+import org.sysethereum.agents.constants.SystemProperties;
+import org.sysethereum.agents.core.bridge.BattleContractApi;
+import org.sysethereum.agents.core.bridge.ClaimContractApi;
+import org.sysethereum.agents.core.bridge.Superblock;
+import org.sysethereum.agents.core.bridge.SuperblockContractApi;
+import org.sysethereum.agents.core.bridge.battle.ChallengerConvictedEvent;
+import org.sysethereum.agents.core.bridge.battle.NewBattleEvent;
+import org.sysethereum.agents.core.bridge.battle.SubmitterConvictedEvent;
 import org.sysethereum.agents.core.syscoin.*;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.sysethereum.agents.service.ChallengeEmailNotifier;
+import org.sysethereum.agents.service.PersistentFileStore;
+import org.sysethereum.agents.util.RandomizationCounter;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.util.*;
 
 /**
@@ -19,34 +30,55 @@ import java.util.*;
  * and defends/confirms the ones submitted by the agent.
  * @author Catalina Juarros
  */
-
 @Service
 @Slf4j(topic = "SuperblockDefenderClient")
 public class SuperblockDefenderClient extends SuperblockBaseClient {
-    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
-    private static long ETH_REQUIRED_CONFIRMATIONS = 5;
+    private static final Logger logger = LoggerFactory.getLogger("SuperblockDefenderClient");
 
-    public SuperblockDefenderClient() {
-        super("Superblock defender client");
-    }
+    private final SystemProperties config;
+    private final PersistentFileStore persistentFileStore;
+    private final BattleContractApi battleContractApi;
+    private final SuperblockChain localSuperblockChain;
+    private final RandomizationCounter randomizationCounter;
+    private final BigInteger superblockTimeout;
 
-    @Override
-    protected void setupClient() {
-        myAddress = ethWrapper.getGeneralPurposeAndSendSuperblocksAddress();
+    public SuperblockDefenderClient(
+            SystemProperties config,
+            AgentConstants agentConstants,
+            PersistentFileStore persistentFileStore,
+            EthWrapper ethWrapper,
+            SuperblockContractApi superblockContractApi,
+            BattleContractApi battleContractApi,
+            ClaimContractApi claimContractApi,
+            SuperblockChain superblockChain,
+            RandomizationCounter randomizationCounter,
+            BigInteger superblockTimeout,
+            EthAddresses ethAddresses,
+            ChallengeEmailNotifier challengeEmailNotifier
+    ) {
+        super(AgentRole.SUBMITTER, config, agentConstants, ethWrapper, superblockContractApi, battleContractApi, claimContractApi, challengeEmailNotifier);
+
+        this.config = config;
+        this.persistentFileStore = persistentFileStore;
+        this.battleContractApi = battleContractApi;
+        this.localSuperblockChain = superblockChain;
+        this.randomizationCounter = randomizationCounter;
+        this.superblockTimeout = superblockTimeout;
+        this.myAddress = ethAddresses.generalPurposeAddress;
     }
 
     @Override
     public long reactToEvents(long fromBlock, long toBlock) {
         try {
-            respondToMerkleRootHashesQueries(fromBlock, toBlock);
-            respondToBlockHeaderQueries(fromBlock, toBlock);
-            sendDescendantsOfSemiApproved(fromBlock, toBlock);
+            respondToNewBattles(fromBlock, toBlock);
 
             // Maintain data structures
             removeSemiApprovedDescendants(fromBlock, toBlock);
+
+            respondToHeaders(fromBlock, toBlock);
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            return latestEthBlockProcessed;
+            logger.error(e.getMessage(), e);
+            return fromBlock - 1;
         }
         return toBlock;
     }
@@ -55,10 +87,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     protected void reactToElapsedTime() {
         try {
             confirmEarliestApprovableSuperblock();
-            callBattleTimeouts();
-            confirmAllSemiApprovable();
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -66,7 +96,27 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     /* ---- CONFIRMING/DEFENDING ---- */
 
     /* - Reacting to elapsed time - */
+    /**
+     * Responds to ongoing battle by responding with 16 headers 3 times and 12 headers the last time for a total of 60 headers over 4 transactions/blocks
+     * @throws Exception
+     */
+    void respondToHeaders(long fromBlock, long toBlock) throws Exception {
+        List<EthWrapper.RespondHeadersEvent> respondHeaderEvents =
+                ethWrapper.getNewRespondHeadersEvents(fromBlock, toBlock);
 
+        for (EthWrapper.RespondHeadersEvent respondHeaderEvent : respondHeaderEvents) {
+            if (isMine(respondHeaderEvent) && battleContractApi.sessionExists(respondHeaderEvent.sessionId)) {
+                int numMerkleHashesBySession = battleContractApi.getNumMerkleHashesBySession(respondHeaderEvent.sessionId);
+
+                // only respond if the event is the one you are looking for (it matches the number of hashes the contract thinks is the latest)
+
+                if (respondHeaderEvent.merkleHashCount == numMerkleHashesBySession) {
+                    logger.info("Header response detected for superblock {} session {}. Merkle hash count: {}. Responding with next set now.", respondHeaderEvent.superblockHash, respondHeaderEvent.sessionId, respondHeaderEvent.merkleHashCount);
+                    ethWrapper.respondBlockHeaders(respondHeaderEvent.sessionId, respondHeaderEvent.superblockHash, respondHeaderEvent.merkleHashCount);
+                }
+            }
+        }
+    }
     /**
      * Finds earliest superblock that's not invalid and stored locally,
      * but not confirmed in Sysethereum Contracts, and confirms it if its timeout has passed
@@ -76,263 +126,71 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      * @throws Exception
      */
     private void confirmEarliestApprovableSuperblock() throws Exception {
-        Keccak256Hash bestSuperblockId = ethWrapper.getBestSuperblockId();
-        Superblock chainHead = superblockChain.getChainHead();
+        Keccak256Hash bestSuperblockId = superblockContractApi.getBestSuperblockId();
+        Superblock chainHead = localSuperblockChain.getChainHead();
 
-        if (chainHead.getSuperblockId().equals(bestSuperblockId)) {
+        if (chainHead.getHash().equals(bestSuperblockId)) {
             // Contract and local db best superblocks are the same, do nothing.
             return;
         }
 
-        Superblock toConfirm = superblockChain.getFirstDescendant(bestSuperblockId);
 
+        Superblock toConfirm = localSuperblockChain.getFirstDescendant(bestSuperblockId);
         if (toConfirm == null) {
-            // TODO: see if this should raise an exception, because it's a pretty bad state
-            log.info("Best superblock from contracts, {}, not found in local database. Stopping.", bestSuperblockId);
-        } else {
-            Keccak256Hash toConfirmId = toConfirm.getSuperblockId();
-
-            if (!isMine(toConfirmId)) return;
-
-            if (newAndTimeoutPassed(toConfirm) || inBattleAndSemiApprovable(toConfirm)) {
-                // Either the superblock is unchallenged or it won all the battles;
-                // it will get approved or semi-approved depending on the situation
-                // (look at SyscoinClaimManager contract source code for more details)
-                log.info("Confirming superblock {}", toConfirmId);
-                ethWrapper.checkClaimFinished(toConfirmId, myAddress, false);
-            } else if (ethWrapper.isSuperblockSemiApproved(toConfirmId)) {
-                Superblock descendant = getHighestSemiApprovedDescendant(toConfirmId);
-                if (descendant != null && semiApprovedAndApprovable(toConfirm, descendant)) {
-                    // The superblock is semi approved and it can be approved if it has enough confirmations
-                    // TODO: see if this should be done by polling semi approved superblocks with enough confirmations
-                    Keccak256Hash descendantId = descendant.getSuperblockId();
-                    log.info("Confirming semi-approved superblock {} with descendant {}", toConfirmId, descendantId);
-                    ethWrapper.confirmClaim(toConfirmId, descendantId, myAddress);
-                }
-            }
+            logger.info("Best superblock from contracts, {}, not found in local database. Stopping.", bestSuperblockId);
+            return;
         }
+        Keccak256Hash toConfirmId = toConfirm.getHash();
+        Superblock highestDescendant = ethWrapper.getHighestApprovableOrNewDescendant(toConfirm, bestSuperblockId);
+        if (highestDescendant == null) {
+            logger.info("Highest descendent from contracts, {}, not found in local database. Stopping.", bestSuperblockId);
+            return;
+        }
+        Keccak256Hash highestDescendantId = highestDescendant.getHash();
+
+
+        // deal with your own superblock claims or if it has become unresponsive we allow someone else to check the claim or confirm it
+        if (!isMine(highestDescendantId) && !unresponsiveTimeoutPassed(highestDescendantId)) return;
+
+        if (ethWrapper.semiApprovedAndApprovable(toConfirm, highestDescendant)) {
+            // The superblock is semi approved and it can be approved if it has enough confirmations
+            logger.info("Confirming semi-approved superblock {} with descendant {}", toConfirmId, highestDescendantId);
+            claimContractApi.confirmClaim(toConfirmId, highestDescendantId);
+        }
+        else if (ethWrapper.newAndTimeoutPassed(highestDescendantId) || claimContractApi.getInBattleAndSemiApprovable(highestDescendantId)) {
+            // Either the superblock is unchallenged or it won all the battles;
+            // it will get approved or semi-approved depending on the situation
+            // (look at SyscoinClaimManager contract source code for more details)
+            logger.info("Confirming superblock {}", highestDescendantId);
+            claimContractApi.checkClaimFinished(highestDescendantId, false);
+
+        }
+
     }
 
-    /**
-     * Confirms superblocks which weren't challenged or for which the defender has won all the battles,
-     * but whose parent might not be approved.
-     * @throws Exception
-     */
-    private void confirmAllSemiApprovable() throws Exception {
-        for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
-            Superblock superblock = superblockChain.getSuperblock(superblockId);
-            if (superblock != null && (inBattleAndSemiApprovable(superblock) || newAndTimeoutPassed(superblock))) {
-                log.info("Confirming semi-approvable superblock {}", superblockId);
-                ethWrapper.checkClaimFinished(superblockId, myAddress, false);
-            }
-        }
-    }
 
 
     /* - Reacting to events - */
 
-    private void respondToBlockHeaderQueries(long fromBlock, long toBlock)
-            throws IOException, BlockStoreException, Exception {
-        List<EthWrapper.QueryBlockHeaderEvent> queryBlockHeaderEvents =
-                ethWrapper.getBlockHeaderQueries(fromBlock, toBlock);
+    private void respondToNewBattles(long fromBlock, long toBlock) throws Exception {
+        List<NewBattleEvent> queryBattleEvents = battleContractApi.getNewBattleEvents(fromBlock, toBlock);
 
-        for (EthWrapper.QueryBlockHeaderEvent queryBlockHeader : queryBlockHeaderEvents) {
-            if (isMine(queryBlockHeader)) {
-                log.info("Header requested for Syscoin block {}, session {}. Responding now.",
-                        queryBlockHeader.syscoinBlockHash, queryBlockHeader.sessionId);
-
-                StoredBlock syscoinBlock = syscoinWrapper.getBlock(queryBlockHeader.syscoinBlockHash);
-                ethWrapper.respondBlockHeader(queryBlockHeader.superblockId, queryBlockHeader.sessionId,
-                        (AltcoinBlock) syscoinBlock.getHeader(), myAddress);
+        for (NewBattleEvent queryBattleEvent : queryBattleEvents) {
+            if (isMyBattleEvent(queryBattleEvent) && battleContractApi.sessionExists(queryBattleEvent.sessionId)) {
+                logger.info("Battle detected for superblock {} session {}. Responding now with first set of headers.", queryBattleEvent.superblockHash, queryBattleEvent.sessionId);
+                ethWrapper.respondBlockHeaders(queryBattleEvent.sessionId, queryBattleEvent.superblockHash, 0);
             }
         }
     }
 
-    private void respondToMerkleRootHashesQueries(long fromBlock, long toBlock) throws IOException, Exception {
-        List<EthWrapper.QueryMerkleRootHashesEvent> queryMerkleRootHashesEvents =
-                ethWrapper.getMerkleRootHashesQueries(fromBlock, toBlock);
-
-        for (EthWrapper.QueryMerkleRootHashesEvent queryMerkleRootHashes : queryMerkleRootHashesEvents) {
-            if (isMine(queryMerkleRootHashes)) {
-                log.info("Merkle root hashes requested for session {}, superblock {}. Responding now.",
-                        queryMerkleRootHashes.sessionId, queryMerkleRootHashes.superblockId);
-
-                Superblock superblock = superblockChain.getSuperblock(queryMerkleRootHashes.superblockId);
-                ethWrapper.respondMerkleRootHashes(queryMerkleRootHashes.superblockId, queryMerkleRootHashes.sessionId,
-                        superblock.getSyscoinBlockHashes(), myAddress);
-            }
-        }
+    private boolean unresponsiveTimeoutPassed(Keccak256Hash superblockId) throws Exception {
+        double delay = superblockTimeout.floatValue() * randomizationCounter.getValue();
+        int timeout = superblockTimeout.intValue() + (int)delay;
+        return claimContractApi.getNewEventTimestampDate(superblockId).before(SuperblockUtils.getNSecondsAgo(timeout));
     }
 
-    /**
-     * Listens to SemiApprovedSuperblock events and proposes their direct descendants to the contracts
-     * if the semi-approved superblock was proposed by this defender.
-     * @param fromBlock
-     * @param toBlock
-     * @throws Exception
-     */
-    private void sendDescendantsOfSemiApproved(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
-                ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
-
-        for (EthWrapper.SuperblockEvent semiApprovedSuperblockEvent : semiApprovedSuperblockEvents) {
-            Superblock descendant = superblockChain.getFirstDescendant(semiApprovedSuperblockEvent.superblockId);
-            if (descendant != null) {
-                log.info("Found superblock {}, descendant of semi-approved {}. Sending it now.",
-                        descendant.getSuperblockId(), semiApprovedSuperblockEvent.superblockId);
-                ethWrapper.sendStoreSuperblock(descendant, myAddress);
-                superblockToSessionsMap.put(descendant.getSuperblockId(), new HashSet<>());
-            }
-        }
-    }
-
-    private void logErrorBattleEvents(long fromBlock, long toBlock) throws IOException {
-        List<EthWrapper.ErrorBattleEvent> errorBattleEvents = ethWrapper.getErrorBattleEvents(fromBlock, toBlock);
-
-        for (EthWrapper.ErrorBattleEvent errorBattleEvent : errorBattleEvents) {
-            if (sessionToSuperblockMap.containsKey(errorBattleEvent.sessionId)) {
-                log.info("ErrorBattle. Session ID: {}, error: {}", errorBattleEvent.sessionId, errorBattleEvent.err);
-            }
-        }
-    }
-
-
-    /* ---- HELPER METHODS ---- */
-
-    private boolean isMine(EthWrapper.QueryBlockHeaderEvent queryBlockHeader) {
-        return queryBlockHeader.submitter.equals(myAddress);
-    }
-
-    private boolean isMine(EthWrapper.QueryMerkleRootHashesEvent queryMerkleRootHashes) {
-        return queryMerkleRootHashes.submitter.equals(myAddress);
-    }
-
-
-    private boolean submittedTimeoutPassed(Keccak256Hash superblockId) throws Exception {
-        return ethWrapper.getNewEventTimestampDate(superblockId).before(getTimeoutDate());
-    }
-
-    private Date getTimeoutDate() throws Exception {
-        int superblockTimeout = ethWrapper.getSuperblockTimeout().intValue();
-        return SuperblockUtils.getNSecondsAgo(superblockTimeout);
-    }
-
-    private boolean challengeTimeoutPassed(Keccak256Hash superblockId) throws Exception {
-        return ethWrapper.getClaimChallengeTimeoutDate(superblockId).before(getTimeoutDate());
-    }
-
-    private boolean newAndTimeoutPassed(Superblock superblock) throws Exception {
-        Keccak256Hash superblockId = superblock.getSuperblockId();
-        return (ethWrapper.isSuperblockNew(superblockId) && submittedTimeoutPassed(superblockId));
-    }
-
-    /**
-     * Checks if a given superblock is in battle and meets the necessary and sufficient conditions
-     * for being semi-approved when calling checkClaimFinished.
-     * @param superblock Superblock to be confirmed.
-     * @return True if the superblock can be safely semi-approved, false otherwise.
-     * @throws Exception
-     */
-    private boolean inBattleAndSemiApprovable(Superblock superblock) throws Exception {
-        Keccak256Hash superblockId = superblock.getSuperblockId();
-        return ethWrapper.getInBattleAndSemiApprovable(superblockId);
-    }
-
-    /**
-     * Checks if a superblock is semi-approved and has enough confirmations, i.e. semi-approved descendants.
-     * To be used after finding a descendant with getHighestSemiApprovedDescendant.
-     * @param superblock Superblock to be confirmed.
-     * @param descendant Highest semi-approved descendant of superblock to be confirmed.
-     * @return True if the superblock can be safely approved, false otherwise.
-     * @throws Exception
-     */
-    private boolean semiApprovedAndApprovable(Superblock superblock, Superblock descendant) throws Exception {
-        Keccak256Hash superblockId = superblock.getSuperblockId();
-        Keccak256Hash descendantId = descendant.getSuperblockId();
-        return (descendant.getSuperblockHeight() - superblock.getSuperblockHeight() >=
-            ethWrapper.getSuperblockConfirmations() &&
-            ethWrapper.isSuperblockSemiApproved(descendantId) &&
-            ethWrapper.isSuperblockSemiApproved(superblockId));
-    }
-
-    /**
-     * Helper method for confirming a semi-approved superblock.
-     * Finds the highest semi-approved superblock in the main chain that comes after a given superblock.
-     * @param superblockId Superblock to be confirmed.
-     * @return Highest superblock in main chain that's newer than the given superblock
-     *         if such a superblock exists, null otherwise (i.e. given superblock isn't in main chain
-     *         or has no semi-approved descendants).
-     * @throws BlockStoreException
-     * @throws IOException
-     * @throws Exception
-     */
-    private Superblock getHighestSemiApprovedDescendant(Keccak256Hash superblockId)
-            throws BlockStoreException, IOException, Exception {
-        Superblock highest = superblockChain.getChainHead();
-
-        // Find highest semi-approved descendant
-        while (highest != null && !ethWrapper.isSuperblockSemiApproved(highest.getSuperblockId())) {
-            highest = superblockChain.getParent(highest);
-            if (highest.getSuperblockId().equals(superblockId)) {
-                // No semi-approved descendants found
-                return null;
-            }
-        }
-
-        return highest;
-    }
-
-
-    /* ---- OVERRIDE ABSTRACT METHODS ---- */
-
-    @Override
-    protected void setupFiles() throws IOException {
-        setupBaseFiles();
-    }
-
-    @Override
-    protected boolean arePendingTransactions() throws IOException {
-        return ethWrapper.arePendingTransactionsForSendSuperblocksAddress();
-    }
-
-    @Override
-    protected boolean isEnabled() {
-        return config.isSyscoinSuperblockSubmitterEnabled();
-    }
-
-    @Override
-    protected String getLastEthBlockProcessedFilename() {
-        return "SuperblockDefenderLatestEthBlockProcessedFile.dat";
-    }
-
-    @Override
-    protected String getSessionToSuperblockMapFilename() {
-        return "SuperblockDefenderSessionToSuperblockMap.dat";
-    }
-
-    @Override
-    protected String getSuperblockToSessionsMapFilename() {
-        return "SuperblockDefenderSuperblockToSessionsMap.dat";
-    }
-
-    @Override
-    protected boolean isMine(EthWrapper.NewBattleEvent newBattleEvent) {
-        return newBattleEvent.submitter.equals(myAddress);
-    }
-
-    @Override
-    protected long getConfirmations() {
-        return config.getAgentConstants().getDefenderConfirmations();
-    }
-
-    @Override
-    protected void callBattleTimeouts() throws Exception {
-        for (Keccak256Hash sessionId : sessionToSuperblockMap.keySet()) {
-            if (ethWrapper.getChallengerHitTimeout(sessionId)) {
-                log.info("Challenger hit timeout on session {}. Calling timeout.", sessionId);
-                ethWrapper.timeout(sessionId, ethWrapper.getBattleManager());
-            }
-        }
+    private boolean isMine(EthWrapper.RespondHeadersEvent respondHeadersEvent) {
+        return respondHeadersEvent.submitter.equals(myAddress);
     }
 
     /**
@@ -342,26 +200,21 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      * @throws Exception
      */
     @Override
-    protected void removeSuperblocks(long fromBlock, long toBlock, List<EthWrapper.SuperblockEvent> superblockEvents)
+    protected void removeSuperblocks(long fromBlock, long toBlock, List<SuperblockContractApi.SuperblockEvent> superblockEvents)
             throws Exception {
-        for (EthWrapper.SuperblockEvent superblockEvent : superblockEvents) {
-            if (superblockToSessionsMap.containsKey(superblockEvent.superblockId)) {
-                superblockToSessionsMap.remove(superblockEvent.superblockId);
+        boolean removeFromContract = false;
+        for (SuperblockContractApi.SuperblockEvent event : superblockEvents) {
+            if (superblockToSessionsMap.containsKey(event.superblockId)) {
+                sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(event.superblockId));
+                superblockToSessionsMap.remove(event.superblockId);
+                removeFromContract = true;
             }
 
-            if (config.isWithdrawFundsEnabled()) {
-                ethWrapper.withdrawAllFundsExceptLimit(myAddress, false);
-            }
+        }
+        if (removeFromContract && config.isWithdrawFundsEnabled()) {
+            claimContractApi.withdrawAllFundsExceptLimit(AgentRole.SUBMITTER, myAddress);
         }
     }
-
-    @Override
-    protected long getTimerTaskPeriod() {
-        return config.getAgentConstants().getDefenderTimerTaskPeriod();
-    }
-
-
-    /* ---- BATTLE MAP METHODS ---- */
 
     /**
      * Removes semi-approved superblocks from superblock to session map.
@@ -370,45 +223,13 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      * @throws Exception
      */
     private void removeSemiApprovedDescendants(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
-                ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
+        List<SuperblockContractApi.SuperblockEvent> semiApprovedSuperblockEvents =
+                superblockContractApi.getSemiApprovedSuperblocks(fromBlock, toBlock);
 
-        for (EthWrapper.SuperblockEvent semiApprovedSuperblockEvent : semiApprovedSuperblockEvents) {
-            if (superblockToSessionsMap.containsKey(semiApprovedSuperblockEvent.superblockId)) {
-                superblockToSessionsMap.remove(semiApprovedSuperblockEvent.superblockId);
-            }
-        }
-    }
-
-    /**
-     * Listens to NewSuperblock events to keep track of superblocks submitted by this client.
-     * @param fromBlock
-     * @param toBlock
-     * @throws IOException
-     */
-    private void getNewSuperblocks(long fromBlock, long toBlock) throws IOException {
-        List<EthWrapper.SuperblockEvent> newSuperblockEvents = ethWrapper.getNewSuperblocks(fromBlock, toBlock);
-
-        for (EthWrapper.SuperblockEvent newSuperblockEvent : newSuperblockEvents) {
-            if (isMine(newSuperblockEvent)) {
-                superblockToSessionsMap.put(newSuperblockEvent.superblockId, new HashSet<>());
-            }
-        }
-    }
-
-    /**
-     * Removes semi-approved superblocks from a data structure that keeps track of in battle superblocks.
-     * @param fromBlock
-     * @param toBlock
-     * @throws Exception
-     */
-    private void removeSemiApproved(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
-                ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
-
-        for (EthWrapper.SuperblockEvent semiApprovedSuperblockEvent : semiApprovedSuperblockEvents) {
-            if (superblockToSessionsMap.containsKey(semiApprovedSuperblockEvent.superblockId)) {
-                superblockToSessionsMap.remove(semiApprovedSuperblockEvent.superblockId);
+        for (SuperblockContractApi.SuperblockEvent event : semiApprovedSuperblockEvents) {
+            if (superblockToSessionsMap.containsKey(event.superblockId)) {
+                sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(event.superblockId));
+                superblockToSessionsMap.remove(event.superblockId);
             }
         }
     }
@@ -424,14 +245,16 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      */
     @Override
     protected void deleteSubmitterConvictedBattles(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SubmitterConvictedEvent> submitterConvictedEvents =
-                ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock, ethWrapper.getBattleManager());
+        List<SubmitterConvictedEvent> events = battleContractApi.getSubmitterConvictedEvents(agentRole, fromBlock, toBlock);
 
-        for (EthWrapper.SubmitterConvictedEvent submitterConvictedEvent : submitterConvictedEvents) {
-            if (submitterConvictedEvent.submitter.equals(myAddress)) {
-                log.info("Submitter convicted on session {}, superblock {}. Battle lost!",
-                        submitterConvictedEvent.sessionId, submitterConvictedEvent.superblockId);
-                sessionToSuperblockMap.remove(submitterConvictedEvent.sessionId);
+        for (SubmitterConvictedEvent event : events) {
+            if (event.submitter.equals(myAddress)) {
+                logger.info("Submitter convicted on session {}, superblock {}. Battle lost!",
+                        event.sessionId, event.superblockHash);
+                sessionToSuperblockMap.remove(event.sessionId);
+                if (superblockToSessionsMap.containsKey(event.superblockHash)) {
+                    superblockToSessionsMap.get(event.superblockHash).remove(event.sessionId);
+                }
             }
         }
     }
@@ -445,30 +268,31 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      */
     @Override
     protected void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.ChallengerConvictedEvent> challengerConvictedEvents =
-                ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock, ethWrapper.getBattleManager());
+        List<ChallengerConvictedEvent> events = battleContractApi.getChallengerConvictedEvents(agentRole, fromBlock, toBlock);
 
-        for (EthWrapper.ChallengerConvictedEvent challengerConvictedEvent : challengerConvictedEvents) {
-            if (sessionToSuperblockMap.containsKey(challengerConvictedEvent.sessionId)) {
-                log.info("Challenger convicted on session {}, superblock {}. Battle won!",
-                        challengerConvictedEvent.sessionId, challengerConvictedEvent.superblockId);
-                sessionToSuperblockMap.remove(challengerConvictedEvent.sessionId);
+        for (ChallengerConvictedEvent event : events) {
+            if (sessionToSuperblockMap.containsKey(event.sessionId)) {
+                logger.info("Challenger convicted on session {}, superblock {}. Battle won!", event.sessionId, event.superblockHash);
+                sessionToSuperblockMap.remove(event.sessionId);
+            }
+            if (superblockToSessionsMap.containsKey(event.superblockHash)) {
+                superblockToSessionsMap.get(event.superblockHash).remove(event.sessionId);
             }
         }
     }
 
     @Override
     protected void restoreFiles() throws ClassNotFoundException, IOException {
-        restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
-        restore(sessionToSuperblockMap, sessionToSuperblockMapFile);
-        restore(superblockToSessionsMap, superblockToSessionsMapFile);
+        latestEthBlockProcessed = persistentFileStore.restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
+        sessionToSuperblockMap = persistentFileStore.restore(sessionToSuperblockMap, sessionToSuperblockMapFile);
+        superblockToSessionsMap = persistentFileStore.restore(superblockToSessionsMap, superblockToSessionsMapFile);
     }
 
     @Override
-    protected void flushFiles() throws ClassNotFoundException, IOException {
-        flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
-        flush(sessionToSuperblockMap, sessionToSuperblockMapFile);
-        flush(superblockToSessionsMap, superblockToSessionsMapFile);
+    protected void flushFiles() throws IOException {
+        persistentFileStore.flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
+        persistentFileStore.flush(sessionToSuperblockMap, sessionToSuperblockMapFile);
+        persistentFileStore.flush(superblockToSessionsMap, superblockToSessionsMapFile);
     }
 
 }
