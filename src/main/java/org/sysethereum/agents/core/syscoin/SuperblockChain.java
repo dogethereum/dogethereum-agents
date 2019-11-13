@@ -148,11 +148,21 @@ public class SuperblockChain {
         }
 
         List<Sha256Hash> poppedBlocks = new ArrayList<>();
-
-        while (!hashStack.empty() && syscoinWrapper.getBlock(hashStack.peek()).getHeader().getTime().before(endTime)) {
-            poppedBlocks.add(hashStack.pop());
+        boolean haveEnoughForDuration = false;
+        while (!hashStack.empty() && new Date(syscoinWrapper.getMedianTimestamp(syscoinWrapper.getBlock(hashStack.peek()))*1000L).before(endTime)) {
+            Sha256Hash poppedHash = hashStack.pop();
+            poppedBlocks.add(poppedHash);
+            if(poppedBlocks.size() >= SUPERBLOCK_DURATION) {
+                if(poppedHash != Sha256Hash.wrap("00000089642228b21bb67fa8e6028ea846973b76d1433a3c950bfba9b0f5f97e") || poppedBlocks.size() >= (SUPERBLOCK_DURATION+1)) {
+                    haveEnoughForDuration = true;
+                    break;
+                }
+            }
         }
 
+        // if we don't have SUPERBLOCK_DURATION amount then just clear, we don't have enough to create a superblock yet
+        if(!haveEnoughForDuration)
+            poppedBlocks.clear();
         return poppedBlocks;
     }
 
