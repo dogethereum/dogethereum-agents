@@ -281,7 +281,7 @@ public class ClaimContractApi {
      * @throws Exception
      */
     public void challengeSuperblock(Keccak256Hash superblockId) throws Exception {
-        if(!getClaimExists(superblockId) || getClaimDecided(superblockId)) {
+        if(!getClaimExists(superblockId) || getClaimDecided(superblockId) || getClaimInvalid(superblockId)) {
             logger.info("Superblock has already been decided upon or claim doesn't exist, skipping...{}", superblockId.toString());
             return;
         }
