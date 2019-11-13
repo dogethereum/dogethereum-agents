@@ -17,15 +17,6 @@ import java.util.Date;
  */
 public class SuperblockUtils {
 
-    /* ---- SUPERBLOCK STATUS CODES ---- */
-
-    public static final BigInteger STATUS_UNINITIALIZED = BigInteger.valueOf(0);
-    public static final BigInteger STATUS_NEW = BigInteger.valueOf(1);
-    public static final BigInteger STATUS_IN_BATTLE = BigInteger.valueOf(2);
-    public static final BigInteger STATUS_SEMI_APPROVED = BigInteger.valueOf(3);
-    public static final BigInteger STATUS_APPROVED = BigInteger.valueOf(4);
-    public static final BigInteger STATUS_INVALID = BigInteger.valueOf(5);
-
     public static byte[] toBytes32(BigInteger n) throws IOException {
         byte[] hex = n.toByteArray();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -42,6 +33,7 @@ public class SuperblockUtils {
         return outputStream.toByteArray();
     }
 
+    @SuppressWarnings("unused")
     public static byte[] toBytes32(int n) throws IOException {
         byte[] hex = intToBytes(n);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -84,6 +76,7 @@ public class SuperblockUtils {
     }
 
     // this is missing in java.Utils for some utterly incomprehensible reason
+    @SuppressWarnings("unused")
     public static void uint32ToByteStreamBE(long val, OutputStream stream) throws IOException {
         stream.write((int) (0xFF & (val >> 24)));
         stream.write((int) (0xFF & (val >> 16)));
@@ -91,12 +84,13 @@ public class SuperblockUtils {
         stream.write((int) (0xFF & val));
     }
 
+    @SuppressWarnings("unused")
     public static long readPaddedUint32(byte[] bytes, int offset) {
         int realOffset = offset + 28; // read last 4 bytes
-        return (bytes[realOffset] & 0xffl) |
-                ((bytes[realOffset + 1] & 0xffl) << 8) |
-                ((bytes[realOffset + 2] & 0xffl) << 16) |
-                ((bytes[realOffset + 3] & 0xffl) << 24);
+        return (bytes[realOffset] & 0xffL) |
+                ((bytes[realOffset + 1] & 0xffL) << 8) |
+                ((bytes[realOffset + 2] & 0xffL) << 16) |
+                ((bytes[realOffset + 3] & 0xffL) << 24);
     }
 
     /**
@@ -117,6 +111,7 @@ public class SuperblockUtils {
      * @param block Syscoin block.
      * @return Serialized block header.
      */
+    @SuppressWarnings("unused")
     public static byte[] serializeBlockHeader(Block block) throws IOException {
         ByteArrayOutputStream stream = new UnsafeByteArrayOutputStream(80);
 

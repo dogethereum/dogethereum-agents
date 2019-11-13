@@ -1,5 +1,6 @@
 package org.sysethereum.agents.constants;
 
+import com.google.common.base.Charsets;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigRenderOptions;
@@ -7,15 +8,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.io.InputStreamReader;
+
+import static org.sysethereum.agents.constants.AgentRole.CHALLENGER;
 
 /**
  * Utility class to retrieve property values from the configuration file
- *
+ * <p>
  * The properties are taken from different sources and merged in the following order
  * (the config option from the next source overrides option from previous):
  * - system property : each config entry might be altered via -D VM option
@@ -26,140 +26,55 @@ import java.util.Properties;
  */
 @Slf4j(topic = "SystemProperties")
 public class SystemProperties {
-    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
-    private static final String LOCAL = "local";
-    private static final String INTEGRATION = "integration";
-    private static final String ETHGANACHE_SYSCOINMAIN = "ethganachesyscoinmain";
 
-    private static final String YES = "yes";
-    private static final String NO = "no";
+    private static final Logger logger = LoggerFactory.getLogger("SystemProperties");
 
-    public static final SystemProperties CONFIG = new SystemProperties();
+    public static final String LOCAL = "local";
+    public static final String INTEGRATION = "integration";
+    public static final String ETHGANACHE_SYSCOINMAIN = "ethganachesyscoinmain";
 
-    protected Config config;
+    public static final String YES = "yes";
+    public static final String NO = "no";
 
+    private final Config config;
 
-    private String projectVersion = null;
-    private String projectVersionModifier = null;
-    private AgentConstants agentConstants;
+    private final String projectVersion;
+    private final String projectVersionModifier;
 
-    public SystemProperties() {
-        try {
-            Config javaSystemProperties = ConfigFactory.load("no-such-resource-only-system-props");
-            String file = System.getProperty("sysethereum.agents.conf.file");
-            Config cmdLineConfigFile = file != null ? ConfigFactory.parseFile(new File(file)) : ConfigFactory.empty();
-            log.info("Config ( {} ): user properties from -Dsysethereum.agents.conf.file file '{}'",
-                    cmdLineConfigFile.entrySet().isEmpty() ? NO : YES, file);
-            config = javaSystemProperties
-                    .withFallback(cmdLineConfigFile);
-
-            log.debug("Config trace: " + config.root().render(ConfigRenderOptions.defaults().
-                    setComments(false).setJson(false)));
-
-            Properties props = new Properties();
-            InputStream is = getClass().getResourceAsStream("/version.properties");
-            props.load(is);
-            this.projectVersion = props.getProperty("versionNumber");
-            this.projectVersion = this.projectVersion.replaceAll("'", "");
-
-            if (this.projectVersion == null) {
-                this.projectVersion = "-.-.-";
-            }
-
-            this.projectVersionModifier = props.getProperty("modifier");
-            this.projectVersionModifier = this.projectVersionModifier.replaceAll("\"", "");
-
-        } catch (Exception e) {
-            log.error("Can't read config.", e);
-            throw new RuntimeException(e);
-        }
+    public static SystemProperties forTest(InputStream config) {
+        return new SystemProperties(ConfigFactory.parseReader(new InputStreamReader(config, Charsets.UTF_8)), "1.0.0", "DEV");
     }
 
-    public Config getConfig() {
-        return config;
+    public SystemProperties(Config config, String projectVersion, String projectVersionModifier) {
+        this.config = config;
+        this.projectVersion = projectVersion;
+        this.projectVersionModifier = projectVersionModifier;
+
+        logger.debug("Config trace: " + config.root().render(ConfigRenderOptions.defaults().setComments(false).setJson(false)));
     }
 
-    /**
-     * Puts a new config atop of existing stack making the options
-     * in the supplied config overriding existing options
-     * Once put this config can't be removed
-     *
-     * @param overrideOptions - atop config
-     */
-    public void overrideParams(Config overrideOptions) {
-        config = overrideOptions.withFallback(config);
+    public String getLastEthBlockProcessedFilename(AgentRole agentRole) {
+        return agentRole == CHALLENGER
+                ? "SuperblockChallengerLatestEthBlockProcessedFile.dat"
+                : "SuperblockDefenderLatestEthBlockProcessedFile.dat";
     }
 
-    /**
-     * Puts a new config atop of existing stack making the options
-     * in the supplied config overriding existing options
-     * Once put this config can't be removed
-     *
-     * @param keyValuePairs [name] [value] [name] [value] ...
-     */
-    public void overrideParams(String ... keyValuePairs) {
-        if (keyValuePairs.length % 2 != 0) {
-            throw new RuntimeException("Odd argument number");
-        }
-
-        Map<String, String> map = new HashMap<>();
-        for (int i = 0; i < keyValuePairs.length; i += 2) {
-            map.put(keyValuePairs[i], keyValuePairs[i + 1]);
-        }
-        overrideParams(map);
+    public String getSessionToSuperblockMapFilename(AgentRole agentRole) {
+        return agentRole == CHALLENGER
+                ? "SuperblockChallengerSessionToSuperblockMap.dat"
+                : "SuperblockDefenderSessionToSuperblockMap.dat";
     }
 
-    /**
-     * Puts a new config atop of existing stack making the options
-     * in the supplied config overriding existing options
-     * Once put this config can't be removed
-     *
-     * @param cliOptions -  command line options to take presidency
-     */
-    public void overrideParams(Map<String, String> cliOptions) {
-        Config cliConf = ConfigFactory.parseMap(cliOptions);
-        overrideParams(cliConf);
+    public String getSuperblockToSessionsMapFilename(AgentRole agentRole) {
+        return agentRole == CHALLENGER
+                ? "SuperblockChallengerSuperblockToSessionsMap.dat"
+                : "SuperblockDefenderSuperblockToSessionsMap.dat";
     }
 
-    public <T> T getProperty(String propName, T defaultValue) {
-        if (!config.hasPath(propName)) {
-            return defaultValue;
-        }
-
-        String string = config.getString(propName);
-        if (string.trim().isEmpty()) {
-            return defaultValue;
-        }
-
-        return (T) config.getAnyRef(propName);
-    }
-
-    public AgentConstants getAgentConstants() {
-        if (agentConstants == null) {
-            String constants = constants();
-            switch (constants) {
-                case INTEGRATION:
-                    agentConstants = IntegrationAgentConstants.getInstance();
-                    break;
-                case LOCAL:
-                    agentConstants = LocalAgentConstants.getInstance();
-                    break;
-                case ETHGANACHE_SYSCOINMAIN:
-                    agentConstants = EthGanacheSyscoinMainAgentConstants.getInstance();
-                    break;
-                default:
-                    throw new RuntimeException("Unknown value for 'constants': '" + constants + "'");
-            }
-        }
-        return agentConstants;
-    }
-
-    public boolean isSyscoinSuperblockSubmitterEnabled() {
-        return getBooleanProperty("syscoin.superblock.submitter.enabled", false);
-    }
-
-    public boolean isSyscoinBlockChallengerEnabled() {
-        return getBooleanProperty("syscoin.superblock.challenger.enabled", false);
+    public boolean isAgentRoleEnabled(AgentRole agentRole) {
+        return agentRole == CHALLENGER
+                ? getBooleanProperty("syscoin.superblock.challenger.enabled")
+                : getBooleanProperty("syscoin.superblock.submitter.enabled");
     }
 
     public boolean isGanache() {
@@ -167,7 +82,7 @@ public class SystemProperties {
     }
 
     public String constants() {
-        return config.hasPath("constants") ? config.getString("constants") : null;
+        return config.getString("constants");
     }
 
     public String projectVersion() {
@@ -181,33 +96,53 @@ public class SystemProperties {
     public String generalPurposeAndSendSuperblocksAddress() {
         return getStringProperty("general.purpose.and.send.superblocks.address", null);
     }
-    public String generalPurposeAndSendSuperblocksUnlockPW(){
+
+    public String generalPurposeAndSendSuperblocksUnlockPW() {
         return getStringProperty("general.purpose.and.send.superblocks.unlockpw", null);
     }
 
     public String syscoinSuperblockChallengerAddress() {
         return getStringProperty("syscoin.superblock.challenger.address", null);
     }
-    public String syscoinSuperblockChallengerUnlockPW(){
+
+    public String syscoinSuperblockChallengerUnlockPW() {
         return getStringProperty("syscoin.superblock.challenger.unlockpw", null);
     }
+
+    public String sslFile() {
+        return getStringProperty("server.ssl.key-store");
+    }
+
+    public String sslFilePassword() {
+        return getStringProperty("server.ssl.key-store-password");
+    }
+
     public String dataDirectory() {
-        return getStringProperty("data.directory", null);
+        return getStringProperty("data.directory");
     }
-    public String infuraURL() {
-        return getStringProperty("infura.url", "https://mainnet.infura.io/v3") + "/" + getStringProperty("infura.projectid", "d178aecf49154b12be98e68e998cfb8d");
+
+    public String secondaryURL() {
+        return getStringProperty("secondary.url", "https://mainnet.infura.io/v3/d178aecf49154b12be98e68e998cfb8d");
     }
+
     public String syscoinRPCUser() {
         return getStringProperty("syscoinrpc.user", "u");
     }
+
     public String syscoinRPCPassword() {
         return getStringProperty("syscoinrpc.password", "p");
     }
+
     public String syscoinRPCURL() {
         return getStringProperty("syscoinrpc.url_and_port", "http://localhost:8370/");
     }
+
     public long gasPriceMinimum() {
         return getLongProperty("gas.price.min", 0);
+    }
+
+    public long gasPriceMaximum() {
+        return getLongProperty("gas.price.max", 0);
     }
 
     public long gasLimit() {
@@ -222,13 +157,34 @@ public class SystemProperties {
         return getLongProperty("deposited.funds.limit", 0);
     }
 
-    protected String getStringProperty(String propertyName, String defaultValue) {
+    public String getStringProperty(String propertyName) {
+        return config.getString(propertyName);
+    }
+
+    public String getStringProperty(String propertyName, String defaultValue) {
         return config.hasPath(propertyName) ? config.getString(propertyName) : defaultValue;
     }
-    protected long getLongProperty(String propertyName, long defaultValue) {
+
+    public int getIntProperty(String propertyName) {
+        return config.getInt(propertyName);
+    }
+
+
+    @SuppressWarnings("unused")
+    public long getLongProperty(String propertyName) {
+        return config.getLong(propertyName);
+    }
+
+    public long getLongProperty(String propertyName, long defaultValue) {
         return config.hasPath(propertyName) ? config.getLong(propertyName) : defaultValue;
     }
-    protected boolean getBooleanProperty(String propertyName, boolean defaultValue) {
+
+    @SuppressWarnings("unused")
+    public boolean getBooleanProperty(String propertyName) {
+        return config.getBoolean(propertyName);
+    }
+
+    public boolean getBooleanProperty(String propertyName, boolean defaultValue) {
         return config.hasPath(propertyName) ? config.getBoolean(propertyName) : defaultValue;
     }
 

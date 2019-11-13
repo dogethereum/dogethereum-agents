@@ -1,46 +1,44 @@
 package org.sysethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
-import org.bitcoinj.store.BlockStoreException;
+import org.sysethereum.agents.constants.AgentConstants;
+import org.sysethereum.agents.constants.AgentRole;
 import org.sysethereum.agents.constants.SystemProperties;
+import org.sysethereum.agents.core.bridge.BattleContractApi;
+import org.sysethereum.agents.core.bridge.ClaimContractApi;
+import org.sysethereum.agents.core.bridge.SuperblockContractApi;
+import org.sysethereum.agents.core.bridge.battle.NewBattleEvent;
 import org.sysethereum.agents.core.syscoin.*;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.sysethereum.agents.service.ChallengeEmailNotifier;
+import org.sysethereum.agents.service.ChallengeReport;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
+import javax.annotation.Nullable;
 import java.io.*;
+import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Base class to monitor the Ethereum blockchain for superblock-related events
  * @author Catalina Juarros
  * @author Ismael Bejarano
  */
-
 @Slf4j(topic = "SuperblockBaseClient")
-public abstract class SuperblockBaseClient extends PersistentFileStore {
-    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
-    @Autowired
-    protected SyscoinWrapper syscoinWrapper;
+public abstract class SuperblockBaseClient {
+    private static final Logger logger = LoggerFactory.getLogger("SuperblockBaseClient");
 
-    @Autowired
-    protected EthWrapper ethWrapper;
-
-    @Autowired
-    protected SuperblockChain superblockChain;
-
-    protected SystemProperties config;
-
-    protected String clientName;
-
+    protected final AgentConstants agentConstants;
+    protected final EthWrapper ethWrapper;
+    protected final SuperblockContractApi superblockContractApi;
+    private final BattleContractApi battleContractApi;
+    protected final ClaimContractApi claimContractApi;
+    protected final AgentRole agentRole;
     protected String myAddress;
-
     protected long latestEthBlockProcessed;
-    protected File latestEthBlockProcessedFile;
-
+    protected final File latestEthBlockProcessedFile;
 
     // Data is duplicated for performance using it.
 
@@ -50,47 +48,60 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
     // key: superblock id, value: set of session ids
     protected HashMap<Keccak256Hash, HashSet<Keccak256Hash>> superblockToSessionsMap;
 
-    protected File sessionToSuperblockMapFile;
-    protected File superblockToSessionsMapFile;
+    protected final File sessionToSuperblockMapFile;
+    protected final File superblockToSessionsMapFile;
+    private final Timer timer;
+    private final ChallengeEmailNotifier challengeEmailNotifier;
 
+    public SuperblockBaseClient(
+            AgentRole agentRole,
+            SystemProperties config,
+            AgentConstants agentConstants,
+            EthWrapper ethWrapper,
+            SuperblockContractApi superblockContractApi,
+            BattleContractApi battleContractApi,
+            ClaimContractApi claimContractApi,
+            ChallengeEmailNotifier challengeEmailNotifier
+    ) {
+        this.agentRole = agentRole;
+        this.agentConstants = agentConstants;
+        this.ethWrapper = ethWrapper;
+        this.superblockContractApi = superblockContractApi;
+        this.battleContractApi = battleContractApi;
+        this.claimContractApi = claimContractApi;
+        this.timer = new Timer(agentRole.getTimerTaskName(), true);
+        this.challengeEmailNotifier = challengeEmailNotifier;
 
-    public SuperblockBaseClient(String clientName) {
-        this.clientName = clientName;
-        this.config = SystemProperties.CONFIG;
+        this.latestEthBlockProcessedFile = Paths.get(config.dataDirectory(), config.getLastEthBlockProcessedFilename(agentRole)).toAbsolutePath().toFile();
+        this.sessionToSuperblockMapFile = Paths.get(config.dataDirectory(), config.getSessionToSuperblockMapFilename(agentRole)).toAbsolutePath().toFile();
+        this.superblockToSessionsMapFile = Paths.get(config.dataDirectory(), config.getSuperblockToSessionsMapFilename(agentRole)).toAbsolutePath().toFile();
+
+        this.latestEthBlockProcessed = agentConstants.getEthInitialCheckpoint();
+        this.sessionToSuperblockMap = new HashMap<>();
+        this.superblockToSessionsMap = new HashMap<>();
     }
 
-    @PostConstruct
-    public void setup() throws ClassNotFoundException, IOException {
-        if (isEnabled()) {
-            setupFiles();
-
-            restoreFiles();
-
-            setupClient();
-
-            setupTimer();
+    public boolean setup() throws ClassNotFoundException, IOException {
+        restoreFiles();
+        try {
+            timer.scheduleAtFixedRate(new SuperblocksBaseClientTimerTask(), 0, agentConstants.getTimerTaskPeriod(agentRole));
+        } catch (Exception e) {
+            return false;
         }
+
+        return true;
     }
 
-    @PreDestroy
-    public void tearDown() throws BlockStoreException, ClassNotFoundException, IOException {
-        if (isEnabled()) {
-            log.info("{} tearDown starting...", clientName);
+    public void cleanUp() throws IOException {
+        logger.info("cleanUp[{}]: Starting...", agentRole);
 
-            flushFiles();
+        timer.cancel();
+        timer.purge();
+        logger.info("cleanUp: Timer was canceled.");
 
-            log.info("{} tearDown finished.", clientName);
-        }
-    }
+        flushFiles();
 
-    private void setupTimer() {
-       new Timer(clientName).scheduleAtFixedRate(new SuperblocksBaseClientTimerTask(),
-               getFirstExecutionDate(), getTimerTaskPeriod());
-    }
-
-    private Date getFirstExecutionDate() {
-        Calendar firstExecution = Calendar.getInstance();
-        return firstExecution.getTime();
+        logger.info("cleanUp[{}]: finished.", agentRole);
     }
 
     private class SuperblocksBaseClientTimerTask extends TimerTask {
@@ -101,7 +112,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
                     restoreFiles();
 
                     if (arePendingTransactions()) {
-                        log.debug("Skipping because there are pending transaction for the sender address.");
+                        logger.debug("Skipping because there are pending transaction for the sender address.");
                         return;
                     }
 
@@ -110,24 +121,29 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
                     reactToElapsedTime();
 
                     long fromBlock = latestEthBlockProcessed + 1;
-                    long toBlock = ethWrapper.getEthBlockCount() - getConfirmations() + 1;
+                    long toBlock = ethWrapper.getEthBlockCount() - agentConstants.getConfirmations(agentRole) + 1;
 
                     // Ignore execution if nothing to process
                     if (fromBlock > toBlock) return;
 
                     // Maintain data structures and react to events
+                    ChallengeReport report = getNewBattles(fromBlock, toBlock);
+
+                    if (report != null) {
+                        CompletableFuture.supplyAsync(() -> challengeEmailNotifier.sendIfEnabled(report));
+                    }
+
                     removeApproved(fromBlock, toBlock);
                     removeInvalid(fromBlock, toBlock);
-                    getNewBattles(fromBlock, toBlock);
                     deleteFinishedBattles(fromBlock, toBlock);
                     latestEthBlockProcessed = reactToEvents(fromBlock, toBlock);
 
                     flushFiles();
                 } else {
-                    log.warn("SuperblocksBaseClientTimerTask skipped because the eth node is syncing blocks");
+                    logger.warn("SuperblocksBaseClientTimerTask skipped because the eth node is syncing blocks");
                 }
             } catch (Exception e) {
-                log.error(e.getMessage(), e);
+                logger.error("SuperblocksBaseClientTimerTask: Exception: {}", e.getMessage(), e);
             }
         }
     }
@@ -137,17 +153,25 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
      * @param fromBlock
      * @param toBlock
      * @throws IOException
+     * @return null when no events were found otherwise a ChallengeReport
      */
-    protected void getNewBattles(long fromBlock, long toBlock) throws IOException {
-        List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
-        for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
-            if (isMine(newBattleEvent)) {
-                Keccak256Hash sessionId = newBattleEvent.sessionId;
-                Keccak256Hash superblockId = newBattleEvent.superblockId;
-                sessionToSuperblockMap.put(sessionId, superblockId);
-                addToSuperblockToSessionsMap(sessionId, superblockId);
+    @Nullable
+    protected ChallengeReport getNewBattles(long fromBlock, long toBlock) throws IOException {
+        var challenged = new ArrayList<Keccak256Hash>();
+        boolean isAtLeastOneMine = false;
+
+        List<NewBattleEvent> events = battleContractApi.getNewBattleEvents(fromBlock, toBlock);
+        for (NewBattleEvent event : events) {
+            if (isMyBattleEvent(event)) {
+                isAtLeastOneMine = true;
+                sessionToSuperblockMap.put(event.sessionId, event.superblockHash);
+                addToSuperblockToSessionsMap(event.sessionId, event.superblockHash);
             }
+
+            challenged.add(event.superblockHash);
         }
+
+        return events.size() == 0 ? null : new ChallengeReport(isAtLeastOneMine, challenged);
     }
 
     protected void addToSuperblockToSessionsMap(Keccak256Hash sessionId, Keccak256Hash superblockId) {
@@ -160,60 +184,32 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
         }
     }
 
+    protected boolean isMyBattleEvent(NewBattleEvent newBattleEvent) {
+        return newBattleEvent.getAddressByRole(agentRole).equals(myAddress);
+    }
+
+    protected final boolean arePendingTransactions() throws InterruptedException, IOException {
+        return agentRole == AgentRole.SUBMITTER
+                ? ethWrapper.arePendingTransactionsForSendSuperblocksAddress()
+                : ethWrapper.arePendingTransactionsForChallengerAddress();
+    }
 
     /* ---- ABSTRACT METHODS ---- */
 
-    protected abstract boolean arePendingTransactions() throws IOException;
-
     protected abstract long reactToEvents(long fromBlock, long toBlock);
 
-    protected abstract boolean isEnabled();
-
-    protected abstract String getLastEthBlockProcessedFilename();
-
-    protected abstract String getSessionToSuperblockMapFilename();
-
-    protected abstract String getSuperblockToSessionsMapFilename();
-
-    protected abstract void setupClient();
-
     protected abstract void reactToElapsedTime();
-
-    protected abstract boolean isMine(EthWrapper.NewBattleEvent newBattleEvent);
-
-    protected abstract long getConfirmations();
-
-    protected abstract void callBattleTimeouts() throws Exception;
-
-    protected abstract long getTimerTaskPeriod(); // in seconds
 
     protected abstract void deleteSubmitterConvictedBattles(long fromBlock, long toBlock) throws Exception;
 
     protected abstract void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception;
 
     protected abstract void removeSuperblocks(long fromBlock, long toBlock,
-                                              List<EthWrapper.SuperblockEvent> superblockEvents) throws Exception;
+                                              List<SuperblockContractApi.SuperblockEvent> superblockEvents) throws Exception;
 
     protected abstract void restoreFiles() throws ClassNotFoundException, IOException;
 
-    protected abstract void flushFiles() throws ClassNotFoundException, IOException;
-
-
-    /* ---- DATABASE METHODS ---- */
-
-    void setupBaseFiles() throws IOException {
-        this.latestEthBlockProcessed = config.getAgentConstants().getEthInitialCheckpoint();
-        this.dataDirectory = new File(config.dataDirectory());
-        this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() +
-                "/" + getLastEthBlockProcessedFilename());
-        this.sessionToSuperblockMap =  new HashMap<>();
-        this.sessionToSuperblockMapFile = new File(dataDirectory.getAbsolutePath() + "/" +
-                getSessionToSuperblockMapFilename());
-        this.superblockToSessionsMap = new HashMap<>();
-        this.superblockToSessionsMapFile = new File(dataDirectory.getAbsolutePath() + "/"
-                + getSuperblockToSessionsMapFilename());
-
-    }
+    protected abstract void flushFiles() throws IOException;
 
 
     /* ---- BATTLE MAP METHODS ---- */
@@ -236,8 +232,8 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
      * @throws Exception
      */
     protected void removeApproved(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> approvedSuperblockEvents =
-                ethWrapper.getApprovedSuperblocks(fromBlock, toBlock);
+        List<SuperblockContractApi.SuperblockEvent> approvedSuperblockEvents =
+                superblockContractApi.getApprovedSuperblocks(fromBlock, toBlock);
         removeSuperblocks(fromBlock, toBlock, approvedSuperblockEvents);
     }
 
@@ -248,19 +244,14 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
      * @throws Exception
      */
     protected void removeInvalid(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> invalidSuperblockEvents = ethWrapper.getInvalidSuperblocks(fromBlock, toBlock);
+        List<SuperblockContractApi.SuperblockEvent> invalidSuperblockEvents = superblockContractApi.getInvalidSuperblocks(fromBlock, toBlock);
         removeSuperblocks(fromBlock, toBlock, invalidSuperblockEvents);
     }
 
-
     /* ----- HELPER METHODS ----- */
 
-    boolean isMine(EthWrapper.SuperblockEvent superblockEvent) {
-        return superblockEvent.who.equals(myAddress);
-    }
-
-    boolean isMine(Keccak256Hash superblockId) throws Exception {
-        return ethWrapper.getClaimSubmitter(superblockId).equals(myAddress);
+    protected boolean isMine(Keccak256Hash superblockId) throws Exception {
+        return claimContractApi.getClaimSubmitter(superblockId).equals(myAddress);
     }
 
 }

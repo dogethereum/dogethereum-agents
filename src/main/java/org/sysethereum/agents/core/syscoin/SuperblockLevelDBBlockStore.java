@@ -1,20 +1,23 @@
 package org.sysethereum.agents.core.syscoin;
 
-import org.bitcoinj.core.*;
+import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.store.BlockStoreException;
-import org.bitcoinj.core.Context;
 
+import org.springframework.stereotype.Service;
 import org.sysethereum.agents.constants.AgentConstants;
-import org.sysethereum.agents.constants.SystemProperties;
 import org.fusesource.leveldbjni.*;
 import org.iq80.leveldb.*;
+import org.sysethereum.agents.constants.SystemProperties;
+import org.sysethereum.agents.core.bridge.Superblock;
+import org.sysethereum.agents.core.bridge.SuperblockData;
+import org.sysethereum.agents.core.bridge.SuperblockFactory;
+import org.sysethereum.agents.core.bridge.SuperblockSerializationHelper;
 
-import java.math.BigInteger;
+import javax.annotation.concurrent.GuardedBy;
 import java.io.*;
 import java.nio.*;
-import java.util.*;
+import java.nio.file.Paths;
 
-//import static com.google.common.base.Preconditions.checkState;
 
 /**
  * LevelDB for storing and retrieving superblocks.
@@ -22,50 +25,47 @@ import java.util.*;
  * the information itself is handled by SuperblockChain, primarily via the updateChain() method.
  * @author Catalina Juarros
  */
-
+@Service
+@Slf4j(topic = "SuperblockLevelDBBlockStore")
 public class SuperblockLevelDBBlockStore {
-    private static final byte[] CHAIN_HEAD_KEY = "chainhead".getBytes(); // to store chain head hash
 
-    private final Context context;
+    private static final byte[] CHAIN_HEAD_KEY = "chainhead".getBytes(); // to store chain head hash
+    private final AgentConstants agentConstants;
     private final File path;
+    private final SuperblockFactory superblockFactory;
+    private final SuperblockSerializationHelper serializationHelper;
+
+    @GuardedBy("this")
     private DB db;
 
+    public SuperblockLevelDBBlockStore(
+            AgentConstants agentConstants,
+            SystemProperties config,
+            SuperblockFactory superblockFactory,
+            SuperblockSerializationHelper serializationHelper
+    ) {
+        this.agentConstants = agentConstants;
+        this.path = Paths.get(config.dataDirectory(), "/SuperblockChain").toFile();
+        this.superblockFactory = superblockFactory;
+        this.serializationHelper = serializationHelper;
 
-    /* ---- ESSENTIAL DATABASE METHODS ---- */
-
-    /**
-     * Constructor.
-     * @param context Syscoin context.
-     * @param directory Where data is stored.
-     * @throws BlockStoreException
-     */
-    public SuperblockLevelDBBlockStore(Context context, File directory, NetworkParameters params)
-            throws BlockStoreException {
-        this(context, directory, JniDBFactory.factory, params); // this might not work, ask later
+        setup();
     }
 
-    /**
-     * Helper for previous constructor.
-     * @param context Syscoin context.
-     * @param directory Where data is stored.
-     * @param dbFactory Interface for opening and repairing directory if needed.
-     * @throws BlockStoreException
-     */
-    public SuperblockLevelDBBlockStore(Context context, File directory, DBFactory dbFactory, NetworkParameters params)
-            throws BlockStoreException {
-        this.context = context;
-        this.path = directory;
+    private void setup() {
         Options options = new Options();
         options.createIfMissing();
 
+        DBFactory dbFactory = JniDBFactory.factory;
+
         try {
-            tryOpen(directory, dbFactory, options, params);
+            tryOpen(path, dbFactory, options);
         } catch (IOException e) {
             try {
-                dbFactory.repair(directory, options);
-                tryOpen(directory, dbFactory, options, params);
+                dbFactory.repair(path, options);
+                tryOpen(path, dbFactory, options);
             } catch (IOException e1) {
-                throw new BlockStoreException(e1);
+                throw new RuntimeException(e1);
             }
         }
     }
@@ -75,14 +75,11 @@ public class SuperblockLevelDBBlockStore {
      * @param directory Where data is stored.
      * @param dbFactory Interface for opening directory.
      * @param options Directory options.
-     * @param params Syscoin network parameters.
      * @throws IOException
-     * @throws BlockStoreException
      */
-    private synchronized void tryOpen(File directory, DBFactory dbFactory, Options options, NetworkParameters params)
-            throws IOException, BlockStoreException {
+    private synchronized void tryOpen(File directory, DBFactory dbFactory, Options options) throws IOException {
         db = dbFactory.open(directory, options);
-        initStoreIfNeeded(params);
+        initStoreIfNeeded();
     }
 
     /**
@@ -94,53 +91,51 @@ public class SuperblockLevelDBBlockStore {
      *   as the Keccak-256 hash of a string which consists of the character '0' 32 times
      * - its chain work is 0
      * @throws java.io.IOException
-     * @throws BlockStoreException
      */
-    private synchronized void initStoreIfNeeded(NetworkParameters params) throws IOException, BlockStoreException {
+    private synchronized void initStoreIfNeeded() {
         if (db.get(CHAIN_HEAD_KEY) != null)
             return; // Already initialised.
-        SystemProperties config = SystemProperties.CONFIG;
-        AgentConstants agentConstants = config.getAgentConstants();
-        Superblock genesisSuperblock = agentConstants.getGenesisSuperblock();
+        SuperblockData data = agentConstants.getGenesisSuperblock();
+        Superblock genesisSuperblock = superblockFactory.fromData(data);
         put(genesisSuperblock);
         setChainHead(genesisSuperblock);
     }
 
     /**
      * Writes a superblock to the database.
-     * @param block Superblock to be written.
+     * @param sb Superblock to be written.
      * @throws java.io.IOException
      */
-    public synchronized void put(Superblock block) throws IOException {
-//        buffer.clear();
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        block.serializeForStorage(stream);
+    public synchronized void put(Superblock sb) {
+        ByteArrayOutputStream stream = serializationHelper.serializeForStorage(sb.data);
+
         ByteBuffer buffer = ByteBuffer.allocate(stream.size());
         buffer.put(stream.toByteArray());
-        db.put(block.getSuperblockId().getBytes(), buffer.array());
+        db.put(sb.getHash().getBytes(), buffer.array());
     }
 
     /**
-     * Retrieves a deserialised superblock from the database.
+     * Retrieves a deserialized superblock from the database.
      * @param superblockId Keccak-256 hash of superblock.
      * @return superblock identified by hash
      */
-    public synchronized Superblock get(Keccak256Hash superblockId) throws IOException {
+    public synchronized Superblock get(Keccak256Hash superblockId) {
         byte[] bits = db.get(superblockId.getBytes());
         if (bits == null)
             return null;
-        return new Superblock(bits);
+
+        return superblockFactory.fromBytes(bits);
     }
 
     /**
      * Closes underlying database.
      * @throws BlockStoreException
      */
-    public synchronized void close() throws BlockStoreException {
+    public synchronized void close() {
         try {
             db.close();
         } catch (IOException e) {
-            throw new BlockStoreException(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -150,27 +145,23 @@ public class SuperblockLevelDBBlockStore {
      * Erases the contents of the database (but NOT the underlying files themselves).
      * @throws BlockStoreException
      */
+    @SuppressWarnings("unused")
     public synchronized void reset() throws BlockStoreException {
         try {
-            WriteBatch batch = db.createWriteBatch();
-            try {
-                DBIterator it = db.iterator();
-                try {
+            try (WriteBatch batch = db.createWriteBatch()) {
+                try (DBIterator it = db.iterator()) {
                     it.seekToFirst();
                     while (it.hasNext())
                         batch.delete(it.next().getKey());
                     db.write(batch);
-                } finally {
-                    it.close();
                 }
-            } finally {
-                batch.close();
             }
         } catch (IOException e) {
             throw new BlockStoreException(e);
         }
     }
 
+    @SuppressWarnings("unused")
     public synchronized void destroy() throws IOException {
         JniDBFactory.factory.destroy(path, new Options());
     }
@@ -181,37 +172,25 @@ public class SuperblockLevelDBBlockStore {
     /**
      * Returns tip of superblock chain. Not necessarily approved in the contracts.
      * @return Highest stored superblock.
-     * @throws BlockStoreException
      */
-    public synchronized Superblock getChainHead() throws BlockStoreException, IOException {
+    public synchronized Superblock getChainHead() {
         return get(getChainHeadId());
     }
 
     /**
      * Returns hash of tip of superblock chain. Not necessarily approved in the contracts.
      * @return Highest stored superblock's hash.
-     * @throws BlockStoreException
      */
-    public synchronized Keccak256Hash getChainHeadId() throws BlockStoreException {
+    public synchronized Keccak256Hash getChainHeadId() {
         return Keccak256Hash.wrap(db.get(CHAIN_HEAD_KEY));
     }
 
     /**
      * Sets tip of superblock chain.
      * @param chainHead Superblock with the highest chain work.
-     * @throws BlockStoreException
      */
-    public synchronized void setChainHead(Superblock chainHead) throws BlockStoreException, IOException {
-        db.put(CHAIN_HEAD_KEY, chainHead.getSuperblockId().getBytes());
-    }
-
-    /**
-     * Returns tip work.
-     * @return Chain head's accumulated work.
-     * @throws BlockStoreException
-     */
-    public synchronized BigInteger getChainHeadWork() throws BlockStoreException, IOException {
-        return getChainHead().getChainWork();
+    public synchronized void setChainHead(Superblock chainHead) {
+        db.put(CHAIN_HEAD_KEY, chainHead.getHash().getBytes());
     }
 
 }

@@ -1,16 +1,31 @@
 package org.sysethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
-import org.bitcoinj.core.Sha256Hash;
+import org.sysethereum.agents.constants.AgentConstants;
+import org.sysethereum.agents.constants.AgentRole;
+import org.sysethereum.agents.constants.EthAddresses;
+import org.sysethereum.agents.constants.SystemProperties;
+import org.sysethereum.agents.contract.SyscoinBattleManagerExtended;
+import org.sysethereum.agents.core.bridge.BattleContractApi;
+import org.sysethereum.agents.core.bridge.ClaimContractApi;
+import org.sysethereum.agents.core.bridge.SuperblockContractApi;
+import org.sysethereum.agents.core.bridge.battle.ChallengerConvictedEvent;
+import org.sysethereum.agents.core.bridge.battle.NewBattleEvent;
+import org.sysethereum.agents.core.bridge.battle.SubmitterConvictedEvent;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
-import org.sysethereum.agents.core.syscoin.Superblock;
+import org.sysethereum.agents.core.bridge.Superblock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.sysethereum.agents.core.syscoin.SuperblockChain;
+import org.sysethereum.agents.service.ChallengeEmailNotifier;
+import org.sysethereum.agents.service.PersistentFileStore;
+import org.sysethereum.agents.util.RandomizationCounter;
 
 import java.io.*;
 import java.math.BigInteger;
+import java.nio.file.Paths;
 import java.util.*;
 
 /**
@@ -23,33 +38,61 @@ import java.util.*;
 @Service
 @Slf4j(topic = "SuperblockChallengerClient")
 public class SuperblockChallengerClient extends SuperblockBaseClient {
-    private static final Logger log = LoggerFactory.getLogger("LocalAgentConstants");
+    private static final Logger logger = LoggerFactory.getLogger("SuperblockChallengerClient");
+
+    private final RandomizationCounter randomizationCounter;
+    private final SyscoinBattleManagerExtended battleManagerForChallenges;
+    private final SystemProperties config;
+    private final PersistentFileStore persistentFileStore;
+    private final SuperblockChain localSuperblockChain;
+    private final SuperblockContractApi superblockContractApi;
+    private final ClaimContractApi claimContractApi;
+    private final BattleContractApi battleContractApi;
+
     private HashSet<Keccak256Hash> semiApprovedSet;
-    private File semiApprovedSetFile;
+    private final File semiApprovedSetFile;
 
-    public SuperblockChallengerClient() {
-        super("Superblock challenger client");
-    }
+    public SuperblockChallengerClient(
+            SystemProperties config,
+            AgentConstants agentConstants,
+            PersistentFileStore persistentFileStore,
+            EthWrapper ethWrapper,
+            SuperblockChain superblockChain,
+            EthAddresses ethAddresses,
+            SuperblockContractApi superblockContractApi,
+            ClaimContractApi claimContractApi,
+            BattleContractApi battleContractApi,
+            SyscoinBattleManagerExtended battleManagerForChallenges,
+            ChallengeEmailNotifier challengeEmailNotifier
+    ) {
+        super(AgentRole.CHALLENGER, config, agentConstants, ethWrapper, superblockContractApi, battleContractApi, claimContractApi, challengeEmailNotifier);
 
-    @Override
-    protected void setupClient() {
-        myAddress = ethWrapper.getSyscoinSuperblockChallengerAddress();
+        this.config = config;
+        this.persistentFileStore = persistentFileStore;
+        this.localSuperblockChain = superblockChain;
+        this.superblockContractApi = superblockContractApi;
+        this.claimContractApi = claimContractApi;
+        this.battleContractApi = battleContractApi;
+
+        this.randomizationCounter = new RandomizationCounter();
+        this.battleManagerForChallenges = battleManagerForChallenges;
+        this.myAddress = ethAddresses.challengerAddress;
+
+        this.semiApprovedSet = new HashSet<>();
+        this.semiApprovedSetFile = Paths.get(config.dataDirectory(), "SemiApprovedSet.dat").toAbsolutePath().toFile();
     }
 
     @Override
     public long reactToEvents(long fromBlock, long toBlock) {
         try {
-//            challengeEverything(fromBlock, toBlock);
             validateNewSuperblocks(fromBlock, toBlock);
             respondToNewBattles(fromBlock, toBlock);
-            respondToMerkleRootHashesEventResponses(fromBlock, toBlock);
-            respondToBlockHeaderEventResponses(fromBlock, toBlock);
 
             // Maintain data structures
             getSemiApproved(fromBlock, toBlock);
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            return latestEthBlockProcessed;
+            logger.error(e.getMessage(), e);
+            return fromBlock - 1;
         }
         return toBlock;
     }
@@ -61,7 +104,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             invalidateLoserSuperblocks();
             invalidateNonMainChainSuperblocks();
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            logger.error(e.getMessage(), e);
         }
     }
 
@@ -72,14 +115,12 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     private void invalidateNonMainChainSuperblocks() throws Exception {
         for (Keccak256Hash superblockId : semiApprovedSet) {
-            long semiApprovedHeight = ethWrapper.getSuperblockHeight(superblockId).longValue();
-            Superblock mainChainSuperblock = superblockChain.getSuperblockByHeight(semiApprovedHeight);
+            long semiApprovedHeight = superblockContractApi.getHeight(superblockId).longValue();
+            Superblock mainChainSuperblock = localSuperblockChain.getByHeight(semiApprovedHeight);
             if (mainChainSuperblock != null) {
-                long confirmations = ethWrapper.getSuperblockConfirmations();
-                if (!mainChainSuperblock.getSuperblockId().equals(superblockId) &&
-                        ethWrapper.getChainHeight().longValue() >= semiApprovedHeight + confirmations) {
-                    log.info("Semi-approved superblock {} not found in main chain. Invalidating.", superblockId);
-                    ethWrapper.rejectClaim(superblockId, myAddress);
+                if (!mainChainSuperblock.getHash().equals(superblockId) && superblockContractApi.getChainHeight().longValue() >= semiApprovedHeight) {
+                    logger.info("Semi-approved superblock {} not found in main chain. Invalidating.", superblockId);
+                    claimContractApi.rejectClaim(superblockId);
                 }
             }
         }
@@ -87,9 +128,12 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     private void invalidateLoserSuperblocks() throws Exception {
         for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
-            if (ethWrapper.getClaimInvalid(superblockId)) {
-                log.info("Superblock {} lost a battle. Invalidating.", superblockId);
-                ethWrapper.checkClaimFinished(superblockId, myAddress, true);
+            // decided is set to true inside of checkClaimFinished and thus only allows it to call once
+            if (claimContractApi.getClaimInvalid(superblockId) && claimContractApi.getClaimExists(superblockId) && !claimContractApi.getClaimDecided(superblockId)) {
+                logger.info("Superblock {} lost a battle. Invalidating.", superblockId);
+                claimContractApi.checkClaimFinished(superblockId, true);
+                sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(superblockId));
+                superblockToSessionsMap.remove(superblockId);
             }
         }
     }
@@ -104,156 +148,65 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @throws Exception
      */
     private void validateNewSuperblocks(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> newSuperblockEvents = ethWrapper.getNewSuperblocks(fromBlock, toBlock);
-
+        List<SuperblockContractApi.SuperblockEvent> newSuperblockEvents = superblockContractApi.getNewSuperblocks(fromBlock, toBlock);
+        if(newSuperblockEvents.size() > 0){
+            randomizationCounter.updateRandomValue();
+        }
         List<Keccak256Hash> toChallenge = new ArrayList<>();
-        for (EthWrapper.SuperblockEvent newSuperblock : newSuperblockEvents) {
-            log.info("NewSuperblock {}. Validating...", newSuperblock.superblockId);
+        for (SuperblockContractApi.SuperblockEvent newSuperblock : newSuperblockEvents) {
+            logger.info("NewSuperblock {}. Validating...", newSuperblock.superblockId);
 
-            Superblock superblock = superblockChain.getSuperblock(newSuperblock.superblockId);
+            Superblock superblock = localSuperblockChain.getByHash(newSuperblock.superblockId);
             if (superblock == null) {
-                BigInteger height = ethWrapper.getSuperblockHeight(newSuperblock.superblockId);
-                Superblock localSuperblock = superblockChain.getSuperblockByHeight(height.longValue());
+                BigInteger height = superblockContractApi.getHeight(newSuperblock.superblockId);
+                Superblock localSuperblock = localSuperblockChain.getByHeight(height.longValue());
+
                 if (localSuperblock == null) {
-                    //FIXME: Local superbockchain might be out of sync
-                    log.info("Superblock {} not present in our superblock chain", newSuperblock.superblockId);
+                    // local superblock chain should not be out of sync because there is 2 hour discrepancy between saving and sending
+                    // this could mean our local syscoin node is out of sync (out of our control) in which case we have no choice but to challenge
+                    // we have to assume if your local syscoin node is forked or not synced and we cannot detect difference between bad and good SB in that case we must challenge
+                    logger.info("Superblock {} not present in our superblock chain", newSuperblock.superblockId);
                 } else {
-                    log.info("Superblock {} at height {} is replaced by {} in our superblock chain",
+                    logger.info("Superblock {} at height {} is replaced by {} in our superblock chain",
                             newSuperblock.superblockId,
                             height,
-                            localSuperblock.getSuperblockId());
-                    toChallenge.add(newSuperblock.superblockId);
+                            localSuperblock.getHash());
                 }
+
+                toChallenge.add(newSuperblock.superblockId);
             } else {
-                log.info("... superblock present in our superblock chain");
+                logger.info("Superblock height: {}... superblock present in our superblock chain", superblock.getHeight());
             }
         }
-
+        // check for pending if we have superblocks to challenge
+        if (toChallenge.size() > 0) {
+            Thread.sleep(500); // in case the transaction takes some time to complete
+            if (ethWrapper.arePendingTransactionsForChallengerAddress()) {
+                throw new Exception("Skipping challenging superblocks, there are pending transaction for the challenger address.");
+            }
+        }
         for (Keccak256Hash superblockId : toChallenge) {
-            ethWrapper.challengeSuperblock(superblockId, myAddress);
+            claimContractApi.challengeSuperblock(superblockId);
         }
     }
 
-    // For testing only. To be eventually deleted.
-    private void challengeEverything(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> newSuperblockEvents = ethWrapper.getNewSuperblocks(fromBlock, toBlock);
-        for (EthWrapper.SuperblockEvent superblockEvent : newSuperblockEvents) {
-            ethWrapper.challengeSuperblock(superblockEvent.superblockId, myAddress);
-        }
-    }
 
     /**
-     * Queries Merkle root hashes for all new battle events that the challenger is taking part in.
+     * Saves all new battle events that the challenger is taking part in.
      * @param fromBlock
      * @param toBlock
      * @throws Exception
      */
     private void respondToNewBattles(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.NewBattleEvent> newBattleEvents = ethWrapper.getNewBattleEvents(fromBlock, toBlock);
+        List<NewBattleEvent> newBattleEvents = battleContractApi.getNewBattleEvents(fromBlock, toBlock);
 
-        for (EthWrapper.NewBattleEvent newBattleEvent : newBattleEvents) {
-            if (isMine(newBattleEvent)) {
-                ethWrapper.queryMerkleRootHashes(newBattleEvent.superblockId, newBattleEvent.sessionId, myAddress);
-                sessionToSuperblockMap.put(newBattleEvent.sessionId, newBattleEvent.superblockId);
-                addToSuperblockToSessionsMap(newBattleEvent.sessionId, newBattleEvent.superblockId);
+        for (NewBattleEvent newBattleEvent : newBattleEvents) {
+            if (isMyBattleEvent(newBattleEvent) && battleContractApi.sessionExists(newBattleEvent.sessionId)) {
+                sessionToSuperblockMap.put(newBattleEvent.sessionId, newBattleEvent.superblockHash);
+                addToSuperblockToSessionsMap(newBattleEvent.sessionId, newBattleEvent.superblockHash);
             }
         }
     }
-
-    /**
-     * Queries first block header for battles that the challenger is taking part in.
-     * @param fromBlock
-     * @param toBlock
-     * @throws Exception
-     */
-    private void respondToMerkleRootHashesEventResponses(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.RespondMerkleRootHashesEvent> defenderResponses =
-                ethWrapper.getRespondMerkleRootHashesEvents(fromBlock, toBlock);
-
-        for (EthWrapper.RespondMerkleRootHashesEvent defenderResponse : defenderResponses) {
-            if (isMine(defenderResponse)) {
-                startBlockHeaderQueries(defenderResponse);
-            }
-        }
-    }
-
-    /**
-     * For all block header event responses corresponding to battles that the challenger is taking part in,
-     * queries the next block header if there are more to go; otherwise, end the battle.
-     * @param fromBlock
-     * @param toBlock
-     * @throws Exception
-     */
-    private void respondToBlockHeaderEventResponses(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.RespondBlockHeaderEvent> defenderResponses =
-                ethWrapper.getRespondBlockHeaderEvents(fromBlock, toBlock);
-
-        for (EthWrapper.RespondBlockHeaderEvent defenderResponse : defenderResponses) {
-            if (isMine(defenderResponse)) {
-                reactToBlockHeaderResponse(defenderResponse);
-            }
-        }
-    }
-
-    /**
-     * Queries header of the first Syscoin block hash in a certain superblock that the challenger is battling.
-     * If it was empty, just verifies it.
-     * @param defenderResponse Merkle root hashes response from the defender.
-     * @throws Exception
-     */
-    private void startBlockHeaderQueries(EthWrapper.RespondMerkleRootHashesEvent defenderResponse) throws Exception {
-        Keccak256Hash superblockId = defenderResponse.superblockId;
-        List<Sha256Hash> syscoinBlockHashes = defenderResponse.blockHashes;
-        log.info("Starting block header queries for superblock {}", superblockId);
-
-        if (!syscoinBlockHashes.isEmpty()) {
-            log.info("Querying first block header for superblock {}", superblockId);
-            ethWrapper.queryBlockHeader(superblockId, defenderResponse.sessionId, syscoinBlockHashes.get(0),
-                    myAddress);
-        } else {
-            log.info("Merkle root hashes response for superblock {} is empty. Verifying it now.", superblockId);
-            ethWrapper.verifySuperblock(defenderResponse.sessionId, ethWrapper.getBattleManagerForChallenges());
-        }
-    }
-
-    /**
-     * Queries the header for the next hash in the superblock's list of Syscoin hashes if there is one,
-     * ends the battle by verifying the superblock if Syscoin block hash was the last one.
-     * @param defenderResponse Syscoin block hash response from defender.
-     * @throws Exception
-     */
-    private void reactToBlockHeaderResponse(EthWrapper.RespondBlockHeaderEvent defenderResponse) throws Exception {
-        Sha256Hash syscoinBlockHash = Sha256Hash.wrapReversed(Sha256Hash.hashTwice(defenderResponse.blockHeader));
-        queryNextBlockHeaderOrVerifySuperblock(defenderResponse.sessionId, defenderResponse.superblockId,
-                syscoinBlockHash);
-
-    }
-
-
-    /**
-     * Queries the next block header or end battle verifying the superblock.
-     * @param sessionId Battle's session ID
-     * @param superblockId Superblock ID
-     * @param syscoinBlockHash Last Syscoin block hash requested
-     * @throws Exception
-     */
-    private void queryNextBlockHeaderOrVerifySuperblock(Keccak256Hash sessionId, Keccak256Hash superblockId,
-                                                        Sha256Hash syscoinBlockHash) throws Exception {
-        List<Sha256Hash> sessionSyscoinBlockHashes = ethWrapper.getSyscoinBlockHashes(sessionId);
-        Sha256Hash nextSyscoinBlockHash = getNextHashToQuery(syscoinBlockHash, sessionSyscoinBlockHashes);
-
-        if (nextSyscoinBlockHash != null) {
-            // not last hash
-            log.info("Querying block header {}", nextSyscoinBlockHash);
-            ethWrapper.queryBlockHeader(superblockId, sessionId, nextSyscoinBlockHash, myAddress);
-        } else {
-            // last hash; end battle
-            log.info("All block hashes for superblock {} have been received. Verifying it now.", superblockId);
-            ethWrapper.verifySuperblock(sessionId, ethWrapper.getBattleManagerForChallenges());
-        }
-    }
-
-
 
     /**
      * Adds new semi-approved superblocks to a data structure that keeps track of them
@@ -263,98 +216,25 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @throws Exception
      */
     private void getSemiApproved(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SuperblockEvent> semiApprovedSuperblockEvents =
-                ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
-        for (EthWrapper.SuperblockEvent superblockEvent : semiApprovedSuperblockEvents) {
+        List<SuperblockContractApi.SuperblockEvent> semiApprovedSuperblockEvents =
+                superblockContractApi.getSemiApprovedSuperblocks(fromBlock, toBlock);
+        for (SuperblockContractApi.SuperblockEvent superblockEvent : semiApprovedSuperblockEvents) {
             if (challengedByMe(superblockEvent))
                 semiApprovedSet.add(superblockEvent.superblockId);
         }
     }
 
-
     /* ---- HELPER METHODS ---- */
 
-    private boolean isMine(EthWrapper.RespondMerkleRootHashesEvent respondMerkleRootHashesEvent) {
-        return respondMerkleRootHashesEvent.challenger.equals(myAddress);
+    private boolean challengedByMe(SuperblockContractApi.SuperblockEvent superblockEvent) throws Exception {
+        return claimContractApi.getClaimChallenger(superblockEvent.superblockId).getValue().equals(myAddress);
     }
 
-    private boolean isMine(EthWrapper.RespondBlockHeaderEvent respondBlockHeaderEvent) {
-        return respondBlockHeaderEvent.challenger.equals(myAddress);
-    }
-
-
-    private boolean challengedByMe(EthWrapper.SuperblockEvent superblockEvent) throws Exception {
-        return ethWrapper.getClaimChallengers(superblockEvent.superblockId).contains(myAddress);
-    }
-
-    /**
-     * Gets the next Syscoin block hash to be requested in a battle session.
-     * If the hash provided is either the last one in the list or not in the list at all,
-     * this method returns null, because either of those conditions implies that the battle should end.
-     * @param syscoinBlockHash Hash of the last block in the session provided by the defender.
-     * @param allSyscoinBlockHashes List of Syscoin block hashes corresponding to the same battle session.
-     * @return Hash of next Syscoin block hash to be requested if there is one,
-     * null otherwise.
-     */
-    private Sha256Hash getNextHashToQuery(Sha256Hash syscoinBlockHash, List<Sha256Hash> allSyscoinBlockHashes) {
-        int idx = allSyscoinBlockHashes.indexOf(syscoinBlockHash) + 1;
-        if (idx < allSyscoinBlockHashes.size() && idx > 0) {
-            return allSyscoinBlockHashes.get(idx);
-        } else {
-            return null;
-        }
-    }
-
-
-    /* ---- OVERRIDE ABSTRACT METHODS ---- */
-
-    @Override
-    protected void setupFiles() throws IOException {
-        setupBaseFiles();
-        setupSemiApprovedSet();
-    }
-
-    @Override
-    protected boolean arePendingTransactions() throws IOException {
-        return ethWrapper.arePendingTransactionsForChallengerAddress();
-    }
-
-    @Override
-    protected boolean isEnabled() {
-        return config.isSyscoinBlockChallengerEnabled();
-    }
-
-    @Override
-    protected String getLastEthBlockProcessedFilename() {
-        return "SuperblockChallengerLatestEthBlockProcessedFile.dat";
-    }
-
-    @Override
-    protected String getSessionToSuperblockMapFilename() {
-        return "SuperblockChallengerSessionToSuperblockMap.dat";
-    }
-
-    @Override
-    protected String getSuperblockToSessionsMapFilename() {
-        return "SuperblockChallengerSuperblockToSessionsMap.dat";
-    }
-
-    @Override
-    protected boolean isMine(EthWrapper.NewBattleEvent newBattleEvent) {
-        return newBattleEvent.challenger.equals(myAddress);
-    }
-
-    @Override
-    protected long getConfirmations() {
-        return config.getAgentConstants().getChallengerConfirmations();
-    }
-
-    @Override
     protected void callBattleTimeouts() throws Exception {
         for (Keccak256Hash sessionId : sessionToSuperblockMap.keySet()) {
-            if (ethWrapper.getSubmitterHitTimeout(sessionId)) {
-                log.info("Submitter hit timeout on session {}. Calling timeout.", sessionId);
-                ethWrapper.timeout(sessionId, ethWrapper.getBattleManagerForChallenges());
+            if (battleContractApi.getSubmitterHitTimeout(sessionId)) {
+                logger.info("Submitter hit timeout on session {}. Calling timeout.", sessionId);
+                ethWrapper.timeout(sessionId, battleManagerForChallenges);
             }
         }
     }
@@ -368,28 +248,26 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      * @throws Exception
      */
     @Override
-    protected void removeSuperblocks(long fromBlock, long toBlock, List<EthWrapper.SuperblockEvent> superblockEvents)
-            throws Exception {
-        for (EthWrapper.SuperblockEvent superblockEvent : superblockEvents) {
+    protected void removeSuperblocks(long fromBlock, long toBlock, List<SuperblockContractApi.SuperblockEvent> superblockEvents) throws Exception {
+        boolean removeFromContract = false;
+        for (SuperblockContractApi.SuperblockEvent superblockEvent : superblockEvents) {
             Keccak256Hash superblockId = superblockEvent.superblockId;
 
             if (superblockToSessionsMap.containsKey(superblockId)) {
+                sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(superblockId));
                 superblockToSessionsMap.remove(superblockId);
+                removeFromContract = true;
             }
 
             if (semiApprovedSet.contains(superblockId)) {
                 semiApprovedSet.remove(superblockId);
+                removeFromContract = true;
             }
 
-            if (config.isWithdrawFundsEnabled()) {
-                ethWrapper.withdrawAllFundsExceptLimit(myAddress, true);
-            }
         }
-    }
-
-    @Override
-    protected long getTimerTaskPeriod() {
-        return config.getAgentConstants().getChallengerTimerTaskPeriod();
+        if (removeFromContract && config.isWithdrawFundsEnabled()) {
+            claimContractApi.withdrawAllFundsExceptLimit(AgentRole.CHALLENGER, myAddress);
+        }
     }
 
     /**
@@ -402,14 +280,16 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      */
     @Override
     protected void deleteSubmitterConvictedBattles(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.SubmitterConvictedEvent> submitterConvictedEvents =
-                ethWrapper.getSubmitterConvictedEvents(fromBlock, toBlock, ethWrapper.getBattleManagerForChallenges());
+        List<SubmitterConvictedEvent> events = battleContractApi.getSubmitterConvictedEvents(agentRole, fromBlock, toBlock);
 
-        for (EthWrapper.SubmitterConvictedEvent submitterConvictedEvent : submitterConvictedEvents) {
-            if (sessionToSuperblockMap.containsKey(submitterConvictedEvent.sessionId)) {
-                log.info("Submitter convicted on session {}, superblock {}. Battle won!",
-                        submitterConvictedEvent.sessionId, submitterConvictedEvent.superblockId);
-                sessionToSuperblockMap.remove(submitterConvictedEvent.sessionId);
+        for (SubmitterConvictedEvent event : events) {
+            if (sessionToSuperblockMap.containsKey(event.sessionId)) {
+                logger.info("Submitter convicted on session {}, superblock {}. Battle won!",
+                        event.sessionId, event.superblockHash);
+                sessionToSuperblockMap.remove(event.sessionId);
+            }
+            if (superblockToSessionsMap.containsKey(event.superblockHash)) {
+                superblockToSessionsMap.get(event.superblockHash).remove(event.sessionId);
             }
         }
     }
@@ -425,38 +305,33 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      */
     @Override
     protected void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception {
-        List<EthWrapper.ChallengerConvictedEvent> challengerConvictedEvents =
-                ethWrapper.getChallengerConvictedEvents(fromBlock, toBlock, ethWrapper.getBattleManagerForChallenges());
+        List<ChallengerConvictedEvent> events = battleContractApi.getChallengerConvictedEvents(agentRole, fromBlock, toBlock);
 
-        for (EthWrapper.ChallengerConvictedEvent challengerConvictedEvent : challengerConvictedEvents) {
-            if (challengerConvictedEvent.challenger.equals(myAddress)) {
-                log.info("Challenger convicted on session {}, superblock {}. Battle lost!",
-                        challengerConvictedEvent.sessionId, challengerConvictedEvent.superblockId);
-                sessionToSuperblockMap.remove(challengerConvictedEvent.sessionId);
+        for (ChallengerConvictedEvent event : events) {
+            if (event.challenger.equals(myAddress)) {
+                logger.info("Challenger convicted on session {}, superblock {}. Battle lost!", event.sessionId, event.superblockHash);
+                sessionToSuperblockMap.remove(event.sessionId);
+
+                if (superblockToSessionsMap.containsKey(event.superblockHash)) {
+                    superblockToSessionsMap.get(event.superblockHash).remove(event.sessionId);
+                }
             }
         }
     }
 
     @Override
     protected void restoreFiles() throws ClassNotFoundException, IOException {
-        restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
-        restore(sessionToSuperblockMap, sessionToSuperblockMapFile);
-        restore(semiApprovedSet, semiApprovedSetFile);
+        latestEthBlockProcessed = persistentFileStore.restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
+        sessionToSuperblockMap = persistentFileStore.restore(sessionToSuperblockMap, sessionToSuperblockMapFile);
+        superblockToSessionsMap = persistentFileStore.restore(superblockToSessionsMap, superblockToSessionsMapFile);
+        semiApprovedSet = persistentFileStore.restore(semiApprovedSet, semiApprovedSetFile);
     }
 
     @Override
-    protected void flushFiles() throws ClassNotFoundException, IOException {
-        flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
-        flush(sessionToSuperblockMap, sessionToSuperblockMapFile);
-        flush(semiApprovedSet, semiApprovedSetFile);
-    }
-
-
-    /* ---- STORAGE ---- */
-
-    private void setupSemiApprovedSet() {
-        this.semiApprovedSet = new HashSet<>();
-        this.semiApprovedSetFile = new File(dataDirectory.getAbsolutePath() + "/SemiApprovedSet.dat");
+    protected void flushFiles() throws IOException {
+        persistentFileStore.flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
+        persistentFileStore.flush(sessionToSuperblockMap, sessionToSuperblockMapFile);
+        persistentFileStore.flush(semiApprovedSet, semiApprovedSetFile);
     }
 
 }
