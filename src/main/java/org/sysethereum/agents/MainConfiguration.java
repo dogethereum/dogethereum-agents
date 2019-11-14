@@ -314,7 +314,10 @@ public class MainConfiguration {
             GetSyscoinRPCHandler getSyscoinRPCHandler,
             InfoHandler infoHandler
     ) throws IOException, KeyManagementException, NoSuchAlgorithmException, KeyStoreException, CertificateException, UnrecoverableKeyException {
-        HttpsServer httpsServer = HttpsServer.create(new InetSocketAddress(8443), 0);
+        HttpsServer httpsServer  = HttpsServer.create(new InetSocketAddress(8443), 0);
+        if(!config.isServerEnabled())
+            return httpsServer;
+
 
         SSLContext sslContext = SSLContext.getInstance("TLS");
 

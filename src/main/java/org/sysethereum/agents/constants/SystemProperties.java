@@ -108,7 +108,9 @@ public class SystemProperties {
     public String syscoinSuperblockChallengerUnlockPW() {
         return getStringProperty("syscoin.superblock.challenger.unlockpw", null);
     }
-
+    public boolean isServerEnabled() {
+        return getBooleanProperty("server.enabled", false);
+    }
     public String sslFile() {
         return getStringProperty("server.ssl.key-store");
     }
