@@ -163,7 +163,9 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             // (look at SyscoinClaimManager contract source code for more details)
             logger.info("Confirming superblock {}", highestDescendantId);
             claimContractApi.checkClaimFinished(highestDescendantId, false);
-
+        } else if(claimContractApi.getClaimInvalid(highestDescendantId) && claimContractApi.getClaimExists(highestDescendantId) && !claimContractApi.getClaimDecided(highestDescendantId)) {
+            logger.info("Superblock {} was invalid. Invalidating.", highestDescendantId);
+            claimContractApi.checkClaimFinished(highestDescendantId, false);
         }
 
     }
