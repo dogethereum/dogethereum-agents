@@ -26,7 +26,7 @@ public class LocalAgentConstantsFactory {
     public AgentConstants create() {
         var syscoinParams = SyscoinRegTestParams.get();
 
-        var syscoinToEthTimerTaskPeriod = 10 * 1000;
+        var syscoinToEthTimerTaskPeriod = 45 * 1000;
 
         List<Sha256Hash> sysHashes = List.of(syscoinParams.getGenesisBlock().getHash());
 
@@ -37,8 +37,8 @@ public class LocalAgentConstantsFactory {
                 Keccak256Hash.wrap(new byte[32]), // initialised with 0s
                 1
         );
-        var defenderTimerTaskPeriod = 15 * 1000;
-        var challengerTimerTaskPeriod = 15 * 1000;
+        var defenderTimerTaskPeriod = 60 * 1000;
+        var challengerTimerTaskPeriod = 60 * 1000;
         var defenderConfirmations = 1;
         var challengerConfirmations = 1;
 
