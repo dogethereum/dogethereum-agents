@@ -25,7 +25,7 @@ public class EthGanacheSyscoinMainAgentConstantsFactory {
 
     public AgentConstants create() {
         var syscoinParams = SyscoinMainNetParams.get();
-        var syscoinToEthTimerTaskPeriod = 10 * 1000;
+        var syscoinToEthTimerTaskPeriod = 45 * 1000;
         
         List<Sha256Hash> sysHashes = List.of(Sha256Hash.wrap("00000da80b8d7df5fae756f81315341a25f1e73c4760e10cbddacd9d3da05402"));
 
@@ -38,8 +38,8 @@ public class EthGanacheSyscoinMainAgentConstantsFactory {
         );
 
 
-        var defenderTimerTaskPeriod = 15 * 1000;
-        var challengerTimerTaskPeriod = 15 * 1000;
+        var defenderTimerTaskPeriod = 60 * 1000;
+        var challengerTimerTaskPeriod = 60 * 1000;
         var defenderConfirmations = 1;
         var challengerConfirmations = 1;
 

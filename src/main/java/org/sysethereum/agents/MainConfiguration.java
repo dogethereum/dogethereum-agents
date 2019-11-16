@@ -121,9 +121,9 @@ public class MainConfiguration {
     }
 
     @Bean
-    public BigInteger superblockDuration(SyscoinBattleManagerExtended battleManagerGetter) {
+    public BigInteger superblockDuration(SyscoinBattleManagerExtended battleManager) {
         try {
-            Uint256 send = battleManagerGetter.superblockDuration().send();
+            Uint256 send = battleManager.superblockDuration().send();
             return send.getValue();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -162,37 +162,6 @@ public class MainConfiguration {
         return result;
     }
 
-    @Bean
-    public SyscoinClaimManagerExtended claimManagerForChallengesGetter(
-            SystemProperties config, AgentConstants agentConstants,
-            Web3j web3Secondary, EthAddresses ethAddresses
-    ) throws IOException {
-        String contractAddress = SyscoinClaimManager.getPreviouslyDeployedAddress(agentConstants.getNetworkId());
-
-        var result = new SyscoinClaimManagerExtended(contractAddress, web3Secondary,
-                new ClientTransactionManager(web3Secondary, ethAddresses.challengerAddress),
-                BigInteger.valueOf(config.gasPriceMinimum()),
-                BigInteger.valueOf(config.gasLimit())
-        );
-        assert result.isValid();
-        return result;
-    }
-
-    @Bean
-    public SyscoinClaimManagerExtended claimManagerGetter(
-            SystemProperties config, AgentConstants agentConstants,
-            Web3j web3Secondary, EthAddresses ethAddresses
-    ) throws IOException {
-        String contractAddress = SyscoinClaimManager.getPreviouslyDeployedAddress(agentConstants.getNetworkId());
-
-        var result = new SyscoinClaimManagerExtended(contractAddress, web3Secondary,
-                new ClientTransactionManager(web3Secondary, ethAddresses.generalPurposeAddress),
-                BigInteger.valueOf(config.gasPriceMinimum()),
-                BigInteger.valueOf(config.gasLimit())
-        );
-        assert result.isValid();
-        return result;
-    }
 
     @Bean
     public SyscoinBattleManagerExtended battleManager(
@@ -203,22 +172,6 @@ public class MainConfiguration {
 
         var result = new SyscoinBattleManagerExtended(contractAddress, web3,
                 new ClientTransactionManager(web3, ethAddresses.generalPurposeAddress),
-                BigInteger.valueOf(config.gasPriceMinimum()),
-                BigInteger.valueOf(config.gasLimit())
-        );
-        assert result.isValid();
-        return result;
-    }
-
-    @Bean
-    public SyscoinBattleManagerExtended battleManagerGetter(
-            SystemProperties config, AgentConstants agentConstants,
-            Web3j web3Secondary, EthAddresses ethAddresses
-    ) throws IOException {
-        String contractAddress = SyscoinBattleManagerExtended.getAddress(agentConstants.getNetworkId());
-
-        var result = new SyscoinBattleManagerExtended(contractAddress, web3Secondary,
-                new ClientTransactionManager(web3Secondary, ethAddresses.generalPurposeAddress),
                 BigInteger.valueOf(config.gasPriceMinimum()),
                 BigInteger.valueOf(config.gasLimit())
         );
@@ -243,22 +196,6 @@ public class MainConfiguration {
     }
 
     @Bean
-    public SyscoinBattleManagerExtended battleManagerForChallengesGetter(
-            SystemProperties config, AgentConstants agentConstants,
-            Web3j web3Secondary, EthAddresses ethAddresses
-    ) throws IOException {
-        String contractAddress = SyscoinBattleManagerExtended.getAddress(agentConstants.getNetworkId());
-
-        var result = new SyscoinBattleManagerExtended(contractAddress, web3Secondary,
-                new ClientTransactionManager(web3Secondary, ethAddresses.challengerAddress),
-                BigInteger.valueOf(config.gasPriceMinimum()),
-                BigInteger.valueOf(config.gasLimit())
-        );
-        assert result.isValid();
-        return result;
-    }
-
-    @Bean
     public SyscoinSuperblocksExtended superblocks(
             SystemProperties config, AgentConstants agentConstants,
             Web3j web3, EthAddresses ethAddresses
@@ -274,35 +211,20 @@ public class MainConfiguration {
         return result;
     }
 
-    @Bean
-    public SyscoinSuperblocksExtended superblocksGetter(
-            SystemProperties config, AgentConstants agentConstants,
-            Web3j web3Secondary, EthAddresses ethAddresses
-    ) throws IOException {
-        String contractAddress = SyscoinSuperblocksExtended.getAddress(agentConstants.getNetworkId());
 
-        var result = new SyscoinSuperblocksExtended(contractAddress, web3Secondary,
-                new ClientTransactionManager(web3Secondary, ethAddresses.generalPurposeAddress),
-                BigInteger.valueOf(config.gasPriceMinimum()),
-                BigInteger.valueOf(config.gasLimit())
-        );
-        assert result.isValid();
-        return result;
+    @Bean
+    public BigInteger superblockDelay(SyscoinClaimManagerExtended claimManager) throws Exception {
+        return claimManager.superblockDelay().send().getValue();
     }
 
     @Bean
-    public BigInteger superblockDelay(SyscoinClaimManagerExtended claimManagerGetter) throws Exception {
-        return claimManagerGetter.superblockDelay().send().getValue();
+    public BigInteger superblockTimeout(SyscoinClaimManagerExtended claimManager) throws Exception {
+        return claimManager.superblockTimeout().send().getValue();
     }
 
     @Bean
-    public BigInteger superblockTimeout(SyscoinClaimManagerExtended claimManagerGetter) throws Exception {
-        return claimManagerGetter.superblockTimeout().send().getValue();
-    }
-
-    @Bean
-    public BigInteger minProposalDeposit(SyscoinClaimManagerExtended claimManagerGetter) throws Exception {
-        return claimManagerGetter.minProposalDeposit().send().getValue();
+    public BigInteger minProposalDeposit(SyscoinClaimManagerExtended claimManager) throws Exception {
+        return claimManager.minProposalDeposit().send().getValue();
     }
 
     @Bean

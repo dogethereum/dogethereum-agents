@@ -164,6 +164,9 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             logger.info("Confirming superblock {}", highestDescendantId);
             claimContractApi.checkClaimFinished(highestDescendantId, false);
 
+        } else if(claimContractApi.getClaimInvalid(highestDescendantId) && claimContractApi.getClaimExists(highestDescendantId) && !claimContractApi.getClaimDecided(highestDescendantId)) {
+            logger.info("Superblock {} was invalid. Invalidating.", highestDescendantId);
+            claimContractApi.checkClaimFinished(highestDescendantId, false);
         }
 
     }
@@ -245,7 +248,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      */
     @Override
     protected void deleteSubmitterConvictedBattles(long fromBlock, long toBlock) throws Exception {
-        List<SubmitterConvictedEvent> events = battleContractApi.getSubmitterConvictedEvents(agentRole, fromBlock, toBlock);
+        List<SubmitterConvictedEvent> events = battleContractApi.getSubmitterConvictedEvents(fromBlock, toBlock);
 
         for (SubmitterConvictedEvent event : events) {
             if (event.submitter.equals(myAddress)) {
@@ -268,7 +271,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      */
     @Override
     protected void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception {
-        List<ChallengerConvictedEvent> events = battleContractApi.getChallengerConvictedEvents(agentRole, fromBlock, toBlock);
+        List<ChallengerConvictedEvent> events = battleContractApi.getChallengerConvictedEvents(fromBlock, toBlock);
 
         for (ChallengerConvictedEvent event : events) {
             if (sessionToSuperblockMap.containsKey(event.sessionId)) {
