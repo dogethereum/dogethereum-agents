@@ -28,44 +28,34 @@ public class BattleContractApi {
     private static final Logger logger = LoggerFactory.getLogger("BattleContractApi");
 
     private final SyscoinBattleManagerExtended main;
-    private final SyscoinBattleManagerExtended getter;
     private final SyscoinBattleManagerExtended challenges;
-    private final SyscoinBattleManagerExtended challengesGetter;
 
     public BattleContractApi(
             SyscoinBattleManagerExtended battleManager,
-            SyscoinBattleManagerExtended battleManagerGetter,
-            SyscoinBattleManagerExtended battleManagerForChallenges,
-            SyscoinBattleManagerExtended battleManagerForChallengesGetter
+            SyscoinBattleManagerExtended battleManagerForChallenges
     ) {
         this.main = battleManager;
-        this.getter = battleManagerGetter;
         this.challenges = battleManagerForChallenges;
-        this.challengesGetter = battleManagerForChallengesGetter;
     }
 
     public void updateGasPrice(BigInteger gasPriceMinimum) {
         //noinspection deprecation
         main.setGasPrice(gasPriceMinimum);
         //noinspection deprecation
-        getter.setGasPrice(gasPriceMinimum);
-        //noinspection deprecation
         challenges.setGasPrice(gasPriceMinimum);
-        //noinspection deprecation
-        challengesGetter.setGasPrice(gasPriceMinimum);
     }
 
     public boolean getSubmitterHitTimeout(Keccak256Hash sessionId) throws Exception {
-        return challengesGetter.getSubmitterHitTimeout(new Bytes32(sessionId.getBytes())).send().getValue();
+        return challenges.getSubmitterHitTimeout(new Bytes32(sessionId.getBytes())).send().getValue();
     }
 
     public int getNumMerkleHashesBySession(Keccak256Hash sessionId) throws Exception {
-        BigInteger ret = getter.getNumMerkleHashesBySession(new Bytes32(sessionId.getBytes())).send().getValue();
+        BigInteger ret = main.getNumMerkleHashesBySession(new Bytes32(sessionId.getBytes())).send().getValue();
         return ret.intValue();
     }
 
     public boolean sessionExists(Keccak256Hash sessionId) throws Exception {
-        return getter.sessionExists(new Bytes32(sessionId.getBytes())).send().getValue();
+        return main.sessionExists(new Bytes32(sessionId.getBytes())).send().getValue();
     }
 
     /**
@@ -80,7 +70,7 @@ public class BattleContractApi {
     public List<NewBattleEvent> getNewBattleEvents(long startBlock, long endBlock) throws IOException {
         List<NewBattleEvent> result = new ArrayList<>();
         List<SyscoinBattleManager.NewBattleEventResponse> newBattleEvents =
-                challengesGetter.getNewBattleEventResponses(
+                challenges.getNewBattleEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
@@ -100,17 +90,14 @@ public class BattleContractApi {
      * Listens to SubmitterConvicted events from a given SyscoinBattleManager contract within a given block window
      * and parses web3j-generated instances into easier to manage SubmitterConvictedEvent objects.
      *
-     * @param agentRole  Agent role
      * @param startBlock First Ethereum block to poll.
      * @param endBlock   Last Ethereum block to poll.
      * @return All SubmitterConvicted events from SyscoinBattleManager as SubmitterConvictedEvent objects.
      * @throws IOException
      */
-    public List<SubmitterConvictedEvent> getSubmitterConvictedEvents(AgentRole agentRole, long startBlock, long endBlock) throws IOException {
-        var myBattleManager = (agentRole == CHALLENGER) ? challengesGetter : getter;
-
+    public List<SubmitterConvictedEvent> getSubmitterConvictedEvents(long startBlock, long endBlock) throws IOException {
         List<SyscoinBattleManager.SubmitterConvictedEventResponse> submitterConvictedEvents =
-                myBattleManager.getSubmitterConvictedEventResponses(
+                challenges.getSubmitterConvictedEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
@@ -127,18 +114,15 @@ public class BattleContractApi {
      * Listens to ChallengerConvicted events from a given SyscoinBattleManager contract within a given block window
      * and parses web3j-generated instances into easier to manage ChallengerConvictedEvent objects.
      *
-     * @param agentRole  Agent role
      * @param startBlock First Ethereum block to poll.
      * @param endBlock   Last Ethereum block to poll.
      * @return All ChallengerConvicted events from SyscoinBattleManager as ChallengerConvictedEvent objects.
      * @throws IOException
      */
-    public List<ChallengerConvictedEvent> getChallengerConvictedEvents(AgentRole agentRole, long startBlock, long endBlock) throws IOException {
-        var myBattleManager = (agentRole == CHALLENGER) ? challengesGetter : getter;
-
+    public List<ChallengerConvictedEvent> getChallengerConvictedEvents(long startBlock, long endBlock) throws IOException {
         List<ChallengerConvictedEvent> result;
         List<SyscoinBattleManager.ChallengerConvictedEventResponse> challengerConvictedEvents =
-                myBattleManager.getChallengerConvictedEventResponses(
+                challenges.getChallengerConvictedEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 

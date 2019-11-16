@@ -33,9 +33,7 @@ public class ClaimContractApi {
     private final BigInteger minProposalDeposit;
     private final BigInteger superblockTimeout;
     private final SyscoinClaimManagerExtended claimManager;
-    private final SyscoinClaimManagerExtended claimManagerGetter;
     private final SyscoinClaimManagerExtended claimManagerForChallenges;
-    private final SyscoinClaimManagerExtended claimManagerForChallengesGetter;
 
     public ClaimContractApi(
             SystemProperties config,
@@ -43,18 +41,14 @@ public class ClaimContractApi {
             BigInteger minProposalDeposit,
             BigInteger superblockTimeout,
             SyscoinClaimManagerExtended claimManager,
-            SyscoinClaimManagerExtended claimManagerGetter,
-            SyscoinClaimManagerExtended claimManagerForChallenges,
-            SyscoinClaimManagerExtended claimManagerForChallengesGetter
+            SyscoinClaimManagerExtended claimManagerForChallenges
     ) {
         this.config = config;
         this.ethAddresses = ethAddresses;
         this.minProposalDeposit = minProposalDeposit;
         this.superblockTimeout = superblockTimeout;
         this.claimManager = claimManager;
-        this.claimManagerGetter = claimManagerGetter;
         this.claimManagerForChallenges = claimManagerForChallenges;
-        this.claimManagerForChallengesGetter = claimManagerForChallengesGetter;
     }
 
     public void updateGasPrice(BigInteger gasPriceMinimum) {
@@ -62,10 +56,6 @@ public class ClaimContractApi {
         claimManager.setGasPrice(gasPriceMinimum);
         //noinspection deprecation
         claimManagerForChallenges.setGasPrice(gasPriceMinimum);
-        //noinspection deprecation
-        claimManagerGetter.setGasPrice(gasPriceMinimum);
-        //noinspection deprecation
-        claimManagerForChallengesGetter.setGasPrice(gasPriceMinimum);
     }
 
     /**
@@ -91,39 +81,39 @@ public class ClaimContractApi {
      * @throws Exception
      */
     public BigInteger getNewEventTimestampBigInteger(Keccak256Hash superblockId) throws Exception {
-        return claimManagerGetter.getNewSuperblockEventTimestamp(new Bytes32(superblockId.getBytes())).send().getValue();
+        return claimManager.getNewSuperblockEventTimestamp(new Bytes32(superblockId.getBytes())).send().getValue();
     }
 
 
     public long getSuperblockConfirmations() throws Exception {
-        return claimManagerGetter.superblockConfirmations().send().getValue().longValue();
+        return claimManager.superblockConfirmations().send().getValue().longValue();
     }
 
     public Address getClaimChallenger(Keccak256Hash superblockId) throws Exception {
-        return new Address(claimManagerGetter.getClaimChallenger(new Bytes32(superblockId.getBytes())).send().getValue());
+        return new Address(claimManager.getClaimChallenger(new Bytes32(superblockId.getBytes())).send().getValue());
     }
 
     public boolean getClaimExists(Keccak256Hash superblockId) throws Exception {
-        return claimManagerGetter.getClaimExists(new Bytes32(superblockId.getBytes())).send().getValue();
+        return claimManager.getClaimExists(new Bytes32(superblockId.getBytes())).send().getValue();
     }
 
     public String getClaimSubmitter(Keccak256Hash superblockId) throws Exception {
-        return claimManagerGetter.getClaimSubmitter(new Bytes32(superblockId.getBytes())).send().getValue();
+        return claimManager.getClaimSubmitter(new Bytes32(superblockId.getBytes())).send().getValue();
     }
 
     public boolean getClaimDecided(Keccak256Hash superblockId) throws Exception {
-        return claimManagerGetter.getClaimDecided(new Bytes32(superblockId.getBytes())).send().getValue();
+        return claimManager.getClaimDecided(new Bytes32(superblockId.getBytes())).send().getValue();
     }
 
     public boolean getClaimInvalid(Keccak256Hash superblockId) throws Exception {
-        return claimManagerGetter.getClaimInvalid(new Bytes32(superblockId.getBytes())).send().getValue();
+        return claimManager.getClaimInvalid(new Bytes32(superblockId.getBytes())).send().getValue();
     }
 
     public boolean getInBattleAndSemiApprovable(Keccak256Hash superblockId) throws Exception {
-        return claimManagerGetter.getInBattleAndSemiApprovable(new Bytes32(superblockId.getBytes())).send().getValue();
+        return claimManager.getInBattleAndSemiApprovable(new Bytes32(superblockId.getBytes())).send().getValue();
     }
 
-    private BigInteger getDeposit(String account, SyscoinClaimManagerExtended myClaimManager) throws Exception {
+    private BigInteger getDeposit(String account, SyscoinClaimManager myClaimManager) throws Exception {
         return myClaimManager.getDeposit(new Address(account)).send().getValue();
     }
 
@@ -143,8 +133,8 @@ public class ClaimContractApi {
      * @param myClaimManager this.claimManager if proposing/defending, this.claimManagerForChallenges if challenging.
      * @throws Exception
      */
-    private void withdrawAllFundsExceptLimit(String account, SyscoinClaimManager myClaimManager, SyscoinClaimManagerExtended myClaimManagerGetter) throws Exception {
-        BigInteger currentDeposit = getDeposit(account, myClaimManagerGetter);
+    private void withdrawAllFundsExceptLimit(String account, SyscoinClaimManager myClaimManager) throws Exception {
+        BigInteger currentDeposit = getDeposit(account, myClaimManager);
         BigInteger limit = BigInteger.valueOf(config.depositedFundsLimit());
         if (currentDeposit.compareTo(limit) > 0) {
             withdrawDeposit(myClaimManager, currentDeposit.subtract(limit));
@@ -161,16 +151,13 @@ public class ClaimContractApi {
      */
     public void withdrawAllFundsExceptLimit(AgentRole agentRole, String account) throws Exception {
         SyscoinClaimManager myClaimManager;
-        SyscoinClaimManagerExtended myClaimManagerGetter;
         if (agentRole == CHALLENGER) {
             myClaimManager = claimManagerForChallenges;
-            myClaimManagerGetter = claimManagerForChallengesGetter;
         } else {
             myClaimManager = claimManager;
-            myClaimManagerGetter = claimManagerGetter;
         }
 
-        withdrawAllFundsExceptLimit(account, myClaimManager, myClaimManagerGetter);
+        withdrawAllFundsExceptLimit(account, myClaimManager);
     }
 
     /**
@@ -182,9 +169,7 @@ public class ClaimContractApi {
     public void makeDepositIfNeeded(AgentRole agentRole, String account, BigInteger weiValue) throws Exception {
 
         SyscoinClaimManager myClaimManager = (agentRole == SUBMITTER) ? claimManager : claimManagerForChallenges;
-        SyscoinClaimManagerExtended myClaimManagerGetter = (agentRole == SUBMITTER) ? claimManagerGetter : claimManagerForChallengesGetter;
-
-        BigInteger currentDeposit = getDeposit(account, myClaimManagerGetter);
+        BigInteger currentDeposit = getDeposit(account, myClaimManager);
         if (currentDeposit.compareTo(weiValue) < 0) {
             BigInteger diff = weiValue.subtract(currentDeposit);
             makeDeposit(myClaimManager, diff);

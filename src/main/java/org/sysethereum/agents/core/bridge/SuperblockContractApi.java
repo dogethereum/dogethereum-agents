@@ -15,18 +15,15 @@ import static java.util.stream.Collectors.toList;
 public class SuperblockContractApi {
 
     private final SyscoinSuperblocksExtended main;
-    private final SyscoinSuperblocksExtended getter;
 
     public SuperblockContractApi(
-            SyscoinSuperblocksExtended superblocks,
-            SyscoinSuperblocksExtended superblocksGetter
+            SyscoinSuperblocksExtended superblocks
     ) {
         this.main = superblocks;
-        this.getter = superblocksGetter;
     }
 
     private BigInteger getStatus(Keccak256Hash superblockId) throws Exception {
-        return getter.getSuperblockStatus(new Bytes32(superblockId.getBytes())).send().getValue();
+        return main.getSuperblockStatus(new Bytes32(superblockId.getBytes())).send().getValue();
     }
 
     public boolean isApproved(Keccak256Hash superblockId) throws Exception {
@@ -42,22 +39,20 @@ public class SuperblockContractApi {
     }
 
     public Keccak256Hash getBestSuperblockId() throws Exception {
-        return Keccak256Hash.wrap(getter.getBestSuperblock().send().getValue());
+        return Keccak256Hash.wrap(main.getBestSuperblock().send().getValue());
     }
 
     public BigInteger getHeight(Keccak256Hash superblockId) throws Exception {
-        return getter.getSuperblockHeight(new Bytes32(superblockId.getBytes())).send().getValue();
+        return main.getSuperblockHeight(new Bytes32(superblockId.getBytes())).send().getValue();
     }
 
     public BigInteger getChainHeight() throws Exception {
-        return getter.getChainHeight().send().getValue();
+        return main.getChainHeight().send().getValue();
     }
 
     public void updateGasPrice(BigInteger gasPriceMinimum) {
         //noinspection deprecation
         main.setGasPrice(gasPriceMinimum);
-        //noinspection deprecation
-        getter.setGasPrice(gasPriceMinimum);
     }
 
     public static class SuperblockEvent {
@@ -80,7 +75,7 @@ public class SuperblockContractApi {
      */
     public List<SuperblockEvent> getNewSuperblocks(long startBlock, long endBlock) throws IOException {
 
-        return getter.getNewSuperblockEvents(startBlock, endBlock)
+        return main.getNewSuperblockEvents(startBlock, endBlock)
                 .stream().map(response -> new SuperblockEvent(
                         Keccak256Hash.wrap(response.superblockHash.getValue()),
                         response.who.getValue()
@@ -98,7 +93,7 @@ public class SuperblockContractApi {
      */
     public List<SuperblockEvent> getApprovedSuperblocks(long startBlock, long endBlock) throws IOException {
 
-        return getter.getApprovedSuperblockEvents(startBlock, endBlock)
+        return main.getApprovedSuperblockEvents(startBlock, endBlock)
                 .stream().map(response -> new SuperblockEvent(
                         Keccak256Hash.wrap(response.superblockHash.getValue()),
                         response.who.getValue()
@@ -116,7 +111,7 @@ public class SuperblockContractApi {
      */
     public List<SuperblockEvent> getSemiApprovedSuperblocks(long startBlock, long endBlock) throws IOException {
 
-        return getter.getSemiApprovedSuperblockEvents(startBlock, endBlock)
+        return main.getSemiApprovedSuperblockEvents(startBlock, endBlock)
                 .stream().map(response -> new SuperblockEvent(
                         Keccak256Hash.wrap(response.superblockHash.getValue()),
                         response.who.getValue()
@@ -134,7 +129,7 @@ public class SuperblockContractApi {
      */
     public List<SuperblockEvent> getInvalidSuperblocks(long startBlock, long endBlock) throws IOException {
 
-        return getter.getInvalidSuperblockEvents(startBlock, endBlock)
+        return main.getInvalidSuperblockEvents(startBlock, endBlock)
                 .stream().map(response -> new SuperblockEvent(
                         Keccak256Hash.wrap(response.superblockHash.getValue()),
                         response.who.getValue()
