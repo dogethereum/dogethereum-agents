@@ -164,7 +164,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
             logger.info("Confirming superblock {}", highestDescendantId);
             claimContractApi.checkClaimFinished(highestDescendantId, false);
         } else if(unresponsiveTimeoutPassed(toConfirmId) && claimContractApi.getClaimInvalid(toConfirmId) && claimContractApi.getClaimExists(toConfirmId) && !claimContractApi.getClaimDecided(toConfirmId)) {
-            logger.info("Superblock {} was invalid. Invalidating.", highestDescendantId);
+            logger.info("Superblock {} was invalid. Invalidating.", toConfirmId);
             claimContractApi.checkClaimFinished(toConfirmId, false);
         }
 
