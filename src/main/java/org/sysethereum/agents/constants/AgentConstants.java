@@ -21,7 +21,6 @@ public class AgentConstants {
     protected final long defenderConfirmations;
     protected final long challengerConfirmations;
 
-    protected final int ethInitialCheckpoint;
     protected final String networkId;
 
     public AgentConstants(
@@ -32,7 +31,6 @@ public class AgentConstants {
             long challengerTimerTaskPeriod,
             long defenderConfirmations,
             long challengerConfirmations,
-            int ethInitialCheckpoint,
             String networkId
     ) {
         this.syscoinParams = syscoinParams;
@@ -42,7 +40,6 @@ public class AgentConstants {
         this.challengerTimerTaskPeriod = challengerTimerTaskPeriod;
         this.defenderConfirmations = defenderConfirmations;
         this.challengerConfirmations = challengerConfirmations;
-        this.ethInitialCheckpoint = ethInitialCheckpoint;
         this.networkId = networkId;
     }
 
@@ -74,8 +71,5 @@ public class AgentConstants {
         return networkId;
     }
 
-    public int getEthInitialCheckpoint() {
-        return ethInitialCheckpoint;
-    }
 
 }

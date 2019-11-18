@@ -42,7 +42,6 @@ public class LocalAgentConstantsFactory {
         var defenderConfirmations = 1;
         var challengerConfirmations = 1;
 
-        var ethInitialCheckpoint = 0;
         var networkId = "32001"; // local eth network
 
         return new AgentConstants(
@@ -53,7 +52,6 @@ public class LocalAgentConstantsFactory {
                 challengerTimerTaskPeriod,
                 defenderConfirmations,
                 challengerConfirmations,
-                ethInitialCheckpoint,
                 networkId
         );
     }

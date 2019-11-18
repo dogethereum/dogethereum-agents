@@ -42,8 +42,7 @@ public class EthGanacheSyscoinMainAgentConstantsFactory {
         var challengerTimerTaskPeriod = 60 * 1000;
         var defenderConfirmations = 1;
         var challengerConfirmations = 1;
-
-        var ethInitialCheckpoint = 0;
+        
         var networkId = "32000"; // eth mainnet
 
         return new AgentConstants(
@@ -54,7 +53,6 @@ public class EthGanacheSyscoinMainAgentConstantsFactory {
             challengerTimerTaskPeriod,
             defenderConfirmations,
             challengerConfirmations,
-            ethInitialCheckpoint,
             networkId
         );
     }

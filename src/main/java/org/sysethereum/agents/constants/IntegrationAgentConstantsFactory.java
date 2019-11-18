@@ -43,7 +43,6 @@ public class IntegrationAgentConstantsFactory {
         var defenderConfirmations = 2;
         var challengerConfirmations = 2;
 
-        var ethInitialCheckpoint = 5349025;
         var networkId = "4"; // eth rinkeby 4; eth mainnet 1
 
         logger.info("genesisSuperblock " + genesisSuperblock.toString());
@@ -56,7 +55,6 @@ public class IntegrationAgentConstantsFactory {
                 challengerTimerTaskPeriod,
                 defenderConfirmations,
                 challengerConfirmations,
-                ethInitialCheckpoint,
                 networkId
         );
     }
