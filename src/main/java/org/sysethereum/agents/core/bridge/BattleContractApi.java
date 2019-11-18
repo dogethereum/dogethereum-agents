@@ -28,21 +28,31 @@ public class BattleContractApi {
     private static final Logger logger = LoggerFactory.getLogger("BattleContractApi");
 
     private final SyscoinBattleManagerExtended main;
+    private final SyscoinBattleManagerExtended getter;
     private final SyscoinBattleManagerExtended challenges;
+    private final SyscoinBattleManagerExtended challengesGetter;
 
     public BattleContractApi(
             SyscoinBattleManagerExtended battleManager,
-            SyscoinBattleManagerExtended battleManagerForChallenges
+            SyscoinBattleManagerExtended battleManagerGetter,
+            SyscoinBattleManagerExtended battleManagerForChallenges,
+            SyscoinBattleManagerExtended battleManagerForChallengesGetter
     ) {
         this.main = battleManager;
+        this.getter = battleManagerGetter;
         this.challenges = battleManagerForChallenges;
+        this.challengesGetter = battleManagerForChallengesGetter;
     }
 
     public void updateGasPrice(BigInteger gasPriceMinimum) {
         //noinspection deprecation
         main.setGasPrice(gasPriceMinimum);
         //noinspection deprecation
+        getter.setGasPrice(gasPriceMinimum);
+        //noinspection deprecation
         challenges.setGasPrice(gasPriceMinimum);
+        //noinspection deprecation
+        challengesGetter.setGasPrice(gasPriceMinimum);
     }
 
     public boolean getSubmitterHitTimeout(Keccak256Hash sessionId) throws Exception {
@@ -70,7 +80,7 @@ public class BattleContractApi {
     public List<NewBattleEvent> getNewBattleEvents(long startBlock, long endBlock) throws IOException {
         List<NewBattleEvent> result = new ArrayList<>();
         List<SyscoinBattleManager.NewBattleEventResponse> newBattleEvents =
-                challenges.getNewBattleEventResponses(
+                challengesGetter.getNewBattleEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
@@ -90,14 +100,16 @@ public class BattleContractApi {
      * Listens to SubmitterConvicted events from a given SyscoinBattleManager contract within a given block window
      * and parses web3j-generated instances into easier to manage SubmitterConvictedEvent objects.
      *
+     * @param agentRole  Agent role
      * @param startBlock First Ethereum block to poll.
      * @param endBlock   Last Ethereum block to poll.
      * @return All SubmitterConvicted events from SyscoinBattleManager as SubmitterConvictedEvent objects.
      * @throws IOException
      */
-    public List<SubmitterConvictedEvent> getSubmitterConvictedEvents(long startBlock, long endBlock) throws IOException {
+    public List<SubmitterConvictedEvent> getSubmitterConvictedEvents(AgentRole agentRole, long startBlock, long endBlock) throws IOException {
+        var myBattleManager = (agentRole == CHALLENGER) ? challengesGetter : getter;
         List<SyscoinBattleManager.SubmitterConvictedEventResponse> submitterConvictedEvents =
-                challenges.getSubmitterConvictedEventResponses(
+                myBattleManager.getSubmitterConvictedEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
@@ -114,15 +126,17 @@ public class BattleContractApi {
      * Listens to ChallengerConvicted events from a given SyscoinBattleManager contract within a given block window
      * and parses web3j-generated instances into easier to manage ChallengerConvictedEvent objects.
      *
+     * @param agentRole  Agent role
      * @param startBlock First Ethereum block to poll.
      * @param endBlock   Last Ethereum block to poll.
      * @return All ChallengerConvicted events from SyscoinBattleManager as ChallengerConvictedEvent objects.
      * @throws IOException
      */
-    public List<ChallengerConvictedEvent> getChallengerConvictedEvents(long startBlock, long endBlock) throws IOException {
+    public List<ChallengerConvictedEvent> getChallengerConvictedEvents(AgentRole agentRole, long startBlock, long endBlock) throws IOException {
+        var myBattleManager = (agentRole == CHALLENGER) ? challengesGetter : getter;
         List<ChallengerConvictedEvent> result;
         List<SyscoinBattleManager.ChallengerConvictedEventResponse> challengerConvictedEvents =
-                challenges.getChallengerConvictedEventResponses(
+                myBattleManager.getChallengerConvictedEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
