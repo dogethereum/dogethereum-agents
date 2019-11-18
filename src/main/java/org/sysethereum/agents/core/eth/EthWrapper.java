@@ -53,7 +53,7 @@ public class EthWrapper {
 
     // Extensions of contracts generated automatically by web3j
     private final SyscoinBattleManagerExtended battleManager;
-    private final SyscoinBattleManagerExtended battleManagerForChallengesGetter;
+    private final SyscoinBattleManagerExtended battleManagerForChallenges;
 
     private BigInteger gasPriceMinimum;
     private final BigInteger gasPriceMaximum;
@@ -76,7 +76,7 @@ public class EthWrapper {
             Web3j web3Secondary,
             EthAddresses ethAddresses,
             SyscoinBattleManagerExtended battleManager,
-            SyscoinBattleManagerExtended battleManagerForChallengesGetter,
+            SyscoinBattleManagerExtended battleManagerForChallenges,
             SuperblockContractApi superblockContractApi,
             BattleContractApi battleContractApi,
             ClaimContractApi claimContractApi,
@@ -90,7 +90,7 @@ public class EthWrapper {
         this.web3Secondary = web3Secondary;
         this.ethAddresses = ethAddresses;
         this.battleManager = battleManager;
-        this.battleManagerForChallengesGetter = battleManagerForChallengesGetter;
+        this.battleManagerForChallenges = battleManagerForChallenges;
         this.superblockContractApi = superblockContractApi;
         this.battleContractApi = battleContractApi;
         this.claimContractApi = claimContractApi;
@@ -333,7 +333,7 @@ public class EthWrapper {
     public List<RespondHeadersEvent> getNewRespondHeadersEvents(long startBlock, long endBlock) throws IOException {
         List<RespondHeadersEvent> result = new ArrayList<>();
         List<SyscoinBattleManager.RespondBlockHeadersEventResponse> newBattleEvents =
-                battleManagerForChallengesGetter.getNewBlockHeadersEventResponses(
+                battleManagerForChallenges.getNewBlockHeadersEventResponses(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
