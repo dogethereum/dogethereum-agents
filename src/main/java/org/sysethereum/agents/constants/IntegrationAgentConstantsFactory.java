@@ -28,12 +28,12 @@ public class IntegrationAgentConstantsFactory {
 
         var syscoinToEthTimerTaskPeriod = 45 * 1000;
 
-        List<Sha256Hash> sysHashes = List.of(Sha256Hash.wrap("00000080458a331fd618db89b08f081ca0dca46331c2ed12999e4c30284e5837"));
+        List<Sha256Hash> sysHashes = List.of(Sha256Hash.wrap("0000094c784f2d0c31b6c5290779f17c65bdf4e52981091a02e61964c67ad9b6"));
 
         var genesisSuperblock = new SuperblockData(
                 MerkleRootComputer.computeMerkleRoot(syscoinParams, sysHashes),
                 sysHashes,
-                1572453448, 1572453403, 503987568,
+                1574113802, 1574113796, 503986500,
                 Keccak256Hash.wrap(new byte[32]), // initialised with 0s
                 1
         );

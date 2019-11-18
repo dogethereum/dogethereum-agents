@@ -340,7 +340,6 @@ public class EthWrapper {
         for (SyscoinBattleManager.RespondBlockHeadersEventResponse response : newBattleEvents) {
             RespondHeadersEvent newRespondHeadersEvent = new RespondHeadersEvent();
             newRespondHeadersEvent.superblockHash = Keccak256Hash.wrap(response.superblockHash.getValue());
-            newRespondHeadersEvent.sessionId = Keccak256Hash.wrap(response.sessionId.getValue());
             newRespondHeadersEvent.merkleHashCount = response.merkleHashCount.getValue().intValue();
             newRespondHeadersEvent.submitter = response.submitter.getValue();
             result.add(newRespondHeadersEvent);
@@ -351,7 +350,6 @@ public class EthWrapper {
 
     public static class RespondHeadersEvent {
         public Keccak256Hash superblockHash;
-        public Keccak256Hash sessionId;
         public int merkleHashCount;
         public String submitter;
     }
@@ -362,9 +360,9 @@ public class EthWrapper {
     /* ---------------------------------- */
     /**
      * Responds to a challenge with all block headers
-     * @param sessionId Battle session ID.
+     * @param superblockId Battle session superblock.
      */
-    public void respondBlockHeaders(Keccak256Hash sessionId, Keccak256Hash superblockId, int merkleHashCount) throws Exception {
+    public void respondBlockHeaders(Keccak256Hash superblockId, int merkleHashCount) throws Exception {
         Thread.sleep(500); // in case the transaction takes some time to complete
         if (arePendingTransactionsForSendSuperblocksAddress()) {
             throw new Exception("Skipping respondBlockHeader, there are pending transaction for the sender address.");
@@ -391,10 +389,10 @@ public class EthWrapper {
         }
 
         CompletableFuture<TransactionReceipt> futureReceipt = battleManager.respondBlockHeaders(
-                new Bytes32(sessionId.getBytes()), new DynamicBytes(blockHeaderBytes), new Uint256(numHashesRequired)).sendAsync();
+                new Bytes32(superblockId.getBytes()), new DynamicBytes(blockHeaderBytes), new Uint256(numHashesRequired)).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 logger.info("Responded to last block header query for Syscoin superblock {} session {}, Receipt: {}",
-                        superblockId, sessionId, receipt)
+                        superblockId, receipt)
         );
 
 
@@ -404,13 +402,13 @@ public class EthWrapper {
 
     /**
      * Calls timeout for a session where a participant hasn't responded in time, thus closing the battle.
-     * @param sessionId Battle session ID.
+     * @param superblockId Battle session ID.
      * @param myBattleManager SyscoinBattleManager contract that the caller is using to handle its battles.
      */
-    public void timeout(Keccak256Hash sessionId, SyscoinBattleManagerExtended myBattleManager) {
-        CompletableFuture<TransactionReceipt> futureReceipt = myBattleManager.timeout(new Bytes32(sessionId.getBytes())).sendAsync();
+    public void timeout(Keccak256Hash superblockId, SyscoinBattleManagerExtended myBattleManager) {
+        CompletableFuture<TransactionReceipt> futureReceipt = myBattleManager.timeout(new Bytes32(superblockId.getBytes())).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                logger.info("Called timeout for session {}", sessionId));
+                logger.info("Called timeout for superblock {}", superblockId));
     }
 
     /**

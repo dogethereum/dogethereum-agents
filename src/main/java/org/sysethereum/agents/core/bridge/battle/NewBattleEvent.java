@@ -7,7 +7,6 @@ import static org.sysethereum.agents.constants.AgentRole.CHALLENGER;
 
 public class NewBattleEvent {
     public Keccak256Hash superblockHash;
-    public Keccak256Hash sessionId;
     public String submitter;
     public String challenger;
 

@@ -127,13 +127,14 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     private void invalidateLoserSuperblocks() throws Exception {
-        for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
+        Iterator<Keccak256Hash> i = sessionToSuperblockMap.iterator();
+        while (i.hasNext()){
+            Keccak256Hash superblockId = i.next();
             // decided is set to true inside of checkClaimFinished and thus only allows it to call once
             if (claimContractApi.getClaimInvalid(superblockId) && claimContractApi.getClaimExists(superblockId) && !claimContractApi.getClaimDecided(superblockId)) {
                 logger.info("Superblock {} lost a battle. Invalidating.", superblockId);
                 claimContractApi.checkClaimFinished(superblockId, true);
-                sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(superblockId));
-                superblockToSessionsMap.remove(superblockId);
+                sessionToSuperblockMap.remove(superblockId);
             }
         }
     }
@@ -201,9 +202,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         List<NewBattleEvent> newBattleEvents = battleContractApi.getNewBattleEvents(fromBlock, toBlock);
 
         for (NewBattleEvent newBattleEvent : newBattleEvents) {
-            if (isMyBattleEvent(newBattleEvent) && battleContractApi.sessionExists(newBattleEvent.sessionId)) {
-                sessionToSuperblockMap.put(newBattleEvent.sessionId, newBattleEvent.superblockHash);
-                addToSuperblockToSessionsMap(newBattleEvent.sessionId, newBattleEvent.superblockHash);
+            if (isMyBattleEvent(newBattleEvent) && battleContractApi.sessionExists(newBattleEvent.superblockHash)) {
+                sessionToSuperblockMap.add(newBattleEvent.superblockHash);
             }
         }
     }
@@ -231,10 +231,12 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     }
 
     protected void callBattleTimeouts() throws Exception {
-        for (Keccak256Hash sessionId : sessionToSuperblockMap.keySet()) {
-            if (battleContractApi.getSubmitterHitTimeout(sessionId)) {
-                logger.info("Submitter hit timeout on session {}. Calling timeout.", sessionId);
-                ethWrapper.timeout(sessionId, battleManagerForChallenges);
+        Iterator<Keccak256Hash> i = sessionToSuperblockMap.iterator();
+        while (i.hasNext()){
+            Keccak256Hash superblockId = i.next();
+            if (battleContractApi.getSubmitterHitTimeout(superblockId)) {
+                logger.info("Submitter hit timeout on superblock {}. Calling timeout.", superblockId);
+                ethWrapper.timeout(superblockId, battleManagerForChallenges);
             }
         }
     }
@@ -253,9 +255,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         for (SuperblockContractApi.SuperblockEvent superblockEvent : superblockEvents) {
             Keccak256Hash superblockId = superblockEvent.superblockId;
 
-            if (superblockToSessionsMap.containsKey(superblockId)) {
-                sessionToSuperblockMap.keySet().removeAll(superblockToSessionsMap.get(superblockId));
-                superblockToSessionsMap.remove(superblockId);
+            if (sessionToSuperblockMap.contains(superblockId)) {
+                sessionToSuperblockMap.remove(superblockId);
                 removeFromContract = true;
             }
 
@@ -283,13 +284,10 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         List<SubmitterConvictedEvent> events = battleContractApi.getSubmitterConvictedEvents(fromBlock, toBlock);
 
         for (SubmitterConvictedEvent event : events) {
-            if (sessionToSuperblockMap.containsKey(event.sessionId)) {
-                logger.info("Submitter convicted on session {}, superblock {}. Battle won!",
-                        event.sessionId, event.superblockHash);
-                sessionToSuperblockMap.remove(event.sessionId);
-            }
-            if (superblockToSessionsMap.containsKey(event.superblockHash)) {
-                superblockToSessionsMap.get(event.superblockHash).remove(event.sessionId);
+            if (sessionToSuperblockMap.contains(event.superblockHash)) {
+                logger.info("Submitter convicted on superblock {}. Battle won!",
+                         event.superblockHash);
+                sessionToSuperblockMap.remove(event.superblockHash);
             }
         }
     }
@@ -309,12 +307,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
         for (ChallengerConvictedEvent event : events) {
             if (event.challenger.equals(myAddress)) {
-                logger.info("Challenger convicted on session {}, superblock {}. Battle lost!", event.sessionId, event.superblockHash);
-                sessionToSuperblockMap.remove(event.sessionId);
-
-                if (superblockToSessionsMap.containsKey(event.superblockHash)) {
-                    superblockToSessionsMap.get(event.superblockHash).remove(event.sessionId);
-                }
+                logger.info("Challenger convicted on superblock {}. Battle lost!", event.superblockHash);
+                sessionToSuperblockMap.remove(event.superblockHash);
             }
         }
     }
@@ -323,7 +317,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     protected void restoreFiles() throws ClassNotFoundException, IOException {
         latestEthBlockProcessed = persistentFileStore.restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
         sessionToSuperblockMap = persistentFileStore.restore(sessionToSuperblockMap, sessionToSuperblockMapFile);
-        superblockToSessionsMap = persistentFileStore.restore(superblockToSessionsMap, superblockToSessionsMapFile);
         semiApprovedSet = persistentFileStore.restore(semiApprovedSet, semiApprovedSetFile);
     }
 
