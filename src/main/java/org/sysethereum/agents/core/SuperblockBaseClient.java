@@ -124,7 +124,7 @@ public abstract class SuperblockBaseClient {
                     long toBlock = ethWrapper.getEthBlockCount() - agentConstants.getConfirmations(agentRole) + 1;
                     long fromBlock;
                     if(latestEthBlockProcessed == 0)
-                        fromBlock = toBlock - 10000;
+                        fromBlock = toBlock - 5000;
                     else
                         fromBlock = latestEthBlockProcessed + 1;
 
