@@ -37,7 +37,9 @@ public class BattleContractApi {
         this.main = battleManager;
         this.challenges = battleManagerForChallenges;
     }
-
+    public SyscoinBattleManagerExtended getBattleManagerForChallenges(){
+        return challenges;
+    }
     public void updateGasPrice(BigInteger gasPriceMinimum) {
         //noinspection deprecation
         main.setGasPrice(gasPriceMinimum);
@@ -45,17 +47,17 @@ public class BattleContractApi {
         challenges.setGasPrice(gasPriceMinimum);
     }
 
-    public boolean getSubmitterHitTimeout(Keccak256Hash sessionId) throws Exception {
-        return challenges.getSubmitterHitTimeout(new Bytes32(sessionId.getBytes())).send().getValue();
+    public boolean getSubmitterHitTimeout(Keccak256Hash superblockHash) throws Exception {
+        return challenges.getSubmitterHitTimeout(new Bytes32(superblockHash.getBytes())).send().getValue();
     }
 
-    public int getNumMerkleHashesBySession(Keccak256Hash sessionId) throws Exception {
-        BigInteger ret = main.getNumMerkleHashesBySession(new Bytes32(sessionId.getBytes())).send().getValue();
+    public int getNumMerkleHashesBySession(Keccak256Hash superblockHash) throws Exception {
+        BigInteger ret = main.getNumMerkleHashesBySession(new Bytes32(superblockHash.getBytes())).send().getValue();
         return ret.intValue();
     }
 
-    public boolean sessionExists(Keccak256Hash sessionId) throws Exception {
-        return main.sessionExists(new Bytes32(sessionId.getBytes())).send().getValue();
+    public boolean sessionExists(Keccak256Hash superblockHash) throws Exception {
+        return main.sessionExists(new Bytes32(superblockHash.getBytes())).send().getValue();
     }
 
     /**
@@ -77,7 +79,6 @@ public class BattleContractApi {
         for (SyscoinBattleManager.NewBattleEventResponse response : newBattleEvents) {
             NewBattleEvent newBattleEvent = new NewBattleEvent();
             newBattleEvent.superblockHash = Keccak256Hash.wrap(response.superblockHash.getValue());
-            newBattleEvent.sessionId = Keccak256Hash.wrap(response.sessionId.getValue());
             newBattleEvent.submitter = response.submitter.getValue();
             newBattleEvent.challenger = response.challenger.getValue();
             result.add(newBattleEvent);
@@ -104,7 +105,6 @@ public class BattleContractApi {
         return submitterConvictedEvents.stream().map(response ->
                 new SubmitterConvictedEvent(
                         Keccak256Hash.wrap(response.superblockHash.getValue()),
-                        Keccak256Hash.wrap(response.sessionId.getValue()),
                         response.submitter.getValue()
                 )
         ).collect(toList());
@@ -129,7 +129,6 @@ public class BattleContractApi {
         result = challengerConvictedEvents.stream().map(response ->
                 new ChallengerConvictedEvent(
                         Keccak256Hash.wrap(response.superblockHash.getValue()),
-                        Keccak256Hash.wrap(response.sessionId.getValue()),
                         response.challenger.getValue()
                 )
         ).collect(toList());

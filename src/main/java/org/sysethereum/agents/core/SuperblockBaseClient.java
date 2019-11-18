@@ -43,10 +43,7 @@ public abstract class SuperblockBaseClient {
     // Data is duplicated for performance using it.
 
     // key: session id, value: superblock id
-    protected HashMap<Keccak256Hash, Keccak256Hash> sessionToSuperblockMap;
-
-    // key: superblock id, value: set of session ids
-    protected HashMap<Keccak256Hash, HashSet<Keccak256Hash>> superblockToSessionsMap;
+    protected HashSet<Keccak256Hash> sessionToSuperblockMap;
 
     protected final File sessionToSuperblockMapFile;
     protected final File superblockToSessionsMapFile;
@@ -77,8 +74,7 @@ public abstract class SuperblockBaseClient {
         this.superblockToSessionsMapFile = Paths.get(config.dataDirectory(), config.getSuperblockToSessionsMapFilename(agentRole)).toAbsolutePath().toFile();
 
         this.latestEthBlockProcessed = 0;
-        this.sessionToSuperblockMap = new HashMap<>();
-        this.superblockToSessionsMap = new HashMap<>();
+        this.sessionToSuperblockMap = new HashSet<>();
     }
 
     public boolean setup() throws ClassNotFoundException, IOException {
@@ -169,8 +165,7 @@ public abstract class SuperblockBaseClient {
         for (NewBattleEvent event : events) {
             if (isMyBattleEvent(event)) {
                 isAtLeastOneMine = true;
-                sessionToSuperblockMap.put(event.sessionId, event.superblockHash);
-                addToSuperblockToSessionsMap(event.sessionId, event.superblockHash);
+                sessionToSuperblockMap.add(event.superblockHash);
             }
 
             challenged.add(event.superblockHash);
@@ -179,15 +174,6 @@ public abstract class SuperblockBaseClient {
         return events.size() == 0 ? null : new ChallengeReport(isAtLeastOneMine, challenged);
     }
 
-    protected void addToSuperblockToSessionsMap(Keccak256Hash sessionId, Keccak256Hash superblockId) {
-        if (superblockToSessionsMap.containsKey(superblockId)) {
-            superblockToSessionsMap.get(superblockId).add(sessionId);
-        } else {
-            HashSet<Keccak256Hash> newSuperblockBattles = new HashSet<>();
-            newSuperblockBattles.add(sessionId);
-            superblockToSessionsMap.put(superblockId, newSuperblockBattles);
-        }
-    }
 
     protected boolean isMyBattleEvent(NewBattleEvent newBattleEvent) {
         return newBattleEvent.getAddressByRole(agentRole).equals(myAddress);

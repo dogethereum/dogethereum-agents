@@ -44,9 +44,8 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
                     new NewBattleEventResponse();
             newBattleEventResponse.log = eventValues.getLog();
             newBattleEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            newBattleEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
-            newBattleEventResponse.submitter = new Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
-            newBattleEventResponse.challenger = new Address ((String)eventValues.getNonIndexedValues().get(3).getValue());
+            newBattleEventResponse.submitter = new Address ((String)eventValues.getNonIndexedValues().get(1).getValue());
+            newBattleEventResponse.challenger = new Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
             result.add(newBattleEventResponse);
         }
 
@@ -69,9 +68,8 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
                     new RespondBlockHeadersEventResponse();
             newBlockHeadersEventResponse.log = eventValues.getLog();
             newBlockHeadersEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            newBlockHeadersEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
-            newBlockHeadersEventResponse.merkleHashCount = (Uint256) eventValues.getNonIndexedValues().get(2);
-            newBlockHeadersEventResponse.submitter = new Address ((String)eventValues.getNonIndexedValues().get(3).getValue());
+            newBlockHeadersEventResponse.merkleHashCount = (Uint256) eventValues.getNonIndexedValues().get(1);
+            newBlockHeadersEventResponse.submitter = new Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
             result.add(newBlockHeadersEventResponse);
         }
 
@@ -94,9 +92,8 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
                     new ChallengerConvictedEventResponse();
             newChallengerConvictedEventResponse.log = eventValues.getLog();
             newChallengerConvictedEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            newChallengerConvictedEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
-            newChallengerConvictedEventResponse.err = (Uint256) eventValues.getNonIndexedValues().get(2);
-            newChallengerConvictedEventResponse.challenger = new Address ((String)eventValues.getNonIndexedValues().get(3).getValue());
+            newChallengerConvictedEventResponse.err = (Uint256) eventValues.getNonIndexedValues().get(1);
+            newChallengerConvictedEventResponse.challenger = new Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
             result.add(newChallengerConvictedEventResponse);
         }
 
@@ -120,9 +117,8 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
                     new SubmitterConvictedEventResponse();
             newSubmitterConvictedEventResponse.log = eventValues.getLog();
             newSubmitterConvictedEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            newSubmitterConvictedEventResponse.sessionId = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(1).getValue());
-            newSubmitterConvictedEventResponse.err = (Uint256) eventValues.getNonIndexedValues().get(2);
-            newSubmitterConvictedEventResponse.submitter = new Address ((String)eventValues.getNonIndexedValues().get(3).getValue());
+            newSubmitterConvictedEventResponse.err = (Uint256) eventValues.getNonIndexedValues().get(1);
+            newSubmitterConvictedEventResponse.submitter = new Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
             result.add(newSubmitterConvictedEventResponse);
         }
 
