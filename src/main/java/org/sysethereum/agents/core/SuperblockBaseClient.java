@@ -76,7 +76,7 @@ public abstract class SuperblockBaseClient {
         this.sessionToSuperblockMapFile = Paths.get(config.dataDirectory(), config.getSessionToSuperblockMapFilename(agentRole)).toAbsolutePath().toFile();
         this.superblockToSessionsMapFile = Paths.get(config.dataDirectory(), config.getSuperblockToSessionsMapFilename(agentRole)).toAbsolutePath().toFile();
 
-        this.latestEthBlockProcessed = agentConstants.getEthInitialCheckpoint();
+        this.latestEthBlockProcessed = 0;
         this.sessionToSuperblockMap = new HashMap<>();
         this.superblockToSessionsMap = new HashMap<>();
     }
@@ -120,8 +120,13 @@ public abstract class SuperblockBaseClient {
 
                     reactToElapsedTime();
 
-                    long fromBlock = latestEthBlockProcessed + 1;
+
                     long toBlock = ethWrapper.getEthBlockCount() - agentConstants.getConfirmations(agentRole) + 1;
+                    long fromBlock;
+                    if(latestEthBlockProcessed == 0)
+                        fromBlock = toBlock - 10000;
+                    else
+                        fromBlock = latestEthBlockProcessed + 1;
 
                     // Ignore execution if nothing to process
                     if (fromBlock > toBlock) return;
