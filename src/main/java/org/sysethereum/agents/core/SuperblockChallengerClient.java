@@ -280,7 +280,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      */
     @Override
     protected void deleteSubmitterConvictedBattles(long fromBlock, long toBlock) throws Exception {
-        List<SubmitterConvictedEvent> events = battleContractApi.getSubmitterConvictedEvents(fromBlock, toBlock);
+        List<SubmitterConvictedEvent> events = battleContractApi.getSubmitterConvictedEvents(agentRole, fromBlock, toBlock);
 
         for (SubmitterConvictedEvent event : events) {
             if (sessionToSuperblockMap.containsKey(event.sessionId)) {
@@ -305,7 +305,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      */
     @Override
     protected void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception {
-        List<ChallengerConvictedEvent> events = battleContractApi.getChallengerConvictedEvents(fromBlock, toBlock);
+        List<ChallengerConvictedEvent> events = battleContractApi.getChallengerConvictedEvents(agentRole, fromBlock, toBlock);
 
         for (ChallengerConvictedEvent event : events) {
             if (event.challenger.equals(myAddress)) {
