@@ -271,7 +271,7 @@ public class ClaimContractApi {
             return;
         }
 
-        if(getClaimSubmitter(superblockId).equals(ethAddresses.challengerAddress)){
+        if(getClaimSubmitter(superblockId).equalsIgnoreCase(ethAddresses.challengerAddress)){
             logger.info("You cannot challenge a superblock you have submitted yourself, skipping...{}", superblockId.toString());
             return;
         }

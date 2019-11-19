@@ -199,7 +199,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     }
 
     private boolean isMine(EthWrapper.RespondHeadersEvent respondHeadersEvent) {
-        return respondHeadersEvent.submitter.equals(myAddress);
+        return respondHeadersEvent.submitter.equalsIgnoreCase(myAddress);
     }
 
     /**
@@ -255,7 +255,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         List<SubmitterConvictedEvent> events = battleContractApi.getSubmitterConvictedEvents(fromBlock, toBlock);
 
         for (SubmitterConvictedEvent event : events) {
-            if (event.submitter.equals(myAddress)) {
+            if (event.submitter.equalsIgnoreCase(myAddress)) {
                 logger.info("Submitter convicted on superblock {}. Battle lost!",
                         event.superblockHash);
                 if (sessionToSuperblockMap.contains(event.superblockHash)) {

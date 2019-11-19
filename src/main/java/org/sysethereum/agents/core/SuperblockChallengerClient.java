@@ -227,14 +227,14 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     /* ---- HELPER METHODS ---- */
 
     private boolean challengedByMe(SuperblockContractApi.SuperblockEvent superblockEvent) throws Exception {
-        return claimContractApi.getClaimChallenger(superblockEvent.superblockId).getValue().equals(myAddress);
+        return claimContractApi.getClaimChallenger(superblockEvent.superblockId).getValue().equalsIgnoreCase(myAddress);
     }
 
     protected void callBattleTimeouts() throws Exception {
         Iterator<Keccak256Hash> i = sessionToSuperblockMap.iterator();
         while (i.hasNext()){
             Keccak256Hash superblockId = i.next();
-            if (battleContractApi.getSubmitterHitTimeout(superblockId)) {
+            if (battleContractApi.getSubmitterHitTimeout(superblockId) && battleContractApi.sessionExists(superblockId)) {
                 logger.info("Submitter hit timeout on superblock {}. Calling timeout.", superblockId);
                 ethWrapper.timeout(superblockId, battleManagerForChallenges);
             }
@@ -306,7 +306,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         List<ChallengerConvictedEvent> events = battleContractApi.getChallengerConvictedEvents(fromBlock, toBlock);
 
         for (ChallengerConvictedEvent event : events) {
-            if (event.challenger.equals(myAddress)) {
+            if (event.challenger.equalsIgnoreCase(myAddress)) {
                 logger.info("Challenger convicted on superblock {}. Battle lost!", event.superblockHash);
                 sessionToSuperblockMap.remove(event.superblockHash);
             }

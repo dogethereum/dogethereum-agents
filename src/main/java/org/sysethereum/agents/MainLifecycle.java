@@ -119,7 +119,7 @@ public class MainLifecycle {
                 }
             }
             String challengerAddress = config.syscoinSuperblockChallengerAddress();
-            if (challengerAddress.length() > 0 && !generalAddress.equals(challengerAddress)) {
+            if (challengerAddress.length() > 0 && !generalAddress.equalsIgnoreCase(challengerAddress)) {
                 PersonalUnlockAccount personalUnlockAccount = admin.personalUnlockAccount(challengerAddress, config.syscoinSuperblockChallengerUnlockPW(), BigInteger.ZERO).send();
                 if (personalUnlockAccount != null && personalUnlockAccount.getResult() != null && personalUnlockAccount.accountUnlocked()) {
                     logger.info("syscoin.superblock.challenger.address is unlocked and ready to use!");
