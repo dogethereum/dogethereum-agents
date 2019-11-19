@@ -261,7 +261,7 @@ public class EthWrapper {
         if (claimContractApi.getClaimExists(superblock.getHash())) {
             boolean allowed = claimContractApi.getClaimInvalid(superblock.getHash())
                     && claimContractApi.getClaimDecided(superblock.getHash())
-                    && !claimContractApi.getClaimSubmitter(superblock.getHash()).equals(account);
+                    && !claimContractApi.getClaimSubmitter(superblock.getHash()).equalsIgnoreCase(account);
 
             if (!allowed) {
                 logger.info("Superblock {} has already been sent. Returning.", superblock.getHash());

@@ -176,7 +176,7 @@ public abstract class SuperblockBaseClient {
 
 
     protected boolean isMyBattleEvent(NewBattleEvent newBattleEvent) {
-        return newBattleEvent.getAddressByRole(agentRole).equals(myAddress);
+        return newBattleEvent.getAddressByRole(agentRole).equalsIgnoreCase(myAddress);
     }
 
     protected final boolean arePendingTransactions() throws InterruptedException, IOException {
@@ -242,7 +242,7 @@ public abstract class SuperblockBaseClient {
     /* ----- HELPER METHODS ----- */
 
     protected boolean isMine(Keccak256Hash superblockId) throws Exception {
-        return claimContractApi.getClaimSubmitter(superblockId).equals(myAddress);
+        return claimContractApi.getClaimSubmitter(superblockId).equalsIgnoreCase(myAddress);
     }
 
 }
