@@ -131,8 +131,7 @@ public class SuperblockChain {
         List<Sha256Hash> poppedBlocks = new ArrayList<>();
         boolean haveEnoughForDuration = false;
         while (!hashStack.empty() && new Date(syscoinWrapper.getMedianTimestamp(syscoinWrapper.getBlock(hashStack.peek()))*1000L).before(endTime)) {
-            Sha256Hash poppedHash = hashStack.pop();
-            poppedBlocks.add(poppedHash);
+            poppedBlocks.add(hashStack.pop());
             if(poppedBlocks.size() >= SUPERBLOCK_DURATION) {
                 haveEnoughForDuration = true;
                 break;
