@@ -380,7 +380,7 @@ public class EthWrapper {
 
         byte[] blockHeaderBytes = null;
         for(int i = startIndex;i<endIndex;i++){
-            AltcoinBlock altBlock = (AltcoinBlock) syscoinWrapper.getBlock(listHashes.get(i)).getHeader();
+            Block altBlock = syscoinWrapper.getBlock(listHashes.get(i)).getHeader().cloneAsHeader();
             byte[] serializedBytes = altBlock.bitcoinSerialize();
             if(blockHeaderBytes == null)
                 blockHeaderBytes = serializedBytes;

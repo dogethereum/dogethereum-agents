@@ -134,10 +134,8 @@ public class SuperblockChain {
             Sha256Hash poppedHash = hashStack.pop();
             poppedBlocks.add(poppedHash);
             if(poppedBlocks.size() >= SUPERBLOCK_DURATION) {
-                if (!poppedHash.equals(Sha256Hash.wrap("00000089642228b21bb67fa8e6028ea846973b76d1433a3c950bfba9b0f5f97e")) || poppedBlocks.size() >= (SUPERBLOCK_DURATION + 1)) {
-                    haveEnoughForDuration = true;
-                    break;
-                }
+                haveEnoughForDuration = true;
+                break;
             }
         }
 
