@@ -7,7 +7,7 @@ import static org.sysethereum.agents.constants.AgentRole.CHALLENGER;
 
 /**
  * Agent and Bridge constants.
- * Subclasses are customizations for each network (syscoin regtest and eth ganache, syscoin mainnet and eth rinkeby, syscoin mainnet and eth prod)
+ * Subclasses are customizations for each network
  */
 public class AgentConstants {
 

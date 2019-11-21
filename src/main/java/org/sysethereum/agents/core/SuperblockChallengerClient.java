@@ -9,9 +9,8 @@ import org.sysethereum.agents.contract.SyscoinBattleManagerExtended;
 import org.sysethereum.agents.core.bridge.BattleContractApi;
 import org.sysethereum.agents.core.bridge.ClaimContractApi;
 import org.sysethereum.agents.core.bridge.SuperblockContractApi;
-import org.sysethereum.agents.core.bridge.battle.ChallengerConvictedEvent;
 import org.sysethereum.agents.core.bridge.battle.NewBattleEvent;
-import org.sysethereum.agents.core.bridge.battle.SubmitterConvictedEvent;
+import org.sysethereum.agents.core.bridge.battle.SuperblockFailedEvent;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.sysethereum.agents.core.bridge.Superblock;
@@ -90,6 +89,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
             // Maintain data structures
             getSemiApproved(fromBlock, toBlock);
+
+            challengerWonBattles(fromBlock, toBlock);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             return fromBlock - 1;
@@ -134,7 +135,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             if (claimContractApi.getClaimInvalid(superblockId) && claimContractApi.getClaimExists(superblockId) && !claimContractApi.getClaimDecided(superblockId)) {
                 logger.info("Superblock {} lost a battle. Invalidating.", superblockId);
                 claimContractApi.checkClaimFinished(superblockId, true);
-                sessionToSuperblockMap.remove(superblockId);
             }
         }
     }
@@ -142,6 +142,30 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     /* - Reacting to events */
 
+    /**
+     * Filters battles where this defender defended the superblock, won
+     * and deletes them from active battle set and pays out the deposit if configuration is set to do so
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
+    protected void challengerWonBattles(long fromBlock, long toBlock) throws Exception {
+        List<SuperblockFailedEvent> events = claimContractApi.getSuperblockClaimFailedEvents(fromBlock, toBlock);
+        boolean removeFromContract = false;
+        for (SuperblockFailedEvent event : events) {
+            if (isMine(event)) {
+                logger.info("Challenger won battle on superblock {}",
+                        event.superblockHash);
+                if (sessionToSuperblockMap.contains(event.superblockHash)) {
+                    sessionToSuperblockMap.remove(event.superblockHash);
+                    removeFromContract = true;
+                }
+            }
+        }
+        if (removeFromContract && config.isWithdrawFundsEnabled()) {
+            claimContractApi.withdrawAllFundsExceptLimit(AgentRole.CHALLENGER, myAddress);
+        }
+    }
     /**
      * Starts challenges for all new superblocks that aren't in the challenger's local chain.
      * @param fromBlock
@@ -240,77 +264,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             }
         }
     }
-
-    /**
-     * Removes superblocks from the data structures that keep track of semi-approved superblocks.
-     * If fund withdrawal is enabled, also withdraws any deposits that might have been unbonded
-     * or any rewards that might have resulted from the superblocks' status change.
-     * @param fromBlock
-     * @param toBlock
-     * @throws Exception
-     */
-    @Override
-    protected void removeSuperblocks(long fromBlock, long toBlock, List<SuperblockContractApi.SuperblockEvent> superblockEvents) throws Exception {
-        boolean removeFromContract = false;
-        for (SuperblockContractApi.SuperblockEvent superblockEvent : superblockEvents) {
-            Keccak256Hash superblockId = superblockEvent.superblockId;
-
-            if (sessionToSuperblockMap.contains(superblockId)) {
-                sessionToSuperblockMap.remove(superblockId);
-                removeFromContract = true;
-            }
-
-            if (semiApprovedSet.contains(superblockId)) {
-                semiApprovedSet.remove(superblockId);
-                removeFromContract = true;
-            }
-
-        }
-        if (removeFromContract && config.isWithdrawFundsEnabled()) {
-            claimContractApi.withdrawAllFundsExceptLimit(AgentRole.CHALLENGER, myAddress);
-        }
-    }
-
-    /**
-     * Filters battles where this challenger battled the superblock and the submitter got convicted
-     * and deletes them from active battle set.
-     * @param fromBlock
-     * @param toBlock
-     * @return
-     * @throws Exception
-     */
-    @Override
-    protected void deleteSubmitterConvictedBattles(long fromBlock, long toBlock) throws Exception {
-        List<SubmitterConvictedEvent> events = battleContractApi.getSubmitterConvictedEvents(fromBlock, toBlock);
-
-        for (SubmitterConvictedEvent event : events) {
-            if (sessionToSuperblockMap.contains(event.superblockHash)) {
-                logger.info("Submitter convicted on superblock {}. Battle won!",
-                         event.superblockHash);
-                sessionToSuperblockMap.remove(event.superblockHash);
-            }
-        }
-    }
-
-    // TODO: see if this should have some fault tolerance for battles that were erroneously not added to set
-    /**
-     * Filters battles where this challenger battled the superblock and got convicted
-     * and deletes them from active battle set.
-     * @param fromBlock
-     * @param toBlock
-     * @return
-     * @throws Exception
-     */
-    @Override
-    protected void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception {
-        List<ChallengerConvictedEvent> events = battleContractApi.getChallengerConvictedEvents(fromBlock, toBlock);
-
-        for (ChallengerConvictedEvent event : events) {
-            if (event.challenger.equalsIgnoreCase(myAddress)) {
-                logger.info("Challenger convicted on superblock {}. Battle lost!", event.superblockHash);
-                sessionToSuperblockMap.remove(event.superblockHash);
-            }
-        }
+    private boolean isMine(SuperblockFailedEvent superblockFailedEvent) {
+        return superblockFailedEvent.challenger.equalsIgnoreCase(myAddress);
     }
 
     @Override

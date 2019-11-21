@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import org.sysethereum.agents.util.JsonGasRanges;
 import org.web3j.abi.datatypes.DynamicBytes;
 import org.web3j.abi.datatypes.generated.Bytes32;
 
@@ -66,6 +67,7 @@ public class EthWrapper {
     private final BigInteger minProposalDeposit;
     private final SuperblockChain localSuperblockChain;
     private final SyscoinWrapper syscoinWrapper;
+    private final JsonGasRanges jsonGasRanges;
 
     @Autowired
     public EthWrapper(
@@ -81,7 +83,8 @@ public class EthWrapper {
             BattleContractApi battleContractApi,
             ClaimContractApi claimContractApi,
             BigInteger superblockDuration,
-            BigInteger minProposalDeposit
+            BigInteger minProposalDeposit,
+            JsonGasRanges jsonGasRanges
     ) throws Exception {
 
         this.localSuperblockChain = superblockChain;
@@ -98,7 +101,9 @@ public class EthWrapper {
         this.minProposalDeposit = minProposalDeposit;
 
         this.gasPriceMinimum = BigInteger.valueOf(config.gasPriceMinimum());
-        this.gasPriceMaximum = BigInteger.valueOf(config.gasPriceMaximum());
+        this.gasPriceMaximum = config.gasPriceMaximum() == 0? BigInteger.ZERO: BigInteger.valueOf(config.gasPriceMaximum());
+
+        this.jsonGasRanges = jsonGasRanges;
 
         updateContractFacadesGasPrice();
     }
@@ -149,9 +154,10 @@ public class EthWrapper {
      * @throws IOException
      */
     public void updateContractFacadesGasPrice() throws IOException {
-        BigInteger suggestedGasPrice = web3.ethGasPrice().send().getGasPrice();
+        BigInteger jsonGasPrice = jsonGasRanges.gasPrice();
+        BigInteger suggestedGasPrice = jsonGasPrice.equals(BigInteger.ZERO)? web3.ethGasPrice().send().getGasPrice(): jsonGasPrice;
         if (suggestedGasPrice.compareTo(gasPriceMinimum) > 0) {
-            if (suggestedGasPrice.compareTo(gasPriceMaximum) > 0) {
+            if (!gasPriceMaximum.equals(BigInteger.ZERO) && suggestedGasPrice.compareTo(gasPriceMaximum) > 0) {
                 suggestedGasPrice = gasPriceMaximum;
             }
             if(!gasPriceMinimum.equals(suggestedGasPrice)) {
@@ -391,7 +397,7 @@ public class EthWrapper {
         CompletableFuture<TransactionReceipt> futureReceipt = battleManager.respondBlockHeaders(
                 new Bytes32(superblockId.getBytes()), new DynamicBytes(blockHeaderBytes), new Uint256(numHashesRequired)).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                logger.info("Responded to last block header query for Syscoin superblock {} session {}, Receipt: {}",
+                logger.info("Responded to last block header query for Syscoin superblock {}, Receipt: {}",
                         superblockId, receipt)
         );
 

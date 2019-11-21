@@ -8,18 +8,24 @@ import org.sysethereum.agents.constants.EthAddresses;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.contract.SyscoinClaimManager;
 import org.sysethereum.agents.contract.SyscoinClaimManagerExtended;
+import org.sysethereum.agents.core.bridge.battle.SuperblockFailedEvent;
+import org.sysethereum.agents.core.bridge.battle.SuperblockSuccessfulEvent;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.sysethereum.agents.core.syscoin.SuperblockUtils;
 import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.abi.datatypes.generated.Uint32;
+import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import static java.util.stream.Collectors.toList;
 import static org.sysethereum.agents.constants.AgentRole.CHALLENGER;
 import static org.sysethereum.agents.constants.AgentRole.SUBMITTER;
 
@@ -254,7 +260,7 @@ public class ClaimContractApi {
      */
     public void rejectClaim(Keccak256Hash superblockId) {
         CompletableFuture<TransactionReceipt> futureReceipt =
-                claimManager.rejectClaim(new Bytes32(superblockId.getBytes())).sendAsync();
+                claimManagerForChallenges.rejectClaim(new Bytes32(superblockId.getBytes())).sendAsync();
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
                 logger.info("rejectClaim receipt {}", receipt.toString())
         );
@@ -285,5 +291,51 @@ public class ClaimContractApi {
                 claimManagerForChallenges.challengeSuperblock(new Bytes32(superblockId.getBytes())).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 logger.info("challengeSuperblock receipt {}", receipt.toString()));
+    }
+
+    /**
+     * Listens to SuperblockClaimSuccessful events from a given SyscoinClaimManager contract within a given block window
+     * and parses web3j-generated instances into easier to manage SuperblockSuccessfulEvent objects.
+     *
+     * @param startBlock First Ethereum block to poll.
+     * @param endBlock   Last Ethereum block to poll.
+     * @return All SuperblockClaimSuccessful events from SyscoinClaimManager as SuperblockSuccessfulEvent objects.
+     * @throws IOException
+     */
+    public List<SuperblockSuccessfulEvent> getSuperblockClaimSuccessfulEvents(long startBlock, long endBlock) throws IOException {
+        List<SyscoinClaimManager.SuperblockClaimSuccessfulEventResponse> superblockSuccessfulEvents =
+                claimManager.getSuperblockClaimSuccessfulEventResponses(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+
+        return superblockSuccessfulEvents.stream().map(response ->
+                new SuperblockSuccessfulEvent(
+                        Keccak256Hash.wrap(response.superblockHash.getValue()),
+                        response.submitter.getValue()
+                )
+        ).collect(toList());
+    }
+
+    /**
+     * Listens to SuperblockClaimFailed events from a given SyscoinClaimManager contract within a given block window
+     * and parses web3j-generated instances into easier to manage SuperblockSuccessfulEvent objects.
+     *
+     * @param startBlock First Ethereum block to poll.
+     * @param endBlock   Last Ethereum block to poll.
+     * @return All SuperblockClaimFailed events from SyscoinClaimManager as SuperblockFailedEvent objects.
+     * @throws IOException
+     */
+    public List<SuperblockFailedEvent> getSuperblockClaimFailedEvents(long startBlock, long endBlock) throws IOException {
+        List<SyscoinClaimManager.SuperblockClaimFailedEventResponse> superblockFailedEvents =
+                claimManagerForChallenges.getSuperblockClaimFailedEventResponses(
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
+                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
+
+        return superblockFailedEvents.stream().map(response ->
+                new SuperblockFailedEvent(
+                        Keccak256Hash.wrap(response.superblockHash.getValue()),
+                        response.challenger.getValue()
+                )
+        ).collect(toList());
     }
 }

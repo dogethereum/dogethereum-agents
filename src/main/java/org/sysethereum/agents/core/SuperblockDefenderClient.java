@@ -9,9 +9,8 @@ import org.sysethereum.agents.core.bridge.BattleContractApi;
 import org.sysethereum.agents.core.bridge.ClaimContractApi;
 import org.sysethereum.agents.core.bridge.Superblock;
 import org.sysethereum.agents.core.bridge.SuperblockContractApi;
-import org.sysethereum.agents.core.bridge.battle.ChallengerConvictedEvent;
 import org.sysethereum.agents.core.bridge.battle.NewBattleEvent;
-import org.sysethereum.agents.core.bridge.battle.SubmitterConvictedEvent;
+import org.sysethereum.agents.core.bridge.battle.SuperblockSuccessfulEvent;
 import org.sysethereum.agents.core.syscoin.*;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.slf4j.Logger;
@@ -71,11 +70,8 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
     public long reactToEvents(long fromBlock, long toBlock) {
         try {
             respondToNewBattles(fromBlock, toBlock);
-
-            // Maintain data structures
-            removeSemiApprovedDescendants(fromBlock, toBlock);
-
             respondToHeaders(fromBlock, toBlock);
+            submitterWonBattles(fromBlock, toBlock);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             return fromBlock - 1;
@@ -181,6 +177,31 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
 
     /* - Reacting to events - */
 
+    /**
+     * Filters battles where this defender defended the superblock, won
+     * and deletes them from active battle set and pays out the deposit if configuration is set to do so
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
+    protected void submitterWonBattles(long fromBlock, long toBlock) throws Exception {
+        List<SuperblockSuccessfulEvent> events = claimContractApi.getSuperblockClaimSuccessfulEvents(fromBlock, toBlock);
+        boolean removeFromContract = false;
+        for (SuperblockSuccessfulEvent event : events) {
+            if (isMine(event)) {
+                logger.info("Submitter won battle on superblock {}",
+                        event.superblockHash);
+                if (sessionToSuperblockMap.contains(event.superblockHash)) {
+                    sessionToSuperblockMap.remove(event.superblockHash);
+                    removeFromContract = true;
+                }
+            }
+        }
+        if (removeFromContract && config.isWithdrawFundsEnabled()) {
+            claimContractApi.withdrawAllFundsExceptLimit(AgentRole.SUBMITTER, myAddress);
+        }
+    }
+
     private void respondToNewBattles(long fromBlock, long toBlock) throws Exception {
         List<NewBattleEvent> queryBattleEvents = battleContractApi.getNewBattleEvents(fromBlock, toBlock);
 
@@ -202,88 +223,9 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         return respondHeadersEvent.submitter.equalsIgnoreCase(myAddress);
     }
 
-    /**
-     * Removes superblocks from the data structure that keeps track of semi-approved superblocks.
-     * @param fromBlock
-     * @param toBlock
-     * @throws Exception
-     */
-    @Override
-    protected void removeSuperblocks(long fromBlock, long toBlock, List<SuperblockContractApi.SuperblockEvent> superblockEvents)
-            throws Exception {
-        boolean removeFromContract = false;
-        for (SuperblockContractApi.SuperblockEvent event : superblockEvents) {
-            if (sessionToSuperblockMap.contains(event.superblockId)) {
-                sessionToSuperblockMap.remove(event.superblockId);
-                removeFromContract = true;
-            }
-
-        }
-        if (removeFromContract && config.isWithdrawFundsEnabled()) {
-            claimContractApi.withdrawAllFundsExceptLimit(AgentRole.SUBMITTER, myAddress);
-        }
+    private boolean isMine(SuperblockSuccessfulEvent superblockSuccessfulEvent) {
+        return superblockSuccessfulEvent.submitter.equalsIgnoreCase(myAddress);
     }
-
-    /**
-     * Removes semi-approved superblocks from superblock to session map.
-     * @param fromBlock
-     * @param toBlock
-     * @throws Exception
-     */
-    private void removeSemiApprovedDescendants(long fromBlock, long toBlock) throws Exception {
-        List<SuperblockContractApi.SuperblockEvent> semiApprovedSuperblockEvents =
-                superblockContractApi.getSemiApprovedSuperblocks(fromBlock, toBlock);
-
-        for (SuperblockContractApi.SuperblockEvent event : semiApprovedSuperblockEvents) {
-            if (sessionToSuperblockMap.contains(event.superblockId)) {
-                sessionToSuperblockMap.remove(event.superblockId);
-            }
-        }
-    }
-
-    // TODO: see if this should have some fault tolerance for battles that were erroneously not added to set
-    // TODO: look into refactoring this and moving it to the base class
-    /**
-     * Filters battles where this defender submitted the superblock and got convicted
-     * and deletes them from active battle set.
-     * @param fromBlock
-     * @param toBlock
-     * @throws Exception
-     */
-    @Override
-    protected void deleteSubmitterConvictedBattles(long fromBlock, long toBlock) throws Exception {
-        List<SubmitterConvictedEvent> events = battleContractApi.getSubmitterConvictedEvents(fromBlock, toBlock);
-
-        for (SubmitterConvictedEvent event : events) {
-            if (event.submitter.equalsIgnoreCase(myAddress)) {
-                logger.info("Submitter convicted on superblock {}. Battle lost!",
-                        event.superblockHash);
-                if (sessionToSuperblockMap.contains(event.superblockHash)) {
-                    sessionToSuperblockMap.remove(event.superblockHash);
-                }
-            }
-        }
-    }
-
-    /**
-     * Filters battles where this defender submitted the superblock and the challenger got convicted
-     * and delete them from active battle set.
-     * @param fromBlock
-     * @param toBlock
-     * @throws Exception
-     */
-    @Override
-    protected void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception {
-        List<ChallengerConvictedEvent> events = battleContractApi.getChallengerConvictedEvents(fromBlock, toBlock);
-
-        for (ChallengerConvictedEvent event : events) {
-            if (sessionToSuperblockMap.contains(event.superblockHash)) {
-                logger.info("Challenger convicted on superblock {}. Battle won!", event.superblockHash);
-                sessionToSuperblockMap.remove(event.superblockHash);
-            }
-        }
-    }
-
     @Override
     protected void restoreFiles() throws ClassNotFoundException, IOException {
         latestEthBlockProcessed = persistentFileStore.restore(latestEthBlockProcessed, latestEthBlockProcessedFile);

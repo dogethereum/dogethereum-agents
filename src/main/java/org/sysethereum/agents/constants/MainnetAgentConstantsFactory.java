@@ -8,52 +8,52 @@ import org.sysethereum.agents.core.bridge.SuperblockData;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.sysethereum.agents.service.rest.MerkleRootComputer;
 
-import java.math.BigInteger;
 import java.util.List;
 
 /**
- * AgentConstants for Syscoin Mainnet and Eth Ganache.
+ * AgentConstants for mainnet
+ * Uses Syscoin Mainnet and Eth Mainnet.
  */
-public class EthGanacheSyscoinMainAgentConstantsFactory {
+public class MainnetAgentConstantsFactory {
 
-    @SuppressWarnings("unused")
-    private static final Logger logger = LoggerFactory.getLogger("EthGanacheSyscoinMainAgentConstants");
+    private static final Logger logger = LoggerFactory.getLogger("MainnetAgentConstantsFactory");
 
-    public EthGanacheSyscoinMainAgentConstantsFactory() {
-
+    public MainnetAgentConstantsFactory() {
     }
 
     public AgentConstants create() {
         var syscoinParams = SyscoinMainNetParams.get();
+
         var syscoinToEthTimerTaskPeriod = 45 * 1000;
-        
-        List<Sha256Hash> sysHashes = List.of(Sha256Hash.wrap("00000da80b8d7df5fae756f81315341a25f1e73c4760e10cbddacd9d3da05402"));
+
+        List<Sha256Hash> sysHashes = List.of(Sha256Hash.wrap("4327748479357319819e98b88df8a80535bff01b4b23ec3213f166b0a673f0c5"));
 
         var genesisSuperblock = new SuperblockData(
                 MerkleRootComputer.computeMerkleRoot(syscoinParams, sysHashes),
                 sysHashes,
-                1572308963, 1572308958, 504365055,
+                1574263489, 1574263208, 403553112,
                 Keccak256Hash.wrap(new byte[32]), // initialised with 0s
                 1
         );
 
-
         var defenderTimerTaskPeriod = 60 * 1000;
         var challengerTimerTaskPeriod = 60 * 1000;
-        var defenderConfirmations = 1;
-        var challengerConfirmations = 1;
-        
-        var networkId = "32000"; // eth mainnet
+        var defenderConfirmations = 2;
+        var challengerConfirmations = 2;
+
+        var networkId = "1"; // eth rinkeby 4; eth mainnet 1
+
+        logger.info("genesisSuperblock " + genesisSuperblock.toString());
 
         return new AgentConstants(
-            syscoinParams,
-            syscoinToEthTimerTaskPeriod,
-            genesisSuperblock,
-            defenderTimerTaskPeriod,
-            challengerTimerTaskPeriod,
-            defenderConfirmations,
-            challengerConfirmations,
-            networkId
+                syscoinParams,
+                syscoinToEthTimerTaskPeriod,
+                genesisSuperblock,
+                defenderTimerTaskPeriod,
+                challengerTimerTaskPeriod,
+                defenderConfirmations,
+                challengerConfirmations,
+                networkId
         );
     }
 }

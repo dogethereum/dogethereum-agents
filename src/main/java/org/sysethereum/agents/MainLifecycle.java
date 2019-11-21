@@ -10,6 +10,7 @@ import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.core.*;
 import org.sysethereum.agents.core.syscoin.SuperblockLevelDBBlockStore;
 import org.sysethereum.agents.core.syscoin.SyscoinWrapper;
+import org.sysethereum.agents.util.JsonGasRanges;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.Web3jService;
 import org.web3j.protocol.admin.Admin;
@@ -40,7 +41,7 @@ public class MainLifecycle {
     private final Web3jService mainWeb3jService;
     private final Web3jService web3jSecondaryService;
     private final SuperblockLevelDBBlockStore superblockLevelDBBlockStore;
-
+    private final JsonGasRanges jsonGasRanges;
     public MainLifecycle(
             SystemProperties config,
             OperatorPeersChecker operatorPeersChecker,
@@ -54,7 +55,8 @@ public class MainLifecycle {
             Web3j web3Secondary,
             Web3jService mainWeb3jService,
             Web3jService web3jSecondaryService,
-            SuperblockLevelDBBlockStore superblockLevelDBBlockStore
+            SuperblockLevelDBBlockStore superblockLevelDBBlockStore,
+            JsonGasRanges jsonGasRanges
     ) {
         this.config = config;
         this.operatorPeersChecker = operatorPeersChecker;
@@ -69,6 +71,7 @@ public class MainLifecycle {
         this.mainWeb3jService = mainWeb3jService;
         this.web3jSecondaryService = web3jSecondaryService;
         this.superblockLevelDBBlockStore = superblockLevelDBBlockStore;
+        this.jsonGasRanges = jsonGasRanges;
     }
 
     public void initialize() throws Exception {
@@ -103,6 +106,7 @@ public class MainLifecycle {
         }
 
         restServer.start();
+        jsonGasRanges.setup();
         logger.debug("initialize: Done");
     }
 
@@ -178,7 +182,7 @@ public class MainLifecycle {
             okHttpClient.dispatcher().executorService().shutdown();
             okHttpClient.connectionPool().evictAll();
         }
-
+        jsonGasRanges.cleanUp();
         logger.debug("cleanUp: Done");
     }
 

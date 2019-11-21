@@ -49,7 +49,7 @@ ganache -l GAS_LIMIT -p 8545
   - Set parameters like this
     - Name: `Main local`
     - Main class: `org.sysethereum.agents.Main`
-    - VM options: `-Dsysethereum.agents.conf.file=path_to_configuration_file`
+    - VM options: `-Dsysethereum.agents.conf.file=path_to_configuration_file -Dhttps.protocols=TLSv1.2,TLSv1.1,TLSv1`
   - Note: Use double backslash as separator on Windows
 
 ### Configuration
@@ -86,7 +86,7 @@ SMTP server where you whitelist Sysethereum Agents application to make sure any 
 ### Run the agents in terminal
 
 ```bash
-mvn compile && mvn exec:java -Dsysethereum.agents.conf.file=data/sysethereum-agents.conf
+mvn compile && mvn exec:java -Dsysethereum.agents.conf.file=data/sysethereum-agents.conf -Dhttps.protocols=TLSv1.2,TLSv1.1,TLSv1 
 ```
 
 ## License

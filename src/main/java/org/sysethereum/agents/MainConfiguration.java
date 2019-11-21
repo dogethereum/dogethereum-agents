@@ -78,8 +78,8 @@ public class MainConfiguration {
             case LOCAL:
                 result = new LocalAgentConstantsFactory().create();
                 break;
-            case ETHGANACHE_SYSCOINMAIN:
-                result = new EthGanacheSyscoinMainAgentConstantsFactory().create();
+            case ETH_SYSCOINMAIN:
+                result = new MainnetAgentConstantsFactory().create();
                 break;
             default:
                 throw new RuntimeException("Unknown value for 'constants': '" + constants + "'");
@@ -111,13 +111,8 @@ public class MainConfiguration {
     }
 
     @Bean
-    public EthAddresses ethAddresses(SystemProperties config, Web3j web3) throws IOException {
-        if (config.isGanache()) {
-            List<String> accounts = web3.ethAccounts().send().getAccounts();
-            return new EthAddresses(accounts.get(0), accounts.get(1));
-        } else {
-            return new EthAddresses(config.generalPurposeAndSendSuperblocksAddress(), config.syscoinSuperblockChallengerAddress());
-        }
+    public EthAddresses ethAddresses(SystemProperties config) {
+        return new EthAddresses(config.generalPurposeAndSendSuperblocksAddress(), config.syscoinSuperblockChallengerAddress());
     }
 
     @Bean

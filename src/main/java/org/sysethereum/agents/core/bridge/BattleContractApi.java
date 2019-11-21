@@ -3,12 +3,9 @@ package org.sysethereum.agents.core.bridge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.sysethereum.agents.constants.AgentRole;
 import org.sysethereum.agents.contract.SyscoinBattleManager;
 import org.sysethereum.agents.contract.SyscoinBattleManagerExtended;
-import org.sysethereum.agents.core.bridge.battle.ChallengerConvictedEvent;
 import org.sysethereum.agents.core.bridge.battle.NewBattleEvent;
-import org.sysethereum.agents.core.bridge.battle.SubmitterConvictedEvent;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.protocol.core.DefaultBlockParameter;
@@ -17,9 +14,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
-
-import static java.util.stream.Collectors.toList;
-import static org.sysethereum.agents.constants.AgentRole.CHALLENGER;
 
 @Service
 public class BattleContractApi {
@@ -83,55 +77,6 @@ public class BattleContractApi {
             newBattleEvent.challenger = response.challenger.getValue();
             result.add(newBattleEvent);
         }
-
-        return result;
-    }
-
-    /**
-     * Listens to SubmitterConvicted events from a given SyscoinBattleManager contract within a given block window
-     * and parses web3j-generated instances into easier to manage SubmitterConvictedEvent objects.
-     *
-     * @param startBlock First Ethereum block to poll.
-     * @param endBlock   Last Ethereum block to poll.
-     * @return All SubmitterConvicted events from SyscoinBattleManager as SubmitterConvictedEvent objects.
-     * @throws IOException
-     */
-    public List<SubmitterConvictedEvent> getSubmitterConvictedEvents(long startBlock, long endBlock) throws IOException {
-        List<SyscoinBattleManager.SubmitterConvictedEventResponse> submitterConvictedEvents =
-                challenges.getSubmitterConvictedEventResponses(
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
-
-        return submitterConvictedEvents.stream().map(response ->
-                new SubmitterConvictedEvent(
-                        Keccak256Hash.wrap(response.superblockHash.getValue()),
-                        response.submitter.getValue()
-                )
-        ).collect(toList());
-    }
-
-    /**
-     * Listens to ChallengerConvicted events from a given SyscoinBattleManager contract within a given block window
-     * and parses web3j-generated instances into easier to manage ChallengerConvictedEvent objects.
-     *
-     * @param startBlock First Ethereum block to poll.
-     * @param endBlock   Last Ethereum block to poll.
-     * @return All ChallengerConvicted events from SyscoinBattleManager as ChallengerConvictedEvent objects.
-     * @throws IOException
-     */
-    public List<ChallengerConvictedEvent> getChallengerConvictedEvents(long startBlock, long endBlock) throws IOException {
-        List<ChallengerConvictedEvent> result;
-        List<SyscoinBattleManager.ChallengerConvictedEventResponse> challengerConvictedEvents =
-                challenges.getChallengerConvictedEventResponses(
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
-                        DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
-
-        result = challengerConvictedEvents.stream().map(response ->
-                new ChallengerConvictedEvent(
-                        Keccak256Hash.wrap(response.superblockHash.getValue()),
-                        response.challenger.getValue()
-                )
-        ).collect(toList());
 
         return result;
     }

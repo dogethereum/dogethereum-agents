@@ -40,13 +40,11 @@ public abstract class SuperblockBaseClient {
     protected long latestEthBlockProcessed;
     protected final File latestEthBlockProcessedFile;
 
-    // Data is duplicated for performance using it.
 
-    // key: session id, value: superblock id
+    // set of superblock id's involving this agent in challenging
     protected HashSet<Keccak256Hash> sessionToSuperblockMap;
 
     protected final File sessionToSuperblockMapFile;
-    protected final File superblockToSessionsMapFile;
     private final Timer timer;
     private final ChallengeEmailNotifier challengeEmailNotifier;
 
@@ -71,7 +69,6 @@ public abstract class SuperblockBaseClient {
 
         this.latestEthBlockProcessedFile = Paths.get(config.dataDirectory(), config.getLastEthBlockProcessedFilename(agentRole)).toAbsolutePath().toFile();
         this.sessionToSuperblockMapFile = Paths.get(config.dataDirectory(), config.getSessionToSuperblockMapFilename(agentRole)).toAbsolutePath().toFile();
-        this.superblockToSessionsMapFile = Paths.get(config.dataDirectory(), config.getSuperblockToSessionsMapFilename(agentRole)).toAbsolutePath().toFile();
 
         this.latestEthBlockProcessed = 0;
         this.sessionToSuperblockMap = new HashSet<>();
@@ -134,9 +131,6 @@ public abstract class SuperblockBaseClient {
                         CompletableFuture.supplyAsync(() -> challengeEmailNotifier.sendIfEnabled(report));
                     }
 
-                    removeApproved(fromBlock, toBlock);
-                    removeInvalid(fromBlock, toBlock);
-                    deleteFinishedBattles(fromBlock, toBlock);
                     latestEthBlockProcessed = reactToEvents(fromBlock, toBlock);
 
                     flushFiles();
@@ -191,13 +185,6 @@ public abstract class SuperblockBaseClient {
 
     protected abstract void reactToElapsedTime();
 
-    protected abstract void deleteSubmitterConvictedBattles(long fromBlock, long toBlock) throws Exception;
-
-    protected abstract void deleteChallengerConvictedBattles(long fromBlock, long toBlock) throws Exception;
-
-    protected abstract void removeSuperblocks(long fromBlock, long toBlock,
-                                              List<SuperblockContractApi.SuperblockEvent> superblockEvents) throws Exception;
-
     protected abstract void restoreFiles() throws ClassNotFoundException, IOException;
 
     protected abstract void flushFiles() throws IOException;
@@ -205,39 +192,7 @@ public abstract class SuperblockBaseClient {
 
     /* ---- BATTLE MAP METHODS ---- */
 
-    /**
-     * Listens to SubmitterConvicted and ChallengerConvicted events to remove battles that have already ended.
-     * @param fromBlock First Ethereum block to be polled.
-     * @param toBlock Last Ethereum block to be polled.
-     * @throws IOException
-     */
-    private void deleteFinishedBattles(long fromBlock, long toBlock) throws Exception {
-        deleteSubmitterConvictedBattles(fromBlock, toBlock);
-        deleteChallengerConvictedBattles(fromBlock, toBlock);
-    }
 
-    /**
-     * Removes approved superblocks from the data structures that keep track of semi-approved and in battle superblocks.
-     * @param fromBlock
-     * @param toBlock
-     * @throws Exception
-     */
-    protected void removeApproved(long fromBlock, long toBlock) throws Exception {
-        List<SuperblockContractApi.SuperblockEvent> approvedSuperblockEvents =
-                superblockContractApi.getApprovedSuperblocks(fromBlock, toBlock);
-        removeSuperblocks(fromBlock, toBlock, approvedSuperblockEvents);
-    }
-
-    /**
-     * Removes invalidated superblocks from data structures that keep track of semi-approved and in battle superblocks.
-     * @param fromBlock
-     * @param toBlock
-     * @throws Exception
-     */
-    protected void removeInvalid(long fromBlock, long toBlock) throws Exception {
-        List<SuperblockContractApi.SuperblockEvent> invalidSuperblockEvents = superblockContractApi.getInvalidSuperblocks(fromBlock, toBlock);
-        removeSuperblocks(fromBlock, toBlock, invalidSuperblockEvents);
-    }
 
     /* ----- HELPER METHODS ----- */
 

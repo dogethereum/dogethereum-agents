@@ -75,54 +75,5 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
 
         return result;
     }
-    public List<ChallengerConvictedEventResponse> getChallengerConvictedEventResponses(
-            DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
-            throws IOException {
-        List<ChallengerConvictedEventResponse> result = new ArrayList<>();
-        EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(CHALLENGERCONVICTED_EVENT));
-        EthLog ethLog = web3j.ethGetLogs(filter).send();
-        List<EthLog.LogResult> logResults = ethLog.getLogs();
-
-        for (EthLog.LogResult logResult : logResults) {
-            Log log = (Log) logResult.get();
-            EventValuesWithLog eventValues = extractEventParametersWithLog(CHALLENGERCONVICTED_EVENT, log);
-
-            ChallengerConvictedEventResponse newChallengerConvictedEventResponse =
-                    new ChallengerConvictedEventResponse();
-            newChallengerConvictedEventResponse.log = eventValues.getLog();
-            newChallengerConvictedEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            newChallengerConvictedEventResponse.err = (Uint256) eventValues.getNonIndexedValues().get(1);
-            newChallengerConvictedEventResponse.challenger = new Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
-            result.add(newChallengerConvictedEventResponse);
-        }
-
-        return result;
-    }
-
-    public List<SubmitterConvictedEventResponse> getSubmitterConvictedEventResponses(
-            DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
-            throws IOException {
-        List<SubmitterConvictedEventResponse> result = new ArrayList<>();
-        EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(SUBMITTERCONVICTED_EVENT));
-        EthLog ethLog = web3j.ethGetLogs(filter).send();
-        List<EthLog.LogResult> logResults = ethLog.getLogs();
-
-        for (EthLog.LogResult logResult : logResults) {
-            Log log = (Log) logResult.get();
-            EventValuesWithLog eventValues = extractEventParametersWithLog(SUBMITTERCONVICTED_EVENT, log);
-
-            SubmitterConvictedEventResponse newSubmitterConvictedEventResponse =
-                    new SubmitterConvictedEventResponse();
-            newSubmitterConvictedEventResponse.log = eventValues.getLog();
-            newSubmitterConvictedEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            newSubmitterConvictedEventResponse.err = (Uint256) eventValues.getNonIndexedValues().get(1);
-            newSubmitterConvictedEventResponse.submitter = new Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
-            result.add(newSubmitterConvictedEventResponse);
-        }
-
-        return result;
-    }
 
 }

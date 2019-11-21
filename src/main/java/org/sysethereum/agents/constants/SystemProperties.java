@@ -31,7 +31,7 @@ public class SystemProperties {
 
     public static final String LOCAL = "local";
     public static final String INTEGRATION = "integration";
-    public static final String ETHGANACHE_SYSCOINMAIN = "ethganachesyscoinmain";
+    public static final String ETH_SYSCOINMAIN = "mainnet";
 
     public static final String YES = "yes";
     public static final String NO = "no";
@@ -65,21 +65,12 @@ public class SystemProperties {
                 : "SuperblockDefenderSessionToSuperblockMap.dat";
     }
 
-    public String getSuperblockToSessionsMapFilename(AgentRole agentRole) {
-        return agentRole == CHALLENGER
-                ? "SuperblockChallengerSuperblockToSessionsMap.dat"
-                : "SuperblockDefenderSuperblockToSessionsMap.dat";
-    }
-
     public boolean isAgentRoleEnabled(AgentRole agentRole) {
         return agentRole == CHALLENGER
                 ? getBooleanProperty("syscoin.superblock.challenger.enabled")
                 : getBooleanProperty("syscoin.superblock.submitter.enabled");
     }
 
-    public boolean isGanache() {
-        return LOCAL.equals(constants()) || ETHGANACHE_SYSCOINMAIN.equals(constants());
-    }
 
     public String constants() {
         return config.getString("constants");
