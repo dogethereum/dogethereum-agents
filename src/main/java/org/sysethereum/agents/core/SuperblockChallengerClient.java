@@ -143,8 +143,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     /* - Reacting to events */
 
     /**
-     * Filters battles where this defender defended the superblock, won
-     * and deletes them from active battle set and pays out the deposit if configuration is set to do so
+     * Filters battles where this challenger won challenge on the superblock,
+     * and deletes them from active battle/semi approved set and pays out the deposit if configuration is set to do so
      * @param fromBlock
      * @param toBlock
      * @throws Exception
@@ -158,6 +158,10 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                         event.superblockHash);
                 if (sessionToSuperblockMap.contains(event.superblockHash)) {
                     sessionToSuperblockMap.remove(event.superblockHash);
+                    removeFromContract = true;
+                }
+                if (semiApprovedSet.contains(event.superblockHash)) {
+                    semiApprovedSet.remove(event.superblockHash);
                     removeFromContract = true;
                 }
             }
