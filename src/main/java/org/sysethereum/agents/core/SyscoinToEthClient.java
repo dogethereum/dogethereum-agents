@@ -6,6 +6,7 @@
 package org.sysethereum.agents.core;
 
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.sysethereum.agents.constants.EthAddresses;
 import org.sysethereum.agents.core.bridge.Superblock;
 import org.sysethereum.agents.core.bridge.SuperblockContractApi;
@@ -44,8 +45,11 @@ public class SyscoinToEthClient {
 
     private final AgentConstants agentConstants;
     private final Timer timer;
+    private final Context syscoinContext;
 
+    @Autowired
     public SyscoinToEthClient(
+            Context syscoinContext,
             AgentConstants agentConstants,
             SuperblockChain superblockChain,
             SyscoinWrapper syscoinWrapper,
@@ -53,6 +57,7 @@ public class SyscoinToEthClient {
             SuperblockContractApi superblockContractApi,
             EthAddresses ethAddresses
     ) {
+        this.syscoinContext = syscoinContext;
         this.agentConstants = agentConstants;
         this.localSuperblockChain = superblockChain;
         this.syscoinWrapper = syscoinWrapper;
@@ -140,7 +145,7 @@ public class SyscoinToEthClient {
      */
     public Object getSuperblockSPVProof(Sha256Hash blockHash, int height) throws Exception {
         synchronized (this) {
-
+            Context.propagate(syscoinContext);
             StoredBlock txStoredBlock;
             if(blockHash != null)
                 txStoredBlock  = syscoinWrapper.getBlock(blockHash);
@@ -178,7 +183,7 @@ public class SyscoinToEthClient {
      *                      of the Syscoin block's existence in the superblock.
      * @throws Exception
      */
-    public Object getSuperblockSPVProof(AltcoinBlock syscoinBlock, Superblock superblock, SuperblockPartialMerkleTree pmt) {
+    private Object getSuperblockSPVProof(AltcoinBlock syscoinBlock, Superblock superblock, SuperblockPartialMerkleTree pmt) {
 
         // Construct SPV proof for block
         int syscoinBlockIndex = pmt.getTransactionIndex(syscoinBlock.getHash());
@@ -228,6 +233,7 @@ public class SyscoinToEthClient {
 
     public Object getSuperblockBySyscoinBlock(@Nullable Sha256Hash blockHash, int height) throws Exception {
         synchronized (this) {
+            Context.propagate(syscoinContext);
             StoredBlock sb;
 
             if (blockHash != null) {

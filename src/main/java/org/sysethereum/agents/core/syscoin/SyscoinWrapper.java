@@ -97,6 +97,7 @@ public class SyscoinWrapper {
      * Gets the median timestamp of the last 11 blocks
      */
     public long getMedianTimestamp(StoredBlock storedBlock) throws BlockStoreException {
+        Context.propagate(syscoinContext);
         long[] timestamps = new long[11];
         int unused = 9;
         timestamps[10] = storedBlock.getHeader().getTimeSeconds();
@@ -113,6 +114,7 @@ public class SyscoinWrapper {
 
     @Nullable
     public StoredBlock getStoredBlockAtHeight(int height) throws BlockStoreException {
+        Context.propagate(syscoinContext);
         BlockStore blockStore = kit.store();
         StoredBlock storedBlock = blockStore.getChainHead();
         int headHeight = storedBlock.getHeight();
@@ -138,6 +140,7 @@ public class SyscoinWrapper {
     }
 
     public Stack<Sha256Hash> getNewerHashesThan(Sha256Hash blockHash) throws BlockStoreException {
+        Context.propagate(syscoinContext);
         var hashes = new Stack<Sha256Hash>();
         StoredBlock cur = getChainHead();
 

@@ -68,9 +68,11 @@ public class EthWrapper {
     private final SuperblockChain localSuperblockChain;
     private final SyscoinWrapper syscoinWrapper;
     private final JsonGasRanges jsonGasRanges;
+    private final Context syscoinContext;
 
     @Autowired
     public EthWrapper(
+            Context syscoinContext,
             SystemProperties config,
             SuperblockChain superblockChain,
             SyscoinWrapper syscoinWrapper,
@@ -86,7 +88,7 @@ public class EthWrapper {
             BigInteger minProposalDeposit,
             JsonGasRanges jsonGasRanges
     ) throws Exception {
-
+        this.syscoinContext = syscoinContext;
         this.localSuperblockChain = superblockChain;
         this.syscoinWrapper = syscoinWrapper;
         this.web3 = web3;
@@ -369,6 +371,7 @@ public class EthWrapper {
      * @param superblockId Battle session superblock.
      */
     public void respondBlockHeaders(Keccak256Hash superblockId, int merkleHashCount) throws Exception {
+        Context.propagate(syscoinContext);
         Thread.sleep(500); // in case the transaction takes some time to complete
         if (arePendingTransactionsForSendSuperblocksAddress()) {
             throw new Exception("Skipping respondBlockHeader, there are pending transaction for the sender address.");

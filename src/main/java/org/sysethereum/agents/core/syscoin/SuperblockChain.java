@@ -37,9 +37,11 @@ public class SuperblockChain {
     public final int SUPERBLOCK_DURATION; // num blocks in a superblock
     private final int SUPERBLOCK_DELAY; // time to wait before building a superblock
     private final int SUPERBLOCK_STORING_WINDOW; // time window between storing and sending to avoid losing sync
+    private final Context syscoinContext;
 
     @Autowired
     public SuperblockChain(
+            Context syscoinContext,
             SyscoinWrapper syscoinWrapper,
             SuperblockFactory superblockFactory,
             SuperblockLevelDBBlockStore superblockLevelDBBlockStore,
@@ -47,6 +49,7 @@ public class SuperblockChain {
             BigInteger superblockDuration,
             BigInteger superblockDelay
     ) {
+        this.syscoinContext = syscoinContext;
         this.syscoinWrapper = syscoinWrapper;
         this.superblockFactory = superblockFactory;
         this.superblockStorage = superblockLevelDBBlockStore;
@@ -70,6 +73,7 @@ public class SuperblockChain {
      */
     public void storeSuperblocks(Stack<Sha256Hash> allSyscoinHashesToHash, Keccak256Hash initialPreviousSuperblockHash)
             throws Exception {
+        Context.propagate(syscoinContext);
         if (allSyscoinHashesToHash.empty())
             return;
 
@@ -124,6 +128,7 @@ public class SuperblockChain {
      * @throws Exception if list is empty.
      */
     private List<Sha256Hash> popBlocksBeforeTime(Stack<Sha256Hash> hashStack, Date endTime) throws Exception {
+        Context.propagate(syscoinContext);
         if (hashStack.empty()) {
             throw new Exception("List of blocks to pop must not be empty.");
         }
