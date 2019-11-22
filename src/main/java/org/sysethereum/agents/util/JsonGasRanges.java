@@ -90,18 +90,25 @@ public class JsonGasRanges {
                 }
                 Set set = ranges.entrySet();
                 Iterator i = set.iterator();
+
+                // convert to gas price
+                long multiple = 1000000000L;
+                Double key = Double.NaN;
                 while(i.hasNext()) {
                     Map.Entry me = (Map.Entry)i.next();
                     Double value = (Double)me.getValue();
+                    key = (Double)me.getKey();
                     // target is 1 min or less for fee
                     if(value.doubleValue() <= 1.0){
-                        Double key = (Double)me.getKey();
                         // convert to gas price
-                        long multiple = 1000000000L;
                         gasPrice = BigInteger.valueOf((long)key.doubleValue()*multiple);
                         errorCount = 0;
                         return;
                     }
+                }
+                if(!key.isNaN()) {
+                    // set in case we don't find a target try to use highest target fee found in response
+                    gasPrice = BigInteger.valueOf((long) key.doubleValue() * multiple);
                 }
                 errorCount = 0;
             } catch (Exception e) {
