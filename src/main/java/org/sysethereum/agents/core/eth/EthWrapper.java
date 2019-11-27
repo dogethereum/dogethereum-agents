@@ -158,9 +158,10 @@ public class EthWrapper {
     public void updateGasForAggressiveMode(){
         BigInteger newGasPrice = gasPriceMinimum.multiply(BigInteger.TWO);
         if (!gasPriceMaximum.equals(BigInteger.ZERO) && newGasPrice.compareTo(gasPriceMaximum) > 0) {
-            logger.info("Updating fee for aggressive mode to " + newGasPrice);
-            claimContractApi.updateGasPrice(newGasPrice);
+            newGasPrice = gasPriceMaximum;
         }
+        logger.info("Updating fee for aggressive mode to " + newGasPrice);
+        claimContractApi.updateGasPrice(newGasPrice);
     }
     public void updateGasForNormalMode(){
         logger.info("Updating fee back to normal from aggressive mode to " + gasPriceMinimum);
