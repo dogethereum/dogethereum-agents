@@ -69,7 +69,7 @@ public class EthWrapper {
     private final SyscoinWrapper syscoinWrapper;
     private final JsonGasRanges jsonGasRanges;
     private final Context syscoinContext;
-    private boolean bAggressiveMode;
+    private volatile boolean bAggressiveMode;
     @Autowired
     public EthWrapper(
             Context syscoinContext,
