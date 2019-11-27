@@ -70,7 +70,7 @@ public class SyscoinToEthClient {
             timer.cancel();
             timer.purge();
             timer = new Timer("Syscoin to Eth client", true);
-            timer.scheduleAtFixedRate(new SyscoinToEthClientTimerTask(), 20_000, ethWrapper.getAggressiveMode()? agentConstants.getSyscoinToEthTimerTaskPeriodAggressive(): agentConstants.getSyscoinToEthTimerTaskPeriod());
+            timer.scheduleAtFixedRate(new SyscoinToEthClientTimerTask(), ethWrapper.getAggressiveMode()? 0: 20_000, ethWrapper.getAggressiveMode()? agentConstants.getSyscoinToEthTimerTaskPeriodAggressive(): agentConstants.getSyscoinToEthTimerTaskPeriod());
         } catch (Exception e) {
             return false;
         }
