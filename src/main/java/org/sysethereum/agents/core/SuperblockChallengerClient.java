@@ -92,6 +92,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
             // Maintain data structures
             getSemiApproved(fromBlock, toBlock);
+            getApproved(fromBlock, toBlock);
 
             challengerWonBattles(fromBlock, toBlock);
         } catch (Exception e) {
@@ -181,17 +182,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      */
     private void validateNewSuperblocks(long fromBlock, long toBlock) throws Exception {
         List<SuperblockContractApi.SuperblockEvent> newSuperblockEvents = superblockContractApi.getNewSuperblocks(fromBlock, toBlock);
-        // switch modes and only when we aren't looking back 5k blocks (initial sync)
-        if(newSuperblockEvents.size() > 0 && fromBlock != (toBlock - 5000)){
-            // set timer back to normal
-            if(ethWrapper.getAggressiveMode()) {
-                logger.info("Switching back to normal mode from aggressive...");
-                // only set timer to normal delay once, since this will be latching when we go from challenge to new superblock
-                ethWrapper.setAggressiveMode(false);
-                syscoinToEthClient.setupTimer();
-            }
-            randomizationCounter.updateRandomValue();
-        }
         List<Keccak256Hash> toChallenge = new ArrayList<>();
         for (SuperblockContractApi.SuperblockEvent newSuperblock : newSuperblockEvents) {
             logger.info("NewSuperblock {}. Validating...", newSuperblock.superblockId);
@@ -255,6 +245,31 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             }
         }
     }
+    private void updateAggressiveMode(boolean bMode){
+        // set timer back to normal
+        if(ethWrapper.getAggressiveMode()) {
+            logger.info("Switching back to normal mode from aggressive...");
+            // only set timer to normal delay once, since this will be latching when we go from challenge to new superblock
+            ethWrapper.setAggressiveMode(bMode);
+            syscoinToEthClient.setupTimer();
+        }
+        randomizationCounter.updateRandomValue();
+    }
+    /**
+     * Gets new approved superblocks to track aggressive mode
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
+    private void getApproved(long fromBlock, long toBlock) throws Exception {
+        List<SuperblockContractApi.SuperblockEvent> approvedSuperblockEvents =
+                superblockContractApi.getSemiApprovedSuperblocks(fromBlock, toBlock);
+        // switch modes and only when we aren't looking back 5k blocks (initial sync)
+        if(approvedSuperblockEvents.size() > 0 && fromBlock != (toBlock - 5000)){
+            // set timer back to normal
+            updateAggressiveMode(false);
+        }
+    }
 
     /**
      * Adds new semi-approved superblocks to a data structure that keeps track of them
@@ -266,6 +281,11 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     private void getSemiApproved(long fromBlock, long toBlock) throws Exception {
         List<SuperblockContractApi.SuperblockEvent> semiApprovedSuperblockEvents =
                 superblockContractApi.getSemiApprovedSuperblocks(fromBlock, toBlock);
+        // switch modes and only when we aren't looking back 5k blocks (initial sync)
+        if(semiApprovedSuperblockEvents.size() > 0 && fromBlock != (toBlock - 5000)){
+            // set timer back to normal
+            updateAggressiveMode(false);
+        }
         for (SuperblockContractApi.SuperblockEvent superblockEvent : semiApprovedSuperblockEvents) {
             if (challengedByMe(superblockEvent))
                 semiApprovedSet.add(superblockEvent.superblockId);

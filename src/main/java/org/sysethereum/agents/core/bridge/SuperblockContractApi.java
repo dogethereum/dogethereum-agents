@@ -83,6 +83,23 @@ public class SuperblockContractApi {
                 .collect(toList());
     }
 
+    /**
+     * Listens to SemiApprovedSuperblock events from SyscoinSuperblocks contract within a given block window
+     * and parses web3j-generated instances into easier to manage SuperblockEvent objects.
+     * @param startBlock First Ethereum block to poll.
+     * @param endBlock Last Ethereum block to poll.
+     * @return All SemiApprovedSuperblock events from SyscoinSuperblocks as SuperblockEvent objects.
+     * @throws IOException
+     */
+    public List<SuperblockEvent> getApprovedSuperblocks(long startBlock, long endBlock) throws IOException {
+
+        return main.getApprovedSuperblockEvents(startBlock, endBlock)
+                .stream().map(response -> new SuperblockEvent(
+                        Keccak256Hash.wrap(response.superblockHash.getValue()),
+                        response.who.getValue()
+                ))
+                .collect(toList());
+    }
 
     /**
      * Listens to SemiApprovedSuperblock events from SyscoinSuperblocks contract within a given block window
