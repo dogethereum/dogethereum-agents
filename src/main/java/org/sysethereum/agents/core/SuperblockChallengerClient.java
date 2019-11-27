@@ -183,7 +183,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         List<SuperblockContractApi.SuperblockEvent> newSuperblockEvents = superblockContractApi.getNewSuperblocks(fromBlock, toBlock);
         // switch modes and only when we aren't looking back 5k blocks (initial sync)
         if(newSuperblockEvents.size() > 0 && fromBlock != (toBlock - 5000)){
-            // set timers back to normal and cycle random value
+            // set timer back to normal
             if(ethWrapper.getAggressiveMode()) {
                 logger.info("Switching back to normal mode from aggressive...");
                 // only set timer to normal delay once, since this will be latching when we go from challenge to new superblock
