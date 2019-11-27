@@ -14,6 +14,7 @@ public class AgentConstants {
     protected final AbstractSyscoinParams syscoinParams;
 
     protected final long syscoinToEthTimerTaskPeriod;
+    protected final long syscoinToEthTimerTaskPeriodAggressive;
     // Minimum number of confirmations a tx has to have in order to EVALUATE relaying it to eth
     protected final SuperblockData genesisSuperblock;
     protected final long defenderTimerTaskPeriod;
@@ -26,6 +27,7 @@ public class AgentConstants {
     public AgentConstants(
             AbstractSyscoinParams syscoinParams,
             long syscoinToEthTimerTaskPeriod,
+            long syscoinToEthTimerTaskPeriodAggressive,
             SuperblockData genesisSuperblock,
             long defenderTimerTaskPeriod,
             long challengerTimerTaskPeriod,
@@ -35,6 +37,7 @@ public class AgentConstants {
     ) {
         this.syscoinParams = syscoinParams;
         this.syscoinToEthTimerTaskPeriod = syscoinToEthTimerTaskPeriod;
+        this.syscoinToEthTimerTaskPeriodAggressive = syscoinToEthTimerTaskPeriodAggressive;
         this.genesisSuperblock = genesisSuperblock;
         this.defenderTimerTaskPeriod = defenderTimerTaskPeriod;
         this.challengerTimerTaskPeriod = challengerTimerTaskPeriod;
@@ -50,7 +53,9 @@ public class AgentConstants {
     public long getSyscoinToEthTimerTaskPeriod() {
         return syscoinToEthTimerTaskPeriod;
     }
-
+    public long getSyscoinToEthTimerTaskPeriodAggressive() {
+        return syscoinToEthTimerTaskPeriodAggressive;
+    }
     public SuperblockData getGenesisSuperblock() {
         return genesisSuperblock;
     }
@@ -62,7 +67,6 @@ public class AgentConstants {
     public long getTimerTaskPeriod(AgentRole agentRole) {
         return agentRole == CHALLENGER ? challengerTimerTaskPeriod : defenderTimerTaskPeriod;
     }
-
     public long getConfirmations(AgentRole agentRole) {
         return agentRole == CHALLENGER ? challengerConfirmations : defenderConfirmations;
     }

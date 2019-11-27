@@ -44,9 +44,8 @@ public class SyscoinToEthClient {
     private final EthAddresses ethAddresses;
 
     private final AgentConstants agentConstants;
-    private final Timer timer;
+    private Timer timer;
     private final Context syscoinContext;
-
     @Autowired
     public SyscoinToEthClient(
             Context syscoinContext,
@@ -66,19 +65,19 @@ public class SyscoinToEthClient {
         this.ethAddresses = ethAddresses;
         this.timer = new Timer("Syscoin to Eth client", true);
     }
-
-    public boolean setup() {
+    public boolean setupTimer(){
         try {
-            timer.scheduleAtFixedRate(
-                    new SyscoinToEthClientTimerTask(),
-                    20_000, // 20 seconds
-                    agentConstants.getSyscoinToEthTimerTaskPeriod()
-            );
+            timer.cancel();
+            timer.purge();
+            timer = new Timer("Syscoin to Eth client", true);
+            timer.scheduleAtFixedRate(new SyscoinToEthClientTimerTask(), 20_000, ethWrapper.getAggressiveMode()? agentConstants.getSyscoinToEthTimerTaskPeriodAggressive(): agentConstants.getSyscoinToEthTimerTaskPeriod());
         } catch (Exception e) {
             return false;
         }
-
         return true;
+    }
+    public boolean setup() {
+        return setupTimer();
     }
 
     public void cleanUp() {

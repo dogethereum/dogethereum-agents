@@ -27,7 +27,7 @@ public class LocalAgentConstantsFactory {
         var syscoinParams = SyscoinRegTestParams.get();
 
         var syscoinToEthTimerTaskPeriod = 45 * 1000;
-
+        var syscoinToEthTimerTaskPeriodAggressive = 5 * 1000;
         List<Sha256Hash> sysHashes = List.of(syscoinParams.getGenesisBlock().getHash());
 
         var genesisSuperblock = new SuperblockData(
@@ -47,6 +47,7 @@ public class LocalAgentConstantsFactory {
         return new AgentConstants(
                 syscoinParams,
                 syscoinToEthTimerTaskPeriod,
+                syscoinToEthTimerTaskPeriodAggressive,
                 genesisSuperblock,
                 defenderTimerTaskPeriod,
                 challengerTimerTaskPeriod,

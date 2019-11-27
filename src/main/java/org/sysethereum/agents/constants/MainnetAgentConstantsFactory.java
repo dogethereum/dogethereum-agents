@@ -25,6 +25,7 @@ public class MainnetAgentConstantsFactory {
         var syscoinParams = SyscoinMainNetParams.get();
 
         var syscoinToEthTimerTaskPeriod = 45 * 1000;
+        var syscoinToEthTimerTaskPeriodAggressive = 5 * 1000;
 
         List<Sha256Hash> sysHashes = List.of(Sha256Hash.wrap("4327748479357319819e98b88df8a80535bff01b4b23ec3213f166b0a673f0c5"));
 
@@ -48,6 +49,7 @@ public class MainnetAgentConstantsFactory {
         return new AgentConstants(
                 syscoinParams,
                 syscoinToEthTimerTaskPeriod,
+                syscoinToEthTimerTaskPeriodAggressive,
                 genesisSuperblock,
                 defenderTimerTaskPeriod,
                 challengerTimerTaskPeriod,

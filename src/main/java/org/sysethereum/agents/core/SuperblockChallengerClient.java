@@ -50,6 +50,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
     private HashSet<Keccak256Hash> semiApprovedSet;
     private final File semiApprovedSetFile;
+    private final SyscoinToEthClient syscoinToEthClient;
 
     public SuperblockChallengerClient(
             SystemProperties config,
@@ -62,7 +63,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             ClaimContractApi claimContractApi,
             BattleContractApi battleContractApi,
             SyscoinBattleManagerExtended battleManagerForChallenges,
-            ChallengeEmailNotifier challengeEmailNotifier
+            ChallengeEmailNotifier challengeEmailNotifier,
+            SyscoinToEthClient syscoinToEthClient
     ) {
         super(AgentRole.CHALLENGER, config, agentConstants, ethWrapper, superblockContractApi, battleContractApi, claimContractApi, challengeEmailNotifier);
 
@@ -79,6 +81,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
         this.semiApprovedSet = new HashSet<>();
         this.semiApprovedSetFile = Paths.get(config.dataDirectory(), "SemiApprovedSet.dat").toAbsolutePath().toFile();
+        this.syscoinToEthClient = syscoinToEthClient;
     }
 
     @Override
@@ -178,7 +181,15 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      */
     private void validateNewSuperblocks(long fromBlock, long toBlock) throws Exception {
         List<SuperblockContractApi.SuperblockEvent> newSuperblockEvents = superblockContractApi.getNewSuperblocks(fromBlock, toBlock);
-        if(newSuperblockEvents.size() > 0){
+        // switch modes and only when we aren't looking back 5k blocks (initial sync)
+        if(newSuperblockEvents.size() > 0 && fromBlock != (toBlock - 5000)){
+            // set timers back to normal and cycle random value
+            if(ethWrapper.getAggressiveMode()) {
+                logger.info("Switching back to normal mode from aggressive...");
+                // only set timer to normal delay once, since this will be latching when we go from challenge to new superblock
+                ethWrapper.setAggressiveMode(false);
+                syscoinToEthClient.setupTimer();
+            }
             randomizationCounter.updateRandomValue();
         }
         List<Keccak256Hash> toChallenge = new ArrayList<>();
@@ -228,7 +239,16 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
      */
     private void respondToNewBattles(long fromBlock, long toBlock) throws Exception {
         List<NewBattleEvent> newBattleEvents = battleContractApi.getNewBattleEvents(fromBlock, toBlock);
-
+        // switch modes and only when we aren't looking back 5k blocks (initial sync)
+        if(newBattleEvents.size() > 0 && fromBlock != (toBlock - 5000)){
+            // aggressive mode
+            if(!ethWrapper.getAggressiveMode()) {
+                logger.info("Switching to aggressive mode...");
+                // only set to aggressive mode on timer if its the first time, since it clears it and next time shouldn't clear this timer
+                ethWrapper.setAggressiveMode(true);
+                syscoinToEthClient.setupTimer();
+            }
+        }
         for (NewBattleEvent newBattleEvent : newBattleEvents) {
             if (isMyBattleEvent(newBattleEvent) && battleContractApi.sessionExists(newBattleEvent.superblockHash)) {
                 sessionToSuperblockMap.add(newBattleEvent.superblockHash);

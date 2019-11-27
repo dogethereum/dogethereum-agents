@@ -69,7 +69,7 @@ public class EthWrapper {
     private final SyscoinWrapper syscoinWrapper;
     private final JsonGasRanges jsonGasRanges;
     private final Context syscoinContext;
-
+    private boolean bAggressiveMode;
     @Autowired
     public EthWrapper(
             Context syscoinContext,
@@ -109,7 +109,12 @@ public class EthWrapper {
 
         updateContractFacadesGasPrice();
     }
-
+    public void setAggressiveMode(boolean bMode){
+        bAggressiveMode = bMode;
+    }
+    public boolean getAggressiveMode(){
+        return bAggressiveMode;
+    }
 
     /**
      * Returns height of the Ethereum blockchain.
@@ -150,7 +155,17 @@ public class EthWrapper {
         }
         return pending.compareTo(latest) > 0;
     }
-
+    public void updateGasForAggressiveMode(){
+        BigInteger newGasPrice = gasPriceMinimum.multiply(BigInteger.TWO);
+        if (!gasPriceMaximum.equals(BigInteger.ZERO) && newGasPrice.compareTo(gasPriceMaximum) > 0) {
+            logger.info("Updating fee for aggressive mode to " + newGasPrice);
+            claimContractApi.updateGasPrice(newGasPrice);
+        }
+    }
+    public void updateGasForNormalMode(){
+        logger.info("Updating fee back to normal from aggressive mode to " + gasPriceMinimum);
+        claimContractApi.updateGasPrice(gasPriceMinimum);
+    }
     /**
      * Sets gas prices for all contract instances.
      * @throws IOException
@@ -299,9 +314,14 @@ public class EthWrapper {
 
         // Make any necessary deposits for sending the superblock
         claimContractApi.makeDepositIfNeeded(AgentRole.SUBMITTER, account, getSuperblockDeposit());
+        // if random counter is 0 it means we are in aggressive mode, increase the fees for superblock submission
+        boolean bAggressiveMode = getAggressiveMode();
+        if(bAggressiveMode){updateGasForAggressiveMode();}
 
         // The parent is either approved or semi approved. We can send the superblock.
         CompletableFuture<TransactionReceipt> futureReceipt = claimContractApi.proposeSuperblock(superblock);
+        // reset fees back to normal mode
+        if(bAggressiveMode){updateGasForNormalMode();}
 
         logger.info("Sent superblock {}", superblock.getHash());
         futureReceipt.handle((receipt, throwable) -> {

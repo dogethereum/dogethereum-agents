@@ -27,6 +27,7 @@ public class IntegrationAgentConstantsFactory {
         var syscoinParams = SyscoinTestNet3Params.get();
 
         var syscoinToEthTimerTaskPeriod = 45 * 1000;
+        var syscoinToEthTimerTaskPeriodAggressive = 5 * 1000;
 
         List<Sha256Hash> sysHashes = List.of(Sha256Hash.wrap("00000c04c5926f539074420b40088d4b099d748d07795df891ca391799b6e54c"));
 
@@ -50,6 +51,7 @@ public class IntegrationAgentConstantsFactory {
         return new AgentConstants(
                 syscoinParams,
                 syscoinToEthTimerTaskPeriod,
+                syscoinToEthTimerTaskPeriodAggressive,
                 genesisSuperblock,
                 defenderTimerTaskPeriod,
                 challengerTimerTaskPeriod,
