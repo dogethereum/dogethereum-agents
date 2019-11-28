@@ -122,6 +122,16 @@ public class ClaimContractApi {
     private BigInteger getDeposit(String account, SyscoinClaimManager myClaimManager) throws Exception {
         return myClaimManager.getDeposit(new Address(account)).send().getValue();
     }
+    /**
+     * Gets in process count of superblocks, this cannot be greator than 10 as submitters will not be allowed to submit, to keep
+     * the amount of bonded deposits capped to 10 per every 10 minutes.
+     *
+     * @return BigInteger value representing the current count
+     * @throws Exception
+     */
+    public BigInteger getProcessCounter() throws Exception {
+        return claimManager.inProcessCounter().send().getValue();
+    }
 
     private void withdrawDeposit(SyscoinClaimManager myClaimManager, BigInteger weiValue) {
         CompletableFuture<TransactionReceipt> futureReceipt = myClaimManager.withdrawDeposit(new Uint256(weiValue)).sendAsync();
@@ -311,7 +321,8 @@ public class ClaimContractApi {
         return superblockSuccessfulEvents.stream().map(response ->
                 new SuperblockSuccessfulEvent(
                         Keccak256Hash.wrap(response.superblockHash.getValue()),
-                        response.submitter.getValue()
+                        response.submitter.getValue(),
+                        response.processCounter
                 )
         ).collect(toList());
     }
@@ -334,8 +345,10 @@ public class ClaimContractApi {
         return superblockFailedEvents.stream().map(response ->
                 new SuperblockFailedEvent(
                         Keccak256Hash.wrap(response.superblockHash.getValue()),
-                        response.challenger.getValue()
+                        response.challenger.getValue(),
+                        response.processCounter
                 )
         ).collect(toList());
     }
+
 }

@@ -43,8 +43,9 @@ public class SyscoinClaimManagerExtended extends SyscoinClaimManager {
             SyscoinClaimManager.SuperblockClaimSuccessfulEventResponse newEventResponse =
                     new SyscoinClaimManager.SuperblockClaimSuccessfulEventResponse();
             newEventResponse.log = eventValues.getLog();
-            newEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            newEventResponse.submitter = new Address((String)eventValues.getNonIndexedValues().get(1).getValue());
+            newEventResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
+            newEventResponse.submitter = (Address)eventValues.getNonIndexedValues().get(1);
+            newEventResponse.processCounter = (Uint256) eventValues.getNonIndexedValues().get(2);
             result.add(newEventResponse);
         }
 
@@ -66,8 +67,9 @@ public class SyscoinClaimManagerExtended extends SyscoinClaimManager {
             SyscoinClaimManager.SuperblockClaimFailedEventResponse newEventResponse =
                     new SyscoinClaimManager.SuperblockClaimFailedEventResponse();
             newEventResponse.log = eventValues.getLog();
-            newEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            newEventResponse.challenger = new Address((String)eventValues.getNonIndexedValues().get(1).getValue());
+            newEventResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
+            newEventResponse.challenger = (Address)eventValues.getNonIndexedValues().get(1);
+            newEventResponse.processCounter = (Uint256) eventValues.getNonIndexedValues().get(2);
             result.add(newEventResponse);
         }
 

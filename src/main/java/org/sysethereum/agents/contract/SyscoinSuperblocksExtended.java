@@ -47,8 +47,8 @@ public class SyscoinSuperblocksExtended extends SyscoinSuperblocks {
 
             NewSuperblockEventResponse response = new NewSuperblockEventResponse();
             response.log = eventValues.getLog();
-            response.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            response.who = new Address((String) eventValues.getNonIndexedValues().get(1).getValue());
+            response.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
+            response.who = (Address)eventValues.getNonIndexedValues().get(1);
             result.add(response);
         }
 
@@ -66,8 +66,8 @@ public class SyscoinSuperblocksExtended extends SyscoinSuperblocks {
 
             ApprovedSuperblockEventResponse response = new ApprovedSuperblockEventResponse();
             response.log = eventValues.getLog();
-            response.superblockHash = new Bytes32((byte[])eventValues.getNonIndexedValues().get(0).getValue());
-            response.who =  new Address((String)eventValues.getNonIndexedValues().get(1).getValue());
+            response.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
+            response.who =  (Address)eventValues.getNonIndexedValues().get(1);
             result.add(response);
         }
 
@@ -85,8 +85,8 @@ public class SyscoinSuperblocksExtended extends SyscoinSuperblocks {
 
             SemiApprovedSuperblockEventResponse response = new SemiApprovedSuperblockEventResponse();
             response.log = eventValues.getLog();
-            response.superblockHash = new Bytes32((byte[])eventValues.getNonIndexedValues().get(0).getValue());
-            response.who =  new Address((String)eventValues.getNonIndexedValues().get(1).getValue());
+            response.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
+            response.who =  (Address)eventValues.getNonIndexedValues().get(1);
             result.add(response);
         }
 

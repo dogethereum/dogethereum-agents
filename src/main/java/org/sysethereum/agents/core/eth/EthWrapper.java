@@ -274,7 +274,11 @@ public class EthWrapper {
      */
     @SuppressWarnings("UnusedReturnValue")
     public boolean sendStoreSuperblock(Superblock superblock, String account) throws Exception {
-
+        BigInteger processCounter = claimContractApi.getProcessCounter();
+        if(processCounter.compareTo(BigInteger.TEN) == 0){
+            logger.info("Superblock {} not sent because process counter is at maximum allowable in progress superblocks (10)", superblock.getHash());
+            return false;
+        }
         // Check if the parent has been approved before sending this superblock.
         Keccak256Hash parentId = superblock.getParentId();
         if (!(superblockContractApi.isApproved(parentId) || superblockContractApi.isSemiApproved(parentId))) {
@@ -324,7 +328,7 @@ public class EthWrapper {
         // reset fees back to normal mode
         if(bAggressiveMode){updateGasForNormalMode();}
 
-        logger.info("Sent superblock {}", superblock.getHash());
+        logger.info("Sent superblock {}, process counter {}", superblock.getHash(), processCounter);
         futureReceipt.handle((receipt, throwable) -> {
             if (receipt != null) {
                 logger.info("proposeSuperblock receipt {}", receipt.toString());

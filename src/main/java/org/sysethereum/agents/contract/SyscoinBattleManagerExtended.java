@@ -43,9 +43,9 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
             NewBattleEventResponse newBattleEventResponse =
                     new NewBattleEventResponse();
             newBattleEventResponse.log = eventValues.getLog();
-            newBattleEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
-            newBattleEventResponse.submitter = new Address ((String)eventValues.getNonIndexedValues().get(1).getValue());
-            newBattleEventResponse.challenger = new Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
+            newBattleEventResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
+            newBattleEventResponse.submitter = (Address)eventValues.getNonIndexedValues().get(1);
+            newBattleEventResponse.challenger = (Address)eventValues.getNonIndexedValues().get(2);
             result.add(newBattleEventResponse);
         }
 
@@ -67,9 +67,9 @@ public class SyscoinBattleManagerExtended extends  SyscoinBattleManager {
             RespondBlockHeadersEventResponse newBlockHeadersEventResponse =
                     new RespondBlockHeadersEventResponse();
             newBlockHeadersEventResponse.log = eventValues.getLog();
-            newBlockHeadersEventResponse.superblockHash = new Bytes32((byte[]) eventValues.getNonIndexedValues().get(0).getValue());
+            newBlockHeadersEventResponse.superblockHash = (Bytes32) eventValues.getNonIndexedValues().get(0);
             newBlockHeadersEventResponse.merkleHashCount = (Uint256) eventValues.getNonIndexedValues().get(1);
-            newBlockHeadersEventResponse.submitter = new Address ((String)eventValues.getNonIndexedValues().get(2).getValue());
+            newBlockHeadersEventResponse.submitter = (Address)eventValues.getNonIndexedValues().get(2);
             result.add(newBlockHeadersEventResponse);
         }
 

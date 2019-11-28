@@ -158,8 +158,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         boolean removeFromContract = false;
         for (SuperblockFailedEvent event : events) {
             if (isMine(event)) {
-                logger.info("Challenger won battle on superblock {}",
-                        event.superblockHash);
+                logger.info("Challenger won battle on superblock {} process counter {}",
+                        event.superblockHash, event.processCounter);
                 if (sessionToSuperblockMap.contains(event.superblockHash)) {
                     sessionToSuperblockMap.remove(event.superblockHash);
                     removeFromContract = true;
