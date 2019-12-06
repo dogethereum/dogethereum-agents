@@ -133,6 +133,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         } catch (Exception e) {
 
         }
+        return null;
     }
     private SuperblockSPVProof GetSuperblockSPVProof(String blockhash){
         try {
@@ -141,6 +142,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         catch(Exception e){
 
         }
+        return null;
     }
     private String GetSysTXIDFromBridgeTransferID(String bridgeTransferID){
         LinkedHashMap<String, String> params = new LinkedHashMap<>();
@@ -155,6 +157,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         } catch (Exception e) {
 
         }
+        return null;
     }
 
 
@@ -337,8 +340,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         }
     }
     /**
-     * Adds new ethereum TXID's based on bridge transfer ID's in TokenFreeze events to a data structure that keeps track of them
-     * so that they can be challenged if user tries to claim erc20's and the mint on syscoin exists (by checking the ethereum txid).
+     * Watches for CancelTransferRequest events and sees if the bridge id exists on Syscoin meaning the cancel request should be invalid, challenge it.
      * @param fromBlock
      * @param toBlock
      * @throws Exception
@@ -352,15 +354,16 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             // randomize up to 15 mins when to challenge so not all agents end up challenging at once
             // setup timer to initiate challenge potentially
             // lookup eth txid to get sys txid and if exists then we may want to challenge
-            String sysTXID = GetSysTXIDFromBridgeTransferID(cancelTransferRequest.bridgeTransferId);
+            String sysTXID = GetSysTXIDFromBridgeTransferID(cancelTransferRequest.bridgeTransferId.toString());
             // check if cancellation request is still valid
-
-            // get SPV proof of sys tx linking to block
-            BlockSPVProof blockSPVProof = GetBlockSPVProof(sysTXID);
-            // get SPV proof of block linking to superblock
-            SuperblockSPVProof superblockSPVProof = GetSuperblockSPVProof(blockSPVProof.blockhash);
-            // submit spv proof of sys tx to claim submitters deposit and close session
-            superblockContractApi.challengeCancelTransfer(blockSPVProof.tx, blockSPVProof.index, blockSPVProof.merklePath, blockSPVProof.block, superblockSPVProof.index, superblockSPVProof.merklePath, superblockSPVProof.merklePath);
+            if(sysTXID != null) {
+                // get SPV proof of sys tx linking to block
+                BlockSPVProof blockSPVProof = GetBlockSPVProof(sysTXID);
+                // get SPV proof of block linking to superblock
+                SuperblockSPVProof superblockSPVProof = GetSuperblockSPVProof(blockSPVProof.blockhash);
+                // submit spv proof of sys tx to claim submitters deposit and close session
+                superblockContractApi.challengeCancelTransfer(blockSPVProof, superblockSPVProof);
+            }
         }
 
     }

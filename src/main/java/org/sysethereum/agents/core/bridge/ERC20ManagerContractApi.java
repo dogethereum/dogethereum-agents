@@ -28,22 +28,22 @@ public class ERC20ManagerContractApi {
     }
 
     /**
-     * Listens to CancelTransfer events from SyscoinERC20Manager contract within a given block window
-     * and parses web3j-generated instances into easier to manage NewCancelTransfer objects.
+     * Listens to CancelTransferRequest events from SyscoinERC20Manager contract within a given block window
+     * and parses web3j-generated instances into easier to manage NewCancelTransferRequest objects.
      *
      * @param startBlock First Ethereum block to poll.
      * @param endBlock   Last Ethereum block to poll.
-     * @return All CancelTransfer events from SyscoinERC20Manager as NewCancelTransfer objects.
+     * @return All CancelTransferRequest events from SyscoinERC20Manager as NewCancelTransferRequest objects.
      * @throws IOException
      */
     public List<NewCancelTransferRequestEvent> getNewCancelTransferEvents(long startBlock, long endBlock) throws IOException {
         List<NewCancelTransferRequestEvent> result = new ArrayList<>();
-        List<SyscoinERC20Manager.CancelTransferEventResponse> newCancelTransferEvents =
-                challenges.getCancelTransferEvents(
+        List<SyscoinERC20Manager.CancelTransferRequestEventResponse> newCancelTransferEvents =
+                challenges.getCancelTransferRequestEvents(
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(startBlock)),
                         DefaultBlockParameter.valueOf(BigInteger.valueOf(endBlock)));
 
-        for (SyscoinERC20Manager.CancelTransferEventResponse response : newCancelTransferEvents) {
+        for (SyscoinERC20Manager.CancelTransferRequestEventResponse response : newCancelTransferEvents) {
             NewCancelTransferRequestEvent newCancelTransferRequestEvent = new NewCancelTransferRequestEvent();
             newCancelTransferRequestEvent.canceller = response.canceller.getValue();
             newCancelTransferRequestEvent.bridgeTransferId = response.bridgetransferid.getValue().intValue();

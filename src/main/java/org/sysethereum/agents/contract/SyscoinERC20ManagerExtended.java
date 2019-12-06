@@ -27,21 +27,21 @@ public class SyscoinERC20ManagerExtended extends  SyscoinERC20Manager {
     }
 
 
-    public List<CancelTransferEventResponse> getCancelTransferEvents(
+    public List<CancelTransferRequestEventResponse> getCancelTransferRequestEvents(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        List<CancelTransferEventResponse> result = new ArrayList<>();
+        List<CancelTransferRequestEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(CANCELTRANSFER_EVENT));
+    filter.addSingleTopic(EventEncoder.encode(CANCELTRANSFERREQUEST_EVENT));
         EthLog ethLog = web3j.ethGetLogs(filter).send();
         List<EthLog.LogResult> logResults = ethLog.getLogs();
 
         for (EthLog.LogResult logResult : logResults) {
             Log log = (Log) logResult.get();
-            EventValuesWithLog eventValues = extractEventParametersWithLog(CANCELTRANSFER_EVENT, log);
+            EventValuesWithLog eventValues = extractEventParametersWithLog(CANCELTRANSFERREQUEST_EVENT, log);
 
-            CancelTransferEventResponse newCancelTransferEventResponse =
-                    new CancelTransferEventResponse();
+            CancelTransferRequestEventResponse newCancelTransferEventResponse =
+                    new CancelTransferRequestEventResponse();
             newCancelTransferEventResponse.log = eventValues.getLog();
             newCancelTransferEventResponse.canceller = (Address) eventValues.getNonIndexedValues().get(0);
             newCancelTransferEventResponse.bridgetransferid = (Uint256) eventValues.getNonIndexedValues().get(1);

@@ -219,6 +219,21 @@ public class MainConfiguration {
         return result;
     }
 
+    @Bean
+    public SyscoinSuperblocksExtended superblocksForChallenges(
+            SystemProperties config, AgentConstants agentConstants,
+            Web3j web3, EthAddresses ethAddresses
+    ) throws IOException {
+        String contractAddress = SyscoinSuperblocksExtended.getAddress(agentConstants.getNetworkId());
+
+        var result = new SyscoinSuperblocksExtended(contractAddress, web3,
+                new ClientTransactionManager(web3, ethAddresses.challengerAddress),
+                BigInteger.valueOf(config.gasPriceMinimum()),
+                BigInteger.valueOf(config.gasLimit())
+        );
+        assert result.isValid();
+        return result;
+    }
 
     @Bean
     public BigInteger superblockDelay(SyscoinClaimManagerExtended claimManager) throws Exception {
