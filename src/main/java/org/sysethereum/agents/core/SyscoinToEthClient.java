@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.sysethereum.agents.constants.EthAddresses;
 import org.sysethereum.agents.core.bridge.Superblock;
 import org.sysethereum.agents.core.bridge.SuperblockContractApi;
-import org.sysethereum.agents.core.eth.SPVProof;
+import org.sysethereum.agents.core.eth.SuperblockSPVProof;
 import org.sysethereum.agents.core.syscoin.*;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
@@ -153,6 +153,7 @@ public class SyscoinToEthClient {
             if (txStoredBlock == null) {
                 return new RestError("Block has not been stored in local database. Block hash: " + blockHash);
             }
+
             Superblock txSuperblock = localSuperblockChain.findBySysBlockHash(txStoredBlock.getHeader().getHash());
 
             if (txSuperblock == null) {
@@ -189,7 +190,7 @@ public class SyscoinToEthClient {
         List<String> siblings = pmt.getTransactionPath(syscoinBlock.getHash())
                 .stream().map(Sha256Hash::toString).collect(toList());
 
-        return new SPVProof(syscoinBlockIndex, siblings, superblock.getHash().toString());
+        return new SuperblockSPVProof(syscoinBlockIndex, siblings, superblock.getHash().toString());
     }
 
     private static class SuperBlockResponse {
