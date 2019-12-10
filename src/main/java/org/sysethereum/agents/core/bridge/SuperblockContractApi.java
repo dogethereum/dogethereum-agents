@@ -1,25 +1,38 @@
 package org.sysethereum.agents.core.bridge;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.sysethereum.agents.contract.SyscoinSuperblocksExtended;
+import org.sysethereum.agents.core.eth.BlockSPVProof;
+import org.sysethereum.agents.core.eth.SuperblockSPVProof;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
+import org.web3j.abi.datatypes.DynamicArray;
+import org.web3j.abi.datatypes.DynamicBytes;
 import org.web3j.abi.datatypes.generated.Bytes32;
+import org.web3j.abi.datatypes.generated.Uint256;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static java.util.stream.Collectors.toList;
 
 @Service
 public class SuperblockContractApi {
-
+    private static final Logger logger = LoggerFactory.getLogger("SuperblockContractApi");
     private final SyscoinSuperblocksExtended main;
+    private final SyscoinSuperblocksExtended challenges;
 
     public SuperblockContractApi(
-            SyscoinSuperblocksExtended superblocks
+            SyscoinSuperblocksExtended main,
+            SyscoinSuperblocksExtended challenges
     ) {
-        this.main = superblocks;
+        this.main = main;
+        this.challenges = challenges;
     }
 
     private BigInteger getStatus(Keccak256Hash superblockId) throws Exception {
@@ -53,6 +66,7 @@ public class SuperblockContractApi {
     public void updateGasPrice(BigInteger gasPriceMinimum) {
         //noinspection deprecation
         main.setGasPrice(gasPriceMinimum);
+        challenges.setGasPrice(gasPriceMinimum);
     }
 
     public static class SuperblockEvent {
@@ -84,24 +98,6 @@ public class SuperblockContractApi {
     }
 
     /**
-     * Listens to ApprovedSuperblock events from SyscoinSuperblocks contract within a given block window
-     * and parses web3j-generated instances into easier to manage SuperblockEvent objects.
-     * @param startBlock First Ethereum block to poll.
-     * @param endBlock Last Ethereum block to poll.
-     * @return All ApprovedSuperblock events from SyscoinSuperblocks as SuperblockEvent objects.
-     * @throws IOException
-     */
-    public List<SuperblockEvent> getApprovedSuperblocks(long startBlock, long endBlock) throws IOException {
-
-        return main.getApprovedSuperblockEvents(startBlock, endBlock)
-                .stream().map(response -> new SuperblockEvent(
-                        Keccak256Hash.wrap(response.superblockHash.getValue()),
-                        response.who.getValue()
-                ))
-                .collect(toList());
-    }
-
-    /**
      * Listens to SemiApprovedSuperblock events from SyscoinSuperblocks contract within a given block window
      * and parses web3j-generated instances into easier to manage SuperblockEvent objects.
      * @param startBlock First Ethereum block to poll.
@@ -118,4 +114,21 @@ public class SuperblockContractApi {
                 ))
                 .collect(toList());
     }
+
+    public void challengeCancelTransfer(BlockSPVProof blockSPVProof, SuperblockSPVProof superblockSPVProof){
+        List<Uint256> txSiblings = new ArrayList<>();
+        for(int i =0;i<blockSPVProof.merklePath.size();i++){
+            txSiblings.add(i, new Uint256(new BigInteger(blockSPVProof.merklePath.get(i))));
+        }
+        List<Uint256> blockSiblings = new ArrayList<>();
+        for(int i =0;i<superblockSPVProof.merklePath.size();i++){
+            blockSiblings.add(i, new Uint256(new BigInteger(superblockSPVProof.merklePath.get(i))));
+        }
+        CompletableFuture<TransactionReceipt> futureReceipt = challenges.challengeCancelTransfer(new DynamicBytes(blockSPVProof.tx.getBytes()), new Uint256(blockSPVProof.index),new DynamicArray<Uint256>(txSiblings),
+                new DynamicBytes(blockSPVProof.block.getBytes()), new Uint256(superblockSPVProof.index), new DynamicArray<Uint256>(blockSiblings), new Bytes32(superblockSPVProof.superBlock.getBytes())).sendAsync();
+
+        futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
+                logger.info("challengeCancelTransfer receipt {}", receipt.toString()));
+    }
+
 }

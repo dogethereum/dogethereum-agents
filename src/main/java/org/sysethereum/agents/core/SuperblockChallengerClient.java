@@ -1,23 +1,25 @@
 package org.sysethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
+import org.bitcoinj.core.Sha256Hash;
 import org.sysethereum.agents.constants.AgentConstants;
 import org.sysethereum.agents.constants.AgentRole;
 import org.sysethereum.agents.constants.EthAddresses;
 import org.sysethereum.agents.constants.SystemProperties;
 import org.sysethereum.agents.contract.SyscoinBattleManagerExtended;
-import org.sysethereum.agents.core.bridge.BattleContractApi;
-import org.sysethereum.agents.core.bridge.ClaimContractApi;
-import org.sysethereum.agents.core.bridge.SuperblockContractApi;
+import org.sysethereum.agents.core.bridge.*;
 import org.sysethereum.agents.core.bridge.battle.NewBattleEvent;
+import org.sysethereum.agents.core.bridge.battle.NewCancelTransferRequestEvent;
 import org.sysethereum.agents.core.bridge.battle.SuperblockFailedEvent;
+import org.sysethereum.agents.core.eth.BlockSPVProof;
 import org.sysethereum.agents.core.eth.EthWrapper;
+import org.sysethereum.agents.core.eth.SuperblockSPVProof;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
-import org.sysethereum.agents.core.bridge.Superblock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.sysethereum.agents.core.syscoin.SuperblockChain;
+import org.sysethereum.agents.core.syscoin.SyscoinRPCClient;
 import org.sysethereum.agents.service.ChallengeEmailNotifier;
 import org.sysethereum.agents.service.PersistentFileStore;
 import org.sysethereum.agents.util.RandomizationCounter;
@@ -47,11 +49,12 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     private final SuperblockContractApi superblockContractApi;
     private final ClaimContractApi claimContractApi;
     private final BattleContractApi battleContractApi;
+    private final ERC20ManagerContractApi erc20ManagerContractApi;
 
     private HashSet<Keccak256Hash> semiApprovedSet;
     private final File semiApprovedSetFile;
     private final SyscoinToEthClient syscoinToEthClient;
-
+    private final SyscoinRPCClient syscoinRPCClient;
     public SuperblockChallengerClient(
             SystemProperties config,
             AgentConstants agentConstants,
@@ -62,9 +65,11 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             SuperblockContractApi superblockContractApi,
             ClaimContractApi claimContractApi,
             BattleContractApi battleContractApi,
+            ERC20ManagerContractApi erc20ManagerContractApi,
             SyscoinBattleManagerExtended battleManagerForChallenges,
             ChallengeEmailNotifier challengeEmailNotifier,
-            SyscoinToEthClient syscoinToEthClient
+            SyscoinToEthClient syscoinToEthClient,
+            SyscoinRPCClient syscoinRPCClient
     ) {
         super(AgentRole.CHALLENGER, config, agentConstants, ethWrapper, superblockContractApi, battleContractApi, claimContractApi, challengeEmailNotifier);
 
@@ -77,11 +82,13 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
         this.randomizationCounter = new RandomizationCounter();
         this.battleManagerForChallenges = battleManagerForChallenges;
+        this.erc20ManagerContractApi = erc20ManagerContractApi;
         this.myAddress = ethAddresses.challengerAddress;
 
         this.semiApprovedSet = new HashSet<>();
         this.semiApprovedSetFile = Paths.get(config.dataDirectory(), "SemiApprovedSet.dat").toAbsolutePath().toFile();
         this.syscoinToEthClient = syscoinToEthClient;
+        this.syscoinRPCClient = syscoinRPCClient;
     }
 
     @Override
@@ -95,6 +102,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             getApproved(fromBlock, toBlock);
 
             challengerWonBattles(fromBlock, toBlock);
+            getCancelTransferRequests(fromBlock, toBlock);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             return fromBlock - 1;
@@ -112,6 +120,46 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             logger.error(e.getMessage(), e);
         }
     }
+    private BlockSPVProof GetBlockSPVProof(String txid){
+        LinkedHashMap<String, String> params = new LinkedHashMap<>();
+        params.put("method", "syscoingetspvproof");
+        params.put("txid", txid);
+        String response;
+        try {
+            String method = params.get("method");
+            params.remove("method");
+            ArrayList<Object> paramList = new ArrayList<>(params.values());
+            response = syscoinRPCClient.makeCoreCall(method, paramList);
+        } catch (Exception e) {
+
+        }
+        return null;
+    }
+    private SuperblockSPVProof GetSuperblockSPVProof(String blockhash){
+        try {
+            syscoinToEthClient.getSuperblockSPVProof(Sha256Hash.wrap(blockhash), 0);
+        }
+        catch(Exception e){
+
+        }
+        return null;
+    }
+    private String GetSysTXIDFromBridgeTransferID(String bridgeTransferID){
+        LinkedHashMap<String, String> params = new LinkedHashMap<>();
+        params.put("method", "syscoincheckmint");
+        params.put("bridgeTransferID", bridgeTransferID);
+        String response;
+        try {
+            String method = params.get("method");
+            params.remove("method");
+            ArrayList<Object> paramList = new ArrayList<>(params.values());
+            response = syscoinRPCClient.makeCoreCall(method, paramList);
+        } catch (Exception e) {
+
+        }
+        return null;
+    }
+
 
 
     /* ---- CHALLENGING ---- */
@@ -291,7 +339,34 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 semiApprovedSet.add(superblockEvent.superblockId);
         }
     }
+    /**
+     * Watches for CancelTransferRequest events and sees if the bridge id exists on Syscoin meaning the cancel request should be invalid, challenge it.
+     * @param fromBlock
+     * @param toBlock
+     * @throws Exception
+     */
+    private void getCancelTransferRequests(long fromBlock, long toBlock) throws Exception {
+        List<NewCancelTransferRequestEvent> cancelTransfersList =
+                erc20ManagerContractApi.getNewCancelTransferEvents(fromBlock, toBlock);
 
+        for (NewCancelTransferRequestEvent cancelTransferRequest : cancelTransfersList) {
+
+            // randomize up to 15 mins when to challenge so not all agents end up challenging at once
+            // setup timer to initiate challenge potentially
+            // lookup eth txid to get sys txid and if exists then we may want to challenge
+            String sysTXID = GetSysTXIDFromBridgeTransferID(cancelTransferRequest.bridgeTransferId.toString());
+            // check if cancellation request is still valid
+            if(sysTXID != null) {
+                // get SPV proof of sys tx linking to block
+                BlockSPVProof blockSPVProof = GetBlockSPVProof(sysTXID);
+                // get SPV proof of block linking to superblock
+                SuperblockSPVProof superblockSPVProof = GetSuperblockSPVProof(blockSPVProof.blockhash);
+                // submit spv proof of sys tx to claim submitters deposit and close session
+                superblockContractApi.challengeCancelTransfer(blockSPVProof, superblockSPVProof);
+            }
+        }
+
+    }
     /* ---- HELPER METHODS ---- */
 
     private boolean challengedByMe(SuperblockContractApi.SuperblockEvent superblockEvent) throws Exception {

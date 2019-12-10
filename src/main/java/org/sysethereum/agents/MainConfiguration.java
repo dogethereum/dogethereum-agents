@@ -16,10 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.sysethereum.agents.constants.*;
-import org.sysethereum.agents.contract.SyscoinBattleManagerExtended;
-import org.sysethereum.agents.contract.SyscoinClaimManager;
-import org.sysethereum.agents.contract.SyscoinClaimManagerExtended;
-import org.sysethereum.agents.contract.SyscoinSuperblocksExtended;
+import org.sysethereum.agents.contract.*;
 import org.sysethereum.agents.core.syscoin.SyscoinWalletAppKit;
 import org.sysethereum.agents.service.MailerFactory;
 import org.sysethereum.agents.service.rest.*;
@@ -191,6 +188,22 @@ public class MainConfiguration {
     }
 
     @Bean
+    public SyscoinERC20ManagerExtended erc20ManagerForChallenges(
+            SystemProperties config, AgentConstants agentConstants,
+            Web3j web3, EthAddresses ethAddresses
+    ) throws IOException {
+        String contractAddress = SyscoinERC20ManagerExtended.getAddress(agentConstants.getNetworkId());
+
+        var result = new SyscoinERC20ManagerExtended(contractAddress, web3,
+                new ClientTransactionManager(web3, ethAddresses.challengerAddress),
+                BigInteger.valueOf(config.gasPriceMinimum()),
+                BigInteger.valueOf(config.gasLimit())
+        );
+        assert result.isValid();
+        return result;
+    }
+
+    @Bean
     public SyscoinSuperblocksExtended superblocks(
             SystemProperties config, AgentConstants agentConstants,
             Web3j web3, EthAddresses ethAddresses
@@ -206,6 +219,21 @@ public class MainConfiguration {
         return result;
     }
 
+    @Bean
+    public SyscoinSuperblocksExtended superblocksForChallenges(
+            SystemProperties config, AgentConstants agentConstants,
+            Web3j web3, EthAddresses ethAddresses
+    ) throws IOException {
+        String contractAddress = SyscoinSuperblocksExtended.getAddress(agentConstants.getNetworkId());
+
+        var result = new SyscoinSuperblocksExtended(contractAddress, web3,
+                new ClientTransactionManager(web3, ethAddresses.challengerAddress),
+                BigInteger.valueOf(config.gasPriceMinimum()),
+                BigInteger.valueOf(config.gasLimit())
+        );
+        assert result.isValid();
+        return result;
+    }
 
     @Bean
     public BigInteger superblockDelay(SyscoinClaimManagerExtended claimManager) throws Exception {
