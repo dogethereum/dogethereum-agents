@@ -1,5 +1,6 @@
 package org.sysethereum.agents.core.bridge;
 
+import com.google.common.io.BaseEncoding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -125,8 +126,8 @@ public class SuperblockContractApi {
         for(int i =0;i<superblockSPVProof.merklePath.size();i++){
             blockSiblings.add(i, new Uint256(new BigInteger(superblockSPVProof.merklePath.get(i), 16)));
         }
-        CompletableFuture<TransactionReceipt> futureReceipt = superblocksForChallenges.challengeCancelTransfer(new DynamicBytes(blockSPVProof.transaction.getBytes()), new Uint256(blockSPVProof.index),new DynamicArray<Uint256>(txSiblings),
-                new DynamicBytes(blockSPVProof.header.getBytes()), new Uint256(superblockSPVProof.index), new DynamicArray<Uint256>(blockSiblings), new Bytes32(Keccak256Hash.wrap(superblockSPVProof.superBlock).getBytes())).sendAsync();
+        CompletableFuture<TransactionReceipt> futureReceipt = superblocksForChallenges.challengeCancelTransfer(new DynamicBytes(BaseEncoding.base16().decode(blockSPVProof.transaction)), new Uint256(blockSPVProof.index),new DynamicArray<Uint256>(txSiblings),
+                new DynamicBytes(BaseEncoding.base16().decode(blockSPVProof.header)), new Uint256(superblockSPVProof.index), new DynamicArray<Uint256>(blockSiblings), new Bytes32(BaseEncoding.base16().decode(superblockSPVProof.superBlock))).sendAsync();
 
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 logger.info("challengeCancelTransfer receipt {}", receipt.toString()));
