@@ -90,7 +90,7 @@ public class SyscoinERC20Manager extends Contract {
 
     static {
         _addresses = new HashMap<String, String>();
-        _addresses.put("4", "0x4Cafd654dA402B4f14aCbE7cf2E8F0a43Cd68e19");
+        _addresses.put("4", "0x443d9a14fb6ba2A45465bEC3767186f404Ccea25");
     }
 
     @Deprecated
