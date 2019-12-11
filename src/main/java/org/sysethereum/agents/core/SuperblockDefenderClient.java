@@ -190,7 +190,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
         for (SuperblockSuccessfulEvent event : events) {
             if (isMine(event)) {
                 logger.info("Submitter won battle on superblock {} process counter {}",
-                        event.superblockHash, event.processCounter);
+                        event.superblockHash, event.processCounter.toString());
                 if (sessionToSuperblockMap.contains(event.superblockHash)) {
                     sessionToSuperblockMap.remove(event.superblockHash);
                     removeFromContract = true;
