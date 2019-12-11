@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.sysethereum.agents.contract.SyscoinSuperblocksExtended;
-import org.sysethereum.agents.core.eth.BlockSPVProof;
+import org.sysethereum.agents.core.syscoin.BlockSPVProof;
 import org.sysethereum.agents.core.eth.SuperblockSPVProof;
 import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.web3j.abi.datatypes.DynamicArray;
@@ -117,15 +117,15 @@ public class SuperblockContractApi {
 
     public void challengeCancelTransfer(BlockSPVProof blockSPVProof, SuperblockSPVProof superblockSPVProof){
         List<Uint256> txSiblings = new ArrayList<>();
-        for(int i =0;i<blockSPVProof.merklePath.size();i++){
-            txSiblings.add(i, new Uint256(new BigInteger(blockSPVProof.merklePath.get(i))));
+        for(int i =0;i<blockSPVProof.siblings.size();i++){
+            txSiblings.add(i, new Uint256(new BigInteger(blockSPVProof.siblings.get(i), 16)));
         }
         List<Uint256> blockSiblings = new ArrayList<>();
         for(int i =0;i<superblockSPVProof.merklePath.size();i++){
-            blockSiblings.add(i, new Uint256(new BigInteger(superblockSPVProof.merklePath.get(i))));
+            blockSiblings.add(i, new Uint256(new BigInteger(superblockSPVProof.merklePath.get(i), 16)));
         }
-        CompletableFuture<TransactionReceipt> futureReceipt = superblocksForChallenges.challengeCancelTransfer(new DynamicBytes(blockSPVProof.tx.getBytes()), new Uint256(blockSPVProof.index),new DynamicArray<Uint256>(txSiblings),
-                new DynamicBytes(blockSPVProof.block.getBytes()), new Uint256(superblockSPVProof.index), new DynamicArray<Uint256>(blockSiblings), new Bytes32(superblockSPVProof.superBlock.getBytes())).sendAsync();
+        CompletableFuture<TransactionReceipt> futureReceipt = superblocksForChallenges.challengeCancelTransfer(new DynamicBytes(blockSPVProof.transaction.getBytes()), new Uint256(blockSPVProof.index),new DynamicArray<Uint256>(txSiblings),
+                new DynamicBytes(blockSPVProof.header.getBytes()), new Uint256(superblockSPVProof.index), new DynamicArray<Uint256>(blockSiblings), new Bytes32(superblockSPVProof.superBlock.getBytes())).sendAsync();
 
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 logger.info("challengeCancelTransfer receipt {}", receipt.toString()));

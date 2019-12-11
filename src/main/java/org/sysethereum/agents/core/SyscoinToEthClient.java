@@ -142,7 +142,7 @@ public class SyscoinToEthClient {
      * Relays all unprocessed transactions to Ethereum contracts by calling sendRelayTx.
      * @throws Exception
      */
-    public Object getSuperblockSPVProof(Sha256Hash blockHash, int height) throws Exception {
+    public Object getSuperblockSPVProof(Sha256Hash blockHash, int height, boolean isApprovedCheck) throws Exception {
         synchronized (this) {
             Context.propagate(syscoinContext);
             StoredBlock txStoredBlock;
@@ -161,7 +161,7 @@ public class SyscoinToEthClient {
                         "Block hash: " + txStoredBlock.getHeader().getHash());
             }
 
-            if (!superblockContractApi.isApproved(txSuperblock.getHash())) {
+            if (isApprovedCheck && !superblockContractApi.isApproved(txSuperblock.getHash())) {
                 return new RestError("Superblock has not been approved yet. " +
                         "Block hash: " + txStoredBlock.getHeader().getHash() + ", superblock ID: " + txSuperblock.getHash());
             }

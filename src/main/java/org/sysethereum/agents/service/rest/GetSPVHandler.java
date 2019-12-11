@@ -38,7 +38,7 @@ public class GetSPVHandler extends CommonHttpHandler {
         try {
             String hash = sanitizeHash(params.get("hash"));
             String height = params.get("height");
-            response = gson.toJson(syscoinToEthClient.getSuperblockSPVProof(hash != null ? Sha256Hash.wrap(hash) : null, height != null ? Integer.decode(height) : -1));
+            response = gson.toJson(syscoinToEthClient.getSuperblockSPVProof(hash != null ? Sha256Hash.wrap(hash) : null, height != null ? Integer.decode(height) : -1, true));
         } catch (Exception exception) {
             response = gson.toJson(new RestError("Could not get SPV proof, internal error!"));
         }

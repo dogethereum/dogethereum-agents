@@ -1,5 +1,6 @@
 package org.sysethereum.agents.core;
 
+import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.Sha256Hash;
 import org.sysethereum.agents.constants.AgentConstants;
@@ -11,15 +12,13 @@ import org.sysethereum.agents.core.bridge.*;
 import org.sysethereum.agents.core.bridge.battle.NewBattleEvent;
 import org.sysethereum.agents.core.bridge.battle.NewCancelTransferRequestEvent;
 import org.sysethereum.agents.core.bridge.battle.SuperblockFailedEvent;
-import org.sysethereum.agents.core.eth.BlockSPVProof;
+import org.sysethereum.agents.core.eth.BridgeTransferInfo;
+import org.sysethereum.agents.core.syscoin.*;
 import org.sysethereum.agents.core.eth.EthWrapper;
 import org.sysethereum.agents.core.eth.SuperblockSPVProof;
-import org.sysethereum.agents.core.syscoin.Keccak256Hash;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.sysethereum.agents.core.syscoin.SuperblockChain;
-import org.sysethereum.agents.core.syscoin.SyscoinRPCClient;
 import org.sysethereum.agents.service.ChallengeEmailNotifier;
 import org.sysethereum.agents.service.PersistentFileStore;
 import org.sysethereum.agents.util.RandomizationCounter;
@@ -130,21 +129,23 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             params.remove("method");
             ArrayList<Object> paramList = new ArrayList<>(params.values());
             response = syscoinRPCClient.makeCoreCall(method, paramList);
+            Gson gson = new Gson();
+            return gson.fromJson(response, BlockSPVProof.class);
         } catch (Exception e) {
 
         }
         return null;
     }
-    private SuperblockSPVProof GetSuperblockSPVProof(String blockhash){
+    private Object GetSuperblockSPVProof(String blockhash){
         try {
-            syscoinToEthClient.getSuperblockSPVProof(Sha256Hash.wrap(blockhash), 0);
+            return syscoinToEthClient.getSuperblockSPVProof(Sha256Hash.wrap(blockhash), 0, false);
         }
         catch(Exception e){
 
         }
         return null;
     }
-    private String GetSysTXIDFromBridgeTransferID(String bridgeTransferID){
+    private SyscoinMintProof GetSysTXIDFromBridgeTransferID(String bridgeTransferID){
         LinkedHashMap<String, String> params = new LinkedHashMap<>();
         params.put("method", "syscoincheckmint");
         params.put("bridgeTransferID", bridgeTransferID);
@@ -154,6 +155,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
             params.remove("method");
             ArrayList<Object> paramList = new ArrayList<>(params.values());
             response = syscoinRPCClient.makeCoreCall(method, paramList);
+            Gson gson = new Gson();
+            return gson.fromJson(response, SyscoinMintProof.class);
         } catch (Exception e) {
 
         }
@@ -350,19 +353,25 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                 erc20ManagerContractApi.getNewCancelTransferEvents(fromBlock, toBlock);
 
         for (NewCancelTransferRequestEvent cancelTransferRequest : cancelTransfersList) {
-
+            logger.info("Found cancel transfer request for id {}...", cancelTransferRequest.bridgeTransferId.toString());
             // randomize up to 15 mins when to challenge so not all agents end up challenging at once
             // setup timer to initiate challenge potentially
             // lookup eth txid to get sys txid and if exists then we may want to challenge
-            String sysTXID = GetSysTXIDFromBridgeTransferID(cancelTransferRequest.bridgeTransferId.toString());
-            // check if cancellation request is still valid
-            if(sysTXID != null) {
-                // get SPV proof of sys tx linking to block
-                BlockSPVProof blockSPVProof = GetBlockSPVProof(sysTXID);
-                // get SPV proof of block linking to superblock
-                SuperblockSPVProof superblockSPVProof = GetSuperblockSPVProof(blockSPVProof.blockhash);
-                // submit spv proof of sys tx to claim submitters deposit and close session
-                superblockContractApi.challengeCancelTransfer(blockSPVProof, superblockSPVProof);
+            SyscoinMintProof mintProof = GetSysTXIDFromBridgeTransferID(cancelTransferRequest.bridgeTransferId.toString());
+            // if sys txid exists for this transfer id
+            if(mintProof != null) {
+                logger.info("Checking to see if the transfer is still valid to challenge...");
+                // check if cancellation request is still valid
+                BridgeTransferInfo bridgeTransferInfo = erc20ManagerContractApi.getBridgeTransfer(cancelTransferRequest.bridgeTransferId);
+                if(bridgeTransferInfo.status == BridgeTransferInfo.BridgeTransferStatus.CancelRequested) {
+                    logger.info("Getting SPV proofs and challenging bridge transfer cancellation...");
+                    // get SPV proof of sys tx linking to block
+                    BlockSPVProof blockSPVProof = GetBlockSPVProof(mintProof.txid);
+                    // get SPV proof of block linking to superblock
+                    SuperblockSPVProof superblockSPVProof = (SuperblockSPVProof) GetSuperblockSPVProof(blockSPVProof.blockhash);
+                    // submit spv proof of sys tx to claim submitters deposit and close session
+                    superblockContractApi.challengeCancelTransfer(blockSPVProof, superblockSPVProof);
+                }
             }
         }
 

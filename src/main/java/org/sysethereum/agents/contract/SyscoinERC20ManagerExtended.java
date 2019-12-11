@@ -1,19 +1,27 @@
 package org.sysethereum.agents.contract;
 
 import org.web3j.abi.EventEncoder;
+import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.Address;
+import org.web3j.abi.datatypes.Type;
+import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.abi.datatypes.generated.Uint32;
+import org.web3j.abi.datatypes.generated.Uint8;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
+import org.web3j.protocol.core.RemoteFunctionCall;
 import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.response.EthLog;
 import org.web3j.protocol.core.methods.response.Log;
+import org.web3j.tuples.generated.Tuple6;
 import org.web3j.tx.TransactionManager;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 public class SyscoinERC20ManagerExtended extends  SyscoinERC20Manager {
     public SyscoinERC20ManagerExtended(String contractAddress, Web3j web3j, TransactionManager transactionManager,
@@ -49,6 +57,5 @@ public class SyscoinERC20ManagerExtended extends  SyscoinERC20Manager {
 
         return result;
     }
-
 
 }

@@ -6,12 +6,21 @@ import org.springframework.stereotype.Service;
 import org.sysethereum.agents.contract.SyscoinERC20Manager;
 import org.sysethereum.agents.contract.SyscoinERC20ManagerExtended;
 import org.sysethereum.agents.core.bridge.battle.NewCancelTransferRequestEvent;
+import org.sysethereum.agents.core.eth.BridgeTransferInfo;
+import org.web3j.abi.datatypes.Address;
+import org.web3j.abi.datatypes.generated.Uint256;
+import org.web3j.abi.datatypes.generated.Uint32;
+import org.web3j.abi.datatypes.generated.Uint8;
 import org.web3j.protocol.core.DefaultBlockParameter;
+import org.web3j.protocol.core.RemoteFunctionCall;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
+import org.web3j.tuples.generated.Tuple6;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 public class ERC20ManagerContractApi {
@@ -50,5 +59,16 @@ public class ERC20ManagerContractApi {
             result.add(newCancelTransferRequestEvent);
         }
         return result;
+    }
+    public BridgeTransferInfo getBridgeTransfer(Integer bridgeTransferId) throws Exception{
+        Tuple6<Uint256, Uint256, Address, Address, Uint32, Uint8> bridgeTransferData = challenges.getBridgeTransfer(new Uint32(bridgeTransferId)).send();
+        BridgeTransferInfo bridgeInfo = new BridgeTransferInfo();
+        bridgeInfo.timestamp = bridgeTransferData.component1().getValue().intValue();
+        bridgeInfo.value = bridgeTransferData.component2().getValue();
+        bridgeInfo.erc20ContractAddress = bridgeTransferData.component3().getValue();
+        bridgeInfo.tokenFreezerAddress = bridgeTransferData.component4().getValue();
+        bridgeInfo.assetGUID = bridgeTransferData.component5().getValue().intValue();
+        bridgeInfo.status = BridgeTransferInfo.BridgeTransferStatus.fromInteger(bridgeTransferData.component6().getValue().intValue());
+        return bridgeInfo;
     }
 }
