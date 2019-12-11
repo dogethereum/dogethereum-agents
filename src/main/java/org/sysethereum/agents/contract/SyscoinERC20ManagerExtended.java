@@ -2,8 +2,7 @@ package org.sysethereum.agents.contract;
 
 import org.web3j.abi.EventEncoder;
 import org.web3j.abi.datatypes.Address;
-import org.web3j.abi.datatypes.generated.Bytes32;
-import org.web3j.abi.datatypes.generated.Uint256;
+import org.web3j.abi.datatypes.generated.Uint32;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.request.EthFilter;
@@ -44,7 +43,7 @@ public class SyscoinERC20ManagerExtended extends  SyscoinERC20Manager {
                     new CancelTransferRequestEventResponse();
             newCancelTransferEventResponse.log = eventValues.getLog();
             newCancelTransferEventResponse.canceller = (Address) eventValues.getNonIndexedValues().get(0);
-            newCancelTransferEventResponse.bridgetransferid = (Uint256) eventValues.getNonIndexedValues().get(1);
+            newCancelTransferEventResponse.bridgetransferid = (Uint32) eventValues.getNonIndexedValues().get(1);
             result.add(newCancelTransferEventResponse);
         }
 
