@@ -24,19 +24,19 @@ import static java.util.stream.Collectors.toList;
 @Service
 public class SuperblockContractApi {
     private static final Logger logger = LoggerFactory.getLogger("SuperblockContractApi");
-    private final SyscoinSuperblocksExtended main;
-    private final SyscoinSuperblocksExtended challenges;
+    private final SyscoinSuperblocksExtended superblocks;
+    private final SyscoinSuperblocksExtended superblocksForChallenges;
 
     public SuperblockContractApi(
-            SyscoinSuperblocksExtended main,
-            SyscoinSuperblocksExtended challenges
+            SyscoinSuperblocksExtended superblocks,
+            SyscoinSuperblocksExtended superblocksForChallenges
     ) {
-        this.main = main;
-        this.challenges = challenges;
+        this.superblocks = superblocks;
+        this.superblocksForChallenges = superblocksForChallenges;
     }
 
     private BigInteger getStatus(Keccak256Hash superblockId) throws Exception {
-        return main.getSuperblockStatus(new Bytes32(superblockId.getBytes())).send().getValue();
+        return superblocks.getSuperblockStatus(new Bytes32(superblockId.getBytes())).send().getValue();
     }
 
     public boolean isApproved(Keccak256Hash superblockId) throws Exception {
@@ -52,21 +52,21 @@ public class SuperblockContractApi {
     }
 
     public Keccak256Hash getBestSuperblockId() throws Exception {
-        return Keccak256Hash.wrap(main.getBestSuperblock().send().getValue());
+        return Keccak256Hash.wrap(superblocks.getBestSuperblock().send().getValue());
     }
 
     public BigInteger getHeight(Keccak256Hash superblockId) throws Exception {
-        return main.getSuperblockHeight(new Bytes32(superblockId.getBytes())).send().getValue();
+        return superblocks.getSuperblockHeight(new Bytes32(superblockId.getBytes())).send().getValue();
     }
 
     public BigInteger getChainHeight() throws Exception {
-        return main.getChainHeight().send().getValue();
+        return superblocks.getChainHeight().send().getValue();
     }
 
     public void updateGasPrice(BigInteger gasPriceMinimum) {
         //noinspection deprecation
-        main.setGasPrice(gasPriceMinimum);
-        challenges.setGasPrice(gasPriceMinimum);
+        superblocks.setGasPrice(gasPriceMinimum);
+        superblocksForChallenges.setGasPrice(gasPriceMinimum);
     }
 
     public static class SuperblockEvent {
@@ -89,7 +89,7 @@ public class SuperblockContractApi {
      */
     public List<SuperblockEvent> getNewSuperblocks(long startBlock, long endBlock) throws IOException {
 
-        return main.getNewSuperblockEvents(startBlock, endBlock)
+        return superblocks.getNewSuperblockEvents(startBlock, endBlock)
                 .stream().map(response -> new SuperblockEvent(
                         Keccak256Hash.wrap(response.superblockHash.getValue()),
                         response.who.getValue()
@@ -107,7 +107,7 @@ public class SuperblockContractApi {
      */
     public List<SuperblockEvent> getSemiApprovedSuperblocks(long startBlock, long endBlock) throws IOException {
 
-        return main.getSemiApprovedSuperblockEvents(startBlock, endBlock)
+        return superblocks.getSemiApprovedSuperblockEvents(startBlock, endBlock)
                 .stream().map(response -> new SuperblockEvent(
                         Keccak256Hash.wrap(response.superblockHash.getValue()),
                         response.who.getValue()
@@ -124,7 +124,7 @@ public class SuperblockContractApi {
         for(int i =0;i<superblockSPVProof.merklePath.size();i++){
             blockSiblings.add(i, new Uint256(new BigInteger(superblockSPVProof.merklePath.get(i))));
         }
-        CompletableFuture<TransactionReceipt> futureReceipt = challenges.challengeCancelTransfer(new DynamicBytes(blockSPVProof.tx.getBytes()), new Uint256(blockSPVProof.index),new DynamicArray<Uint256>(txSiblings),
+        CompletableFuture<TransactionReceipt> futureReceipt = superblocksForChallenges.challengeCancelTransfer(new DynamicBytes(blockSPVProof.tx.getBytes()), new Uint256(blockSPVProof.index),new DynamicArray<Uint256>(txSiblings),
                 new DynamicBytes(blockSPVProof.block.getBytes()), new Uint256(superblockSPVProof.index), new DynamicArray<Uint256>(blockSiblings), new Bytes32(superblockSPVProof.superBlock.getBytes())).sendAsync();
 
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
