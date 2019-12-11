@@ -116,6 +116,7 @@ public class SuperblockContractApi {
     }
 
     public void challengeCancelTransfer(BlockSPVProof blockSPVProof, SuperblockSPVProof superblockSPVProof){
+
         List<Uint256> txSiblings = new ArrayList<>();
         for(int i =0;i<blockSPVProof.siblings.size();i++){
             txSiblings.add(i, new Uint256(new BigInteger(blockSPVProof.siblings.get(i), 16)));
@@ -125,7 +126,7 @@ public class SuperblockContractApi {
             blockSiblings.add(i, new Uint256(new BigInteger(superblockSPVProof.merklePath.get(i), 16)));
         }
         CompletableFuture<TransactionReceipt> futureReceipt = superblocksForChallenges.challengeCancelTransfer(new DynamicBytes(blockSPVProof.transaction.getBytes()), new Uint256(blockSPVProof.index),new DynamicArray<Uint256>(txSiblings),
-                new DynamicBytes(blockSPVProof.header.getBytes()), new Uint256(superblockSPVProof.index), new DynamicArray<Uint256>(blockSiblings), new Bytes32(superblockSPVProof.superBlock.getBytes())).sendAsync();
+                new DynamicBytes(blockSPVProof.header.getBytes()), new Uint256(superblockSPVProof.index), new DynamicArray<Uint256>(blockSiblings), new Bytes32(Keccak256Hash.wrap(superblockSPVProof.superBlock).getBytes())).sendAsync();
 
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 logger.info("challengeCancelTransfer receipt {}", receipt.toString()));
