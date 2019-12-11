@@ -126,7 +126,6 @@ public class SuperblockContractApi {
         for(int i =0;i<superblockSPVProof.merklePath.size();i++){
             blockSiblings.add(i, new Uint256(new BigInteger(superblockSPVProof.merklePath.get(i), 16)));
         }
-        logger.info("blockSPVProof.header {} blockSPVProof.transaction {}", blockSPVProof.header, blockSPVProof.transaction);
         CompletableFuture<TransactionReceipt> futureReceipt = superblocksForChallenges.challengeCancelTransfer(new DynamicBytes(BaseEncoding.base16().lowerCase().decode(blockSPVProof.transaction)), new Uint256(blockSPVProof.index),new DynamicArray<Uint256>(txSiblings),
                 new DynamicBytes(BaseEncoding.base16().lowerCase().decode(blockSPVProof.header)), new Uint256(superblockSPVProof.index), new DynamicArray<Uint256>(blockSiblings), new Bytes32(BaseEncoding.base16().lowerCase().decode(superblockSPVProof.superBlock))).sendAsync();
 
