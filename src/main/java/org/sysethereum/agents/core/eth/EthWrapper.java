@@ -328,7 +328,7 @@ public class EthWrapper {
         // reset fees back to normal mode
         if(bAggressiveMode){updateGasForNormalMode();}
 
-        logger.info("Sent superblock {}, process counter {}", superblock.getHash(), processCounter.toString());
+        logger.info("Sent superblock {}, process counter {}", superblock.getHash(), processCounter.intValue());
         futureReceipt.handle((receipt, throwable) -> {
             if (receipt != null) {
                 logger.info("proposeSuperblock receipt {}", receipt.toString());
