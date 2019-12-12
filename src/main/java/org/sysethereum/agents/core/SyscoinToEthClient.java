@@ -20,6 +20,7 @@ import org.sysethereum.agents.util.RestError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.web3j.utils.Numeric;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -192,7 +193,21 @@ public class SyscoinToEthClient {
 
         return new SuperblockSPVProof(syscoinBlockIndex, siblings, superblock.getHash().toString());
     }
+    /**
+     * Tx SPV Proof for challengeCancelBridgeTransfer
+     * @throws Exception
+     */
+    public void fillBlockSPVProof(BlockSPVProof blockSPVProof, Sha256Hash txHash) throws Exception {
+        List<Sha256Hash> sha256Siblings = blockSPVProof.siblings.stream().map(Sha256Hash::wrap).collect(toList());
+        byte[] includeBits = new byte[(int) Math.ceil(blockSPVProof.siblings.size() / 8.0)];
+        Utils.setBitLE(includeBits, blockSPVProof.index);
+        SuperblockPartialMerkleTree superblockPMT = SuperblockPartialMerkleTree.buildFromLeaves(agentConstants.getSyscoinParams(),
+                includeBits, sha256Siblings);
 
+        blockSPVProof.siblings = superblockPMT.getTransactionPath(txHash)
+                .stream().map(Sha256Hash::toString).collect(toList());
+
+    }
     private static class SuperBlockResponse {
         public final String merkleRoot;
         public final long lastSyscoinBlockTime;

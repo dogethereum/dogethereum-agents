@@ -369,6 +369,8 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                     BlockSPVProof blockSPVProof = GetBlockSPVProof(mintProof.txid);
                     // get SPV proof of block linking to superblock
                     SuperblockSPVProof superblockSPVProof = (SuperblockSPVProof) GetSuperblockSPVProof(blockSPVProof.blockhash);
+                    // fill merkle proof in siblings section of blocksSPVProof
+                    syscoinToEthClient.fillBlockSPVProof(blockSPVProof, Sha256Hash.wrap(mintProof.txid));
                     // submit spv proof of sys tx to claim submitters deposit and close session
                     superblockContractApi.challengeCancelTransfer(blockSPVProof, superblockSPVProof);
                 }
