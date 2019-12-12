@@ -197,7 +197,7 @@ public class SyscoinToEthClient {
      * Tx SPV Proof for challengeCancelBridgeTransfer
      * @throws Exception
      */
-    public void fillBlockSPVProof(BlockSPVProof blockSPVProof, Sha256Hash txHash) throws Exception {
+    public void fillBlockSPVProof(BlockSPVProof blockSPVProof, Sha256Hash txHash) {
         List<Sha256Hash> sha256Siblings = blockSPVProof.siblings.stream().map(Sha256Hash::wrap).collect(toList());
         byte[] includeBits = new byte[(int) Math.ceil(blockSPVProof.siblings.size() / 8.0)];
         Utils.setBitLE(includeBits, blockSPVProof.index);
