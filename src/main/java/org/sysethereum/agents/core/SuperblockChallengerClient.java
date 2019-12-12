@@ -375,6 +375,9 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                     superblockContractApi.challengeCancelTransfer(blockSPVProof, superblockSPVProof);
                 }
             }
+            else{
+                logger.info("Could not find Syscoin Mint Proof to challenge with...");
+            }
         }
 
     }
