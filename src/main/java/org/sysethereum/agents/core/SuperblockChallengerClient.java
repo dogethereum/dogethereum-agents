@@ -354,8 +354,6 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
 
         for (NewCancelTransferRequestEvent cancelTransferRequest : cancelTransfersList) {
             logger.info("Found cancel transfer request for id {}...", cancelTransferRequest.bridgeTransferId.toString());
-            // randomize up to 15 mins when to challenge so not all agents end up challenging at once
-            // setup timer to initiate challenge potentially
             // lookup eth txid to get sys txid and if exists then we may want to challenge
             SyscoinMintProof mintProof = GetSysTXIDFromBridgeTransferID(cancelTransferRequest.bridgeTransferId.toString());
             // if sys txid exists for this transfer id
