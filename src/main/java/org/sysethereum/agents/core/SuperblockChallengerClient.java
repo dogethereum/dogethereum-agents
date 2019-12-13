@@ -369,6 +369,11 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
                     SuperblockSPVProof superblockSPVProof = (SuperblockSPVProof) GetSuperblockSPVProof(blockSPVProof.blockhash);
                     // fill merkle proof in siblings section of blocksSPVProof
                     syscoinToEthClient.fillBlockSPVProof(blockSPVProof, Sha256Hash.wrap(mintProof.txid));
+
+                    Thread.sleep(500); // let pending transactions propogate
+                    if (ethWrapper.arePendingTransactionsForChallengerAddress()) {
+                        throw new Exception("Skipping challenging cancel transfer, there are pending transaction for the challenger address.");
+                    }
                     // submit spv proof of sys tx to claim submitters deposit and close session
                     superblockContractApi.challengeCancelTransfer(blockSPVProof, superblockSPVProof);
                 }
