@@ -10,7 +10,6 @@ import org.dogethereum.agents.constants.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import sun.util.resources.cldr.gl.CalendarData_gl_ES;
 
 import javax.annotation.PostConstruct;
 import java.io.*;
