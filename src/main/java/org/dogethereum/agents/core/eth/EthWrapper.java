@@ -1481,8 +1481,7 @@ public class EthWrapper implements SuperblockConstantProvider {
                             byte[] data, ScryptHash blockScryptHash) {
         log.info("Send scrypt hash for verification session {}, superblock {}", sessionId, superblockId);
         CompletableFuture<TransactionReceipt> futureReceipt = scryptVerifier.checkScrypt(
-                data, blockScryptHash.getBytes(), proposalId.getBytes(), battleManager.getContractAddress(),
-                BigInteger.ZERO).sendAsync();
+                data, blockScryptHash.getBytes(), proposalId.getBytes(), battleManager.getContractAddress()).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("checkScrypt receipt {}", receipt.toString()));
     }
