@@ -34,9 +34,7 @@ public class DogeTokenExtended extends DogeToken {
     }
 
     public List<DogeToken.UnlockRequestEventResponse> getUnlockRequestEvents(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) throws IOException {
-        final Event event = new Event("UnlockRequest",
-                Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Uint32>() {}, new TypeReference<Bytes20>() {}));
+        final Event event = UNLOCKREQUEST_EVENT;
         List<DogeToken.UnlockRequestEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
         filter.addSingleTopic(EventEncoder.encode(event));

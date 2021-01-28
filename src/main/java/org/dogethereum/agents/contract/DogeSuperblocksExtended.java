@@ -43,11 +43,7 @@ public class DogeSuperblocksExtended extends DogeSuperblocks {
 
     public List<NewSuperblockEventResponse> getNewSuperblockEvents(DefaultBlockParameter startBlock,
                                                                    DefaultBlockParameter endBlock) throws IOException {
-        final Event event = new Event("NewSuperblock",
-                Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {
-                }, new TypeReference<Address>() {
-                }));
+        final Event event = NEWSUPERBLOCK_EVENT;
 
         List<NewSuperblockEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
@@ -72,11 +68,7 @@ public class DogeSuperblocksExtended extends DogeSuperblocks {
     public List<ApprovedSuperblockEventResponse> getApprovedSuperblockEvents(DefaultBlockParameter startBlock,
                                                                              DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("ApprovedSuperblock",
-                Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {
-                }, new TypeReference<Address>() {
-                }));
+        final Event event = APPROVEDSUPERBLOCK_EVENT;
 
         List<ApprovedSuperblockEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
@@ -101,11 +93,7 @@ public class DogeSuperblocksExtended extends DogeSuperblocks {
     public List<ChallengeSuperblockEventResponse> getChallengeSuperblockEvents(DefaultBlockParameter startBlock,
                                                                                DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("ChallengeSuperblock",
-                Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {
-                }, new TypeReference<Address>() {
-                }));
+        final Event event = CHALLENGESUPERBLOCK_EVENT;
 
         List<ChallengeSuperblockEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
@@ -130,11 +118,7 @@ public class DogeSuperblocksExtended extends DogeSuperblocks {
     public List<SemiApprovedSuperblockEventResponse> getSemiApprovedSuperblockEvents(DefaultBlockParameter startBlock,
                                                                                DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("SemiApprovedSuperblock",
-                Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {
-                }, new TypeReference<Address>() {
-                }));
+        final Event event = SEMIAPPROVEDSUPERBLOCK_EVENT;
 
         List<SemiApprovedSuperblockEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
@@ -159,11 +143,7 @@ public class DogeSuperblocksExtended extends DogeSuperblocks {
     public List<InvalidSuperblockEventResponse> getInvalidSuperblockEvents(DefaultBlockParameter startBlock,
                                                                                DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("InvalidSuperblock",
-                Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {
-                }, new TypeReference<Address>() {
-                }));
+        final Event event = INVALIDSUPERBLOCK_EVENT;
 
         List<InvalidSuperblockEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());

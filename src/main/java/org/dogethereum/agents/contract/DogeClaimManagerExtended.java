@@ -34,10 +34,7 @@ public class DogeClaimManagerExtended extends DogeClaimManager {
     public List<SuperblockBattleDecidedEventResponse> getSuperblockBattleDecidedEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("SuperblockBattleDecided",
-                Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {},
-                        new TypeReference<Address>() {}));
+        final Event event = SUPERBLOCKBATTLEDECIDED_EVENT;
 
         List<SuperblockBattleDecidedEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());

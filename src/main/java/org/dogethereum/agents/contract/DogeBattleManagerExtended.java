@@ -33,10 +33,7 @@ public class DogeBattleManagerExtended extends  DogeBattleManager {
     public List<QueryBlockHeaderEventResponse> getQueryBlockHeaderEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("QueryBlockHeader",
-                Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
-                        new TypeReference<Address>() {}, new TypeReference<Bytes32>() {}));
+        final Event event = QUERYBLOCKHEADER_EVENT;
 
         List<QueryBlockHeaderEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
@@ -63,10 +60,7 @@ public class DogeBattleManagerExtended extends  DogeBattleManager {
     public List<QueryMerkleRootHashesEventResponse> getQueryMerkleRootHashesEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("QueryMerkleRootHashes",
-                Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
-                        new TypeReference<Address>() {}));
+        final Event event = QUERYMERKLEROOTHASHES_EVENT;
 
         List<QueryMerkleRootHashesEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
@@ -93,10 +87,7 @@ public class DogeBattleManagerExtended extends  DogeBattleManager {
     public List<NewBattleEventResponse> getNewBattleEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("NewBattle",
-                Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32> () {},
-                        new TypeReference<Address>() {}, new TypeReference<Address>() {}));
+        final Event event = NEWBATTLE_EVENT;
 
         List<NewBattleEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
@@ -124,10 +115,7 @@ public class DogeBattleManagerExtended extends  DogeBattleManager {
     public List<ChallengerConvictedEventResponse> getChallengerConvictedEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("ChallengerConvicted",
-                Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
-                        new TypeReference<Address>() {}));
+        final Event event = CHALLENGERCONVICTED_EVENT;
 
         List<ChallengerConvictedEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
@@ -154,10 +142,7 @@ public class DogeBattleManagerExtended extends  DogeBattleManager {
     public List<SubmitterConvictedEventResponse> getSubmitterConvictedEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("SubmitterConvicted",
-                Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
-                        new TypeReference<Address>() {}));
+        final Event event = SUBMITTERCONVICTED_EVENT;
 
         List<SubmitterConvictedEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
@@ -184,10 +169,7 @@ public class DogeBattleManagerExtended extends  DogeBattleManager {
     public List<RespondMerkleRootHashesEventResponse> getRespondMerkleRootHashesEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("RespondMerkleRootHashes",
-                Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
-                        new TypeReference<Address>() {}, new TypeReference<DynamicArray<Bytes32>>() {}));
+        final Event event = RESPONDMERKLEROOTHASHES_EVENT;
 
         List<RespondMerkleRootHashesEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
@@ -219,11 +201,7 @@ public class DogeBattleManagerExtended extends  DogeBattleManager {
     public List<RespondBlockHeaderEventResponse> getRespondBlockHeaderEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("RespondBlockHeader",
-                Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
-                        new TypeReference<Address>() {}, new TypeReference<Bytes32>() {},
-                        new TypeReference<DynamicBytes>() {}, new TypeReference<DynamicBytes>() {}));
+        final Event event = RESPONDBLOCKHEADER_EVENT;
 
         List<RespondBlockHeaderEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
@@ -253,9 +231,7 @@ public class DogeBattleManagerExtended extends  DogeBattleManager {
     public List<ErrorBattleEventResponse> getErrorBattleEventResponses(DefaultBlockParameter startBlock,
                                                                        DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("ErrorBattle",
-                Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Uint256>() {}));
+        final Event event = ERRORBATTLE_EVENT;
 
         List<ErrorBattleEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
@@ -281,11 +257,7 @@ public class DogeBattleManagerExtended extends  DogeBattleManager {
     public List<RequestScryptHashValidationEventResponse> getRequestScryptHashValidationEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("RequestScryptHashValidation",
-                Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
-                        new TypeReference<Bytes32>() {}, new TypeReference<DynamicBytes>() {},
-                        new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
+        final Event event = REQUESTSCRYPTHASHVALIDATION_EVENT;
 
         List<RequestScryptHashValidationEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
@@ -315,12 +287,7 @@ public class DogeBattleManagerExtended extends  DogeBattleManager {
     public List<ResolvedScryptHashValidationEventResponse> getResolvedScryptHashValidationEventResponses(
             DefaultBlockParameter startBlock, DefaultBlockParameter endBlock)
             throws IOException {
-        final Event event = new Event("ResolvedScryptHashValidation",
-                Arrays.<TypeReference<?>>asList(),
-                Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
-                        new TypeReference<Bytes32>() {}, new TypeReference<Bytes32>() {},
-                        new TypeReference<Bytes32>() {}, new TypeReference<Address>() {},
-                        new TypeReference<Bool>() {}));
+        final Event event = RESOLVEDSCRYPTHASHVALIDATION_EVENT;
 
         List<ResolvedScryptHashValidationEventResponse> result = new ArrayList<>();
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
