@@ -1431,21 +1431,21 @@ public class EthWrapper implements SuperblockConstantProvider {
         Tuple8<String, byte[], BigInteger, BigInteger, BigInteger, List<BigInteger>, BigInteger, byte[]> tuple =
                 dogeToken.getUnlockPendingInvestorProof(BigInteger.valueOf(unlockRequestId)).send();
         Unlock unlock = new Unlock();
-        unlock.from = tuple.getValue1();
-        unlock.dogeAddress = tuple.getValue2();
-        unlock.value = tuple.getValue3().longValue();
-        unlock.operatorFee = tuple.getValue4().longValue();
-        unlock.timestamp = tuple.getValue5().longValue();
-        unlock.dogeTxFee = tuple.getValue7().longValue();
-        unlock.operatorPublicKeyHash = tuple.getValue8();
+        unlock.from = tuple.component1();
+        unlock.dogeAddress = tuple.component2();
+        unlock.value = tuple.component3().longValue();
+        unlock.operatorFee = tuple.component4().longValue();
+        unlock.timestamp = tuple.component5().longValue();
+        unlock.dogeTxFee = tuple.component7().longValue();
+        unlock.operatorPublicKeyHash = tuple.component8();
 
-        List<BigInteger> selectedUtxosIndexes = tuple.getValue6();
+        List<BigInteger> selectedUtxosIndexes = tuple.component6();
         List<UTXO> selectedUtxosOutpoints = new ArrayList<>();
         for (BigInteger selectedUtxo : selectedUtxosIndexes) {
             Tuple3<BigInteger, BigInteger, BigInteger> utxo = dogeToken.getUtxo(unlock.operatorPublicKeyHash, selectedUtxo).send();
-            long value = utxo.getValue1().longValue();
-            Sha256Hash txHash = Sha256Hash.wrap(bigIntegerToHexStringPad64(utxo.getValue2()));
-            long outputIndex = utxo.getValue3().longValue();
+            long value = utxo.component1().longValue();
+            Sha256Hash txHash = Sha256Hash.wrap(bigIntegerToHexStringPad64(utxo.component2()));
+            long outputIndex = utxo.component3().longValue();
             selectedUtxosOutpoints.add(new UTXO(txHash, outputIndex, Coin.valueOf(value), 0, false, null));
         }
         unlock.selectedUtxos = selectedUtxosOutpoints;
