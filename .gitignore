@@ -28,4 +28,6 @@ defenderstorage/
 challengerstorage/
 maliciousstorage/
 fakesubmitterstorage/
+
 agent-data-dir/
+operator-private-key
