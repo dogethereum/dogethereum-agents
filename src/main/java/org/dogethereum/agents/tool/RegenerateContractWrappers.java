@@ -1,25 +1,78 @@
 package org.dogethereum.agents.tool;
 
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-import org.web3j.abi.datatypes.Address;
-import org.web3j.codegen.TruffleJsonFunctionWrapperGenerator;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONArray;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+import org.web3j.protocol.core.methods.response.AbiDefinition;
+import org.web3j.codegen.SolidityFunctionWrapper;
+import org.web3j.tx.Contract;
+import org.web3j.protocol.ObjectMapperFactory;
 
-import java.io.File;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
+
+@Value
+class DogethereumSmartContract {
+    /**
+     * The name of the Dogethereum smart contract component in the deployment artifact.
+     */
+    String componentName;
+    /**
+     * The name of the generated class that represents this particular smart contract component.
+     */
+    String contractClassName;
+}
 
 @Slf4j(topic = "RegenerateContractWrappers")
 public class RegenerateContractWrappers {
-    public static void main(String[] args) throws IOException, ClassNotFoundException {
-        String dogethereumContractsRootDir = "/path-to-code/dogethereum-contracts";
-        String dogethereumAgentsRootDir = "/path-to-code/dogethereum-agents";
-        String[] contractNames = new String[]{"DogeToken", "DogeClaimManager", "DogeBattleManager", "DogeSuperblocks", "ClaimManager"};
-        for (String contractName : contractNames) {
-            new TruffleJsonFunctionWrapperGenerator(
-                    dogethereumContractsRootDir + "/build/contracts/" + contractName + ".json",
-                    dogethereumAgentsRootDir + "/src/main/java/",
-                    "org.dogethereum.agents.contract",
-                    true)
-                    .generate();
+    public static void main(String[] args) throws IOException, ClassNotFoundException, ParseException {
+        if (args.length < 1) {
+            log.error("Missing deployment file argument.");
+            return;
+        }
+
+        String dogethereumDeploymentJson = args[0];
+        String basePackageName = "org.dogethereum.agents.contract";
+        String dogethereumAgentsJavaWrapperDir = "/home/scn/Repos/Ethereum/dogethereum/dogethereum-agents/src/main/java/";
+        DogethereumSmartContract[] targetContracts = new DogethereumSmartContract[]{
+            new DogethereumSmartContract("dogeToken", "DogeToken"),
+            new DogethereumSmartContract("claimManager", "DogeClaimManager"),
+            new DogethereumSmartContract("battleManager", "DogeBattleManager"),
+            new DogethereumSmartContract("superblocks", "DogeSuperblocks"),
+            new DogethereumSmartContract("scryptChecker", "ClaimManager")
+        };
+
+        SolidityFunctionWrapper wrapperGenerator = new SolidityFunctionWrapper(true);
+        FileReader deploymentJson = new FileReader(dogethereumDeploymentJson);
+        JSONParser parser = new JSONParser();
+        JSONObject deployment = (JSONObject) parser.parse(deploymentJson);
+        JSONObject contracts = (JSONObject) deployment.get("contracts");
+        ObjectMapper objectMapper = ObjectMapperFactory.getObjectMapper();
+        for (DogethereumSmartContract targetContract : targetContracts) {
+            JSONObject contract = (JSONObject) contracts.get(targetContract.getComponentName());
+            String abi = ((JSONArray) contract.get("abi")).toJSONString();
+            AbiDefinition[] abiDefinition = objectMapper.readValue(abi, AbiDefinition[].class);
+            // HACK: This lets us workaround this issue in web3j codegen: https://github.com/web3j/web3j/issues/1268
+            for (AbiDefinition functionAbi : abiDefinition) {
+                String stateMutability = functionAbi.getStateMutability();
+                if (stateMutability != null && stateMutability.equals("payable")) {
+                    functionAbi.setPayable(true);
+                }
+            }
+            wrapperGenerator.generateJavaFiles(
+                    targetContract.getContractClassName(),
+                    Contract.BIN_NOT_PROVIDED,
+                    Arrays.asList(abiDefinition),
+                    dogethereumAgentsJavaWrapperDir,
+                    basePackageName,
+                    null
+            );
         }
     }
 }
