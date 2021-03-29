@@ -179,7 +179,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @throws Exception
      */
     private DogethereumAddresses getContractAddresses() throws Exception {
-        String path = config.truffleBuildContractsDirectory();
+        String path = config.deploymentFile();
         FileReader deploymentJson = new FileReader(path);
         JSONParser parser = new JSONParser();
         JSONObject deployment = (JSONObject) parser.parse(deploymentJson);

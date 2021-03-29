@@ -226,8 +226,8 @@ public class SystemProperties {
         return getStringProperty("scryptVerifier.contract.address", null);
     }
 
-    public String truffleBuildContractsDirectory() {
-        return getStringProperty("truffle.build.contracts.directory", null);
+    public String deploymentFile() {
+        return getStringProperty("deployment.path", null);
     }
 
     public String dataDirectory() {
