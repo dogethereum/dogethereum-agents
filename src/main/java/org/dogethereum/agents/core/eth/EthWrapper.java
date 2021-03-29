@@ -1,10 +1,10 @@
 package org.dogethereum.agents.core.eth;
 
 
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 
-import org.dogethereum.agents.constants.AgentConstants;
 import org.dogethereum.agents.constants.SystemProperties;
 import org.dogethereum.agents.contract.*;
 
@@ -14,7 +14,6 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 import org.libdohj.core.ScryptHash;
-import org.spongycastle.util.encoders.Hex;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -28,7 +27,6 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 
 import org.web3j.tuples.generated.Tuple3;
-import org.web3j.tuples.generated.Tuple7;
 
 import org.web3j.tuples.generated.Tuple8;
 import org.web3j.tx.ClientTransactionManager;
@@ -44,6 +42,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+
+@Value
+class DogethereumAddresses {
+    String superblocks;
+    String claimManager;
+    String scryptChecker;
+    String dogeToken;
+    String battleManager;
+}
 
 /**
  * Helps the agent communication with the Eth blockchain.
@@ -98,11 +105,12 @@ public class EthWrapper implements SuperblockConstantProvider {
         String scryptVerifierAddress;
 
         if (config.isGanache()) {
-            dogeTokenContractAddress = getContractAddress("DogeToken");
-            claimManagerContractAddress = getContractAddress("DogeClaimManager");
-            battleManagerContractAddress = getContractAddress("DogeBattleManager");
-            superblocksContractAddress = getContractAddress("DogeSuperblocks");
-            scryptVerifierAddress = getContractAddress("ScryptCheckerDummy");
+            DogethereumAddresses addresses = getContractAddresses();
+            dogeTokenContractAddress = addresses.getDogeToken();
+            claimManagerContractAddress = addresses.getClaimManager();
+            battleManagerContractAddress = addresses.getBattleManager();
+            superblocksContractAddress = addresses.getSuperblocks();
+            scryptVerifierAddress = addresses.getScryptChecker();
             List<String> accounts = web3.ethAccounts().send().getAccounts();
             generalPurposeAndSendSuperblocksAddress = accounts.get(0);
             relayTxsAddress = accounts.get(1);
@@ -165,20 +173,35 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     /**
-     * Returns the deployed contract address from a Truffle JSON file.
+     * Returns an object describing the addresses of dogethereum contracts from a deployment JSON file.
      *
-     * @param contractName Contract name, e.g DogeSuperblocks.
-     * @return Contract address.
+     * @return Addresses of contracts.
      * @throws Exception
      */
-    private String getContractAddress(String contractName) throws Exception {
-        String basePath = config.truffleBuildContractsDirectory();
-        FileReader contractSpecFile = new FileReader(basePath + "/" + contractName + ".json");
+    private DogethereumAddresses getContractAddresses() throws Exception {
+        String path = config.truffleBuildContractsDirectory();
+        FileReader deploymentJson = new FileReader(path);
         JSONParser parser = new JSONParser();
-        JSONObject parsedSpecFile = (JSONObject) parser.parse(contractSpecFile);
-        JSONObject networks = (JSONObject) parsedSpecFile.get("networks");
-        JSONObject data = (JSONObject) networks.values().iterator().next();
-        return (String) data.get("address");
+        JSONObject deployment = (JSONObject) parser.parse(deploymentJson);
+        JSONObject contracts = (JSONObject) deployment.get("contracts");
+
+        String dogeTokenAddress = getContractAddress(contracts, "dogeToken");
+        String claimManagerAddress = getContractAddress(contracts, "claimManager");
+        String battleManagerAddress = getContractAddress(contracts, "battleManager");
+        String superblocksAddress = getContractAddress(contracts, "superblocks");
+        String scryptCheckerAddress = getContractAddress(contracts, "scryptChecker");
+        return new DogethereumAddresses(
+            superblocksAddress,
+            claimManagerAddress,
+            scryptCheckerAddress,
+            dogeTokenAddress,
+            battleManagerAddress
+        );
+    }
+
+    private String getContractAddress(JSONObject contracts, String componentName) {
+        JSONObject contract = (JSONObject) contracts.get(componentName);
+        return contract.get("address").toString();
     }
 
     /**
