@@ -29,5 +29,7 @@ challengerstorage/
 maliciousstorage/
 fakesubmitterstorage/
 
+config/
+
 agent-data-dir/
 operator-private-key
