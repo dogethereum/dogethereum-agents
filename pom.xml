@@ -39,7 +39,7 @@
         <dependency>
             <groupId>org.libdohj</groupId>
             <artifactId>libdohj-core</artifactId>
-            <version>0.14-dogethereum-3</version>
+            <version>0.14-dogethereum-4</version>
         </dependency>
         <dependency>
             <groupId>org.web3j</groupId>
