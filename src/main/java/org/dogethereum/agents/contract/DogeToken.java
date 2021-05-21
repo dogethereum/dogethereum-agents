@@ -98,7 +98,9 @@ public class DogeToken extends Contract {
 
     public static final String FUNC_OPERATORS = "operators";
 
-    public static final String FUNC_PROCESSTRANSACTION = "processTransaction";
+    public static final String FUNC_PROCESSLOCKTRANSACTION = "processLockTransaction";
+
+    public static final String FUNC_PROCESSUNLOCKTRANSACTION = "processUnlockTransaction";
 
     public static final String FUNC_SETDOGEETHPRICE = "setDogeEthPrice";
 
@@ -551,13 +553,24 @@ public class DogeToken extends Contract {
                 });
     }
 
-    public RemoteFunctionCall<TransactionReceipt> processTransaction(byte[] dogeTx, BigInteger txHash, byte[] operatorPublicKeyHash, String superblockSubmitterAddress) {
+    public RemoteFunctionCall<TransactionReceipt> processLockTransaction(byte[] dogeTx, BigInteger txHash, byte[] operatorPublicKeyHash, String superblockSubmitterAddress) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
-                FUNC_PROCESSTRANSACTION, 
+                FUNC_PROCESSLOCKTRANSACTION, 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicBytes(dogeTx), 
                 new org.web3j.abi.datatypes.generated.Uint256(txHash), 
                 new org.web3j.abi.datatypes.generated.Bytes20(operatorPublicKeyHash), 
                 new org.web3j.abi.datatypes.Address(superblockSubmitterAddress)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> processUnlockTransaction(byte[] dogeTx, BigInteger txHash, byte[] operatorPublicKeyHash, String param3) {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+                FUNC_PROCESSUNLOCKTRANSACTION, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicBytes(dogeTx), 
+                new org.web3j.abi.datatypes.generated.Uint256(txHash), 
+                new org.web3j.abi.datatypes.generated.Bytes20(operatorPublicKeyHash), 
+                new org.web3j.abi.datatypes.Address(param3)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
