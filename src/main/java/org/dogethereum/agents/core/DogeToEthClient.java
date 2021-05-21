@@ -211,6 +211,14 @@ public class DogeToEthClient {
                         }
                     }
 
+                    List<TransactionOutput> txOutputs = operatorWalletTx.getOutputs();
+                    if (txOutputs.size() > 3) {
+                        log.debug("Tx {} not relayed because it's neither a lock nor unlock transaction." +
+                                        " Block hash: {}",
+                                operatorWalletTx.getHash(), txStoredBlock.getHeader().getHash());
+                        continue;
+                    }
+
                     Superblock txSuperblock = findBestSuperblockFor(txStoredBlock.getHeader().getHash());
 
                     if (txSuperblock == null) {
@@ -236,7 +244,8 @@ public class DogeToEthClient {
                             includeBits, txSuperblock.getDogeBlockHashes());
 
                     ethWrapper.sendRelayTx(operatorWalletTx, operatorPublicKeyHandler.getPublicKeyHash(),
-                            (AltcoinBlock) txStoredBlock.getHeader(), txSuperblock, txPMT, superblockPMT);
+                            (AltcoinBlock) txStoredBlock.getHeader(), txSuperblock,
+                            txPMT, superblockPMT, isLockTransaction(txOutputs));
                     numberOfTxsSent++;
                     // Send a maximum of 40 registerTransaction txs per turn
                     if (numberOfTxsSent >= MAXIMUM_REGISTER_DOGE_LOCK_TXS_PER_TURN) {
@@ -246,6 +255,22 @@ public class DogeToEthClient {
                 }
             }
         }
+    }
+
+    private boolean isLockTransaction(List<TransactionOutput> outputs) {
+        if (outputs.size() == 1) {
+            return false;
+        }
+        TransactionOutput output = outputs.get(1);
+        byte[] script = output.getScriptBytes();
+
+        // scriptPub format for the ethereum address in a lock transaction is
+        // 0x6a OP_RETURN
+        // 0x14 PUSH20
+        // []   20 bytes of the ethereum address
+        return script.length == 20+2 &&
+                script[0] == 0x6a &&
+                script[1] == 0x14;
     }
 
     /**

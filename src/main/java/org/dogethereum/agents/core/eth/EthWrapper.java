@@ -1373,7 +1373,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @throws Exception
      */
     public void sendRelayTx(org.bitcoinj.core.Transaction tx, byte[] operatorPublicKeyHash, AltcoinBlock block,
-                            Superblock superblock, PartialMerkleTree txPMT, PartialMerkleTree superblockPMT)
+                            Superblock superblock, PartialMerkleTree txPMT, PartialMerkleTree superblockPMT, boolean isLockTx)
             throws Exception {
         byte[] dogeBlockHeader = Arrays.copyOfRange(block.bitcoinSerialize(), 0, 80);
         Sha256Hash dogeBlockHash = block.getHash();
@@ -1401,9 +1401,16 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         String targetContract = dogeToken.getContractAddress();
 
-        CompletableFuture<TransactionReceipt> futureReceipt = superblocksForRelayTxs.relayTx(txSerialized,
-                operatorPublicKeyHash, txIndex, txSiblingsBigInteger, dogeBlockHeader, dogeBlockIndex,
-                dogeBlockSiblingsBigInteger, superblock.getSuperblockId().getBytes(), targetContract).sendAsync();
+        CompletableFuture<TransactionReceipt> futureReceipt = null;
+        if (isLockTx) {
+            futureReceipt = superblocksForRelayTxs.relayLockTx(txSerialized,
+                    operatorPublicKeyHash, txIndex, txSiblingsBigInteger, dogeBlockHeader, dogeBlockIndex,
+                    dogeBlockSiblingsBigInteger, superblock.getSuperblockId().getBytes(), targetContract).sendAsync();
+        } else {
+            futureReceipt = superblocksForRelayTxs.relayUnlockTx(txSerialized,
+                    operatorPublicKeyHash, txIndex, txSiblingsBigInteger, dogeBlockHeader, dogeBlockIndex,
+                    dogeBlockSiblingsBigInteger, superblock.getSuperblockId().getBytes(), targetContract).sendAsync();
+        }
         log.info("Sent relayTx {}", tx.getHash());
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("RelayTx receipt {}.", receipt.toString())
