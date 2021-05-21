@@ -59,10 +59,21 @@ public class RegenerateContractWrappers {
             String abi = ((JSONArray) contract.get("abi")).toJSONString();
             AbiDefinition[] abiDefinition = objectMapper.readValue(abi, AbiDefinition[].class);
             // HACK: This lets us workaround this issue in web3j codegen: https://github.com/web3j/web3j/issues/1268
+            // It also works around the fact that web3j does not support function types in function parameters
             for (AbiDefinition functionAbi : abiDefinition) {
                 String stateMutability = functionAbi.getStateMutability();
                 if (stateMutability != null && stateMutability.equals("payable")) {
                     functionAbi.setPayable(true);
+                }
+                String type = functionAbi.getType();
+                if (type.equals("function")) {
+                    java.util.List<AbiDefinition.NamedType> inputs = functionAbi.getInputs();
+                    for (AbiDefinition.NamedType inputTypeNode : inputs) {
+                        String inputType = inputTypeNode.getType();
+                        if (inputType.startsWith("function")) {
+                            inputTypeNode.setType("bytes24");
+                        }
+                    }
                 }
             }
             wrapperGenerator.generateJavaFiles(
