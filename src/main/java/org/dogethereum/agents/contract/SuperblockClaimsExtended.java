@@ -1,10 +1,7 @@
 package org.dogethereum.agents.contract;
 
 import org.web3j.abi.EventEncoder;
-import org.web3j.abi.TypeReference;
 import org.web3j.abi.datatypes.*;
-import org.web3j.abi.datatypes.generated.Bytes32;
-import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.request.EthFilter;
@@ -16,19 +13,18 @@ import org.web3j.tx.TransactionManager;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-public class DogeClaimManagerExtended extends DogeClaimManager {
-    protected DogeClaimManagerExtended(String contractAddress, Web3j web3j, TransactionManager transactionManager,
-                                        BigInteger gasPrice, BigInteger gasLimit) {
+public class SuperblockClaimsExtended extends SuperblockClaims {
+    protected SuperblockClaimsExtended(String contractAddress, Web3j web3j, TransactionManager transactionManager,
+                                       BigInteger gasPrice, BigInteger gasLimit) {
         super(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
 
-    public static DogeClaimManagerExtended load(String contractAddress, Web3j web3j,
-                                                 TransactionManager transactionManager, BigInteger gasPrice,
-                                                 BigInteger gasLimit) {
-        return new DogeClaimManagerExtended(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
+    public static SuperblockClaimsExtended load(String contractAddress, Web3j web3j,
+                                                TransactionManager transactionManager, BigInteger gasPrice,
+                                                BigInteger gasLimit) {
+        return new SuperblockClaimsExtended(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
 
     public List<SuperblockBattleDecidedEventResponse> getSuperblockBattleDecidedEventResponses(

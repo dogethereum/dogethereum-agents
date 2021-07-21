@@ -42,10 +42,10 @@ public class RegenerateContractWrappers {
         String dogethereumAgentsJavaWrapperDir = "/home/scn/Repos/Ethereum/dogethereum/dogethereum-agents/src/main/java/";
         DogethereumSmartContract[] targetContracts = new DogethereumSmartContract[]{
             new DogethereumSmartContract("dogeToken", "DogeToken"),
-            new DogethereumSmartContract("claimManager", "DogeClaimManager"),
+            new DogethereumSmartContract("superblockClaims", "SuperblockClaims"),
             new DogethereumSmartContract("battleManager", "DogeBattleManager"),
             new DogethereumSmartContract("superblocks", "DogeSuperblocks"),
-            new DogethereumSmartContract("scryptChecker", "ClaimManager")
+            new DogethereumSmartContract("scryptChecker", "ScryptClaims")
         };
 
         SolidityFunctionWrapper wrapperGenerator = new SolidityFunctionWrapper(true);

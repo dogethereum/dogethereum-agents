@@ -40,7 +40,7 @@ import org.web3j.tx.gas.ContractGasProvider;
  * <p>Generated with web3j version 4.8.2.
  */
 @SuppressWarnings("rawtypes")
-public class DogeClaimManager extends Contract {
+public class SuperblockClaims extends Contract {
     public static final String BINARY = "Bin file was not provided";
 
     public static final String FUNC_BATTLEREWARD = "battleReward";
@@ -174,20 +174,20 @@ public class DogeClaimManager extends Contract {
     ;
 
     @Deprecated
-    protected DogeClaimManager(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
+    protected SuperblockClaims(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
         super(BINARY, contractAddress, web3j, credentials, gasPrice, gasLimit);
     }
 
-    protected DogeClaimManager(String contractAddress, Web3j web3j, Credentials credentials, ContractGasProvider contractGasProvider) {
+    protected SuperblockClaims(String contractAddress, Web3j web3j, Credentials credentials, ContractGasProvider contractGasProvider) {
         super(BINARY, contractAddress, web3j, credentials, contractGasProvider);
     }
 
     @Deprecated
-    protected DogeClaimManager(String contractAddress, Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit) {
+    protected SuperblockClaims(String contractAddress, Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit) {
         super(BINARY, contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
 
-    protected DogeClaimManager(String contractAddress, Web3j web3j, TransactionManager transactionManager, ContractGasProvider contractGasProvider) {
+    protected SuperblockClaims(String contractAddress, Web3j web3j, TransactionManager transactionManager, ContractGasProvider contractGasProvider) {
         super(BINARY, contractAddress, web3j, transactionManager, contractGasProvider);
     }
 
@@ -931,21 +931,21 @@ public class DogeClaimManager extends Contract {
     }
 
     @Deprecated
-    public static DogeClaimManager load(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
-        return new DogeClaimManager(contractAddress, web3j, credentials, gasPrice, gasLimit);
+    public static SuperblockClaims load(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
+        return new SuperblockClaims(contractAddress, web3j, credentials, gasPrice, gasLimit);
     }
 
     @Deprecated
-    public static DogeClaimManager load(String contractAddress, Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit) {
-        return new DogeClaimManager(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
+    public static SuperblockClaims load(String contractAddress, Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit) {
+        return new SuperblockClaims(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
 
-    public static DogeClaimManager load(String contractAddress, Web3j web3j, Credentials credentials, ContractGasProvider contractGasProvider) {
-        return new DogeClaimManager(contractAddress, web3j, credentials, contractGasProvider);
+    public static SuperblockClaims load(String contractAddress, Web3j web3j, Credentials credentials, ContractGasProvider contractGasProvider) {
+        return new SuperblockClaims(contractAddress, web3j, credentials, contractGasProvider);
     }
 
-    public static DogeClaimManager load(String contractAddress, Web3j web3j, TransactionManager transactionManager, ContractGasProvider contractGasProvider) {
-        return new DogeClaimManager(contractAddress, web3j, transactionManager, contractGasProvider);
+    public static SuperblockClaims load(String contractAddress, Web3j web3j, TransactionManager transactionManager, ContractGasProvider contractGasProvider) {
+        return new SuperblockClaims(contractAddress, web3j, transactionManager, contractGasProvider);
     }
 
     public static class DepositBondedEventResponse extends BaseEventResponse {

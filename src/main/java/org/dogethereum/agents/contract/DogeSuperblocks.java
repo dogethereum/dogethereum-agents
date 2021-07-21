@@ -123,11 +123,11 @@ public class DogeSuperblocks extends Contract {
 
     public static final String FUNC_SEMIAPPROVE = "semiApprove";
 
-    public static final String FUNC_SETCLAIMMANAGER = "setClaimManager";
+    public static final String FUNC_SETSUPERBLOCKCLAIMS = "setSuperblockClaims";
 
     public static final String FUNC_SUPERBLOCKCOST = "superblockCost";
 
-    public static final String FUNC_TRUSTEDCLAIMMANAGER = "trustedClaimManager";
+    public static final String FUNC_TRUSTEDSUPERBLOCKCLAIMS = "trustedSuperblockClaims";
 
     public static final String FUNC_VERIFYSUPERBLOCKCOST = "verifySuperblockCost";
 
@@ -814,10 +814,10 @@ public class DogeSuperblocks extends Contract {
         return executeRemoteCallTransaction(function);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> setClaimManager(String _claimManager) {
+    public RemoteFunctionCall<TransactionReceipt> setSuperblockClaims(String _superblockClaims) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
-                FUNC_SETCLAIMMANAGER, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(_claimManager)), 
+                FUNC_SETSUPERBLOCKCLAIMS, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(_superblockClaims)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
@@ -829,8 +829,8 @@ public class DogeSuperblocks extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteFunctionCall<String> trustedClaimManager() {
-        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_TRUSTEDCLAIMMANAGER, 
+    public RemoteFunctionCall<String> trustedSuperblockClaims() {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_TRUSTEDSUPERBLOCKCLAIMS, 
                 Arrays.<Type>asList(), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}));
         return executeRemoteCallSingleValueReturn(function, String.class);

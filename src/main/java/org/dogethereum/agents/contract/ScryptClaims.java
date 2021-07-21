@@ -31,7 +31,7 @@ import org.web3j.tx.gas.ContractGasProvider;
  * <p>Generated with web3j version 4.8.2.
  */
 @SuppressWarnings("rawtypes")
-public class ClaimManager extends Contract {
+public class ScryptClaims extends Contract {
     public static final String BINARY = "Bin file was not provided";
 
     public static final String FUNC_ACCEPTALL = "acceptAll";
@@ -49,20 +49,20 @@ public class ClaimManager extends Contract {
     public static final String FUNC_STORESCRYPTHASH = "storeScryptHash";
 
     @Deprecated
-    protected ClaimManager(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
+    protected ScryptClaims(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
         super(BINARY, contractAddress, web3j, credentials, gasPrice, gasLimit);
     }
 
-    protected ClaimManager(String contractAddress, Web3j web3j, Credentials credentials, ContractGasProvider contractGasProvider) {
+    protected ScryptClaims(String contractAddress, Web3j web3j, Credentials credentials, ContractGasProvider contractGasProvider) {
         super(BINARY, contractAddress, web3j, credentials, contractGasProvider);
     }
 
     @Deprecated
-    protected ClaimManager(String contractAddress, Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit) {
+    protected ScryptClaims(String contractAddress, Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit) {
         super(BINARY, contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
 
-    protected ClaimManager(String contractAddress, Web3j web3j, TransactionManager transactionManager, ContractGasProvider contractGasProvider) {
+    protected ScryptClaims(String contractAddress, Web3j web3j, TransactionManager transactionManager, ContractGasProvider contractGasProvider) {
         super(BINARY, contractAddress, web3j, transactionManager, contractGasProvider);
     }
 
@@ -137,20 +137,20 @@ public class ClaimManager extends Contract {
     }
 
     @Deprecated
-    public static ClaimManager load(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
-        return new ClaimManager(contractAddress, web3j, credentials, gasPrice, gasLimit);
+    public static ScryptClaims load(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
+        return new ScryptClaims(contractAddress, web3j, credentials, gasPrice, gasLimit);
     }
 
     @Deprecated
-    public static ClaimManager load(String contractAddress, Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit) {
-        return new ClaimManager(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
+    public static ScryptClaims load(String contractAddress, Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit) {
+        return new ScryptClaims(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
 
-    public static ClaimManager load(String contractAddress, Web3j web3j, Credentials credentials, ContractGasProvider contractGasProvider) {
-        return new ClaimManager(contractAddress, web3j, credentials, contractGasProvider);
+    public static ScryptClaims load(String contractAddress, Web3j web3j, Credentials credentials, ContractGasProvider contractGasProvider) {
+        return new ScryptClaims(contractAddress, web3j, credentials, contractGasProvider);
     }
 
-    public static ClaimManager load(String contractAddress, Web3j web3j, TransactionManager transactionManager, ContractGasProvider contractGasProvider) {
-        return new ClaimManager(contractAddress, web3j, transactionManager, contractGasProvider);
+    public static ScryptClaims load(String contractAddress, Web3j web3j, TransactionManager transactionManager, ContractGasProvider contractGasProvider) {
+        return new ScryptClaims(contractAddress, web3j, transactionManager, contractGasProvider);
     }
 }

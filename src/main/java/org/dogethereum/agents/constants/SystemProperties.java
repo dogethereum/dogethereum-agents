@@ -210,8 +210,8 @@ public class SystemProperties {
         return getStringProperty("dogeToken.contract.address", null);
     }
 
-    public String dogeClaimManagerContractAddress() {
-        return getStringProperty("dogeClaimManager.contract.address", null);
+    public String superblockClaimsContractAddress() {
+        return getStringProperty("superblockClaims.contract.address", null);
     }
 
     public String dogeBattleManagerContractAddress() {
