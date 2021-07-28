@@ -64,5 +64,5 @@ If you are new to the Dogecoin <-> Ethereum bridge, please check the [docs](http
 ## License
 
 MIT License<br/>
-Copyright (c) 2018 Coinfabrik & Oscar Guindzberg<br/>
+Copyright (c) 2021 Coinfabrik & Oscar Guindzberg<br/>
 [License](LICENSE)
