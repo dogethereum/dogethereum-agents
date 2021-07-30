@@ -334,10 +334,16 @@ public class EthWrapper implements SuperblockConstantProvider {
 
         // The parent is either approved or semi approved. We can send the superblock.
         CompletableFuture<TransactionReceipt> futureReceipt = proposeSuperblock(superblock);
-        log.info("Sent superblock {}", superblock.getSuperblockId());
+        Keccak256Hash superblockId = superblock.getSuperblockId();
+        log.info("Sent superblock {}", superblockId);
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("proposeSuperblock receipt {}", receipt.toString())
         );
+        futureReceipt.exceptionally(t -> {
+            log.error("Failed to respond to propose superblock {}.", superblockId);
+            log.error(t.getMessage(), t);
+            return null;
+        });
         Thread.sleep(200);
     }
 
@@ -384,6 +390,11 @@ public class EthWrapper implements SuperblockConstantProvider {
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("makeClaimDeposit receipt {}", receipt.toString())
         );
+        futureReceipt.exceptionally(t -> {
+            log.error("Failed to deposit {} weis.", weiValue);
+            log.error(t.getMessage(), t);
+            return null;
+        });
         Thread.sleep(200); // in case the transaction takes some time to complete
     }
 
@@ -433,6 +444,11 @@ public class EthWrapper implements SuperblockConstantProvider {
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("withdrawDeposit receipt {}", receipt.toString())
         );
+        futureReceipt.exceptionally(t -> {
+            log.error("Failed to withdraw {} weis.", weiValue);
+            log.error(t.getMessage(), t);
+            return null;
+        });
     }
 
     /**
@@ -481,6 +497,11 @@ public class EthWrapper implements SuperblockConstantProvider {
                 superblocks.invalidate(superblockId.getBytes(), validator).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("Invalidated superblock {}", superblockId));
+        futureReceipt.exceptionally(t -> {
+            log.error("Failed to invalidate superblock {}.", superblockId);
+            log.error(t.getMessage(), t);
+            return null;
+        });
     }
 
 
@@ -725,6 +746,11 @@ public class EthWrapper implements SuperblockConstantProvider {
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("checkClaimFinished receipt {}", receipt.toString())
         );
+        futureReceipt.exceptionally(t -> {
+            log.error("Failed to check claim for superblock {}.", superblockId);
+            log.error(t.getMessage(), t);
+            return null;
+        });
     }
 
     /**
@@ -757,6 +783,11 @@ public class EthWrapper implements SuperblockConstantProvider {
         futureReceipt.thenAcceptAsync( (TransactionReceipt receipt) ->
                 log.info("rejectClaim receipt {}", receipt.toString())
         );
+        futureReceipt.exceptionally(t -> {
+            log.error("Failed to reject claim for superblock {}.", superblockId);
+            log.error(t.getMessage(), t);
+            return null;
+        });
     }
 
 
@@ -1161,6 +1192,12 @@ public class EthWrapper implements SuperblockConstantProvider {
                 log.info("Responded to block header query for Doge block {}, session {}, superblock {}. Receipt: {}",
                         dogeBlock.getHash(), sessionId, superblockId, receipt)
         );
+        futureReceipt.exceptionally(t -> {
+            log.error("Failed to respond block header for Doge block {}, session {}, superblock {}.",
+                    dogeBlock.getHash(), sessionId, superblockId);
+            log.error(t.getMessage(), t);
+            return null;
+        });
     }
 
     /**
@@ -1182,6 +1219,12 @@ public class EthWrapper implements SuperblockConstantProvider {
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("Responded to Merkle root hashes query for session {}, superblock {}. Receipt: {}",
                         sessionId, superblockId, receipt.toString()));
+        futureReceipt.exceptionally(t -> {
+            log.error("Failed to respond to Merkle root hashes query for session {}, superblock {}.",
+                    sessionId, superblockId);
+            log.error(t.getMessage(), t);
+            return null;
+        });
     }
 
     /**
@@ -1199,6 +1242,12 @@ public class EthWrapper implements SuperblockConstantProvider {
                 sessionId.getBytes(), dogeBlockHash.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("Requested Doge block header for block {}, superblock {}", dogeBlockHash, superblockId));
+        futureReceipt.exceptionally(t -> {
+            log.error("Failed to query block header for Doge block {}, session {}, superblock {}.",
+                    dogeBlockHash, sessionId, superblockId);
+            log.error(t.getMessage(), t);
+            return null;
+        });
     }
 
     // TODO: see if the challenger should know which superblock this is
@@ -1214,6 +1263,11 @@ public class EthWrapper implements SuperblockConstantProvider {
                 myBattleManager.verifySuperblock(sessionId.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("Verified superblock for session {}", sessionId));
+        futureReceipt.exceptionally(t -> {
+            log.error("Failed to verify superblock for session {}.", sessionId);
+            log.error(t.getMessage(), t);
+            return null;
+        });
     }
 
     /**
@@ -1226,6 +1280,11 @@ public class EthWrapper implements SuperblockConstantProvider {
         CompletableFuture<TransactionReceipt> futureReceipt = myBattleManager.timeout(sessionId.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("Called timeout for session {}", sessionId));
+        futureReceipt.exceptionally(t -> {
+            log.error("Failed to timeout session {}.", sessionId);
+            log.error(t.getMessage(), t);
+            return null;
+        });
     }
 
 
@@ -1246,6 +1305,11 @@ public class EthWrapper implements SuperblockConstantProvider {
                 superblockClaimsForChallenges.challengeSuperblock(superblockId.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("challengeSuperblock receipt {}", receipt.toString()));
+        futureReceipt.exceptionally(t -> {
+            log.error("Failed to challenge superblock {}.", superblockId);
+            log.error(t.getMessage(), t);
+            return null;
+        });
     }
 
     /**
@@ -1261,6 +1325,11 @@ public class EthWrapper implements SuperblockConstantProvider {
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("makeChallengerDeposit receipt {}", receipt.toString())
         );
+        futureReceipt.exceptionally(t -> {
+            log.error("Failed to deposit {} weis.", weiValue);
+            log.error(t.getMessage(), t);
+            return null;
+        });
         Thread.sleep(200); // in case the transaction takes some time to complete
     }
 
@@ -1279,6 +1348,12 @@ public class EthWrapper implements SuperblockConstantProvider {
                 superblockId.getBytes(), sessionId.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("queryMerkleRootHashes receipt {}", receipt.toString()));
+        futureReceipt.exceptionally(t -> {
+            log.error("Failed to query Merkle root hashes for session {}, superblock {}.",
+                    sessionId, superblockId);
+            log.error(t.getMessage(), t);
+            return null;
+        });
     }
 
     //TODO: document this and all other scrypt hash validation functions
@@ -1291,6 +1366,12 @@ public class EthWrapper implements SuperblockConstantProvider {
                 superblockId.getBytes(), sessionId.getBytes(), blockSha256Hash.getBytes()).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("requestScryptHashValidation receipt {}", receipt.toString()));
+        futureReceipt.exceptionally(t -> {
+            log.error("Failed to request scrypt hash validation for Doge block {}, session {}, superblock {}.",
+                    blockSha256Hash, sessionId, superblockId);
+            log.error(t.getMessage(), t);
+            return null;
+        });
     }
 
 
@@ -1411,10 +1492,15 @@ public class EthWrapper implements SuperblockConstantProvider {
                     operatorPublicKeyHash, txIndex, txSiblingsBigInteger, dogeBlockHeader, dogeBlockIndex,
                     dogeBlockSiblingsBigInteger, superblock.getSuperblockId().getBytes(), targetContract).sendAsync();
         }
-        log.info("Sent relayTx {}", tx.getHash());
+        log.info("Relayed Tx {}", tx.getHash());
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("RelayTx receipt {}.", receipt.toString())
+                log.info("Relay tx receipt {}.", receipt.toString())
         );
+        futureReceipt.exceptionally(t -> {
+            log.error("Failed to relay tx {}.", tx.getHash());
+            log.error(t.getMessage(), t);
+            return null;
+        });
     }
 
 
@@ -1433,6 +1519,11 @@ public class EthWrapper implements SuperblockConstantProvider {
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("Update doge-eth price tx receipt {}.", receipt.toString())
         );
+        futureReceipt.exceptionally(t -> {
+            log.error("Failed to update doge-eth price to {}.", price);
+            log.error(t.getMessage(), t);
+            return null;
+        });
     }
 
     //TODO: learn more about unlock and document all of these
@@ -1509,11 +1600,17 @@ public class EthWrapper implements SuperblockConstantProvider {
      */
     public void checkScrypt(Keccak256Hash sessionId, Keccak256Hash superblockId, Keccak256Hash proposalId,
                             byte[] data, ScryptHash blockScryptHash) {
-        log.info("Send scrypt hash for verification session {}, superblock {}", sessionId, superblockId);
+        log.info("Open scrypt hash verification session {}, superblock {}", sessionId, superblockId);
         // TODO: parametrize weiValue when checking scrypt
         CompletableFuture<TransactionReceipt> futureReceipt = scryptVerifier.checkScrypt(
                 data, blockScryptHash.getBytes(), proposalId.getBytes(), battleManager.getContractAddress(), BigInteger.ZERO).sendAsync();
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("checkScrypt receipt {}", receipt.toString()));
+        futureReceipt.exceptionally(t -> {
+            log.error("Failed to open scrypt hash verification session Doge block {}, session {}, superblock {}.",
+                    blockScryptHash, sessionId, superblockId);
+            log.error(t.getMessage(), t);
+            return null;
+        });
     }
 }
