@@ -6,7 +6,6 @@ A set of agents:
 - Superblock defender  (SuperblockDefenderClient.java): Replies to challenges made by rogue challengers.
 - Doge tx submitter (DogeToEthClient.java): Sends doge lock and unlock txs so they are validated and relayed to DogeToken ERC20 contract.
 - Operator agent (EthToDogeClient.java): Signs and broadcasts doge unlock txs
-- Oracle agent (PriceOracleClient.java): Informs the doge/eth price to DogeToken
 
 If you are new to the Dogecoin <-> Ethereum bridge, please check the [docs](https://github.com/dogethereum/docs) repository first.
 

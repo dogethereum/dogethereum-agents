@@ -56,7 +56,5 @@ public class EthGanacheDogeMainAgentConstants extends AgentConstants {
         ethToDogeTimerTaskPeriod = 15 * 1000;
         unlockConfirmations = 2;
         ethInitialCheckpoint = 0;
-
-        priceOracleTimerTaskPeriod = 60 * 1000;
     }
 }

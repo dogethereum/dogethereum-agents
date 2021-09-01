@@ -31,8 +31,6 @@ public class AgentConstants {
     protected int unlockConfirmations;
     protected int ethInitialCheckpoint;
 
-    protected long priceOracleTimerTaskPeriod;
-
 
     public AbstractDogecoinParams getDogeParams() {
         return dogeParams;
@@ -69,7 +67,4 @@ public class AgentConstants {
         return ethInitialCheckpoint;
     }
 
-    public long getPriceOracleTimerTaskPeriod() {
-        return priceOracleTimerTaskPeriod;
-    }
 }

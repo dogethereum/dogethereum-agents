@@ -164,10 +164,6 @@ public class SystemProperties {
         return getBooleanProperty("operator.enabled", false);
     }
 
-    public boolean isPriceOracleEnabled() {
-        return getBooleanProperty("price.oracle.enabled", false);
-    }
-
     public boolean isDogeBlockChallengerEnabled() {
         return getBooleanProperty("doge.superblock.challenger.enabled", false);
     }
@@ -200,10 +196,6 @@ public class SystemProperties {
 
     public String relayTxsAddress() {
         return getStringProperty("relay.txs.address", null);
-    }
-
-    public String priceOracleAddress() {
-        return getStringProperty("price.oracle.address", null);
     }
 
     public String dogeTokenContractAddress() {

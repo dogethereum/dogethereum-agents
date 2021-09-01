@@ -78,7 +78,6 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     private String generalPurposeAndSendSuperblocksAddress;
     private String relayTxsAddress;
-    private String priceOracleAddress;
     private String dogeSuperblockChallengerAddress;
 
     private BigInteger minProposalDeposit;
@@ -114,7 +113,6 @@ public class EthWrapper implements SuperblockConstantProvider {
             List<String> accounts = web3.ethAccounts().send().getAccounts();
             generalPurposeAndSendSuperblocksAddress = accounts.get(0);
             relayTxsAddress = accounts.get(1);
-            priceOracleAddress = accounts.get(2);
             dogeSuperblockChallengerAddress = accounts.get(3);
         } else {
             dogeTokenContractAddress = config.dogeTokenContractAddress();
@@ -124,7 +122,6 @@ public class EthWrapper implements SuperblockConstantProvider {
             scryptVerifierAddress = config.dogeScryptVerifierContractAddress();
             generalPurposeAndSendSuperblocksAddress = config.generalPurposeAndSendSuperblocksAddress();
             relayTxsAddress = config.relayTxsAddress();
-            priceOracleAddress = config.priceOracleAddress();
             dogeSuperblockChallengerAddress = config.dogeSuperblockChallengerAddress();
         }
 
@@ -132,7 +129,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         BigInteger gasLimit = BigInteger.valueOf(config.gasLimit());
 
         dogeToken = DogeTokenExtended.load(dogeTokenContractAddress, web3,
-                new ClientTransactionManager(web3, priceOracleAddress),
+                new ClientTransactionManager(web3, generalPurposeAndSendSuperblocksAddress),
                 gasPriceMinimum, gasLimit);
         assert dogeToken.isValid();
         superblockClaims = SuperblockClaimsExtended.load(superblockClaimsContractAddress, web3,
@@ -1507,24 +1504,6 @@ public class EthWrapper implements SuperblockConstantProvider {
     /* ---------------------------------- */
     /* --------- Unlock section --------- */
     /* ---------------------------------- */
-
-    /**
-     * Sets price of DogeToken.
-     * @param price New price of DogeToken.
-     */
-    public void updatePrice(long price) {
-        BigInteger priceBI = BigInteger.valueOf(price);
-        CompletableFuture<TransactionReceipt> futureReceipt = dogeToken.setDogeEthPrice(priceBI).sendAsync();
-        log.info("Sent update doge-eth price tx. Price: {}", price);
-        futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
-                log.info("Update doge-eth price tx receipt {}.", receipt.toString())
-        );
-        futureReceipt.exceptionally(t -> {
-            log.error("Failed to update doge-eth price to {}.", price);
-            log.error(t.getMessage(), t);
-            return null;
-        });
-    }
 
     //TODO: learn more about unlock and document all of these
 
