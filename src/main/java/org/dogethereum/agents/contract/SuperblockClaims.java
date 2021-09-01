@@ -85,6 +85,8 @@ public class SuperblockClaims extends Contract {
 
     public static final String FUNC_GETSESSION = "getSession";
 
+    public static final String FUNC_INITIALIZE = "initialize";
+
     public static final String FUNC_MAKEDEPOSIT = "makeDeposit";
 
     public static final String FUNC_MINCHALLENGEDEPOSIT = "minChallengeDeposit";
@@ -774,6 +776,19 @@ public class SuperblockClaims extends Contract {
                 new org.web3j.abi.datatypes.Address(challenger)), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}));
         return executeRemoteCallSingleValueReturn(function, byte[].class);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> initialize(String superblocks, String battleManager, BigInteger initSuperblockDelay, BigInteger initSuperblockTimeout, BigInteger initSuperblockConfirmations, BigInteger initBattleReward) {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+                FUNC_INITIALIZE, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(superblocks), 
+                new org.web3j.abi.datatypes.Address(battleManager), 
+                new org.web3j.abi.datatypes.generated.Uint256(initSuperblockDelay), 
+                new org.web3j.abi.datatypes.generated.Uint256(initSuperblockTimeout), 
+                new org.web3j.abi.datatypes.generated.Uint256(initSuperblockConfirmations), 
+                new org.web3j.abi.datatypes.generated.Uint256(initBattleReward)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
     }
 
     public RemoteFunctionCall<TransactionReceipt> makeDeposit(BigInteger weiValue) {

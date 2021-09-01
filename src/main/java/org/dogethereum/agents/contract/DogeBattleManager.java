@@ -56,6 +56,8 @@ public class DogeBattleManager extends Contract {
 
     public static final String FUNC_GETSUBMITTERHITTIMEOUT = "getSubmitterHitTimeout";
 
+    public static final String FUNC_INITIALIZE = "initialize";
+
     public static final String FUNC_MINCHALLENGEDEPOSIT = "minChallengeDeposit";
 
     public static final String FUNC_MINPROPOSALDEPOSIT = "minProposalDeposit";
@@ -95,8 +97,6 @@ public class DogeBattleManager extends Contract {
     public static final String FUNC_SESSIONS = "sessions";
 
     public static final String FUNC_SESSIONSCOUNT = "sessionsCount";
-
-    public static final String FUNC_SETSCRYPTCHECKER = "setScryptChecker";
 
     public static final String FUNC_SETSUPERBLOCKCLAIMS = "setSuperblockClaims";
 
@@ -592,6 +592,18 @@ public class DogeBattleManager extends Contract {
         return executeRemoteCallSingleValueReturn(function, Boolean.class);
     }
 
+    public RemoteFunctionCall<TransactionReceipt> initialize(BigInteger network, String superblocks, String scryptChecker, BigInteger initSuperblockDuration, BigInteger initSuperblockTimeout) {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+                FUNC_INITIALIZE, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint8(network), 
+                new org.web3j.abi.datatypes.Address(superblocks), 
+                new org.web3j.abi.datatypes.Address(scryptChecker), 
+                new org.web3j.abi.datatypes.generated.Uint256(initSuperblockDuration), 
+                new org.web3j.abi.datatypes.generated.Uint256(initSuperblockTimeout)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
     public RemoteFunctionCall<BigInteger> minChallengeDeposit() {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_MINCHALLENGEDEPOSIT, 
                 Arrays.<Type>asList(), 
@@ -783,18 +795,10 @@ public class DogeBattleManager extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> setScryptChecker(String _scryptChecker) {
-        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
-                FUNC_SETSCRYPTCHECKER, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(_scryptChecker)), 
-                Collections.<TypeReference<?>>emptyList());
-        return executeRemoteCallTransaction(function);
-    }
-
-    public RemoteFunctionCall<TransactionReceipt> setSuperblockClaims(String _superblockClaims) {
+    public RemoteFunctionCall<TransactionReceipt> setSuperblockClaims(String superblockClaims) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
                 FUNC_SETSUPERBLOCKCLAIMS, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(_superblockClaims)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(superblockClaims)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }

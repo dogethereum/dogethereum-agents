@@ -70,8 +70,6 @@ public class DogeToken extends Contract {
 
     public static final String FUNC_APPROVE = "approve";
 
-    public static final String FUNC_APPROVEANDCALL = "approveAndCall";
-
     public static final String FUNC_BALANCEOF = "balanceOf";
 
     public static final String FUNC_COLLATERALRATIO = "collateralRatio";
@@ -84,6 +82,10 @@ public class DogeToken extends Contract {
 
     public static final String FUNC_DOGEETHPRICE = "dogeEthPrice";
 
+    public static final String FUNC_DOGEUSDORACLE = "dogeUsdOracle";
+
+    public static final String FUNC_ETHUSDORACLE = "ethUsdOracle";
+
     public static final String FUNC_GETOPERATORSLENGTH = "getOperatorsLength";
 
     public static final String FUNC_GETUNLOCKPENDINGINVESTORPROOF = "getUnlockPendingInvestorProof";
@@ -91,6 +93,8 @@ public class DogeToken extends Contract {
     public static final String FUNC_GETUTXO = "getUtxo";
 
     public static final String FUNC_GETUTXOSLENGTH = "getUtxosLength";
+
+    public static final String FUNC_INITIALIZE = "initialize";
 
     public static final String FUNC_NAME = "name";
 
@@ -102,8 +106,6 @@ public class DogeToken extends Contract {
 
     public static final String FUNC_PROCESSUNLOCKTRANSACTION = "processUnlockTransaction";
 
-    public static final String FUNC_SETDOGEETHPRICE = "setDogeEthPrice";
-
     public static final String FUNC_SYMBOL = "symbol";
 
     public static final String FUNC_TOTALSUPPLY = "totalSupply";
@@ -112,15 +114,11 @@ public class DogeToken extends Contract {
 
     public static final String FUNC_TRANSFERFROM = "transferFrom";
 
-    public static final String FUNC_TRUSTEDDOGEETHPRICEORACLE = "trustedDogeEthPriceOracle";
-
     public static final String FUNC_TRUSTEDRELAYERCONTRACT = "trustedRelayerContract";
 
     public static final String FUNC_UNLOCKIDX = "unlockIdx";
 
     public static final String FUNC_UNLOCKSPENDINGINVESTORPROOF = "unlocksPendingInvestorProof";
-
-    public static final String FUNC_VERSION = "version";
 
     public static final String FUNC_WASDOGETXPROCESSED = "wasDogeTxProcessed";
 
@@ -400,16 +398,6 @@ public class DogeToken extends Contract {
         return executeRemoteCallTransaction(function);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> approveAndCall(String _spender, BigInteger _value, byte[] _extraData) {
-        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
-                FUNC_APPROVEANDCALL, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(_spender), 
-                new org.web3j.abi.datatypes.generated.Uint256(_value), 
-                new org.web3j.abi.datatypes.DynamicBytes(_extraData)), 
-                Collections.<TypeReference<?>>emptyList());
-        return executeRemoteCallTransaction(function);
-    }
-
     public RemoteFunctionCall<BigInteger> balanceOf(String _owner) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_BALANCEOF, 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(_owner)), 
@@ -454,6 +442,20 @@ public class DogeToken extends Contract {
                 Arrays.<Type>asList(), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
+    public RemoteFunctionCall<String> dogeUsdOracle() {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_DOGEUSDORACLE, 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}));
+        return executeRemoteCallSingleValueReturn(function, String.class);
+    }
+
+    public RemoteFunctionCall<String> ethUsdOracle() {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_ETHUSDORACLE, 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}));
+        return executeRemoteCallSingleValueReturn(function, String.class);
     }
 
     public RemoteFunctionCall<BigInteger> getOperatorsLength() {
@@ -508,6 +510,17 @@ public class DogeToken extends Contract {
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes20(operatorPublicKeyHash)), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> initialize(String relayerContract, String initDogeUsdOracle, String initEthUsdOracle, BigInteger initCollateralRatio) {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+                FUNC_INITIALIZE, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(relayerContract), 
+                new org.web3j.abi.datatypes.Address(initDogeUsdOracle), 
+                new org.web3j.abi.datatypes.Address(initEthUsdOracle), 
+                new org.web3j.abi.datatypes.generated.Uint8(initCollateralRatio)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
     }
 
     public RemoteFunctionCall<String> name() {
@@ -575,14 +588,6 @@ public class DogeToken extends Contract {
         return executeRemoteCallTransaction(function);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> setDogeEthPrice(BigInteger _dogeEthPrice) {
-        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
-                FUNC_SETDOGEETHPRICE, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_dogeEthPrice)), 
-                Collections.<TypeReference<?>>emptyList());
-        return executeRemoteCallTransaction(function);
-    }
-
     public RemoteFunctionCall<String> symbol() {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_SYMBOL, 
                 Arrays.<Type>asList(), 
@@ -614,13 +619,6 @@ public class DogeToken extends Contract {
                 new org.web3j.abi.datatypes.generated.Uint256(_value)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
-    }
-
-    public RemoteFunctionCall<String> trustedDogeEthPriceOracle() {
-        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_TRUSTEDDOGEETHPRICEORACLE, 
-                Arrays.<Type>asList(), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}));
-        return executeRemoteCallSingleValueReturn(function, String.class);
     }
 
     public RemoteFunctionCall<String> trustedRelayerContract() {
@@ -656,13 +654,6 @@ public class DogeToken extends Contract {
                                 (byte[]) results.get(6).getValue());
                     }
                 });
-    }
-
-    public RemoteFunctionCall<String> version() {
-        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_VERSION, 
-                Arrays.<Type>asList(), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Utf8String>() {}));
-        return executeRemoteCallSingleValueReturn(function, String.class);
     }
 
     public RemoteFunctionCall<Boolean> wasDogeTxProcessed(BigInteger txHash) {
