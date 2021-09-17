@@ -2,6 +2,7 @@ package org.dogethereum.agents.util;
 
 import org.bitcoinj.core.*;
 import org.bitcoinj.script.Script;
+import org.bitcoinj.script.ScriptException;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.wallet.Wallet;
