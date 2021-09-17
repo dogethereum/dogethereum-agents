@@ -37,9 +37,9 @@
             <version>5.0.2.RELEASE</version>
         </dependency>
         <dependency>
-            <groupId>org.libdohj</groupId>
+            <groupId>com.dogecoin</groupId>
             <artifactId>libdohj-core</artifactId>
-            <version>0.14-dogethereum-4</version>
+            <version>0.15-dogethereum-1</version>
         </dependency>
         <dependency>
             <groupId>org.web3j</groupId>
