@@ -205,9 +205,9 @@ public class DogecoinWrapper {
 
     public void onTransaction(Transaction tx) {
         if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
-            log.debug("onTransaction {}", tx.getHash());
+            log.debug("onTransaction {}", tx.getTxId());
             synchronized (this) {
-                dogeTxToRelayToEthProofsMap.put(tx.getHash(), new ArrayList<Proof>());
+                dogeTxToRelayToEthProofsMap.put(tx.getTxId(), new ArrayList<Proof>());
                 try {
                     flushProofs();
                 } catch (IOException e) {

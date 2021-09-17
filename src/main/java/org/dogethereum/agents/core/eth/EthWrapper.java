@@ -1455,13 +1455,13 @@ public class EthWrapper implements SuperblockConstantProvider {
             throws Exception {
         byte[] dogeBlockHeader = Arrays.copyOfRange(block.bitcoinSerialize(), 0, 80);
         Sha256Hash dogeBlockHash = block.getHash();
-        log.info("About to send to the bridge doge tx hash {}. Block hash {}", tx.getHash(), dogeBlockHash);
+        log.info("About to send to the bridge doge tx hash {}. Block hash {}", tx.getTxId(), dogeBlockHash);
 
         byte[] txSerialized = tx.bitcoinSerialize();
 
         // Construct SPV proof for transaction
-        BigInteger txIndex = BigInteger.valueOf(txPMT.getTransactionIndex(tx.getHash()));
-        List<Sha256Hash> txSiblingsSha256Hash = txPMT.getTransactionPath(tx.getHash());
+        BigInteger txIndex = BigInteger.valueOf(txPMT.getTransactionIndex(tx.getTxId()));
+        List<Sha256Hash> txSiblingsSha256Hash = txPMT.getTransactionPath(tx.getTxId());
         List<BigInteger> txSiblingsBigInteger = new ArrayList<>();
         for (Sha256Hash sha256Hash : txSiblingsSha256Hash) {
             txSiblingsBigInteger.add(sha256Hash.toBigInteger());
@@ -1489,12 +1489,12 @@ public class EthWrapper implements SuperblockConstantProvider {
                     operatorPublicKeyHash, txIndex, txSiblingsBigInteger, dogeBlockHeader, dogeBlockIndex,
                     dogeBlockSiblingsBigInteger, superblock.getSuperblockId().getBytes(), targetContract).sendAsync();
         }
-        log.info("Relayed Tx {}", tx.getHash());
+        log.info("Relayed Tx {}", tx.getTxId());
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
                 log.info("Relay tx receipt {}.", receipt.toString())
         );
         futureReceipt.exceptionally(t -> {
-            log.error("Failed to relay tx {}.", tx.getHash());
+            log.error("Failed to relay tx {}.", tx.getTxId());
             log.error(t.getMessage(), t);
             return null;
         });

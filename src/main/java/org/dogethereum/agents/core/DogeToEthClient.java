@@ -195,9 +195,9 @@ public class DogeToEthClient {
         int numberOfTxsSent = 0;
 
         for (Transaction operatorWalletTx : operatorWalletTxSet) {
-            if (!ethWrapper.wasDogeTxProcessed(operatorWalletTx.getHash())) {
+            if (!ethWrapper.wasDogeTxProcessed(operatorWalletTx.getTxId())) {
                 synchronized (this) {
-                    List<Proof> proofs = dogecoinWrapper.getTransactionsToSendToEth().get(operatorWalletTx.getHash());
+                    List<Proof> proofs = dogecoinWrapper.getTransactionsToSendToEth().get(operatorWalletTx.getTxId());
 
                     if (proofs == null || proofs.isEmpty())
                         continue;
@@ -215,7 +215,7 @@ public class DogeToEthClient {
                     if (txOutputs.size() > 3) {
                         log.debug("Tx {} not relayed because it's neither a lock nor unlock transaction." +
                                         " Block hash: {}",
-                                operatorWalletTx.getHash(), txStoredBlock.getHeader().getHash());
+                                operatorWalletTx.getTxId(), txStoredBlock.getHeader().getHash());
                         continue;
                     }
 
@@ -225,14 +225,14 @@ public class DogeToEthClient {
                         // no superblock found for tx
                         log.debug("Tx {} not relayed because the superblock it's in hasn't been stored in local" +
                                         "database yet. Block hash: {}",
-                                  operatorWalletTx.getHash(), txStoredBlock.getHeader().getHash());
+                                  operatorWalletTx.getTxId(), txStoredBlock.getHeader().getHash());
                         continue;
                     }
 
                     if (!ethWrapper.isSuperblockApproved(txSuperblock.getSuperblockId())) {
                         log.debug("Tx {} not relayed because the superblock it's in hasn't been approved yet." +
                                         "Block hash: {}, superblock ID: {}",
-                                operatorWalletTx.getHash(), txStoredBlock.getHeader().getHash(),
+                                operatorWalletTx.getTxId(), txStoredBlock.getHeader().getHash(),
                                 txSuperblock.getSuperblockId());
                         continue;
                     }
@@ -251,7 +251,7 @@ public class DogeToEthClient {
                     if (numberOfTxsSent >= MAXIMUM_REGISTER_DOGE_LOCK_TXS_PER_TURN) {
                         break;
                     }
-                    log.debug("Invoked registerTransaction for tx {}", operatorWalletTx.getHash());
+                    log.debug("Invoked registerTransaction for tx {}", operatorWalletTx.getTxId());
                 }
             }
         }
@@ -291,7 +291,7 @@ public class DogeToEthClient {
                 }
             }
 
-        throw new IllegalStateException("Tx not in the best chain: " + tx.getHash());
+        throw new IllegalStateException("Tx not in the best chain: " + tx.getTxId());
     }
 
     /**
