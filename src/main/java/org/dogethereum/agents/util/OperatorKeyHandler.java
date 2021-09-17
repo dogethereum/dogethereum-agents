@@ -12,7 +12,7 @@ import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
 import org.dogethereum.agents.constants.SystemProperties;
 import org.libdohj.params.AbstractDogecoinParams;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;

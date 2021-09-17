@@ -2,7 +2,7 @@ package org.dogethereum.agents.core.dogecoin;
 
 import org.bitcoinj.core.*;
 
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.util.encoders.Hex;
 import org.web3j.crypto.Hash;
 
 import java.io.ByteArrayOutputStream;
