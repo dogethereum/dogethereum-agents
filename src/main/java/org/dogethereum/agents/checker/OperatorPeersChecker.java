@@ -8,6 +8,7 @@ import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.PeerAddress;
 import org.dogethereum.agents.constants.SystemProperties;
+import org.libdohj.params.AbstractDogecoinParams;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -29,9 +30,9 @@ public class OperatorPeersChecker {
     @PostConstruct
     public void setup() throws Exception {
         SystemProperties config = SystemProperties.CONFIG;
-        int defaultPort = config.getAgentConstants().getDogeParams().getPort();
+        AbstractDogecoinParams dogeParams = config.getAgentConstants().getDogeParams();
         List<String> peerStrings = Lists.newArrayList("127.0.0.1");
-        List<PeerAddress> peerAddresses = DogecoinPeerFactory.buildDogecoinPeerAddresses(defaultPort, peerStrings);
+        List<PeerAddress> peerAddresses = DogecoinPeerFactory.buildDogecoinPeerAddresses(dogeParams, peerStrings);
         if (peerAddresses == null || peerAddresses.isEmpty()) {
             // Can't happen until we implement peer list configuration
             throw new RuntimeException("No Dogecoin Peers");
