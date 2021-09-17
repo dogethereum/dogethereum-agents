@@ -6,8 +6,8 @@ package org.dogethereum.agents.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.bitcoinj.core.Address;
 import org.bitcoinj.core.ECKey;
+import org.bitcoinj.core.LegacyAddress;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
 import org.dogethereum.agents.constants.SystemProperties;
@@ -83,8 +83,8 @@ public class OperatorKeyHandler implements OperatorPublicKeyHandler {
     }
 
     @Override
-    public Address getAddress() {
-        return getPrivateKey().toAddress(dogeParams);
+    public LegacyAddress getAddress() {
+        return LegacyAddress.fromKey(dogeParams, getPrivateKey());
     }
 
     @Override

@@ -8,6 +8,7 @@ package org.dogethereum.agents.core.dogecoin;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.bitcoinj.kits.WalletAppKit;
+import org.bitcoinj.script.Script;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.wallet.Wallet;
@@ -89,7 +90,7 @@ public class DogecoinWrapper {
             protected Wallet createWallet() {
                 Wallet wallet = super.createWallet();
                 if (walletEnabled) {
-                    Address address = operatorPublicKeyHandler.getAddress();
+                    LegacyAddress address = operatorPublicKeyHandler.getAddress();
                     // Be notified when we receive doge so we call registerTransaction()
                     wallet.addWatchedAddress(address, operatorPublicKeyHandler.getAddressCreationTime());
                 }

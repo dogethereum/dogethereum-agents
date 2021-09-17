@@ -1,6 +1,6 @@
 package org.dogethereum.agents.util;
 
-import org.bitcoinj.core.Address;
+import org.bitcoinj.core.LegacyAddress;
 import org.bitcoinj.script.Script;
 
 /**
@@ -10,7 +10,7 @@ import org.bitcoinj.script.Script;
 public interface OperatorPublicKeyHandler {
     Script getOutputScript();
 
-    Address getAddress();
+    LegacyAddress getAddress();
 
     byte[] getPublicKeyHash();
 
