@@ -60,7 +60,7 @@ public class DogecoinWrapper {
 
 
     public void setup() {
-        kit = new WalletAppKit(dogeContext, dataDirectory, "dogethereumAgentLibdohj") {
+        kit = new WalletAppKit(dogeContext, Script.ScriptType.P2PKH, null, dataDirectory, "dogethereumAgentLibdohj") {
             @Override
             protected void onSetupCompleted() {
                 Context.propagate(dogeContext);
