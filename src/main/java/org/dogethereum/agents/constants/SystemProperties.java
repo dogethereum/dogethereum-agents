@@ -156,8 +156,8 @@ public class SystemProperties {
         return getBooleanProperty("doge.superblock.submitter.enabled", false);
     }
 
-    public boolean isDogeTxRelayerEnabled() {
-        return getBooleanProperty("doge.tx.relayer.enabled", false);
+    public boolean isDogeLockTxRelayEnabled() {
+        return getBooleanProperty("doge.lock.tx.relay.enabled", false);
     }
 
     public boolean isOperatorEnabled() {

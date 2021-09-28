@@ -45,14 +45,14 @@ public class DogecoinWrapper {
     public DogecoinWrapper(OperatorPublicKeyHandler operatorPublicKeyHandler) throws Exception {
         this.operatorPublicKeyHandler = operatorPublicKeyHandler;
         this.config = SystemProperties.CONFIG;
-        if (config.isDogeSuperblockSubmitterEnabled() || config.isDogeTxRelayerEnabled() ||
+        if (config.isDogeSuperblockSubmitterEnabled() || config.isDogeLockTxRelayEnabled() ||
                 config.isOperatorEnabled() || config.isDogeBlockChallengerEnabled()) {
             this.agentConstants = config.getAgentConstants();
             this.dogeContext = new Context(agentConstants.getDogeParams());
             this.dataDirectory = new File(config.dataDirectory() + "/DogecoinWrapper");
             this.dogeTxToRelayToEthProofsFile = new File(dataDirectory.getAbsolutePath() + "/DogeTxToRelayToEthProofs.ser");
             restoreProofsFromFile();
-            this.walletEnabled = config.isDogeTxRelayerEnabled() || config.isOperatorEnabled();
+            this.walletEnabled = config.isDogeLockTxRelayEnabled() || config.isOperatorEnabled();
             setup();
             start();
         }
@@ -171,7 +171,7 @@ public class DogecoinWrapper {
     }
 
     public void onBlock(FilteredBlock filteredBlock) {
-        if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
+        if (config.isDogeLockTxRelayEnabled() || config.isOperatorEnabled()) {
             synchronized (this) {
                 log.debug("onBlock {}", filteredBlock.getHash());
                 List<Sha256Hash> hashes = new ArrayList<>();
@@ -205,7 +205,7 @@ public class DogecoinWrapper {
     }
 
     public void onTransaction(Transaction tx) {
-        if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
+        if (config.isDogeLockTxRelayEnabled() || config.isOperatorEnabled()) {
             log.debug("onTransaction {}", tx.getTxId());
             synchronized (this) {
                 dogeTxToRelayToEthProofsMap.put(tx.getTxId(), new ArrayList<Proof>());
@@ -221,7 +221,7 @@ public class DogecoinWrapper {
 
     @PreDestroy
     public void tearDown() throws BlockStoreException, IOException {
-        if (config.isDogeSuperblockSubmitterEnabled() || config.isDogeTxRelayerEnabled() ||
+        if (config.isDogeSuperblockSubmitterEnabled() || config.isDogeLockTxRelayEnabled() ||
                 config.isOperatorEnabled() || config.isDogeBlockChallengerEnabled()) {
             log.info("DogecoinWrapper tearDown starting...");
             stop();

@@ -55,7 +55,7 @@ public class DogeTxRelayClient {
     @PostConstruct
     public void setup() throws Exception {
         config = SystemProperties.CONFIG;
-        if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
+        if (config.isDogeLockTxRelayEnabled() || config.isOperatorEnabled()) {
             agentConstants = config.getAgentConstants();
 
             new Timer("Doge Tx Relay client").scheduleAtFixedRate(new DogeTxRelayClientTimerTask(),
@@ -80,7 +80,7 @@ public class DogeTxRelayClient {
                 if (!ethWrapper.isEthNodeSyncing()) {
                     log.debug("DogeTxRelayClientTimerTask");
                     ethWrapper.updateContractFacadesGasPrice();
-                    if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
+                    if (config.isDogeLockTxRelayEnabled() || config.isOperatorEnabled()) {
                         updateBridgeTransactions();
                     }
                 } else {
@@ -106,7 +106,7 @@ public class DogeTxRelayClient {
 
         Set<Transaction> operatorWalletTxSet = dogecoinWrapper.getTransactions(
                 agentConstants.getDogeToEthConfirmations(),
-                config.isDogeTxRelayerEnabled(),
+                config.isDogeLockTxRelayEnabled(),
                 config.isOperatorEnabled());
 
         int numberOfTxsSent = 0;

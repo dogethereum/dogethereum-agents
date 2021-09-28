@@ -49,7 +49,7 @@ public class OperatorKeyHandler implements OperatorPublicKeyHandler {
         this.dogeParams = config.getAgentConstants().getDogeParams();
         this.filePath = config.operatorPrivateKeyFilePath();
         this.addressCreationTime = config.operatorAddressCreationTime();
-        if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
+        if (config.isDogeLockTxRelayEnabled() || config.isOperatorEnabled()) {
             validateOperatorKeyFile();
             log.info("OperatorKeyHandler started. Operator address is {}, created on {}.", getAddress(), getOperatorAddressCreationDate());
         } else {
