@@ -223,13 +223,13 @@ public class DogecoinWrapper {
     public void tearDown() throws BlockStoreException, IOException {
         if (config.isDogeSuperblockSubmitterEnabled() || config.isDogeTxRelayerEnabled() ||
                 config.isOperatorEnabled() || config.isDogeBlockChallengerEnabled()) {
-            log.info("DogeToEthClient tearDown starting...");
+            log.info("DogecoinWrapper tearDown starting...");
             stop();
 
             synchronized (this) {
                 flushProofs();
             }
-            log.info("DogeToEthClient tearDown finished.");
+            log.info("DogecoinWrapper tearDown finished.");
         }
     }
 
