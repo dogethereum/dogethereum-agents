@@ -3,19 +3,18 @@ package org.dogethereum.agents.core.dogecoin;
 import static org.junit.Assert.*;
 
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class SuperblockChainTest {
-    SuperblockChain sb;
+public class SuperblockchainTest {
+    Superblockchain sb;
     SimpleDateFormat format;
 
     @Before
     public void init() throws Exception {
-        sb = new SuperblockChain();
+        sb = new Superblockchain();
         format = new SimpleDateFormat("HH:mm:ss.SSS");
     }
 

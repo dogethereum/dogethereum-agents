@@ -8,7 +8,7 @@ import org.dogethereum.agents.constants.AgentConstants;
 import org.dogethereum.agents.constants.SystemProperties;
 import org.dogethereum.agents.core.dogecoin.DogecoinWrapper;
 import org.dogethereum.agents.core.dogecoin.Superblock;
-import org.dogethereum.agents.core.dogecoin.SuperblockChain;
+import org.dogethereum.agents.core.dogecoin.Superblockchain;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -27,7 +27,7 @@ import java.util.*;
 
 public class SuperblockchainUpdaterClient {
     @Autowired
-    private SuperblockChain superblockChain;
+    private Superblockchain superblockchain;
 
     @Autowired
     private DogecoinWrapper dogecoinWrapper;
@@ -59,12 +59,12 @@ public class SuperblockchainUpdaterClient {
      * @throws IOException
      */
     public void updateChain() throws Exception, BlockStoreException, IOException {
-        Superblock bestSuperblock = superblockChain.getChainHead();
+        Superblock bestSuperblock = superblockchain.getChainHead();
         Sha256Hash bestSuperblockLastBlockHash = bestSuperblock.getLastDogeBlockHash();
 
         // get all the Dogecoin blocks that haven't yet been hashed into a superblock
         Stack<Sha256Hash> allDogeHashesToHash = getDogeBlockHashesNewerThan(bestSuperblockLastBlockHash);
-        superblockChain.storeSuperblocks(allDogeHashesToHash, bestSuperblock.getSuperblockId()); // group them in superblocks
+        superblockchain.storeSuperblocks(allDogeHashesToHash, bestSuperblock.getSuperblockId()); // group them in superblocks
     }
 
     private Stack<Sha256Hash> getDogeBlockHashesNewerThan(Sha256Hash blockHash) throws BlockStoreException {

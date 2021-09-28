@@ -26,8 +26,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 
 @Component
-@Slf4j(topic = "SuperblockChain")
-public class SuperblockChain {
+@Slf4j(topic = "Superblockchain")
+public class Superblockchain {
     @Autowired
     private DogecoinWrapper dogecoinWrapper; // Interface with the Doge blockchain
     @Autowired
@@ -43,7 +43,7 @@ public class SuperblockChain {
     /* ---- CONSTRUCTION METHODS ---- */
 
     @Autowired
-    public SuperblockChain() throws Exception, BlockStoreException {}
+    public Superblockchain() throws Exception, BlockStoreException {}
 
     /**
      * Sets up variables and initialises chain.
@@ -56,7 +56,7 @@ public class SuperblockChain {
         AgentConstants agentConstants = config.getAgentConstants();
         Context context = new Context(agentConstants.getDogeParams());
         File directory = new File(config.dataDirectory());
-        File chainFile = new File(directory.getAbsolutePath() + "/SuperblockChain");
+        File chainFile = new File(directory.getAbsolutePath() + "/Superblockchain");
         this.params = agentConstants.getDogeParams();
         this.superblockStorage = new SuperblockLevelDBBlockStore(context, chainFile, params);
         this.SUPERBLOCK_DURATION = provider.getSuperblockDuration().intValue();

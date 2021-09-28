@@ -47,7 +47,7 @@ public class DogeTxRelayClient {
     private DogecoinWrapper dogecoinWrapper;
 
     @Autowired
-    private SuperblockChain superblockChain;
+    private Superblockchain superblockchain;
 
     public DogeTxRelayClient() {}
 
@@ -218,12 +218,12 @@ public class DogeTxRelayClient {
      * @throws BlockStoreException
      */
     private Superblock findBestSuperblockFor(Sha256Hash blockHash) throws BlockStoreException, IOException {
-        Superblock currentSuperblock = superblockChain.getChainHead();
+        Superblock currentSuperblock = superblockchain.getChainHead();
 
         while (currentSuperblock != null) {
             if (currentSuperblock.hasDogeBlock(blockHash))
                 return currentSuperblock;
-            currentSuperblock = superblockChain.getSuperblock(currentSuperblock.getParentId());
+            currentSuperblock = superblockchain.getSuperblock(currentSuperblock.getParentId());
         }
 
         // current superblock is null

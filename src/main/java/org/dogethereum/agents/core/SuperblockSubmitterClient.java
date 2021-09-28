@@ -37,7 +37,7 @@ public class SuperblockSubmitterClient {
     private AgentConstants agentConstants;
 
     @Autowired
-    private SuperblockChain superblockChain;
+    private Superblockchain superblockchain;
 
     public SuperblockSubmitterClient() {}
 
@@ -70,7 +70,7 @@ public class SuperblockSubmitterClient {
                 if (!ethWrapper.isEthNodeSyncing()) {
                     log.debug("SuperblockSubmitterClientTimerTask");
                     ethWrapper.updateContractFacadesGasPrice();
-                    updateBridgeSuperblockChain();
+                    updateBridgeSuperblockchain();
                 } else {
                     log.warn("SuperblockSubmitterClientTimerTask skipped because the eth node is syncing blocks");
                 }
@@ -86,7 +86,7 @@ public class SuperblockSubmitterClient {
      * @return Number of superblocks sent to the bridge.
      * @throws Exception
      */
-    public long updateBridgeSuperblockChain() throws Exception {
+    public long updateBridgeSuperblockchain() throws Exception {
         if (ethWrapper.arePendingTransactionsForSendSuperblocksAddress()) {
             log.debug("Skipping sending superblocks, there are pending transaction for the sender address.");
             return 0;
@@ -100,7 +100,7 @@ public class SuperblockSubmitterClient {
         log.debug("Matched superblock {}.", matchedSuperblock.getSuperblockId());
 
         // We found the superblock in the agent's best chain. Send the earliest superblock that the relay is missing.
-        Superblock toSend = superblockChain.getFirstDescendant(matchedSuperblock.getSuperblockId());
+        Superblock toSend = superblockchain.getFirstDescendant(matchedSuperblock.getSuperblockId());
 
         if (toSend == null) {
             log.debug("Bridge was just updated, no new superblocks to send. matchedSuperblock: {}.",
@@ -108,7 +108,7 @@ public class SuperblockSubmitterClient {
             return 0;
         }
 
-        if (!superblockChain.sendingTimePassed(toSend)) {
+        if (!superblockchain.sendingTimePassed(toSend)) {
             log.debug("Too early to send superblock {}, will try again in a few seconds.",
                     toSend.getSuperblockId());
             return 0;
@@ -128,7 +128,7 @@ public class SuperblockSubmitterClient {
     }
 
     /**
-     * Helper method for updateBridgeSuperblockChain().
+     * Helper method for updateBridgeSuperblockchain().
      * Gets the earliest superblock from the bridge's superblock locator
      * that was also found in the agent's main chain.
      * @param superblockLocator List of ancestors provided by the bridge.
@@ -143,13 +143,13 @@ public class SuperblockSubmitterClient {
 
         for (int i = 0; i < superblockLocator.size(); i++) {
             Keccak256Hash superblockBridgeHash = Keccak256Hash.wrap(superblockLocator.get(i));
-            Superblock bridgeSuperblock = superblockChain.getSuperblock(superblockBridgeHash);
+            Superblock bridgeSuperblock = superblockchain.getSuperblock(superblockBridgeHash);
 
             if (bridgeSuperblock == null)
                 continue;
 
             Superblock bestRelaySuperblockInLocalChain =
-                    superblockChain.getSuperblockByHeight(bridgeSuperblock.getSuperblockHeight());
+                    superblockchain.getSuperblockByHeight(bridgeSuperblock.getSuperblockHeight());
 
             if (bridgeSuperblock.getSuperblockId().equals(bestRelaySuperblockInLocalChain.getSuperblockId())) {
                 matchedSuperblock = bestRelaySuperblockInLocalChain;

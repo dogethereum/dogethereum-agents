@@ -76,14 +76,14 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      */
     private void confirmEarliestApprovableSuperblock() throws Exception {
         Keccak256Hash bestSuperblockId = ethWrapper.getBestSuperblockId();
-        Superblock chainHead = superblockChain.getChainHead();
+        Superblock chainHead = superblockchain.getChainHead();
 
         if (chainHead.getSuperblockId().equals(bestSuperblockId)) {
             // Contract and local db best superblocks are the same, do nothing.
             return;
         }
 
-        Superblock toConfirm = superblockChain.getFirstDescendant(bestSuperblockId);
+        Superblock toConfirm = superblockchain.getFirstDescendant(bestSuperblockId);
 
         if (toConfirm == null) {
             // TODO: see if this should raise an exception, because it's a pretty bad state
@@ -119,7 +119,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      */
     private void confirmAllSemiApprovable() throws Exception {
         for (Keccak256Hash superblockId : superblockToSessionsMap.keySet()) {
-            Superblock superblock = superblockChain.getSuperblock(superblockId);
+            Superblock superblock = superblockchain.getSuperblock(superblockId);
             if (superblock != null && (inBattleAndSemiApprovable(superblock) || newAndTimeoutPassed(superblock))) {
                 log.info("Confirming semi-approvable superblock {}", superblockId);
                 ethWrapper.checkClaimFinished(superblockId, myAddress, false);
@@ -156,7 +156,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 log.info("Merkle root hashes requested for session {}, superblock {}. Responding now.",
                         queryMerkleRootHashes.sessionId, queryMerkleRootHashes.superblockId);
 
-                Superblock superblock = superblockChain.getSuperblock(queryMerkleRootHashes.superblockId);
+                Superblock superblock = superblockchain.getSuperblock(queryMerkleRootHashes.superblockId);
                 ethWrapper.respondMerkleRootHashes(queryMerkleRootHashes.superblockId, queryMerkleRootHashes.sessionId,
                         superblock.getDogeBlockHashes(), myAddress);
             }
@@ -175,7 +175,7 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
                 ethWrapper.getSemiApprovedSuperblocks(fromBlock, toBlock);
 
         for (EthWrapper.SuperblockEvent semiApprovedSuperblockEvent : semiApprovedSuperblockEvents) {
-            Superblock descendant = superblockChain.getFirstDescendant(semiApprovedSuperblockEvent.superblockId);
+            Superblock descendant = superblockchain.getFirstDescendant(semiApprovedSuperblockEvent.superblockId);
             if (descendant != null) {
                 log.info("Found superblock {}, descendant of semi-approved {}. Sending it now.",
                         descendant.getSuperblockId(), semiApprovedSuperblockEvent.superblockId);
@@ -291,11 +291,11 @@ public class SuperblockDefenderClient extends SuperblockBaseClient {
      */
     private Superblock getHighestSemiApprovedDescendant(Keccak256Hash superblockId)
             throws BlockStoreException, IOException, Exception {
-        Superblock highest = superblockChain.getChainHead();
+        Superblock highest = superblockchain.getChainHead();
 
         // Find highest semi-approved descendant
         while (highest != null && !ethWrapper.isSuperblockSemiApproved(highest.getSuperblockId())) {
-            highest = superblockChain.getParent(highest);
+            highest = superblockchain.getParent(highest);
             if (highest.getSuperblockId().equals(superblockId)) {
                 // No semi-approved descendants found
                 return null;

@@ -19,7 +19,7 @@ import java.util.*;
 /**
  * LevelDB for storing and retrieving superblocks.
  * This class only takes care of storing/retrieving data that it receives from external sources;
- * the information itself is handled by SuperblockChain, primarily via the updateChain() method.
+ * the information itself is handled by Superblockchain, primarily via the updateChain() method.
  * @author Catalina Juarros
  */
 

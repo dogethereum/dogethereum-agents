@@ -28,7 +28,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
     protected EthWrapper ethWrapper;
 
     @Autowired
-    protected SuperblockChain superblockChain;
+    protected Superblockchain superblockchain;
 
     protected SystemProperties config;
 

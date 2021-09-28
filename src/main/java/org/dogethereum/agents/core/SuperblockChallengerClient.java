@@ -73,7 +73,7 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
     private void invalidateNonMainChainSuperblocks() throws Exception {
         for (Keccak256Hash superblockId : semiApprovedSet) {
             long semiApprovedHeight = ethWrapper.getSuperblockHeight(superblockId).longValue();
-            Superblock mainChainSuperblock = superblockChain.getSuperblockByHeight(semiApprovedHeight);
+            Superblock mainChainSuperblock = superblockchain.getSuperblockByHeight(semiApprovedHeight);
             if (mainChainSuperblock != null) {
                 long confirmations = ethWrapper.getSuperblockConfirmations();
                 if (!mainChainSuperblock.getSuperblockId().equals(superblockId) &&
@@ -110,10 +110,10 @@ public class SuperblockChallengerClient extends SuperblockBaseClient {
         for (EthWrapper.SuperblockEvent newSuperblock : newSuperblockEvents) {
             log.info("NewSuperblock {}. Validating...", newSuperblock.superblockId);
 
-            Superblock superblock = superblockChain.getSuperblock(newSuperblock.superblockId);
+            Superblock superblock = superblockchain.getSuperblock(newSuperblock.superblockId);
             if (superblock == null) {
                 BigInteger height = ethWrapper.getSuperblockHeight(newSuperblock.superblockId);
-                Superblock localSuperblock = superblockChain.getSuperblockByHeight(height.longValue());
+                Superblock localSuperblock = superblockchain.getSuperblockByHeight(height.longValue());
                 if (localSuperblock == null) {
                     //FIXME: Local superbockchain might be out of sync
                     log.info("Superblock {} not present in our superblock chain", newSuperblock.superblockId);
