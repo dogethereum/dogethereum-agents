@@ -10,8 +10,6 @@ src/main/resources/dogethereum-agents-bkp.conf
 src/main/resources/dogethereum-agents.ethganachedogemain.conf
 src/main/resources/operator0.key
 
-src/main/java/test/SuperblockChainTest.java
-
 *.iml
 *.log
 
