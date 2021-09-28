@@ -17,18 +17,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
 
-@Value
-class DogethereumSmartContract {
-    /**
-     * The name of the Dogethereum smart contract component in the deployment artifact.
-     */
-    String componentName;
-    /**
-     * The name of the generated class that represents this particular smart contract component.
-     */
-    String contractClassName;
-}
-
 @Slf4j(topic = "RegenerateContractWrappers")
 public class RegenerateContractWrappers {
     public static void main(String[] args) throws IOException, ClassNotFoundException, ParseException {
@@ -86,4 +74,18 @@ public class RegenerateContractWrappers {
             );
         }
     }
+
+
+    @Value
+    private static class DogethereumSmartContract {
+        /**
+         * The name of the Dogethereum smart contract component in the deployment artifact.
+         */
+        String componentName;
+        /**
+         * The name of the generated class that represents this particular smart contract component.
+         */
+        String contractClassName;
+    }
+
 }
