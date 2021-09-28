@@ -45,17 +45,14 @@ public class DogecoinWrapper {
     public DogecoinWrapper(OperatorPublicKeyHandler operatorPublicKeyHandler) throws Exception {
         this.operatorPublicKeyHandler = operatorPublicKeyHandler;
         this.config = SystemProperties.CONFIG;
-        if (config.isDogeSuperblockSubmitterEnabled() || config.isDogeLockTxRelayEnabled() ||
-                config.isOperatorEnabled() || config.isDogeBlockChallengerEnabled()) {
-            this.agentConstants = config.getAgentConstants();
-            this.dogeContext = new Context(agentConstants.getDogeParams());
-            this.dataDirectory = new File(config.dataDirectory() + "/DogecoinWrapper");
-            this.dogeTxToRelayToEthProofsFile = new File(dataDirectory.getAbsolutePath() + "/DogeTxToRelayToEthProofs.ser");
-            restoreProofsFromFile();
-            this.walletEnabled = config.isDogeLockTxRelayEnabled() || config.isOperatorEnabled();
-            setup();
-            start();
-        }
+        this.agentConstants = config.getAgentConstants();
+        this.dogeContext = new Context(agentConstants.getDogeParams());
+        this.dataDirectory = new File(config.dataDirectory() + "/DogecoinWrapper");
+        this.dogeTxToRelayToEthProofsFile = new File(dataDirectory.getAbsolutePath() + "/DogeTxToRelayToEthProofs.ser");
+        restoreProofsFromFile();
+        this.walletEnabled = config.isDogeLockTxRelayEnabled() || config.isOperatorEnabled();
+        setup();
+        start();
     }
 
 
@@ -221,16 +218,13 @@ public class DogecoinWrapper {
 
     @PreDestroy
     public void tearDown() throws BlockStoreException, IOException {
-        if (config.isDogeSuperblockSubmitterEnabled() || config.isDogeLockTxRelayEnabled() ||
-                config.isOperatorEnabled() || config.isDogeBlockChallengerEnabled()) {
-            log.info("DogecoinWrapper tearDown starting...");
-            stop();
+        log.info("DogecoinWrapper tearDown starting...");
+        stop();
 
-            synchronized (this) {
-                flushProofs();
-            }
-            log.info("DogecoinWrapper tearDown finished.");
+        synchronized (this) {
+            flushProofs();
         }
+        log.info("DogecoinWrapper tearDown finished.");
     }
 
     private void restoreProofsFromFile() throws IOException, ClassNotFoundException {
