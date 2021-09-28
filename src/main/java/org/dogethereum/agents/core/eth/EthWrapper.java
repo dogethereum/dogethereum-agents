@@ -43,15 +43,6 @@ import java.util.concurrent.ExecutionException;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-@Value
-class DogethereumAddresses {
-    String superblocks;
-    String superblockClaims;
-    String scryptChecker;
-    String dogeToken;
-    String battleManager;
-}
-
 /**
  * Helps the agent communication with the Eth blockchain.
  * @author Oscar Guindzberg
@@ -1592,4 +1583,14 @@ public class EthWrapper implements SuperblockConstantProvider {
             return null;
         });
     }
+
+    @Value
+    private static class DogethereumAddresses {
+        String superblocks;
+        String superblockClaims;
+        String scryptChecker;
+        String dogeToken;
+        String battleManager;
+    }
+
 }
