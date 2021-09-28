@@ -95,7 +95,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         String scryptVerifierAddress;
 
         if (config.isGanache()) {
-            DogethereumAddresses addresses = getContractAddresses();
+            ContractAddresses addresses = getContractAddresses();
             dogeTokenContractAddress = addresses.getDogeToken();
             superblockClaimsContractAddress = addresses.getSuperblockClaims();
             battleManagerContractAddress = addresses.getBattleManager();
@@ -166,7 +166,7 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @return Addresses of contracts.
      * @throws Exception
      */
-    private DogethereumAddresses getContractAddresses() throws Exception {
+    private ContractAddresses getContractAddresses() throws Exception {
         String path = config.deploymentFile();
         FileReader deploymentJson = new FileReader(path);
         JSONParser parser = new JSONParser();
@@ -178,7 +178,7 @@ public class EthWrapper implements SuperblockConstantProvider {
         String battleManagerAddress = getContractAddress(contracts, "battleManager");
         String superblocksAddress = getContractAddress(contracts, "superblocks");
         String scryptCheckerAddress = getContractAddress(contracts, "scryptChecker");
-        return new DogethereumAddresses(
+        return new ContractAddresses(
             superblocksAddress,
             superblockClaimsAddress,
             scryptCheckerAddress,
@@ -1585,7 +1585,7 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     @Value
-    private static class DogethereumAddresses {
+    private static class ContractAddresses {
         String superblocks;
         String superblockClaims;
         String scryptChecker;
