@@ -113,6 +113,8 @@ public class DogeSuperblocks extends Contract {
 
     public static final String FUNC_RELAYTX = "relayTx";
 
+    public static final String FUNC_RELAYTXANDREPORTOPERATORFREEUTXOSPEND = "relayTxAndReportOperatorFreeUtxoSpend";
+
     public static final String FUNC_RELAYUNLOCKTX = "relayUnlockTx";
 
     public static final String FUNC_REQUESTSCRYPTCOST = "requestScryptCost";
@@ -154,15 +156,11 @@ public class DogeSuperblocks extends Contract {
     ;
 
     public static final Event RELAYTRANSACTION_EVENT = new Event("RelayTransaction", 
-            Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Uint256>() {}));
+            Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}));
     ;
 
     public static final Event SEMIAPPROVEDSUPERBLOCK_EVENT = new Event("SemiApprovedSuperblock", 
             Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
-    ;
-
-    public static final Event VERIFYTRANSACTION_EVENT = new Event("VerifyTransaction", 
-            Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Uint256>() {}));
     ;
 
     @Deprecated
@@ -355,7 +353,6 @@ public class DogeSuperblocks extends Contract {
             RelayTransactionEventResponse typedResponse = new RelayTransactionEventResponse();
             typedResponse.log = eventValues.getLog();
             typedResponse.txHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            typedResponse.returnCode = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
             responses.add(typedResponse);
         }
         return responses;
@@ -369,7 +366,6 @@ public class DogeSuperblocks extends Contract {
                 RelayTransactionEventResponse typedResponse = new RelayTransactionEventResponse();
                 typedResponse.log = log;
                 typedResponse.txHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-                typedResponse.returnCode = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
                 return typedResponse;
             }
         });
@@ -414,39 +410,6 @@ public class DogeSuperblocks extends Contract {
         return semiApprovedSuperblockEventFlowable(filter);
     }
 
-    public List<VerifyTransactionEventResponse> getVerifyTransactionEvents(TransactionReceipt transactionReceipt) {
-        List<Contract.EventValuesWithLog> valueList = extractEventParametersWithLog(VERIFYTRANSACTION_EVENT, transactionReceipt);
-        ArrayList<VerifyTransactionEventResponse> responses = new ArrayList<VerifyTransactionEventResponse>(valueList.size());
-        for (Contract.EventValuesWithLog eventValues : valueList) {
-            VerifyTransactionEventResponse typedResponse = new VerifyTransactionEventResponse();
-            typedResponse.log = eventValues.getLog();
-            typedResponse.txHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            typedResponse.returnCode = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
-            responses.add(typedResponse);
-        }
-        return responses;
-    }
-
-    public Flowable<VerifyTransactionEventResponse> verifyTransactionEventFlowable(EthFilter filter) {
-        return web3j.ethLogFlowable(filter).map(new Function<Log, VerifyTransactionEventResponse>() {
-            @Override
-            public VerifyTransactionEventResponse apply(Log log) {
-                Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(VERIFYTRANSACTION_EVENT, log);
-                VerifyTransactionEventResponse typedResponse = new VerifyTransactionEventResponse();
-                typedResponse.log = log;
-                typedResponse.txHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-                typedResponse.returnCode = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
-                return typedResponse;
-            }
-        });
-    }
-
-    public Flowable<VerifyTransactionEventResponse> verifyTransactionEventFlowable(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
-        EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(VERIFYTRANSACTION_EVENT));
-        return verifyTransactionEventFlowable(filter);
-    }
-
     public RemoteFunctionCall<byte[]> bestSuperblock() {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_BESTSUPERBLOCK, 
                 Arrays.<Type>asList(), 
@@ -461,24 +424,24 @@ public class DogeSuperblocks extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteFunctionCall<byte[]> calcSuperblockHash(byte[] _blocksMerkleRoot, BigInteger _accumulatedWork, BigInteger _timestamp, BigInteger _prevTimestamp, byte[] _lastHash, BigInteger _lastBits, byte[] _parentId) {
+    public RemoteFunctionCall<byte[]> calcSuperblockHash(byte[] blocksMerkleRoot, BigInteger accumulatedWork, BigInteger timestamp, BigInteger prevTimestamp, byte[] lastHash, BigInteger lastBits, byte[] parentId) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_CALCSUPERBLOCKHASH, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(_blocksMerkleRoot), 
-                new org.web3j.abi.datatypes.generated.Uint256(_accumulatedWork), 
-                new org.web3j.abi.datatypes.generated.Uint256(_timestamp), 
-                new org.web3j.abi.datatypes.generated.Uint256(_prevTimestamp), 
-                new org.web3j.abi.datatypes.generated.Bytes32(_lastHash), 
-                new org.web3j.abi.datatypes.generated.Uint32(_lastBits), 
-                new org.web3j.abi.datatypes.generated.Bytes32(_parentId)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(blocksMerkleRoot), 
+                new org.web3j.abi.datatypes.generated.Uint256(accumulatedWork), 
+                new org.web3j.abi.datatypes.generated.Uint256(timestamp), 
+                new org.web3j.abi.datatypes.generated.Uint256(prevTimestamp), 
+                new org.web3j.abi.datatypes.generated.Bytes32(lastHash), 
+                new org.web3j.abi.datatypes.generated.Uint32(lastBits), 
+                new org.web3j.abi.datatypes.generated.Bytes32(parentId)), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}));
         return executeRemoteCallSingleValueReturn(function, byte[].class);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> challenge(byte[] _superblockHash, String _challenger) {
+    public RemoteFunctionCall<TransactionReceipt> challenge(byte[] superblockHash, String challenger) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
                 FUNC_CHALLENGE, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(_superblockHash), 
-                new org.web3j.abi.datatypes.Address(_challenger)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(superblockHash), 
+                new org.web3j.abi.datatypes.Address(challenger)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
@@ -490,11 +453,11 @@ public class DogeSuperblocks extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> confirm(byte[] _superblockHash, String _validator) {
+    public RemoteFunctionCall<TransactionReceipt> confirm(byte[] superblockHash, String validator) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
                 FUNC_CONFIRM, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(_superblockHash), 
-                new org.web3j.abi.datatypes.Address(_validator)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(superblockHash), 
+                new org.web3j.abi.datatypes.Address(validator)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
@@ -543,9 +506,9 @@ public class DogeSuperblocks extends Contract {
                 });
     }
 
-    public RemoteFunctionCall<BigInteger> getSuperblockAccumulatedWork(byte[] _superblockHash) {
+    public RemoteFunctionCall<BigInteger> getSuperblockAccumulatedWork(byte[] superblockHash) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_GETSUPERBLOCKACCUMULATEDWORK, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(_superblockHash)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(superblockHash)), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
@@ -557,9 +520,9 @@ public class DogeSuperblocks extends Contract {
         return executeRemoteCallSingleValueReturn(function, byte[].class);
     }
 
-    public RemoteFunctionCall<byte[]> getSuperblockAt(BigInteger _height) {
+    public RemoteFunctionCall<byte[]> getSuperblockAt(BigInteger height) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_GETSUPERBLOCKAT, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(_height)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(height)), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}));
         return executeRemoteCallSingleValueReturn(function, byte[].class);
     }
@@ -578,9 +541,9 @@ public class DogeSuperblocks extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteFunctionCall<byte[]> getSuperblockLastHash(byte[] _superblockHash) {
+    public RemoteFunctionCall<byte[]> getSuperblockLastHash(byte[] superblockHash) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_GETSUPERBLOCKLASTHASH, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(_superblockHash)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(superblockHash)), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}));
         return executeRemoteCallSingleValueReturn(function, byte[].class);
     }
@@ -600,67 +563,67 @@ public class DogeSuperblocks extends Contract {
                 });
     }
 
-    public RemoteFunctionCall<byte[]> getSuperblockMerkleRoot(byte[] _superblockHash) {
+    public RemoteFunctionCall<byte[]> getSuperblockMerkleRoot(byte[] superblockHash) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_GETSUPERBLOCKMERKLEROOT, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(_superblockHash)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(superblockHash)), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}));
         return executeRemoteCallSingleValueReturn(function, byte[].class);
     }
 
-    public RemoteFunctionCall<byte[]> getSuperblockParentId(byte[] _superblockHash) {
+    public RemoteFunctionCall<byte[]> getSuperblockParentId(byte[] superblockHash) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_GETSUPERBLOCKPARENTID, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(_superblockHash)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(superblockHash)), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}));
         return executeRemoteCallSingleValueReturn(function, byte[].class);
     }
 
-    public RemoteFunctionCall<BigInteger> getSuperblockPrevTimestamp(byte[] _superblockHash) {
+    public RemoteFunctionCall<BigInteger> getSuperblockPrevTimestamp(byte[] superblockHash) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_GETSUPERBLOCKPREVTIMESTAMP, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(_superblockHash)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(superblockHash)), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteFunctionCall<BigInteger> getSuperblockStatus(byte[] _superblockHash) {
+    public RemoteFunctionCall<BigInteger> getSuperblockStatus(byte[] superblockHash) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_GETSUPERBLOCKSTATUS, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(_superblockHash)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(superblockHash)), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint8>() {}));
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteFunctionCall<BigInteger> getSuperblockTimestamp(byte[] _superblockHash) {
+    public RemoteFunctionCall<BigInteger> getSuperblockTimestamp(byte[] superblockHash) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_GETSUPERBLOCKTIMESTAMP, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(_superblockHash)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(superblockHash)), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> initialize(byte[] _blocksMerkleRoot, BigInteger _accumulatedWork, BigInteger _timestamp, BigInteger _prevTimestamp, byte[] _lastHash, BigInteger _lastBits, byte[] _parentId) {
+    public RemoteFunctionCall<TransactionReceipt> initialize(byte[] blocksMerkleRoot, BigInteger accumulatedWork, BigInteger timestamp, BigInteger prevTimestamp, byte[] lastHash, BigInteger lastBits, byte[] parentId) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
                 FUNC_INITIALIZE, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(_blocksMerkleRoot), 
-                new org.web3j.abi.datatypes.generated.Uint256(_accumulatedWork), 
-                new org.web3j.abi.datatypes.generated.Uint256(_timestamp), 
-                new org.web3j.abi.datatypes.generated.Uint256(_prevTimestamp), 
-                new org.web3j.abi.datatypes.generated.Bytes32(_lastHash), 
-                new org.web3j.abi.datatypes.generated.Uint32(_lastBits), 
-                new org.web3j.abi.datatypes.generated.Bytes32(_parentId)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(blocksMerkleRoot), 
+                new org.web3j.abi.datatypes.generated.Uint256(accumulatedWork), 
+                new org.web3j.abi.datatypes.generated.Uint256(timestamp), 
+                new org.web3j.abi.datatypes.generated.Uint256(prevTimestamp), 
+                new org.web3j.abi.datatypes.generated.Bytes32(lastHash), 
+                new org.web3j.abi.datatypes.generated.Uint32(lastBits), 
+                new org.web3j.abi.datatypes.generated.Bytes32(parentId)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> invalidate(byte[] _superblockHash, String _validator) {
+    public RemoteFunctionCall<TransactionReceipt> invalidate(byte[] superblockHash, String validator) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
                 FUNC_INVALIDATE, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(_superblockHash), 
-                new org.web3j.abi.datatypes.Address(_validator)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(superblockHash), 
+                new org.web3j.abi.datatypes.Address(validator)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
-    public RemoteFunctionCall<Boolean> isApproved(byte[] _superblockHash) {
+    public RemoteFunctionCall<Boolean> isApproved(byte[] superblockHash) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_ISAPPROVED, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(_superblockHash)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(superblockHash)), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Bool>() {}));
         return executeRemoteCallSingleValueReturn(function, Boolean.class);
     }
@@ -695,16 +658,16 @@ public class DogeSuperblocks extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> propose(byte[] _blocksMerkleRoot, BigInteger _accumulatedWork, BigInteger _timestamp, BigInteger _prevTimestamp, byte[] _lastHash, BigInteger _lastBits, byte[] _parentId, String submitter) {
+    public RemoteFunctionCall<TransactionReceipt> propose(byte[] blocksMerkleRoot, BigInteger accumulatedWork, BigInteger timestamp, BigInteger prevTimestamp, byte[] lastHash, BigInteger lastBits, byte[] parentId, String submitter) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
                 FUNC_PROPOSE, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(_blocksMerkleRoot), 
-                new org.web3j.abi.datatypes.generated.Uint256(_accumulatedWork), 
-                new org.web3j.abi.datatypes.generated.Uint256(_timestamp), 
-                new org.web3j.abi.datatypes.generated.Uint256(_prevTimestamp), 
-                new org.web3j.abi.datatypes.generated.Bytes32(_lastHash), 
-                new org.web3j.abi.datatypes.generated.Uint32(_lastBits), 
-                new org.web3j.abi.datatypes.generated.Bytes32(_parentId), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(blocksMerkleRoot), 
+                new org.web3j.abi.datatypes.generated.Uint256(accumulatedWork), 
+                new org.web3j.abi.datatypes.generated.Uint256(timestamp), 
+                new org.web3j.abi.datatypes.generated.Uint256(prevTimestamp), 
+                new org.web3j.abi.datatypes.generated.Bytes32(lastHash), 
+                new org.web3j.abi.datatypes.generated.Uint32(lastBits), 
+                new org.web3j.abi.datatypes.generated.Bytes32(parentId), 
                 new org.web3j.abi.datatypes.Address(submitter)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
@@ -724,62 +687,84 @@ public class DogeSuperblocks extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> relayLockTx(byte[] _txBytes, byte[] _operatorPublicKeyHash, BigInteger _txIndex, List<BigInteger> _txSiblings, byte[] _dogeBlockHeader, BigInteger _dogeBlockIndex, List<BigInteger> _dogeBlockSiblings, byte[] _superblockHash, String _untrustedTargetContract) {
+    public RemoteFunctionCall<TransactionReceipt> relayLockTx(byte[] txBytes, byte[] operatorPublicKeyHash, BigInteger txIndex, List<BigInteger> txSiblings, byte[] dogeBlockHeader, BigInteger dogeBlockIndex, List<BigInteger> dogeBlockSiblings, byte[] superblockHash, String untrustedTargetContract) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
                 FUNC_RELAYLOCKTX, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicBytes(_txBytes), 
-                new org.web3j.abi.datatypes.generated.Bytes20(_operatorPublicKeyHash), 
-                new org.web3j.abi.datatypes.generated.Uint256(_txIndex), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicBytes(txBytes), 
+                new org.web3j.abi.datatypes.generated.Bytes20(operatorPublicKeyHash), 
+                new org.web3j.abi.datatypes.generated.Uint256(txIndex), 
                 new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.generated.Uint256>(
                         org.web3j.abi.datatypes.generated.Uint256.class,
-                        org.web3j.abi.Utils.typeMap(_txSiblings, org.web3j.abi.datatypes.generated.Uint256.class)), 
-                new org.web3j.abi.datatypes.DynamicBytes(_dogeBlockHeader), 
-                new org.web3j.abi.datatypes.generated.Uint256(_dogeBlockIndex), 
+                        org.web3j.abi.Utils.typeMap(txSiblings, org.web3j.abi.datatypes.generated.Uint256.class)), 
+                new org.web3j.abi.datatypes.DynamicBytes(dogeBlockHeader), 
+                new org.web3j.abi.datatypes.generated.Uint256(dogeBlockIndex), 
                 new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.generated.Uint256>(
                         org.web3j.abi.datatypes.generated.Uint256.class,
-                        org.web3j.abi.Utils.typeMap(_dogeBlockSiblings, org.web3j.abi.datatypes.generated.Uint256.class)), 
-                new org.web3j.abi.datatypes.generated.Bytes32(_superblockHash), 
-                new org.web3j.abi.datatypes.Address(_untrustedTargetContract)), 
+                        org.web3j.abi.Utils.typeMap(dogeBlockSiblings, org.web3j.abi.datatypes.generated.Uint256.class)), 
+                new org.web3j.abi.datatypes.generated.Bytes32(superblockHash), 
+                new org.web3j.abi.datatypes.Address(untrustedTargetContract)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> relayTx(byte[] _txBytes, byte[] _operatorPublicKeyHash, BigInteger _txIndex, List<BigInteger> _txSiblings, byte[] _dogeBlockHeader, BigInteger _dogeBlockIndex, List<BigInteger> _dogeBlockSiblings, byte[] _superblockHash, byte[] _untrustedMethod) {
+    public RemoteFunctionCall<TransactionReceipt> relayTx(byte[] txBytes, byte[] operatorPublicKeyHash, BigInteger txIndex, List<BigInteger> txSiblings, byte[] dogeBlockHeader, BigInteger dogeBlockIndex, List<BigInteger> dogeBlockSiblings, byte[] superblockHash, byte[] untrustedMethod) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
                 FUNC_RELAYTX, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicBytes(_txBytes), 
-                new org.web3j.abi.datatypes.generated.Bytes20(_operatorPublicKeyHash), 
-                new org.web3j.abi.datatypes.generated.Uint256(_txIndex), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicBytes(txBytes), 
+                new org.web3j.abi.datatypes.generated.Bytes20(operatorPublicKeyHash), 
+                new org.web3j.abi.datatypes.generated.Uint256(txIndex), 
                 new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.generated.Uint256>(
                         org.web3j.abi.datatypes.generated.Uint256.class,
-                        org.web3j.abi.Utils.typeMap(_txSiblings, org.web3j.abi.datatypes.generated.Uint256.class)), 
-                new org.web3j.abi.datatypes.DynamicBytes(_dogeBlockHeader), 
-                new org.web3j.abi.datatypes.generated.Uint256(_dogeBlockIndex), 
+                        org.web3j.abi.Utils.typeMap(txSiblings, org.web3j.abi.datatypes.generated.Uint256.class)), 
+                new org.web3j.abi.datatypes.DynamicBytes(dogeBlockHeader), 
+                new org.web3j.abi.datatypes.generated.Uint256(dogeBlockIndex), 
                 new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.generated.Uint256>(
                         org.web3j.abi.datatypes.generated.Uint256.class,
-                        org.web3j.abi.Utils.typeMap(_dogeBlockSiblings, org.web3j.abi.datatypes.generated.Uint256.class)), 
-                new org.web3j.abi.datatypes.generated.Bytes32(_superblockHash), 
-                new org.web3j.abi.datatypes.generated.Bytes24(_untrustedMethod)), 
+                        org.web3j.abi.Utils.typeMap(dogeBlockSiblings, org.web3j.abi.datatypes.generated.Uint256.class)), 
+                new org.web3j.abi.datatypes.generated.Bytes32(superblockHash), 
+                new org.web3j.abi.datatypes.generated.Bytes24(untrustedMethod)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> relayUnlockTx(byte[] _txBytes, byte[] _operatorPublicKeyHash, BigInteger _txIndex, List<BigInteger> _txSiblings, byte[] _dogeBlockHeader, BigInteger _dogeBlockIndex, List<BigInteger> _dogeBlockSiblings, byte[] _superblockHash, String _untrustedTargetContract) {
+    public RemoteFunctionCall<TransactionReceipt> relayTxAndReportOperatorFreeUtxoSpend(byte[] txBytes, byte[] operatorPublicKeyHash, BigInteger txIndex, List<BigInteger> txSiblings, byte[] dogeBlockHeader, BigInteger dogeBlockIndex, List<BigInteger> dogeBlockSiblings, byte[] superblockHash, String untrustedTargetContract, BigInteger operatorTxOutputReference, BigInteger unlawfulTxInputIndex) {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+                FUNC_RELAYTXANDREPORTOPERATORFREEUTXOSPEND, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicBytes(txBytes), 
+                new org.web3j.abi.datatypes.generated.Bytes20(operatorPublicKeyHash), 
+                new org.web3j.abi.datatypes.generated.Uint256(txIndex), 
+                new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.generated.Uint256>(
+                        org.web3j.abi.datatypes.generated.Uint256.class,
+                        org.web3j.abi.Utils.typeMap(txSiblings, org.web3j.abi.datatypes.generated.Uint256.class)), 
+                new org.web3j.abi.datatypes.DynamicBytes(dogeBlockHeader), 
+                new org.web3j.abi.datatypes.generated.Uint256(dogeBlockIndex), 
+                new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.generated.Uint256>(
+                        org.web3j.abi.datatypes.generated.Uint256.class,
+                        org.web3j.abi.Utils.typeMap(dogeBlockSiblings, org.web3j.abi.datatypes.generated.Uint256.class)), 
+                new org.web3j.abi.datatypes.generated.Bytes32(superblockHash), 
+                new org.web3j.abi.datatypes.Address(untrustedTargetContract), 
+                new org.web3j.abi.datatypes.generated.Uint32(operatorTxOutputReference), 
+                new org.web3j.abi.datatypes.generated.Uint32(unlawfulTxInputIndex)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> relayUnlockTx(byte[] txBytes, byte[] operatorPublicKeyHash, BigInteger txIndex, List<BigInteger> txSiblings, byte[] dogeBlockHeader, BigInteger dogeBlockIndex, List<BigInteger> dogeBlockSiblings, byte[] superblockHash, String untrustedTargetContract) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
                 FUNC_RELAYUNLOCKTX, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicBytes(_txBytes), 
-                new org.web3j.abi.datatypes.generated.Bytes20(_operatorPublicKeyHash), 
-                new org.web3j.abi.datatypes.generated.Uint256(_txIndex), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicBytes(txBytes), 
+                new org.web3j.abi.datatypes.generated.Bytes20(operatorPublicKeyHash), 
+                new org.web3j.abi.datatypes.generated.Uint256(txIndex), 
                 new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.generated.Uint256>(
                         org.web3j.abi.datatypes.generated.Uint256.class,
-                        org.web3j.abi.Utils.typeMap(_txSiblings, org.web3j.abi.datatypes.generated.Uint256.class)), 
-                new org.web3j.abi.datatypes.DynamicBytes(_dogeBlockHeader), 
-                new org.web3j.abi.datatypes.generated.Uint256(_dogeBlockIndex), 
+                        org.web3j.abi.Utils.typeMap(txSiblings, org.web3j.abi.datatypes.generated.Uint256.class)), 
+                new org.web3j.abi.datatypes.DynamicBytes(dogeBlockHeader), 
+                new org.web3j.abi.datatypes.generated.Uint256(dogeBlockIndex), 
                 new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.generated.Uint256>(
                         org.web3j.abi.datatypes.generated.Uint256.class,
-                        org.web3j.abi.Utils.typeMap(_dogeBlockSiblings, org.web3j.abi.datatypes.generated.Uint256.class)), 
-                new org.web3j.abi.datatypes.generated.Bytes32(_superblockHash), 
-                new org.web3j.abi.datatypes.Address(_untrustedTargetContract)), 
+                        org.web3j.abi.Utils.typeMap(dogeBlockSiblings, org.web3j.abi.datatypes.generated.Uint256.class)), 
+                new org.web3j.abi.datatypes.generated.Bytes32(superblockHash), 
+                new org.web3j.abi.datatypes.Address(untrustedTargetContract)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
@@ -805,19 +790,19 @@ public class DogeSuperblocks extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> semiApprove(byte[] _superblockHash, String _validator) {
+    public RemoteFunctionCall<TransactionReceipt> semiApprove(byte[] superblockHash, String validator) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
                 FUNC_SEMIAPPROVE, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(_superblockHash), 
-                new org.web3j.abi.datatypes.Address(_validator)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(superblockHash), 
+                new org.web3j.abi.datatypes.Address(validator)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> setSuperblockClaims(String _superblockClaims) {
+    public RemoteFunctionCall<TransactionReceipt> setSuperblockClaims(String superblockClaims) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
                 FUNC_SETSUPERBLOCKCLAIMS, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(_superblockClaims)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(superblockClaims)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
@@ -843,18 +828,17 @@ public class DogeSuperblocks extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> verifyTx(byte[] _txBytes, BigInteger _txIndex, List<BigInteger> _siblings, byte[] _txBlockHeaderBytes, byte[] _txsuperblockHash) {
-        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
-                FUNC_VERIFYTX, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicBytes(_txBytes), 
-                new org.web3j.abi.datatypes.generated.Uint256(_txIndex), 
+    public RemoteFunctionCall<BigInteger> verifyTx(byte[] txBytes, BigInteger txIndex, List<BigInteger> siblings, byte[] blockHeader, byte[] superblockHash) {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_VERIFYTX, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicBytes(txBytes), 
+                new org.web3j.abi.datatypes.generated.Uint256(txIndex), 
                 new org.web3j.abi.datatypes.DynamicArray<org.web3j.abi.datatypes.generated.Uint256>(
                         org.web3j.abi.datatypes.generated.Uint256.class,
-                        org.web3j.abi.Utils.typeMap(_siblings, org.web3j.abi.datatypes.generated.Uint256.class)), 
-                new org.web3j.abi.datatypes.DynamicBytes(_txBlockHeaderBytes), 
-                new org.web3j.abi.datatypes.generated.Bytes32(_txsuperblockHash)), 
-                Collections.<TypeReference<?>>emptyList());
-        return executeRemoteCallTransaction(function);
+                        org.web3j.abi.Utils.typeMap(siblings, org.web3j.abi.datatypes.generated.Uint256.class)), 
+                new org.web3j.abi.datatypes.DynamicBytes(blockHeader), 
+                new org.web3j.abi.datatypes.generated.Bytes32(superblockHash)), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
     @Deprecated
@@ -907,19 +891,11 @@ public class DogeSuperblocks extends Contract {
 
     public static class RelayTransactionEventResponse extends BaseEventResponse {
         public byte[] txHash;
-
-        public BigInteger returnCode;
     }
 
     public static class SemiApprovedSuperblockEventResponse extends BaseEventResponse {
         public byte[] superblockHash;
 
         public String who;
-    }
-
-    public static class VerifyTransactionEventResponse extends BaseEventResponse {
-        public byte[] txHash;
-
-        public BigInteger returnCode;
     }
 }

@@ -820,16 +820,16 @@ public class SuperblockClaims extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> proposeSuperblock(byte[] _blocksMerkleRoot, BigInteger _accumulatedWork, BigInteger _timestamp, BigInteger _prevTimestamp, byte[] _lastHash, BigInteger _lastBits, byte[] _parentHash) {
+    public RemoteFunctionCall<TransactionReceipt> proposeSuperblock(byte[] blocksMerkleRoot, BigInteger accumulatedWork, BigInteger timestamp, BigInteger prevTimestamp, byte[] lastHash, BigInteger lastBits, byte[] parentHash) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
                 FUNC_PROPOSESUPERBLOCK, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(_blocksMerkleRoot), 
-                new org.web3j.abi.datatypes.generated.Uint256(_accumulatedWork), 
-                new org.web3j.abi.datatypes.generated.Uint256(_timestamp), 
-                new org.web3j.abi.datatypes.generated.Uint256(_prevTimestamp), 
-                new org.web3j.abi.datatypes.generated.Bytes32(_lastHash), 
-                new org.web3j.abi.datatypes.generated.Uint32(_lastBits), 
-                new org.web3j.abi.datatypes.generated.Bytes32(_parentHash)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(blocksMerkleRoot), 
+                new org.web3j.abi.datatypes.generated.Uint256(accumulatedWork), 
+                new org.web3j.abi.datatypes.generated.Uint256(timestamp), 
+                new org.web3j.abi.datatypes.generated.Uint256(prevTimestamp), 
+                new org.web3j.abi.datatypes.generated.Bytes32(lastHash), 
+                new org.web3j.abi.datatypes.generated.Uint32(lastBits), 
+                new org.web3j.abi.datatypes.generated.Bytes32(parentHash)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }

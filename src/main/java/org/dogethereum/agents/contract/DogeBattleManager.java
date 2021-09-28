@@ -743,13 +743,13 @@ public class DogeBattleManager extends Contract {
                 });
     }
 
-    public RemoteFunctionCall<TransactionReceipt> scryptSubmitted(byte[] scryptChallengeId, byte[] _scryptHash, byte[] _data, String _submitter) {
+    public RemoteFunctionCall<TransactionReceipt> scryptSubmitted(byte[] scryptChallengeId, byte[] scryptHash, byte[] data, String submitter) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
                 FUNC_SCRYPTSUBMITTED, 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(scryptChallengeId), 
-                new org.web3j.abi.datatypes.generated.Bytes32(_scryptHash), 
-                new org.web3j.abi.datatypes.DynamicBytes(_data), 
-                new org.web3j.abi.datatypes.Address(_submitter)), 
+                new org.web3j.abi.datatypes.generated.Bytes32(scryptHash), 
+                new org.web3j.abi.datatypes.DynamicBytes(data), 
+                new org.web3j.abi.datatypes.Address(submitter)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }

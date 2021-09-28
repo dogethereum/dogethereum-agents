@@ -73,13 +73,13 @@ public class ScryptClaims extends Contract {
         return executeRemoteCallSingleValueReturn(function, Boolean.class);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> checkScrypt(byte[] _data, byte[] _hash, byte[] _proposalId, String _scryptDependent, BigInteger weiValue) {
+    public RemoteFunctionCall<TransactionReceipt> checkScrypt(byte[] data, byte[] hash, byte[] proposalId, String scryptDependent, BigInteger weiValue) {
         final Function function = new Function(
                 FUNC_CHECKSCRYPT, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicBytes(_data), 
-                new org.web3j.abi.datatypes.generated.Bytes32(_hash), 
-                new org.web3j.abi.datatypes.generated.Bytes32(_proposalId), 
-                new org.web3j.abi.datatypes.Address(_scryptDependent)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicBytes(data), 
+                new org.web3j.abi.datatypes.generated.Bytes32(hash), 
+                new org.web3j.abi.datatypes.generated.Bytes32(proposalId), 
+                new org.web3j.abi.datatypes.Address(scryptDependent)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function, weiValue);
     }
@@ -109,29 +109,29 @@ public class ScryptClaims extends Contract {
                 });
     }
 
-    public RemoteFunctionCall<TransactionReceipt> sendFailed(byte[] _hash, String _scryptDependent) {
+    public RemoteFunctionCall<TransactionReceipt> sendFailed(byte[] hash, String scryptDependent) {
         final Function function = new Function(
                 FUNC_SENDFAILED, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(_hash), 
-                new org.web3j.abi.datatypes.Address(_scryptDependent)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(hash), 
+                new org.web3j.abi.datatypes.Address(scryptDependent)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> sendVerification(byte[] _hash, String _scryptDependent) {
+    public RemoteFunctionCall<TransactionReceipt> sendVerification(byte[] hash, String scryptDependent) {
         final Function function = new Function(
                 FUNC_SENDVERIFICATION, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(_hash), 
-                new org.web3j.abi.datatypes.Address(_scryptDependent)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes32(hash), 
+                new org.web3j.abi.datatypes.Address(scryptDependent)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> storeScryptHash(byte[] _data, byte[] _hash) {
+    public RemoteFunctionCall<TransactionReceipt> storeScryptHash(byte[] data, byte[] hash) {
         final Function function = new Function(
                 FUNC_STORESCRYPTHASH, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicBytes(_data), 
-                new org.web3j.abi.datatypes.generated.Bytes32(_hash)), 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicBytes(data), 
+                new org.web3j.abi.datatypes.generated.Bytes32(hash)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
