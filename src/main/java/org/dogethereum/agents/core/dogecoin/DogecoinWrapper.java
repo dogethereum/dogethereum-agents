@@ -35,7 +35,6 @@ public class DogecoinWrapper {
     private Context dogeContext;
     private AgentConstants agentConstants;
     private File dataDirectory;
-    private boolean walletEnabled;
 
     private Map<Sha256Hash, List<Proof>> dogeTxToRelayToEthProofsMap = new ConcurrentHashMap<>();
     private File dogeTxToRelayToEthProofsFile;
@@ -50,7 +49,6 @@ public class DogecoinWrapper {
         this.dataDirectory = new File(config.dataDirectory() + "/DogecoinWrapper");
         this.dogeTxToRelayToEthProofsFile = new File(dataDirectory.getAbsolutePath() + "/DogeTxToRelayToEthProofs.ser");
         restoreProofsFromFile();
-        this.walletEnabled = config.isDogeLockTxRelayEnabled() || config.isOperatorEnabled();
         setup();
         start();
     }
@@ -61,7 +59,7 @@ public class DogecoinWrapper {
             @Override
             protected void onSetupCompleted() {
                 Context.propagate(dogeContext);
-                if (walletEnabled) {
+                if (config.isDogeLockTxRelayEnabled() || config.isOperatorEnabled()) {
                     // When we receive a block that includes a tx that sends funds to eth via peg, store the PartialMerkleTree
                     vPeerGroup.addBlocksDownloadedEventListener((peer, block, filteredBlock, blocksLeft) -> {
                         if (filteredBlock != null) {
@@ -86,7 +84,7 @@ public class DogecoinWrapper {
             @Override
             protected Wallet createWallet() {
                 Wallet wallet = super.createWallet();
-                if (walletEnabled) {
+                if (config.isDogeLockTxRelayEnabled() || config.isOperatorEnabled()) {
                     LegacyAddress address = operatorPublicKeyHandler.getAddress();
                     // Be notified when we receive doge so we call registerTransaction()
                     wallet.addWatchedAddress(address, operatorPublicKeyHandler.getAddressCreationTime());
