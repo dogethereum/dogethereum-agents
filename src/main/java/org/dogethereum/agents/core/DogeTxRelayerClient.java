@@ -29,7 +29,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  */
 @Service
 @Slf4j(topic = "DogeTxRelayerClient")
-public class DogeTxRelayer {
+public class DogeTxRelayerClient {
 
     static final int MAXIMUM_REGISTER_DOGE_LOCK_TXS_PER_TURN = 40;
 
@@ -49,7 +49,7 @@ public class DogeTxRelayer {
     @Autowired
     private SuperblockChain superblockChain;
 
-    public DogeTxRelayer() {}
+    public DogeTxRelayerClient() {}
 
 
     @PostConstruct
