@@ -166,33 +166,31 @@ public class DogecoinWrapper {
     }
 
     public void onBlock(FilteredBlock filteredBlock) {
-        if (config.isDogeLockTxRelayEnabled() || config.isOperatorEnabled()) {
-            synchronized (this) {
-                log.debug("onBlock {}", filteredBlock.getHash());
-                List<Sha256Hash> hashes = new ArrayList<>();
-                PartialMerkleTree tree = filteredBlock.getPartialMerkleTree();
-                tree.getTxnHashAndMerkleRoot(hashes);
-                for (Sha256Hash txToSendToEth : dogeTxToRelayToEthProofsMap.keySet()) {
-                    if (hashes.contains(txToSendToEth)) {
-                        List<Proof> proofs = dogeTxToRelayToEthProofsMap.get(txToSendToEth);
-                        boolean alreadyIncluded = false;
-                        for (Proof proof : proofs) {
-                            if (proof.getBlockHash().equals(filteredBlock.getHash())) {
-                                alreadyIncluded = true;
-                            }
+        synchronized (this) {
+            log.debug("onBlock {}", filteredBlock.getHash());
+            List<Sha256Hash> hashes = new ArrayList<>();
+            PartialMerkleTree tree = filteredBlock.getPartialMerkleTree();
+            tree.getTxnHashAndMerkleRoot(hashes);
+            for (Sha256Hash txToSendToEth : dogeTxToRelayToEthProofsMap.keySet()) {
+                if (hashes.contains(txToSendToEth)) {
+                    List<Proof> proofs = dogeTxToRelayToEthProofsMap.get(txToSendToEth);
+                    boolean alreadyIncluded = false;
+                    for (Proof proof : proofs) {
+                        if (proof.getBlockHash().equals(filteredBlock.getHash())) {
+                            alreadyIncluded = true;
                         }
-                        if (!alreadyIncluded) {
-                            Proof proof = new Proof(filteredBlock.getHash(), tree);
-                            proofs.add(proof);
-                            log.info("New proof for tx " + txToSendToEth + " in block " + filteredBlock.getHash());
-                            try {
-                                flushProofs();
-                            } catch (IOException e) {
-                                log.error(e.getMessage(), e);
-                            }
-                        } else {
-                            log.info("Proof for tx " + txToSendToEth + " in block " + filteredBlock.getHash() + " already stored");
+                    }
+                    if (!alreadyIncluded) {
+                        Proof proof = new Proof(filteredBlock.getHash(), tree);
+                        proofs.add(proof);
+                        log.info("New proof for tx " + txToSendToEth + " in block " + filteredBlock.getHash());
+                        try {
+                            flushProofs();
+                        } catch (IOException e) {
+                            log.error(e.getMessage(), e);
                         }
+                    } else {
+                        log.info("Proof for tx " + txToSendToEth + " in block " + filteredBlock.getHash() + " already stored");
                     }
                 }
             }
@@ -200,15 +198,13 @@ public class DogecoinWrapper {
     }
 
     public void onTransaction(Transaction tx) {
-        if (config.isDogeLockTxRelayEnabled() || config.isOperatorEnabled()) {
-            log.debug("onTransaction {}", tx.getTxId());
-            synchronized (this) {
-                dogeTxToRelayToEthProofsMap.put(tx.getTxId(), new ArrayList<Proof>());
-                try {
-                    flushProofs();
-                } catch (IOException e) {
-                    log.error(e.getMessage(), e);
-                }
+        log.debug("onTransaction {}", tx.getTxId());
+        synchronized (this) {
+            dogeTxToRelayToEthProofsMap.put(tx.getTxId(), new ArrayList<Proof>());
+            try {
+                flushProofs();
+            } catch (IOException e) {
+                log.error(e.getMessage(), e);
             }
         }
     }
