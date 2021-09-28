@@ -5,33 +5,31 @@
 package org.dogethereum.agents.core;
 
 
-import org.dogethereum.agents.core.dogecoin.*;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.bitcoinj.store.BlockStoreException;
 import org.dogethereum.agents.constants.AgentConstants;
 import org.dogethereum.agents.constants.SystemProperties;
-import org.dogethereum.agents.core.dogecoin.DogecoinWrapper;
-import org.dogethereum.agents.core.dogecoin.Proof;
+import org.dogethereum.agents.core.dogecoin.*;
 import org.dogethereum.agents.core.eth.EthWrapper;
 import org.dogethereum.agents.util.OperatorPublicKeyHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.io.*;
+import java.io.IOException;
 import java.util.*;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Manages the process of informing Dogethereum Contracts news about the dogecoin blockchain
+ * Relay doge txs to the Dogethereum Contracts
  * @author Oscar Guindzberg
  * @author Catalina Juarros
  */
 @Service
-@Slf4j(topic = "DogeToEthClient")
-public class DogeToEthClient {
+@Slf4j(topic = "DogeTxRelayerClient")
+public class DogeTxRelayer {
 
     static final int MAXIMUM_REGISTER_DOGE_LOCK_TXS_PER_TURN = 40;
 
@@ -51,17 +49,17 @@ public class DogeToEthClient {
     @Autowired
     private SuperblockChain superblockChain;
 
-    public DogeToEthClient() {}
+    public DogeTxRelayer() {}
 
 
     @PostConstruct
     public void setup() throws Exception {
         config = SystemProperties.CONFIG;
-        if (config.isDogeSuperblockSubmitterEnabled() || config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
+        if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
             agentConstants = config.getAgentConstants();
 
-            new Timer("Doge to Eth client").scheduleAtFixedRate(new DogeToEthClientTimerTask(),
-                    getFirstExecutionDate(), agentConstants.getDogeToEthTimerTaskPeriod());
+            new Timer("Superblock Submitter client").scheduleAtFixedRate(new DogeTxRelayerClientTimerTask(),
+                    getFirstExecutionDate(), agentConstants.getDogeTxRelayerTimerTaskPeriod());
 
         }
     }
@@ -75,21 +73,18 @@ public class DogeToEthClient {
 
 
     @SuppressWarnings("unused")
-    private class DogeToEthClientTimerTask extends TimerTask {
+    private class DogeTxRelayerClientTimerTask extends TimerTask {
         @Override
         public void run() {
             try {
                 if (!ethWrapper.isEthNodeSyncing()) {
-                    log.debug("DogeToEthClientTimerTask");
+                    log.debug("DogeTxRelayerClientTimerTask");
                     ethWrapper.updateContractFacadesGasPrice();
-                    if (config.isDogeSuperblockSubmitterEnabled()) {
-                        updateBridgeSuperblockChain();
-                    }
                     if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
                         updateBridgeTransactions();
                     }
                 } else {
-                    log.warn("DogeToEthClientTimerTask skipped because the eth node is syncing blocks");
+                    log.warn("DogeTxRelayerClientTimerTask skipped because the eth node is syncing blocks");
                 }
             } catch (Exception e) {
 
@@ -98,84 +93,6 @@ public class DogeToEthClient {
         }
     }
 
-    /**
-     * Updates bridge with all the superblocks that the agent has but the bridge doesn't.
-     * @return Number of superblocks sent to the bridge.
-     * @throws Exception
-     */
-    public long updateBridgeSuperblockChain() throws Exception {
-        if (ethWrapper.arePendingTransactionsForSendSuperblocksAddress()) {
-            log.debug("Skipping sending superblocks, there are pending transaction for the sender address.");
-            return 0;
-        }
-
-        // Get the best superblock from the relay that is also in the main chain.
-        List<byte[]> superblockLocator = ethWrapper.getSuperblockLocator();
-        Superblock matchedSuperblock = getEarliestMatchingSuperblock(superblockLocator);
-
-        checkNotNull(matchedSuperblock, "No best chain superblock found");
-        log.debug("Matched superblock {}.", matchedSuperblock.getSuperblockId());
-
-        // We found the superblock in the agent's best chain. Send the earliest superblock that the relay is missing.
-        Superblock toSend = superblockChain.getFirstDescendant(matchedSuperblock.getSuperblockId());
-
-        if (toSend == null) {
-            log.debug("Bridge was just updated, no new superblocks to send. matchedSuperblock: {}.",
-                    matchedSuperblock.getSuperblockId());
-            return 0;
-        }
-
-        if (!superblockChain.sendingTimePassed(toSend)) {
-            log.debug("Too early to send superblock {}, will try again in a few seconds.",
-                    toSend.getSuperblockId());
-            return 0;
-        }
-
-        if (ethWrapper.wasSuperblockAlreadySubmitted(toSend.getSuperblockId())) {
-            log.debug("The contract already knows about the superblock, it won't be sent again: {}.",
-                      toSend.getSuperblockId());
-            return 0;
-        }
-
-        log.debug("First superblock missing in the bridge: {}.", toSend.getSuperblockId());
-        ethWrapper.sendStoreSuperblock(toSend, ethWrapper.getGeneralPurposeAndSendSuperblocksAddress());
-        log.debug("Invoked sendStoreSuperblocks with superblock {}.", toSend.getSuperblockId());
-
-        return toSend.getSuperblockHeight();
-    }
-
-    /**
-     * Helper method for updateBridgeSuperblockChain().
-     * Gets the earliest superblock from the bridge's superblock locator
-     * that was also found in the agent's main chain.
-     * @param superblockLocator List of ancestors provided by the bridge.
-     * @return Earliest matched block if it is found,
-     *         null otherwise.
-     * @throws BlockStoreException
-     * @throws IOException
-     */
-    private Superblock getEarliestMatchingSuperblock(List<byte[]> superblockLocator)
-            throws BlockStoreException, IOException {
-        Superblock matchedSuperblock = null;
-
-        for (int i = 0; i < superblockLocator.size(); i++) {
-            Keccak256Hash superblockBridgeHash = Keccak256Hash.wrap(superblockLocator.get(i));
-            Superblock bridgeSuperblock = superblockChain.getSuperblock(superblockBridgeHash);
-
-            if (bridgeSuperblock == null)
-                continue;
-
-            Superblock bestRelaySuperblockInLocalChain =
-                    superblockChain.getSuperblockByHeight(bridgeSuperblock.getSuperblockHeight());
-
-            if (bridgeSuperblock.getSuperblockId().equals(bestRelaySuperblockInLocalChain.getSuperblockId())) {
-                matchedSuperblock = bestRelaySuperblockInLocalChain;
-                break;
-            }
-        }
-
-        return matchedSuperblock;
-    }
 
     /**
      * Relays all unprocessed transactions to Ethereum contracts by calling sendRelayTx.

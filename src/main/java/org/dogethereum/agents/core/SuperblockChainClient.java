@@ -41,7 +41,7 @@ public class SuperblockChainClient {
         if (config.isDogeSuperblockSubmitterEnabled() || config.isDogeTxRelayerEnabled() ||
                 config.isOperatorEnabled() || config.isDogeBlockChallengerEnabled()) {
             new Timer("SuperblockChainClient").scheduleAtFixedRate(new UpdateSuperblocksTimerTask(),
-                      getFirstExecutionDate(), agentConstants.getDogeToEthTimerTaskPeriod());
+                      getFirstExecutionDate(), agentConstants.getSuperblockChainTimerTaskPeriod());
         }
     }
 
