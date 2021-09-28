@@ -28,8 +28,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Catalina Juarros
  */
 @Service
-@Slf4j(topic = "DogeTxRelayerClient")
-public class DogeTxRelayerClient {
+@Slf4j(topic = "DogeTxRelayClient")
+public class DogeTxRelayClient {
 
     static final int MAXIMUM_REGISTER_DOGE_LOCK_TXS_PER_TURN = 40;
 
@@ -49,7 +49,7 @@ public class DogeTxRelayerClient {
     @Autowired
     private SuperblockChain superblockChain;
 
-    public DogeTxRelayerClient() {}
+    public DogeTxRelayClient() {}
 
 
     @PostConstruct
@@ -58,8 +58,8 @@ public class DogeTxRelayerClient {
         if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
             agentConstants = config.getAgentConstants();
 
-            new Timer("Superblock Submitter client").scheduleAtFixedRate(new DogeTxRelayerClientTimerTask(),
-                    getFirstExecutionDate(), agentConstants.getDogeTxRelayerTimerTaskPeriod());
+            new Timer("Doge Tx Relay client").scheduleAtFixedRate(new DogeTxRelayClientTimerTask(),
+                    getFirstExecutionDate(), agentConstants.getDogeTxRelayTimerTaskPeriod());
 
         }
     }
@@ -73,18 +73,18 @@ public class DogeTxRelayerClient {
 
 
     @SuppressWarnings("unused")
-    private class DogeTxRelayerClientTimerTask extends TimerTask {
+    private class DogeTxRelayClientTimerTask extends TimerTask {
         @Override
         public void run() {
             try {
                 if (!ethWrapper.isEthNodeSyncing()) {
-                    log.debug("DogeTxRelayerClientTimerTask");
+                    log.debug("DogeTxRelayClientTimerTask");
                     ethWrapper.updateContractFacadesGasPrice();
                     if (config.isDogeTxRelayerEnabled() || config.isOperatorEnabled()) {
                         updateBridgeTransactions();
                     }
                 } else {
-                    log.warn("DogeTxRelayerClientTimerTask skipped because the eth node is syncing blocks");
+                    log.warn("DogeTxRelayClientTimerTask skipped because the eth node is syncing blocks");
                 }
             } catch (Exception e) {
 

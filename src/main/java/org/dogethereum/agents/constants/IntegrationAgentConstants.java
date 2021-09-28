@@ -31,7 +31,7 @@ public class IntegrationAgentConstants extends AgentConstants {
 
         superblockChainTimerTaskPeriod = 15 * 1000;
         superblockSubmitterTimerTaskPeriod = 15 * 1000;
-        dogeTxRelayerTimerTaskPeriod = 15 * 1000;
+        dogeTxRelayTimerTaskPeriod = 15 * 1000;
         dogeToEthConfirmations = 2;
         minimumLockTxValue = Coin.valueOf(300000000); // 3 doge
 

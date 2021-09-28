@@ -31,7 +31,7 @@ public class LocalAgentConstants extends AgentConstants {
 
         superblockChainTimerTaskPeriod = 10 * 1000;
         superblockSubmitterTimerTaskPeriod = 10 * 1000;
-        dogeTxRelayerTimerTaskPeriod = 10 * 1000;
+        dogeTxRelayTimerTaskPeriod = 10 * 1000;
         dogeToEthConfirmations = 1;
         minimumLockTxValue = Coin.valueOf(300000000); // 3 doge
 

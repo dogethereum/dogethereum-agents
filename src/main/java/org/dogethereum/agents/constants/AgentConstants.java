@@ -17,7 +17,7 @@ public class AgentConstants {
 
     protected long superblockChainTimerTaskPeriod;
     protected long superblockSubmitterTimerTaskPeriod;
-    protected long dogeTxRelayerTimerTaskPeriod;
+    protected long dogeTxRelayTimerTaskPeriod;
     // Minimum number of confirmations a tx has to have in order to EVALUATE relaying it to eth
     // Tx will be relayed only if they are part of an aproved superblock, so this value is just an optimization
     // for the agent.
@@ -40,7 +40,7 @@ public class AgentConstants {
 
     public long getSuperblockChainTimerTaskPeriod() { return superblockChainTimerTaskPeriod; }
     public long getSuperblockSubmitterTimerTaskPeriod() { return superblockSubmitterTimerTaskPeriod; }
-    public long getDogeTxRelayerTimerTaskPeriod() { return dogeTxRelayerTimerTaskPeriod; }
+    public long getDogeTxRelayTimerTaskPeriod() { return dogeTxRelayTimerTaskPeriod; }
     public int getDogeToEthConfirmations() { return dogeToEthConfirmations; }
     public Coin getMinimumLockTxValue() { return minimumLockTxValue; }
     public Superblock getGenesisSuperblock() {
