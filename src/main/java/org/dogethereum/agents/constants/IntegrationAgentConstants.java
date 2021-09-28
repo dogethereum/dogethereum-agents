@@ -29,7 +29,7 @@ public class IntegrationAgentConstants extends AgentConstants {
     IntegrationAgentConstants() {
         dogeParams = DogecoinMainNetParams.get();
 
-        superblockChainTimerTaskPeriod = 15 * 1000;
+        superblockchainUpdaterTimerTaskPeriod = 15 * 1000;
         superblockSubmitterTimerTaskPeriod = 15 * 1000;
         dogeTxRelayTimerTaskPeriod = 15 * 1000;
         dogeToEthConfirmations = 2;

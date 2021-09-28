@@ -15,7 +15,7 @@ public class AgentConstants {
 
     protected AbstractDogecoinParams dogeParams;
 
-    protected long superblockChainTimerTaskPeriod;
+    protected long superblockchainUpdaterTimerTaskPeriod;
     protected long superblockSubmitterTimerTaskPeriod;
     protected long dogeTxRelayTimerTaskPeriod;
     // Minimum number of confirmations a tx has to have in order to EVALUATE relaying it to eth
@@ -38,7 +38,7 @@ public class AgentConstants {
         return dogeParams;
     }
 
-    public long getSuperblockChainTimerTaskPeriod() { return superblockChainTimerTaskPeriod; }
+    public long getSuperblockchainUpdaterTimerTaskPeriod() { return superblockchainUpdaterTimerTaskPeriod; }
     public long getSuperblockSubmitterTimerTaskPeriod() { return superblockSubmitterTimerTaskPeriod; }
     public long getDogeTxRelayTimerTaskPeriod() { return dogeTxRelayTimerTaskPeriod; }
     public int getDogeToEthConfirmations() { return dogeToEthConfirmations; }

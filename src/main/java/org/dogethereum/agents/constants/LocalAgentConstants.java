@@ -29,7 +29,7 @@ public class LocalAgentConstants extends AgentConstants {
     LocalAgentConstants() {
         dogeParams = DogecoinRegTestParams.get();
 
-        superblockChainTimerTaskPeriod = 10 * 1000;
+        superblockchainUpdaterTimerTaskPeriod = 10 * 1000;
         superblockSubmitterTimerTaskPeriod = 10 * 1000;
         dogeTxRelayTimerTaskPeriod = 10 * 1000;
         dogeToEthConfirmations = 1;

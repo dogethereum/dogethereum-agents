@@ -27,7 +27,7 @@ public class EthGanacheDogeMainAgentConstants extends AgentConstants {
     EthGanacheDogeMainAgentConstants() {
         dogeParams = DogecoinMainNetParams.get();
 
-        superblockChainTimerTaskPeriod = 10 * 1000;
+        superblockchainUpdaterTimerTaskPeriod = 10 * 1000;
         superblockSubmitterTimerTaskPeriod = 10 * 1000;
         dogeTxRelayTimerTaskPeriod = 10 * 1000;
         dogeToEthConfirmations = 1;

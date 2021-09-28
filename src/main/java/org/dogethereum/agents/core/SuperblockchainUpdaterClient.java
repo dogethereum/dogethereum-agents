@@ -17,14 +17,15 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * Runs a SuperblockChain.
+ * Keeps the local Superblockchain up to date.
  * @author Catalina Juarros
+ * @author Oscar Guindzberg
  */
 
 @Service
-@Slf4j(topic = "SuperblockChainClient")
+@Slf4j(topic = "SuperblockchainUpdaterClient")
 
-public class SuperblockChainClient {
+public class SuperblockchainUpdaterClient {
     @Autowired
     private SuperblockChain superblockChain;
 
@@ -32,7 +33,7 @@ public class SuperblockChainClient {
     private DogecoinWrapper dogecoinWrapper;
 
 
-    public SuperblockChainClient() {}
+    public SuperblockchainUpdaterClient() {}
 
     @PostConstruct
     public void setup() throws Exception {
@@ -40,8 +41,8 @@ public class SuperblockChainClient {
         AgentConstants agentConstants = config.getAgentConstants();
         if (config.isDogeSuperblockSubmitterEnabled() || config.isDogeLockTxRelayEnabled() ||
                 config.isOperatorEnabled() || config.isDogeBlockChallengerEnabled()) {
-            new Timer("SuperblockChainClient").scheduleAtFixedRate(new UpdateSuperblocksTimerTask(),
-                      getFirstExecutionDate(), agentConstants.getSuperblockChainTimerTaskPeriod());
+            new Timer("SuperblockchainUpdaterClient").scheduleAtFixedRate(new UpdateSuperblocksTimerTask(),
+                      getFirstExecutionDate(), agentConstants.getSuperblockchainUpdaterTimerTaskPeriod());
         }
     }
 

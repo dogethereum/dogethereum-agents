@@ -2,7 +2,7 @@
 
 A set of agents:
 - Doge superblock submitter (SuperblockSubmitterClient.java): Sends doge superblocks.
-- Superblockchain updater (SuperblockChainClient.java): Keeps local copy of superblockchain up to date as new doge blocks are created.
+- Superblockchain updater (SuperblockchainUpdaterClient.java): Keeps local copy of superblockchain up to date as new doge blocks are created.
 - Superblock challenger (SuperblockDefenderClient.java): Challenges invalid superblocks sent by rogue submitters.
 - Superblock defender  (SuperblockDefenderClient.java): Replies to challenges made by rogue challengers.
 - Doge tx relay (DogeTxRelayClient.java): Sends doge lock and unlock txs, so they are validated and relayed to DogeToken ERC20 contract.
