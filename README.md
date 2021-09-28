@@ -5,8 +5,8 @@ A set of agents:
 - Superblockchain updater (SuperblockChainClient.java): Keeps local copy of superblockchain up to date as new doge blocks are created.
 - Superblock challenger (SuperblockDefenderClient.java): Challenges invalid superblocks sent by rogue submitters.
 - Superblock defender  (SuperblockDefenderClient.java): Replies to challenges made by rogue challengers.
-- Doge tx relayer (DogeTxRelayer.java): Sends doge lock and unlock txs, so they are validated and relayed to DogeToken ERC20 contract.
-- Operator agent (EthToDogeClient.java): Signs and broadcasts doge unlock txs
+- Doge tx relayer (DogeTxRelayerClient.java): Sends doge lock and unlock txs, so they are validated and relayed to DogeToken ERC20 contract.
+- Sign & Broadcast doge unlock tx (SignBroadcastDogeUnlockTxClient.java): Signs and broadcasts doge unlock txs
 
 If you are new to the Dogecoin <-> Ethereum bridge, please check the [docs](https://github.com/dogethereum/docs) repository first.
 

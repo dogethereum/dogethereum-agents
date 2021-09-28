@@ -56,7 +56,7 @@ public class IntegrationAgentConstants extends AgentConstants {
         defenderConfirmations = 2;
         challengerConfirmations = 2;
 
-        ethToDogeTimerTaskPeriod = 30 * 1000;
+        signBroadcastDogeUnlockTxTimerTaskPeriod = 30 * 1000;
         unlockConfirmations = 4;
         ethInitialCheckpoint = 2766716;
     }

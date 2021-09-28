@@ -47,7 +47,7 @@ public class LocalAgentConstants extends AgentConstants {
         defenderConfirmations = 1;
         challengerConfirmations = 1;
 
-        ethToDogeTimerTaskPeriod = 15 * 1000;
+        signBroadcastDogeUnlockTxTimerTaskPeriod = 15 * 1000;
         unlockConfirmations = 2;
         ethInitialCheckpoint = 0;
     }

@@ -20,8 +20,8 @@ import java.util.*;
  * @author Catalina Juarros
  */
 @Service
-@Slf4j(topic = "EthToDogeClient")
-public class EthToDogeClient extends PersistentFileStore {
+@Slf4j(topic = "SignBroadcastDogeUnlockTxClient")
+public class SignBroadcastDogeUnlockTxClient extends PersistentFileStore {
 
     @Autowired
     private EthWrapper ethWrapper;
@@ -39,7 +39,7 @@ public class EthToDogeClient extends PersistentFileStore {
     @Autowired
     private OperatorKeyHandler operatorKeyHandler;
 
-    public EthToDogeClient() {}
+    public SignBroadcastDogeUnlockTxClient() {}
 
 
     @PostConstruct
@@ -53,7 +53,7 @@ public class EthToDogeClient extends PersistentFileStore {
             setupFiles();
             restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
 
-            new Timer("Eth to Doge client").scheduleAtFixedRate(new UpdateEthToDogeTimerTask(), getFirstExecutionDate(), config.getAgentConstants().getEthToDogeTimerTaskPeriod());
+            new Timer("Eth to Doge client").scheduleAtFixedRate(new SignBroadcastDogeUnlockTxTimerTask(), getFirstExecutionDate(), config.getAgentConstants().getSignBroadcastDogeUnlockTxTimerTaskPeriod());
         }
     }
 
@@ -63,7 +63,7 @@ public class EthToDogeClient extends PersistentFileStore {
         return firstExecution.getTime();
     }
 
-    private class UpdateEthToDogeTimerTask extends TimerTask {
+    private class SignBroadcastDogeUnlockTxTimerTask extends TimerTask {
         @Override
         public void run() {
             try {
@@ -83,7 +83,7 @@ public class EthToDogeClient extends PersistentFileStore {
                     latestEthBlockProcessed = toBlock;
                     flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
                 } else {
-                    log.warn("UpdateEthToDogeTimerTask skipped because the eth node is syncing blocks");
+                    log.warn("SignBroadcastDogeUnlockTxTimerTask skipped because the eth node is syncing blocks");
                 }
             } catch (Exception e) {
                 log.error(e.getMessage(), e);

@@ -29,7 +29,7 @@ public class AgentConstants {
     protected long defenderConfirmations;
     protected long challengerConfirmations;
 
-    protected long ethToDogeTimerTaskPeriod;
+    protected long signBroadcastDogeUnlockTxTimerTaskPeriod;
     protected int unlockConfirmations;
     protected int ethInitialCheckpoint;
 
@@ -63,7 +63,7 @@ public class AgentConstants {
         return challengerConfirmations;
     }
 
-    public long getEthToDogeTimerTaskPeriod() { return ethToDogeTimerTaskPeriod; }
+    public long getSignBroadcastDogeUnlockTxTimerTaskPeriod() { return signBroadcastDogeUnlockTxTimerTaskPeriod; }
     public int getUnlockConfirmations() {
         return unlockConfirmations;
     }
