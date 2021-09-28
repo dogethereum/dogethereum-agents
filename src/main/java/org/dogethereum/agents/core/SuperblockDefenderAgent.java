@@ -22,8 +22,6 @@ import java.util.*;
 @Slf4j(topic = "SuperblockDefenderAgent")
 public class SuperblockDefenderAgent extends SuperblockBattleBaseAgent {
 
-    private static long ETH_REQUIRED_CONFIRMATIONS = 5;
-
     public SuperblockDefenderAgent() {
         super("SuperblockDefenderAgent");
     }

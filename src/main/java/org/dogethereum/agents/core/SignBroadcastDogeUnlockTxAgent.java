@@ -28,8 +28,6 @@ public class SignBroadcastDogeUnlockTxAgent extends PersistentFileStore {
 
     private SystemProperties config;
 
-    private static long ETH_REQUIRED_CONFIRMATIONS = 5;
-
     private long latestEthBlockProcessed;
     private File latestEthBlockProcessedFile;
 
