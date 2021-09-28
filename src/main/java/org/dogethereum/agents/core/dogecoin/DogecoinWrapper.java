@@ -76,7 +76,7 @@ public class DogecoinWrapper {
 
             private void coinsReceivedOrSent(Transaction tx) {
                 Context.propagate(dogeContext);
-                if (AgentUtils.isLockTx(tx, vWallet, agentConstants, operatorPublicKeyHandler) || AgentUtils.isReleaseTx(tx, vWallet, operatorPublicKeyHandler)) {
+                if (AgentUtils.isLockTx(tx, vWallet, agentConstants, operatorPublicKeyHandler) || AgentUtils.isUnlockTx(tx, vWallet, operatorPublicKeyHandler)) {
                     onTransaction(tx);
                 }
             }
@@ -153,7 +153,7 @@ public class DogecoinWrapper {
             if (tx.getConfidence().getConfidenceType().equals(TransactionConfidence.ConfidenceType.BUILDING) &&
                 tx.getConfidence().getDepthInBlocks() >= minconfirmations) {
                 if (AgentUtils.isLockTx(tx, kit.wallet(), agentConstants, operatorPublicKeyHandler) && includeLock ||
-                    AgentUtils.isReleaseTx(tx, kit.wallet(), operatorPublicKeyHandler) && includeUnlock) {
+                    AgentUtils.isUnlockTx(tx, kit.wallet(), operatorPublicKeyHandler) && includeUnlock) {
                     txs.add(tx);
                 }
             }

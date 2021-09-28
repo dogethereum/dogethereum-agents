@@ -39,7 +39,7 @@ public class AgentUtils {
     }
 
     public static boolean isLockTx(Transaction tx, Wallet wallet, AgentConstants agentConstants, OperatorPublicKeyHandler keyHandler) {
-        // First, check tx is not a release tx.
+        // First, check tx is not an unlock tx.
         int i = 0;
         for (TransactionInput transactionInput : tx.getInputs()) {
             try {
@@ -60,12 +60,12 @@ public class AgentUtils {
         return (valueSentToMeSignum > 0 && !valueSentToMe.isLessThan(agentConstants.getMinimumLockTxValue()));
     }
 
-    public static boolean isReleaseTx(Transaction tx, Wallet wallet, OperatorPublicKeyHandler keyHandler) {
+    public static boolean isUnlockTx(Transaction tx, Wallet wallet, OperatorPublicKeyHandler keyHandler) {
         int i = 0;
         for (TransactionInput transactionInput : tx.getInputs()) {
             try {
                 transactionInput.getScriptSig().correctlySpends(tx, i, keyHandler.getOutputScript(), Script.ALL_VERIFY_FLAGS);
-                // There is an input spending from the operator address, this is a release tx
+                // There is an input spending from the operator address, this is an unlock tx
                 Coin valueSentToMe = tx.getValueSentToMe(wallet);
                 int valueSentToMeSignum = valueSentToMe.signum();
                 if (valueSentToMeSignum <= 0) {
