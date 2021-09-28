@@ -20,8 +20,8 @@ import java.util.*;
  * @author Catalina Juarros
  */
 @Service
-@Slf4j(topic = "SignBroadcastDogeUnlockTxClient")
-public class SignBroadcastDogeUnlockTxClient extends PersistentFileStore {
+@Slf4j(topic = "SignBroadcastDogeUnlockTxAgent")
+public class SignBroadcastDogeUnlockTxAgent extends PersistentFileStore {
 
     @Autowired
     private EthWrapper ethWrapper;
@@ -39,7 +39,7 @@ public class SignBroadcastDogeUnlockTxClient extends PersistentFileStore {
     @Autowired
     private OperatorKeyHandler operatorKeyHandler;
 
-    public SignBroadcastDogeUnlockTxClient() {}
+    public SignBroadcastDogeUnlockTxAgent() {}
 
 
     @PostConstruct
@@ -53,7 +53,7 @@ public class SignBroadcastDogeUnlockTxClient extends PersistentFileStore {
             setupFiles();
             restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
 
-            new Timer("Eth to Doge client").scheduleAtFixedRate(new SignBroadcastDogeUnlockTxTimerTask(), getFirstExecutionDate(), config.getAgentConstants().getSignBroadcastDogeUnlockTxTimerTaskPeriod());
+            new Timer("SignBroadcastDogeUnlockTxAgent").scheduleAtFixedRate(new SignBroadcastDogeUnlockTxAgentTimerTask(), getFirstExecutionDate(), config.getAgentConstants().getSignBroadcastDogeUnlockTxAgentTimerTaskPeriod());
         }
     }
 
@@ -63,7 +63,7 @@ public class SignBroadcastDogeUnlockTxClient extends PersistentFileStore {
         return firstExecution.getTime();
     }
 
-    private class SignBroadcastDogeUnlockTxTimerTask extends TimerTask {
+    private class SignBroadcastDogeUnlockTxAgentTimerTask extends TimerTask {
         @Override
         public void run() {
             try {
@@ -83,7 +83,7 @@ public class SignBroadcastDogeUnlockTxClient extends PersistentFileStore {
                     latestEthBlockProcessed = toBlock;
                     flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
                 } else {
-                    log.warn("SignBroadcastDogeUnlockTxTimerTask skipped because the eth node is syncing blocks");
+                    log.warn("SignBroadcastDogeUnlockTxAgentTimerTask skipped because the eth node is syncing blocks");
                 }
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
@@ -124,7 +124,7 @@ public class SignBroadcastDogeUnlockTxClient extends PersistentFileStore {
     @Override
     void setupFiles() {
         this.latestEthBlockProcessedFile =
-                new File(dataDirectory.getAbsolutePath() + "/EthToDogeClientLatestEthBlockProcessedFile.dat");
+                new File(dataDirectory.getAbsolutePath() + "/SignBroadcastDogeUnlockTxAgentLatestEthBlockProcessedFile.dat");
     }
 
 }

@@ -20,18 +20,18 @@ import java.util.*;
  */
 
 @Service
-@Slf4j(topic = "SuperblockChallengerClient")
-public class SuperblockChallengerClient extends SuperblockBattleBaseClient {
+@Slf4j(topic = "SuperblockChallengerAgent")
+public class SuperblockChallengerAgent extends SuperblockBattleBaseAgent {
 
     private HashSet<Keccak256Hash> semiApprovedSet;
     private File semiApprovedSetFile;
 
-    public SuperblockChallengerClient() {
-        super("Superblock challenger client");
+    public SuperblockChallengerAgent() {
+        super("SuperblockChallengerAgent");
     }
 
     @Override
-    protected void setupClient() {
+    protected void setupAgent() {
         myAddress = ethWrapper.getDogeSuperblockChallengerAddress();
     }
 

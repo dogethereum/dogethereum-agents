@@ -19,17 +19,17 @@ import java.util.*;
  */
 
 @Service
-@Slf4j(topic = "SuperblockDefenderClient")
-public class SuperblockDefenderClient extends SuperblockBattleBaseClient {
+@Slf4j(topic = "SuperblockDefenderAgent")
+public class SuperblockDefenderAgent extends SuperblockBattleBaseAgent {
 
     private static long ETH_REQUIRED_CONFIRMATIONS = 5;
 
-    public SuperblockDefenderClient() {
-        super("Superblock defender client");
+    public SuperblockDefenderAgent() {
+        super("SuperblockDefenderAgent");
     }
 
     @Override
-    protected void setupClient() {
+    protected void setupAgent() {
         myAddress = ethWrapper.getGeneralPurposeAndSendSuperblocksAddress();
     }
 
@@ -404,7 +404,7 @@ public class SuperblockDefenderClient extends SuperblockBattleBaseClient {
     }
 
     /**
-     * Listens to NewSuperblock events to keep track of superblocks submitted by this client.
+     * Listens to NewSuperblock events to keep track of superblocks submitted by this agent.
      * @param fromBlock
      * @param toBlock
      * @throws IOException

@@ -28,8 +28,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Catalina Juarros
  */
 @Service
-@Slf4j(topic = "DogeTxRelayClient")
-public class DogeTxRelayClient {
+@Slf4j(topic = "DogeTxRelayAgent")
+public class DogeTxRelayAgent {
 
     static final int MAXIMUM_REGISTER_DOGE_LOCK_TXS_PER_TURN = 40;
 
@@ -49,7 +49,7 @@ public class DogeTxRelayClient {
     @Autowired
     private Superblockchain superblockchain;
 
-    public DogeTxRelayClient() {}
+    public DogeTxRelayAgent() {}
 
 
     @PostConstruct
@@ -58,8 +58,8 @@ public class DogeTxRelayClient {
         if (config.isDogeLockTxRelayEnabled() || config.isOperatorEnabled()) {
             agentConstants = config.getAgentConstants();
 
-            new Timer("Doge Tx Relay client").scheduleAtFixedRate(new DogeTxRelayClientTimerTask(),
-                    getFirstExecutionDate(), agentConstants.getDogeTxRelayTimerTaskPeriod());
+            new Timer("DogeTxRelayAgent").scheduleAtFixedRate(new DogeTxRelayAgentTimerTask(),
+                    getFirstExecutionDate(), agentConstants.getDogeTxRelayAgentTimerTaskPeriod());
 
         }
     }
@@ -73,18 +73,18 @@ public class DogeTxRelayClient {
 
 
     @SuppressWarnings("unused")
-    private class DogeTxRelayClientTimerTask extends TimerTask {
+    private class DogeTxRelayAgentTimerTask extends TimerTask {
         @Override
         public void run() {
             try {
                 if (!ethWrapper.isEthNodeSyncing()) {
-                    log.debug("DogeTxRelayClientTimerTask");
+                    log.debug("DogeTxRelayAgentTimerTask");
                     ethWrapper.updateContractFacadesGasPrice();
                     if (config.isDogeLockTxRelayEnabled() || config.isOperatorEnabled()) {
                         updateBridgeTransactions();
                     }
                 } else {
-                    log.warn("DogeTxRelayClientTimerTask skipped because the eth node is syncing blocks");
+                    log.warn("DogeTxRelayAgentTimerTask skipped because the eth node is syncing blocks");
                 }
             } catch (Exception e) {
 

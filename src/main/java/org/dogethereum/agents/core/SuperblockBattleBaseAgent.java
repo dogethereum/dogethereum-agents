@@ -13,13 +13,13 @@ import java.io.*;
 import java.util.*;
 
 /**
- * Base class for Superblock challenger and defender clients
+ * Base class for Superblock challenger and defender agents.
  * @author Catalina Juarros
  * @author Ismael Bejarano
  */
 
-@Slf4j(topic = "SuperblockBattleBaseClient")
-public abstract class SuperblockBattleBaseClient extends PersistentFileStore {
+@Slf4j(topic = "SuperblockBattleBaseAgent")
+public abstract class SuperblockBattleBaseAgent extends PersistentFileStore {
 
     @Autowired
     protected DogecoinWrapper dogecoinWrapper;
@@ -32,7 +32,7 @@ public abstract class SuperblockBattleBaseClient extends PersistentFileStore {
 
     protected SystemProperties config;
 
-    protected String clientName;
+    protected String agentName;
 
     protected String myAddress;
 
@@ -52,8 +52,8 @@ public abstract class SuperblockBattleBaseClient extends PersistentFileStore {
     protected File superblockToSessionsMapFile;
 
 
-    public SuperblockBattleBaseClient(String clientName) {
-        this.clientName = clientName;
+    public SuperblockBattleBaseAgent(String agentName) {
+        this.agentName = agentName;
         this.config = SystemProperties.CONFIG;
     }
 
@@ -64,7 +64,7 @@ public abstract class SuperblockBattleBaseClient extends PersistentFileStore {
 
             restoreFiles();
 
-            setupClient();
+            setupAgent();
 
             setupTimer();
         }
@@ -73,16 +73,16 @@ public abstract class SuperblockBattleBaseClient extends PersistentFileStore {
     @PreDestroy
     public void tearDown() throws BlockStoreException, ClassNotFoundException, IOException {
         if (isEnabled()) {
-            log.info("{} tearDown starting...", clientName);
+            log.info("{} tearDown starting...", agentName);
 
             flushFiles();
 
-            log.info("{} tearDown finished.", clientName);
+            log.info("{} tearDown finished.", agentName);
         }
     }
 
     private void setupTimer() {
-       new Timer(clientName).scheduleAtFixedRate(new SuperblocksBaseClientTimerTask(),
+       new Timer(agentName).scheduleAtFixedRate(new SuperblocksBattleBaseAgentTimerTask(),
                getFirstExecutionDate(), getTimerTaskPeriod());
     }
 
@@ -91,7 +91,7 @@ public abstract class SuperblockBattleBaseClient extends PersistentFileStore {
         return firstExecution.getTime();
     }
 
-    private class SuperblocksBaseClientTimerTask extends TimerTask {
+    private class SuperblocksBattleBaseAgentTimerTask extends TimerTask {
         @Override
         public void run() {
             try {
@@ -122,7 +122,7 @@ public abstract class SuperblockBattleBaseClient extends PersistentFileStore {
 
                     flushFiles();
                 } else {
-                    log.warn("SuperblocksBaseClientTimerTask skipped because the eth node is syncing blocks");
+                    log.warn("SuperblocksBattleBaseAgentTimerTask skipped because the eth node is syncing blocks");
                 }
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
@@ -131,7 +131,7 @@ public abstract class SuperblockBattleBaseClient extends PersistentFileStore {
     }
 
     /**
-     * Listens to NewBattle events to keep track of new battles that this client is taking part in.
+     * Listens to NewBattle events to keep track of new battles that this agent is taking part in.
      * @param fromBlock
      * @param toBlock
      * @throws IOException
@@ -173,7 +173,7 @@ public abstract class SuperblockBattleBaseClient extends PersistentFileStore {
 
     protected abstract String getSuperblockToSessionsMapFilename();
 
-    protected abstract void setupClient();
+    protected abstract void setupAgent();
 
     protected abstract void reactToElapsedTime();
 

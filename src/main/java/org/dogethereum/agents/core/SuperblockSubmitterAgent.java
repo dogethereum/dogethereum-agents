@@ -26,8 +26,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * @author Catalina Juarros
  */
 @Service
-@Slf4j(topic = "SuperblockSubmitterClient")
-public class SuperblockSubmitterClient {
+@Slf4j(topic = "SuperblockSubmitterAgent")
+public class SuperblockSubmitterAgent {
 
     @Autowired
     private EthWrapper ethWrapper;
@@ -39,7 +39,7 @@ public class SuperblockSubmitterClient {
     @Autowired
     private Superblockchain superblockchain;
 
-    public SuperblockSubmitterClient() {}
+    public SuperblockSubmitterAgent() {}
 
 
     @PostConstruct
@@ -48,8 +48,8 @@ public class SuperblockSubmitterClient {
         if (config.isDogeSuperblockSubmitterEnabled()) {
             agentConstants = config.getAgentConstants();
 
-            new Timer("Superblock Submitter client").scheduleAtFixedRate(new SuperblockSubmitterClientTimerTask(),
-                    getFirstExecutionDate(), agentConstants.getSuperblockSubmitterTimerTaskPeriod());
+            new Timer("SuperblockSubmitterAgent").scheduleAtFixedRate(new SuperblockSubmitterAgentTimerTask(),
+                    getFirstExecutionDate(), agentConstants.getSuperblockSubmitterAgentTimerTaskPeriod());
 
         }
     }
@@ -63,16 +63,16 @@ public class SuperblockSubmitterClient {
 
 
     @SuppressWarnings("unused")
-    private class SuperblockSubmitterClientTimerTask extends TimerTask {
+    private class SuperblockSubmitterAgentTimerTask extends TimerTask {
         @Override
         public void run() {
             try {
                 if (!ethWrapper.isEthNodeSyncing()) {
-                    log.debug("SuperblockSubmitterClientTimerTask");
+                    log.debug("SuperblockSubmitterAgentTimerTask");
                     ethWrapper.updateContractFacadesGasPrice();
                     updateBridgeSuperblockchain();
                 } else {
-                    log.warn("SuperblockSubmitterClientTimerTask skipped because the eth node is syncing blocks");
+                    log.warn("SuperblockSubmitterAgentTimerTask skipped because the eth node is syncing blocks");
                 }
             } catch (Exception e) {
 

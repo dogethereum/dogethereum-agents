@@ -22,7 +22,7 @@ import java.util.List;
 
 /**
  * Extension of web3j auto-generated DogeSuperblocks class
- * with event polling methods for SuperblockDefenderClient.
+ * with event polling methods for SuperblockDefenderAgent.
  * @author Catalina Juarros
  */
 

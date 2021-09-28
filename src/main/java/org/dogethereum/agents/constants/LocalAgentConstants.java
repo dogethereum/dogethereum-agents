@@ -29,9 +29,9 @@ public class LocalAgentConstants extends AgentConstants {
     LocalAgentConstants() {
         dogeParams = DogecoinRegTestParams.get();
 
-        superblockchainUpdaterTimerTaskPeriod = 10 * 1000;
-        superblockSubmitterTimerTaskPeriod = 10 * 1000;
-        dogeTxRelayTimerTaskPeriod = 10 * 1000;
+        superblockchainUpdaterAgentTimerTaskPeriod = 10 * 1000;
+        superblockSubmitterAgentTimerTaskPeriod = 10 * 1000;
+        dogeTxRelayAgentTimerTaskPeriod = 10 * 1000;
         dogeToEthConfirmations = 1;
         minimumLockTxValue = Coin.valueOf(300000000); // 3 doge
 
@@ -47,7 +47,7 @@ public class LocalAgentConstants extends AgentConstants {
         defenderConfirmations = 1;
         challengerConfirmations = 1;
 
-        signBroadcastDogeUnlockTxTimerTaskPeriod = 15 * 1000;
+        signBroadcastDogeUnlockTxAgentTimerTaskPeriod = 15 * 1000;
         unlockConfirmations = 2;
         ethInitialCheckpoint = 0;
     }

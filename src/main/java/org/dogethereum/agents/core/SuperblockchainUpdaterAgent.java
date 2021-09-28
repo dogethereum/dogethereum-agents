@@ -23,9 +23,9 @@ import java.util.*;
  */
 
 @Service
-@Slf4j(topic = "SuperblockchainUpdaterClient")
+@Slf4j(topic = "SuperblockchainUpdaterAgent")
 
-public class SuperblockchainUpdaterClient {
+public class SuperblockchainUpdaterAgent {
     @Autowired
     private Superblockchain superblockchain;
 
@@ -33,7 +33,7 @@ public class SuperblockchainUpdaterClient {
     private DogecoinWrapper dogecoinWrapper;
 
 
-    public SuperblockchainUpdaterClient() {}
+    public SuperblockchainUpdaterAgent() {}
 
     @PostConstruct
     public void setup() throws Exception {
@@ -41,8 +41,8 @@ public class SuperblockchainUpdaterClient {
         AgentConstants agentConstants = config.getAgentConstants();
         if (config.isDogeSuperblockSubmitterEnabled() || config.isDogeLockTxRelayEnabled() ||
                 config.isOperatorEnabled() || config.isDogeBlockChallengerEnabled()) {
-            new Timer("SuperblockchainUpdaterClient").scheduleAtFixedRate(new UpdateSuperblocksTimerTask(),
-                      getFirstExecutionDate(), agentConstants.getSuperblockchainUpdaterTimerTaskPeriod());
+            new Timer("SuperblockchainUpdaterAgent").scheduleAtFixedRate(new SuperblockchainUpdaterAgentTimerTask(),
+                      getFirstExecutionDate(), agentConstants.getSuperblockchainUpdaterAgentTimerTaskPeriod());
         }
     }
 
@@ -82,11 +82,11 @@ public class SuperblockchainUpdaterClient {
     /**
      * Task to keep superblock chain updated whenever the agent is running.
      */
-    private class UpdateSuperblocksTimerTask extends TimerTask {
+    private class SuperblockchainUpdaterAgentTimerTask extends TimerTask {
         @Override
         public void run() {
             try {
-                log.debug("UpdateSuperblocksTimerTask");
+                log.debug("SuperblockchainUpdaterAgentTimerTask");
                 updateChain();
             } catch (Exception e) {
                 log.error(e.getMessage(), e);

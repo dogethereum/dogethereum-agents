@@ -15,9 +15,9 @@ public class AgentConstants {
 
     protected AbstractDogecoinParams dogeParams;
 
-    protected long superblockchainUpdaterTimerTaskPeriod;
-    protected long superblockSubmitterTimerTaskPeriod;
-    protected long dogeTxRelayTimerTaskPeriod;
+    protected long superblockchainUpdaterAgentTimerTaskPeriod;
+    protected long superblockSubmitterAgentTimerTaskPeriod;
+    protected long dogeTxRelayAgentTimerTaskPeriod;
     // Minimum number of confirmations a tx has to have in order to EVALUATE relaying it to eth
     // Tx will be relayed only if they are part of an aproved superblock, so this value is just an optimization
     // for the agent.
@@ -29,7 +29,7 @@ public class AgentConstants {
     protected long defenderConfirmations;
     protected long challengerConfirmations;
 
-    protected long signBroadcastDogeUnlockTxTimerTaskPeriod;
+    protected long signBroadcastDogeUnlockTxAgentTimerTaskPeriod;
     protected int unlockConfirmations;
     protected int ethInitialCheckpoint;
 
@@ -38,9 +38,9 @@ public class AgentConstants {
         return dogeParams;
     }
 
-    public long getSuperblockchainUpdaterTimerTaskPeriod() { return superblockchainUpdaterTimerTaskPeriod; }
-    public long getSuperblockSubmitterTimerTaskPeriod() { return superblockSubmitterTimerTaskPeriod; }
-    public long getDogeTxRelayTimerTaskPeriod() { return dogeTxRelayTimerTaskPeriod; }
+    public long getSuperblockchainUpdaterAgentTimerTaskPeriod() { return superblockchainUpdaterAgentTimerTaskPeriod; }
+    public long getSuperblockSubmitterAgentTimerTaskPeriod() { return superblockSubmitterAgentTimerTaskPeriod; }
+    public long getDogeTxRelayAgentTimerTaskPeriod() { return dogeTxRelayAgentTimerTaskPeriod; }
     public int getDogeToEthConfirmations() { return dogeToEthConfirmations; }
     public Coin getMinimumLockTxValue() { return minimumLockTxValue; }
     public Superblock getGenesisSuperblock() {
@@ -63,7 +63,7 @@ public class AgentConstants {
         return challengerConfirmations;
     }
 
-    public long getSignBroadcastDogeUnlockTxTimerTaskPeriod() { return signBroadcastDogeUnlockTxTimerTaskPeriod; }
+    public long getSignBroadcastDogeUnlockTxAgentTimerTaskPeriod() { return signBroadcastDogeUnlockTxAgentTimerTaskPeriod; }
     public int getUnlockConfirmations() {
         return unlockConfirmations;
     }
