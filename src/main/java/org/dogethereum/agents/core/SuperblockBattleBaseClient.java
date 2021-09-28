@@ -13,13 +13,13 @@ import java.io.*;
 import java.util.*;
 
 /**
- * Base class to monitor the Ethereum blockchain for superblock-related events
+ * Base class for Superblock challenger and defender clients
  * @author Catalina Juarros
  * @author Ismael Bejarano
  */
 
-@Slf4j(topic = "SuperblockBaseClient")
-public abstract class SuperblockBaseClient extends PersistentFileStore {
+@Slf4j(topic = "SuperblockBattleBaseClient")
+public abstract class SuperblockBattleBaseClient extends PersistentFileStore {
 
     @Autowired
     protected DogecoinWrapper dogecoinWrapper;
@@ -52,7 +52,7 @@ public abstract class SuperblockBaseClient extends PersistentFileStore {
     protected File superblockToSessionsMapFile;
 
 
-    public SuperblockBaseClient(String clientName) {
+    public SuperblockBattleBaseClient(String clientName) {
         this.clientName = clientName;
         this.config = SystemProperties.CONFIG;
     }

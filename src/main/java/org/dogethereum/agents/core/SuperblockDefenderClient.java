@@ -20,7 +20,7 @@ import java.util.*;
 
 @Service
 @Slf4j(topic = "SuperblockDefenderClient")
-public class SuperblockDefenderClient extends SuperblockBaseClient {
+public class SuperblockDefenderClient extends SuperblockBattleBaseClient {
 
     private static long ETH_REQUIRED_CONFIRMATIONS = 5;
 

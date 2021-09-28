@@ -21,7 +21,7 @@ import java.util.*;
 
 @Service
 @Slf4j(topic = "SuperblockChallengerClient")
-public class SuperblockChallengerClient extends SuperblockBaseClient {
+public class SuperblockChallengerClient extends SuperblockBattleBaseClient {
 
     private HashSet<Keccak256Hash> semiApprovedSet;
     private File semiApprovedSetFile;
