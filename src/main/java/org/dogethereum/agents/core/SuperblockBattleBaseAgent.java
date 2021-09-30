@@ -2,7 +2,6 @@ package org.dogethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.store.BlockStoreException;
-import org.dogethereum.agents.constants.SystemProperties;
 import org.dogethereum.agents.core.dogecoin.*;
 import org.dogethereum.agents.core.eth.EthWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +15,7 @@ import java.util.*;
  * Base class for Superblock challenger and defender agents.
  * @author Catalina Juarros
  * @author Ismael Bejarano
+ * @author Oscar Guindzberg
  */
 
 @Slf4j(topic = "SuperblockBattleBaseAgent")
@@ -30,15 +30,9 @@ public abstract class SuperblockBattleBaseAgent extends PersistentFileStore {
     @Autowired
     protected Superblockchain superblockchain;
 
-    protected SystemProperties config;
-
     protected String agentName;
 
     protected String myAddress;
-
-    protected long latestEthBlockProcessed;
-    protected File latestEthBlockProcessedFile;
-
 
     // Data is duplicated for performance using it.
 
@@ -54,30 +48,24 @@ public abstract class SuperblockBattleBaseAgent extends PersistentFileStore {
 
     public SuperblockBattleBaseAgent(String agentName) {
         this.agentName = agentName;
-        this.config = SystemProperties.CONFIG;
     }
 
     @PostConstruct
-    public void setup() throws ClassNotFoundException, IOException {
+    public void setup() throws Exception {
+        super.setup();
         if (isEnabled()) {
             setupFiles();
-
             restoreFiles();
-
             setupAgent();
-
             setupTimer();
         }
     }
 
     @PreDestroy
     public void tearDown() throws BlockStoreException, ClassNotFoundException, IOException {
+        super.tearDown();
         if (isEnabled()) {
-            log.info("{} tearDown starting...", agentName);
-
             flushFiles();
-
-            log.info("{} tearDown finished.", agentName);
         }
     }
 
@@ -96,8 +84,6 @@ public abstract class SuperblockBattleBaseAgent extends PersistentFileStore {
         public void run() {
             try {
                 if (!ethWrapper.isEthNodeSyncing()) {
-                    restoreFiles();
-
                     if (arePendingTransactions()) {
                         log.debug("Skipping because there are pending transaction for the sender address.");
                         return;
@@ -120,6 +106,7 @@ public abstract class SuperblockBattleBaseAgent extends PersistentFileStore {
                     deleteFinishedBattles(fromBlock, toBlock);
                     latestEthBlockProcessed = reactToEvents(fromBlock, toBlock);
 
+                    flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
                     flushFiles();
                 } else {
                     log.warn("SuperblocksBattleBaseAgentTimerTask skipped because the eth node is syncing blocks");
@@ -165,10 +152,6 @@ public abstract class SuperblockBattleBaseAgent extends PersistentFileStore {
 
     protected abstract long reactToEvents(long fromBlock, long toBlock);
 
-    protected abstract boolean isEnabled();
-
-    protected abstract String getLastEthBlockProcessedFilename();
-
     protected abstract String getSessionToSuperblockMapFilename();
 
     protected abstract String getSuperblockToSessionsMapFilename();
@@ -192,18 +175,9 @@ public abstract class SuperblockBattleBaseAgent extends PersistentFileStore {
     protected abstract void removeSuperblocks(long fromBlock, long toBlock,
                                               List<EthWrapper.SuperblockEvent> superblockEvents) throws Exception;
 
-    protected abstract void restoreFiles() throws ClassNotFoundException, IOException;
-
-    protected abstract void flushFiles() throws ClassNotFoundException, IOException;
-
-
     /* ---- DATABASE METHODS ---- */
 
-    void setupBaseFiles() throws IOException {
-        this.latestEthBlockProcessed = config.getAgentConstants().getEthInitialCheckpoint();
-        this.dataDirectory = new File(config.dataDirectory());
-        this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() +
-                "/" + getLastEthBlockProcessedFilename());
+    protected void setupFiles() throws IOException {
         this.sessionToSuperblockMap =  new HashMap<>();
         this.sessionToSuperblockMapFile = new File(dataDirectory.getAbsolutePath() + "/" +
                 getSessionToSuperblockMapFilename());
@@ -212,6 +186,17 @@ public abstract class SuperblockBattleBaseAgent extends PersistentFileStore {
                 + getSuperblockToSessionsMapFilename());
 
     }
+
+    protected void restoreFiles() throws ClassNotFoundException, IOException {
+        restore(sessionToSuperblockMap, sessionToSuperblockMapFile);
+        restore(superblockToSessionsMap, superblockToSessionsMapFile);
+    }
+
+    protected void flushFiles() throws ClassNotFoundException, IOException {
+        flush(sessionToSuperblockMap, sessionToSuperblockMapFile);
+        flush(superblockToSessionsMap, superblockToSessionsMapFile);
+    }
+
 
 
     /* ---- BATTLE MAP METHODS ---- */

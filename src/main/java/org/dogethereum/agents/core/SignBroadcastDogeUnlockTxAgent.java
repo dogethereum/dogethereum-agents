@@ -3,7 +3,6 @@ package org.dogethereum.agents.core;
 
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
-import org.dogethereum.agents.constants.SystemProperties;
 import org.dogethereum.agents.core.dogecoin.DogecoinWrapper;
 import org.dogethereum.agents.core.eth.EthWrapper;
 import org.dogethereum.agents.util.OperatorKeyHandler;
@@ -26,11 +25,6 @@ public class SignBroadcastDogeUnlockTxAgent extends PersistentFileStore {
     @Autowired
     private EthWrapper ethWrapper;
 
-    private SystemProperties config;
-
-    private long latestEthBlockProcessed;
-    private File latestEthBlockProcessedFile;
-
     @Autowired
     private DogecoinWrapper dogecoinWrapper;
 
@@ -42,15 +36,8 @@ public class SignBroadcastDogeUnlockTxAgent extends PersistentFileStore {
 
     @PostConstruct
     public void setup() throws Exception {
-        config = SystemProperties.CONFIG;
-        if (config.isOperatorEnabled()) {
-            // Set latestEthBlockProcessed to eth genesis block or eth checkpoint,
-            // then read the latestEthBlockProcessed from file and overwrite it.
-            this.latestEthBlockProcessed = config.getAgentConstants().getEthInitialCheckpoint();
-            this.dataDirectory = new File(config.dataDirectory());
-            setupFiles();
-            restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
-
+        super.setup();
+        if (isEnabled()) {
             new Timer("SignBroadcastDogeUnlockTxAgent").scheduleAtFixedRate(new SignBroadcastDogeUnlockTxAgentTimerTask(), getFirstExecutionDate(), config.getAgentConstants().getSignBroadcastDogeUnlockTxAgentTimerTaskPeriod());
         }
     }
@@ -120,9 +107,14 @@ public class SignBroadcastDogeUnlockTxAgent extends PersistentFileStore {
     }
 
     @Override
-    void setupFiles() {
-        this.latestEthBlockProcessedFile =
-                new File(dataDirectory.getAbsolutePath() + "/SignBroadcastDogeUnlockTxAgentLatestEthBlockProcessedFile.dat");
+    protected boolean isEnabled() {
+        return config.isOperatorEnabled();
+    }
+
+
+    @Override
+    protected String getLatestEthBlockProcessedFilename() {
+        return "SignBroadcastDogeUnlockTxAgentLatestEthBlockProcessed.dat";
     }
 
 }

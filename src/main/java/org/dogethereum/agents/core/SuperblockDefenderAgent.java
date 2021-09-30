@@ -16,6 +16,7 @@ import java.util.*;
  * Monitors the Ethereum blockchain for superblock-related events
  * and defends/confirms the ones submitted by the agent.
  * @author Catalina Juarros
+ * @author Oscar Guindzberg
  */
 
 @Service
@@ -307,11 +308,6 @@ public class SuperblockDefenderAgent extends SuperblockBattleBaseAgent {
     /* ---- OVERRIDE ABSTRACT METHODS ---- */
 
     @Override
-    protected void setupFiles() throws IOException {
-        setupBaseFiles();
-    }
-
-    @Override
     protected boolean arePendingTransactions() throws IOException {
         return ethWrapper.arePendingTransactionsForSendSuperblocksAddress();
     }
@@ -322,8 +318,8 @@ public class SuperblockDefenderAgent extends SuperblockBattleBaseAgent {
     }
 
     @Override
-    protected String getLastEthBlockProcessedFilename() {
-        return "SuperblockDefenderLatestEthBlockProcessedFile.dat";
+    protected String getLatestEthBlockProcessedFilename() {
+        return "SuperblockDefenderLatestEthBlockProcessed.dat";
     }
 
     @Override
@@ -476,20 +472,6 @@ public class SuperblockDefenderAgent extends SuperblockBattleBaseAgent {
                 sessionToSuperblockMap.remove(challengerConvictedEvent.sessionId);
             }
         }
-    }
-
-    @Override
-    protected void restoreFiles() throws ClassNotFoundException, IOException {
-        restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
-        restore(sessionToSuperblockMap, sessionToSuperblockMapFile);
-        restore(superblockToSessionsMap, superblockToSessionsMapFile);
-    }
-
-    @Override
-    protected void flushFiles() throws ClassNotFoundException, IOException {
-        flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
-        flush(sessionToSuperblockMap, sessionToSuperblockMapFile);
-        flush(superblockToSessionsMap, superblockToSessionsMapFile);
     }
 
 }

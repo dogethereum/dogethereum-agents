@@ -17,6 +17,7 @@ import java.util.*;
  * and challenges invalid submissions.
  * @author Catalina Juarros
  * @author Ismael Bejarano
+ * @author Oscar Guindzberg
  */
 
 @Service
@@ -374,12 +375,6 @@ public class SuperblockChallengerAgent extends SuperblockBattleBaseAgent {
     /* ---- OVERRIDE ABSTRACT METHODS ---- */
 
     @Override
-    protected void setupFiles() throws IOException {
-        setupBaseFiles();
-        setupSemiApprovedSet();
-    }
-
-    @Override
     protected boolean arePendingTransactions() throws IOException {
         return ethWrapper.arePendingTransactionsForChallengerAddress();
     }
@@ -390,8 +385,8 @@ public class SuperblockChallengerAgent extends SuperblockBattleBaseAgent {
     }
 
     @Override
-    protected String getLastEthBlockProcessedFilename() {
-        return "SuperblockChallengerLatestEthBlockProcessedFile.dat";
+    protected String getLatestEthBlockProcessedFilename() {
+        return "SuperblockChallengerLatestEthBlockProcessed.dat";
     }
 
     @Override
@@ -503,25 +498,21 @@ public class SuperblockChallengerAgent extends SuperblockBattleBaseAgent {
     }
 
     @Override
+    protected void setupFiles() throws IOException {
+        super.setupFiles();
+        this.semiApprovedSet = new HashSet<>();
+        this.semiApprovedSetFile = new File(dataDirectory.getAbsolutePath() + "/SemiApprovedSet.dat");
+    }
+
+    @Override
     protected void restoreFiles() throws ClassNotFoundException, IOException {
-        restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
-        restore(sessionToSuperblockMap, sessionToSuperblockMapFile);
+        super.restoreFiles();
         restore(semiApprovedSet, semiApprovedSetFile);
     }
 
     @Override
     protected void flushFiles() throws ClassNotFoundException, IOException {
-        flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
-        flush(sessionToSuperblockMap, sessionToSuperblockMapFile);
+        super.flushFiles();
         flush(semiApprovedSet, semiApprovedSetFile);
     }
-
-
-    /* ---- STORAGE ---- */
-
-    private void setupSemiApprovedSet() {
-        this.semiApprovedSet = new HashSet<>();
-        this.semiApprovedSetFile = new File(dataDirectory.getAbsolutePath() + "/SemiApprovedSet.dat");
-    }
-
 }

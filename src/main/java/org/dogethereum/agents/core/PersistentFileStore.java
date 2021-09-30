@@ -1,15 +1,50 @@
 package org.dogethereum.agents.core;
 
+import org.bitcoinj.store.BlockStoreException;
+import org.dogethereum.agents.constants.SystemProperties;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.io.*;
 
 /**
- * Base methods for managing file storage.
+ * Base class for agents managing file storage.
  * @author Catalina Juarros
+ * @author Oscar Guindzberg
  */
 public abstract class PersistentFileStore {
-    File dataDirectory;
+    protected SystemProperties config;
 
-    abstract void setupFiles() throws IOException;
+    protected File dataDirectory;
+
+    protected long latestEthBlockProcessed;
+    protected File latestEthBlockProcessedFile;
+
+    @PostConstruct
+    public void setup() throws Exception{
+        this.config = SystemProperties.CONFIG;
+        if (isEnabled()) {
+            this.dataDirectory = new File(config.dataDirectory());
+            // Set latestEthBlockProcessed to eth genesis block or eth checkpoint,
+            // then read the latestEthBlockProcessed from file and overwrite it.
+            this.latestEthBlockProcessed = config.getAgentConstants().getEthInitialCheckpoint();
+            this.latestEthBlockProcessedFile = new File(dataDirectory.getAbsolutePath() + "/" + getLatestEthBlockProcessedFilename());
+            restore(latestEthBlockProcessed, latestEthBlockProcessedFile);
+        }
+    }
+
+
+    @PreDestroy
+    public void tearDown() throws BlockStoreException, ClassNotFoundException, IOException {
+        if (isEnabled()) {
+            flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
+        }
+    }
+
+    protected abstract boolean isEnabled();
+
+    protected abstract String getLatestEthBlockProcessedFilename();
+
 
     void restore(Serializable obj, File file) throws ClassNotFoundException, IOException {
         if (file.exists()) {
