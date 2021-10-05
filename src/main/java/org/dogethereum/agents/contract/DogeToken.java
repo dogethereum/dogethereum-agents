@@ -17,7 +17,6 @@ import org.web3j.abi.datatypes.Event;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.Utf8String;
 import org.web3j.abi.datatypes.generated.Bytes20;
-import org.web3j.abi.datatypes.generated.Uint16;
 import org.web3j.abi.datatypes.generated.Uint24;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.abi.datatypes.generated.Uint32;
@@ -33,8 +32,8 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tuples.generated.Tuple2;
 import org.web3j.tuples.generated.Tuple3;
 import org.web3j.tuples.generated.Tuple6;
-import org.web3j.tuples.generated.Tuple7;
 import org.web3j.tuples.generated.Tuple8;
+import org.web3j.tuples.generated.Tuple9;
 import org.web3j.tx.Contract;
 import org.web3j.tx.TransactionManager;
 import org.web3j.tx.gas.ContractGasProvider;
@@ -53,6 +52,10 @@ public class DogeToken extends Contract {
     public static final String BINARY = "Bin file was not provided";
 
     public static final String FUNC_DOGETHEREUM_FEE_FRACTION = "DOGETHEREUM_FEE_FRACTION";
+
+    public static final String FUNC_DOGE_TX_BASE_FEE = "DOGE_TX_BASE_FEE";
+
+    public static final String FUNC_DOGE_TX_FEE_PER_INPUT = "DOGE_TX_FEE_PER_INPUT";
 
     public static final String FUNC_MIN_LOCK_VALUE = "MIN_LOCK_VALUE";
 
@@ -88,9 +91,11 @@ public class DogeToken extends Contract {
 
     public static final String FUNC_ETHUSDORACLE = "ethUsdOracle";
 
+    public static final String FUNC_ETHEREUMTIMEGRACEPERIOD = "ethereumTimeGracePeriod";
+
     public static final String FUNC_GETOPERATORSLENGTH = "getOperatorsLength";
 
-    public static final String FUNC_GETUNLOCKPENDINGINVESTORPROOF = "getUnlockPendingInvestorProof";
+    public static final String FUNC_GETUNLOCK = "getUnlock";
 
     public static final String FUNC_GETUTXO = "getUtxo";
 
@@ -110,6 +115,12 @@ public class DogeToken extends Contract {
 
     public static final String FUNC_PROCESSUNLOCKTRANSACTION = "processUnlockTransaction";
 
+    public static final String FUNC_REPORTOPERATORMISSINGUNLOCK = "reportOperatorMissingUnlock";
+
+    public static final String FUNC_SUPERBLOCKS = "superblocks";
+
+    public static final String FUNC_SUPERBLOCKSHEIGHTGRACEPERIOD = "superblocksHeightGracePeriod";
+
     public static final String FUNC_SYMBOL = "symbol";
 
     public static final String FUNC_TOTALSUPPLY = "totalSupply";
@@ -122,7 +133,7 @@ public class DogeToken extends Contract {
 
     public static final String FUNC_UNLOCKIDX = "unlockIdx";
 
-    public static final String FUNC_UNLOCKSPENDINGINVESTORPROOF = "unlocksPendingInvestorProof";
+    public static final String FUNC_UNLOCKS = "unlocks";
 
     public static final String FUNC_WASDOGETXPROCESSED = "wasDogeTxProcessed";
 
@@ -140,7 +151,7 @@ public class DogeToken extends Contract {
             Arrays.<TypeReference<?>>asList(new TypeReference<Address>(true) {}, new TypeReference<Uint256>() {}));
     ;
 
-    public static final Event OPERATORCONDEMNED_EVENT = new Event("OperatorCondemned", 
+    public static final Event OPERATORLIQUIDATED_EVENT = new Event("OperatorLiquidated", 
             Arrays.<TypeReference<?>>asList(new TypeReference<Bytes20>() {}));
     ;
 
@@ -149,7 +160,7 @@ public class DogeToken extends Contract {
     ;
 
     public static final Event UNLOCKREQUEST_EVENT = new Event("UnlockRequest", 
-            Arrays.<TypeReference<?>>asList(new TypeReference<Uint32>() {}, new TypeReference<Bytes20>() {}));
+            Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}, new TypeReference<Bytes20>() {}));
     ;
 
     @Deprecated
@@ -269,11 +280,11 @@ public class DogeToken extends Contract {
         return newTokenEventFlowable(filter);
     }
 
-    public List<OperatorCondemnedEventResponse> getOperatorCondemnedEvents(TransactionReceipt transactionReceipt) {
-        List<Contract.EventValuesWithLog> valueList = extractEventParametersWithLog(OPERATORCONDEMNED_EVENT, transactionReceipt);
-        ArrayList<OperatorCondemnedEventResponse> responses = new ArrayList<OperatorCondemnedEventResponse>(valueList.size());
+    public List<OperatorLiquidatedEventResponse> getOperatorLiquidatedEvents(TransactionReceipt transactionReceipt) {
+        List<Contract.EventValuesWithLog> valueList = extractEventParametersWithLog(OPERATORLIQUIDATED_EVENT, transactionReceipt);
+        ArrayList<OperatorLiquidatedEventResponse> responses = new ArrayList<OperatorLiquidatedEventResponse>(valueList.size());
         for (Contract.EventValuesWithLog eventValues : valueList) {
-            OperatorCondemnedEventResponse typedResponse = new OperatorCondemnedEventResponse();
+            OperatorLiquidatedEventResponse typedResponse = new OperatorLiquidatedEventResponse();
             typedResponse.log = eventValues.getLog();
             typedResponse.operatorPublicKeyHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
             responses.add(typedResponse);
@@ -281,12 +292,12 @@ public class DogeToken extends Contract {
         return responses;
     }
 
-    public Flowable<OperatorCondemnedEventResponse> operatorCondemnedEventFlowable(EthFilter filter) {
-        return web3j.ethLogFlowable(filter).map(new Function<Log, OperatorCondemnedEventResponse>() {
+    public Flowable<OperatorLiquidatedEventResponse> operatorLiquidatedEventFlowable(EthFilter filter) {
+        return web3j.ethLogFlowable(filter).map(new Function<Log, OperatorLiquidatedEventResponse>() {
             @Override
-            public OperatorCondemnedEventResponse apply(Log log) {
-                Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(OPERATORCONDEMNED_EVENT, log);
-                OperatorCondemnedEventResponse typedResponse = new OperatorCondemnedEventResponse();
+            public OperatorLiquidatedEventResponse apply(Log log) {
+                Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(OPERATORLIQUIDATED_EVENT, log);
+                OperatorLiquidatedEventResponse typedResponse = new OperatorLiquidatedEventResponse();
                 typedResponse.log = log;
                 typedResponse.operatorPublicKeyHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
                 return typedResponse;
@@ -294,10 +305,10 @@ public class DogeToken extends Contract {
         });
     }
 
-    public Flowable<OperatorCondemnedEventResponse> operatorCondemnedEventFlowable(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
+    public Flowable<OperatorLiquidatedEventResponse> operatorLiquidatedEventFlowable(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(OPERATORCONDEMNED_EVENT));
-        return operatorCondemnedEventFlowable(filter);
+        filter.addSingleTopic(EventEncoder.encode(OPERATORLIQUIDATED_EVENT));
+        return operatorLiquidatedEventFlowable(filter);
     }
 
     public List<TransferEventResponse> getTransferEvents(TransactionReceipt transactionReceipt) {
@@ -370,6 +381,20 @@ public class DogeToken extends Contract {
 
     public RemoteFunctionCall<BigInteger> DOGETHEREUM_FEE_FRACTION() {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_DOGETHEREUM_FEE_FRACTION, 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
+    public RemoteFunctionCall<BigInteger> DOGE_TX_BASE_FEE() {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_DOGE_TX_BASE_FEE, 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
+    public RemoteFunctionCall<BigInteger> DOGE_TX_FEE_PER_INPUT() {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_DOGE_TX_FEE_PER_INPUT, 
                 Arrays.<Type>asList(), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
@@ -504,6 +529,13 @@ public class DogeToken extends Contract {
         return executeRemoteCallSingleValueReturn(function, String.class);
     }
 
+    public RemoteFunctionCall<BigInteger> ethereumTimeGracePeriod() {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_ETHEREUMTIMEGRACEPERIOD, 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
     public RemoteFunctionCall<BigInteger> getOperatorsLength() {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_GETOPERATORSLENGTH, 
                 Arrays.<Type>asList(), 
@@ -511,24 +543,25 @@ public class DogeToken extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteFunctionCall<Tuple8<String, byte[], BigInteger, BigInteger, BigInteger, List<BigInteger>, BigInteger, byte[]>> getUnlockPendingInvestorProof(BigInteger index) {
-        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_GETUNLOCKPENDINGINVESTORPROOF, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint32(index)), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}, new TypeReference<Bytes20>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<DynamicArray<Uint32>>() {}, new TypeReference<Uint256>() {}, new TypeReference<Bytes20>() {}));
-        return new RemoteFunctionCall<Tuple8<String, byte[], BigInteger, BigInteger, BigInteger, List<BigInteger>, BigInteger, byte[]>>(function,
-                new Callable<Tuple8<String, byte[], BigInteger, BigInteger, BigInteger, List<BigInteger>, BigInteger, byte[]>>() {
+    public RemoteFunctionCall<Tuple9<String, byte[], BigInteger, BigInteger, BigInteger, BigInteger, List<BigInteger>, byte[], Boolean>> getUnlock(BigInteger index) {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_GETUNLOCK, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(index)), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}, new TypeReference<Bytes20>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<DynamicArray<Uint32>>() {}, new TypeReference<Bytes20>() {}, new TypeReference<Bool>() {}));
+        return new RemoteFunctionCall<Tuple9<String, byte[], BigInteger, BigInteger, BigInteger, BigInteger, List<BigInteger>, byte[], Boolean>>(function,
+                new Callable<Tuple9<String, byte[], BigInteger, BigInteger, BigInteger, BigInteger, List<BigInteger>, byte[], Boolean>>() {
                     @Override
-                    public Tuple8<String, byte[], BigInteger, BigInteger, BigInteger, List<BigInteger>, BigInteger, byte[]> call() throws Exception {
+                    public Tuple9<String, byte[], BigInteger, BigInteger, BigInteger, BigInteger, List<BigInteger>, byte[], Boolean> call() throws Exception {
                         List<Type> results = executeCallMultipleValueReturn(function);
-                        return new Tuple8<String, byte[], BigInteger, BigInteger, BigInteger, List<BigInteger>, BigInteger, byte[]>(
+                        return new Tuple9<String, byte[], BigInteger, BigInteger, BigInteger, BigInteger, List<BigInteger>, byte[], Boolean>(
                                 (String) results.get(0).getValue(), 
                                 (byte[]) results.get(1).getValue(), 
                                 (BigInteger) results.get(2).getValue(), 
                                 (BigInteger) results.get(3).getValue(), 
                                 (BigInteger) results.get(4).getValue(), 
-                                convertToNative((List<Uint32>) results.get(5).getValue()), 
-                                (BigInteger) results.get(6).getValue(), 
-                                (byte[]) results.get(7).getValue());
+                                (BigInteger) results.get(5).getValue(), 
+                                convertToNative((List<Uint32>) results.get(6).getValue()), 
+                                (byte[]) results.get(7).getValue(), 
+                                (Boolean) results.get(8).getValue());
                     }
                 });
     }
@@ -537,7 +570,7 @@ public class DogeToken extends Contract {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_GETUTXO, 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes20(operatorPublicKeyHash), 
                 new org.web3j.abi.datatypes.generated.Uint256(i)), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint16>() {}));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint32>() {}));
         return new RemoteFunctionCall<Tuple3<BigInteger, BigInteger, BigInteger>>(function,
                 new Callable<Tuple3<BigInteger, BigInteger, BigInteger>>() {
                     @Override
@@ -558,13 +591,16 @@ public class DogeToken extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> initialize(String relayerContract, String initDogeUsdOracle, String initEthUsdOracle, BigInteger initCollateralRatio) {
+    public RemoteFunctionCall<TransactionReceipt> initialize(String relayerContract, String initSuperblocks, String initDogeUsdOracle, String initEthUsdOracle, BigInteger initCollateralRatio, BigInteger timeGracePeriod, BigInteger superblocksGracePeriod) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
                 FUNC_INITIALIZE, 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(relayerContract), 
+                new org.web3j.abi.datatypes.Address(initSuperblocks), 
                 new org.web3j.abi.datatypes.Address(initDogeUsdOracle), 
                 new org.web3j.abi.datatypes.Address(initEthUsdOracle), 
-                new org.web3j.abi.datatypes.generated.Uint8(initCollateralRatio)), 
+                new org.web3j.abi.datatypes.generated.Uint8(initCollateralRatio), 
+                new org.web3j.abi.datatypes.generated.Uint256(timeGracePeriod), 
+                new org.web3j.abi.datatypes.generated.Uint256(superblocksGracePeriod)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
@@ -635,15 +671,38 @@ public class DogeToken extends Contract {
         return executeRemoteCallTransaction(function);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> processUnlockTransaction(byte[] dogeTx, BigInteger dogeTxHash, byte[] operatorPublicKeyHash, String param3) {
+    public RemoteFunctionCall<TransactionReceipt> processUnlockTransaction(byte[] dogeTx, BigInteger dogeTxHash, byte[] operatorPublicKeyHash, BigInteger unlockIndex) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
                 FUNC_PROCESSUNLOCKTRANSACTION, 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.DynamicBytes(dogeTx), 
                 new org.web3j.abi.datatypes.generated.Uint256(dogeTxHash), 
                 new org.web3j.abi.datatypes.generated.Bytes20(operatorPublicKeyHash), 
-                new org.web3j.abi.datatypes.Address(param3)), 
+                new org.web3j.abi.datatypes.generated.Uint256(unlockIndex)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> reportOperatorMissingUnlock(byte[] operatorPublicKeyHash, BigInteger unlockIndex) {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+                FUNC_REPORTOPERATORMISSINGUNLOCK, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes20(operatorPublicKeyHash), 
+                new org.web3j.abi.datatypes.generated.Uint256(unlockIndex)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public RemoteFunctionCall<String> superblocks() {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_SUPERBLOCKS, 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}));
+        return executeRemoteCallSingleValueReturn(function, String.class);
+    }
+
+    public RemoteFunctionCall<BigInteger> superblocksHeightGracePeriod() {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_SUPERBLOCKSHEIGHTGRACEPERIOD, 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
     public RemoteFunctionCall<String> symbol() {
@@ -689,27 +748,28 @@ public class DogeToken extends Contract {
     public RemoteFunctionCall<BigInteger> unlockIdx() {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_UNLOCKIDX, 
                 Arrays.<Type>asList(), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Uint32>() {}));
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteFunctionCall<Tuple7<String, byte[], BigInteger, BigInteger, BigInteger, BigInteger, byte[]>> unlocksPendingInvestorProof(BigInteger param0) {
-        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_UNLOCKSPENDINGINVESTORPROOF, 
-                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint32(param0)), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}, new TypeReference<Bytes20>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<Bytes20>() {}));
-        return new RemoteFunctionCall<Tuple7<String, byte[], BigInteger, BigInteger, BigInteger, BigInteger, byte[]>>(function,
-                new Callable<Tuple7<String, byte[], BigInteger, BigInteger, BigInteger, BigInteger, byte[]>>() {
+    public RemoteFunctionCall<Tuple8<String, byte[], BigInteger, BigInteger, BigInteger, BigInteger, byte[], Boolean>> unlocks(BigInteger param0) {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_UNLOCKS, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Uint256(param0)), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}, new TypeReference<Bytes20>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<Bytes20>() {}, new TypeReference<Bool>() {}));
+        return new RemoteFunctionCall<Tuple8<String, byte[], BigInteger, BigInteger, BigInteger, BigInteger, byte[], Boolean>>(function,
+                new Callable<Tuple8<String, byte[], BigInteger, BigInteger, BigInteger, BigInteger, byte[], Boolean>>() {
                     @Override
-                    public Tuple7<String, byte[], BigInteger, BigInteger, BigInteger, BigInteger, byte[]> call() throws Exception {
+                    public Tuple8<String, byte[], BigInteger, BigInteger, BigInteger, BigInteger, byte[], Boolean> call() throws Exception {
                         List<Type> results = executeCallMultipleValueReturn(function);
-                        return new Tuple7<String, byte[], BigInteger, BigInteger, BigInteger, BigInteger, byte[]>(
+                        return new Tuple8<String, byte[], BigInteger, BigInteger, BigInteger, BigInteger, byte[], Boolean>(
                                 (String) results.get(0).getValue(), 
                                 (byte[]) results.get(1).getValue(), 
                                 (BigInteger) results.get(2).getValue(), 
                                 (BigInteger) results.get(3).getValue(), 
                                 (BigInteger) results.get(4).getValue(), 
                                 (BigInteger) results.get(5).getValue(), 
-                                (byte[]) results.get(6).getValue());
+                                (byte[]) results.get(6).getValue(), 
+                                (Boolean) results.get(7).getValue());
                     }
                 });
     }
@@ -766,7 +826,7 @@ public class DogeToken extends Contract {
         public BigInteger value;
     }
 
-    public static class OperatorCondemnedEventResponse extends BaseEventResponse {
+    public static class OperatorLiquidatedEventResponse extends BaseEventResponse {
         public byte[] operatorPublicKeyHash;
     }
 
