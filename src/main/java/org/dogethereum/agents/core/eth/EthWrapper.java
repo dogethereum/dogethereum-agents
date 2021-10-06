@@ -1519,18 +1519,23 @@ public class EthWrapper implements SuperblockConstantProvider {
     }
 
     public Unlock getUnlock(Long unlockRequestId) throws Exception {
-        Tuple8<String, byte[], BigInteger, BigInteger, BigInteger, List<BigInteger>, BigInteger, byte[]> tuple =
-                dogeToken.getUnlockPendingInvestorProof(BigInteger.valueOf(unlockRequestId)).send();
+        return getUnlock(BigInteger.valueOf(unlockRequestId));
+    }
+
+    public Unlock getUnlock(BigInteger unlockRequestId) throws Exception {
+        Tuple9<String, byte[], BigInteger, BigInteger, BigInteger, BigInteger, List<BigInteger>, byte[], Boolean> tuple =
+                dogeToken.getUnlock(unlockRequestId).send();
         Unlock unlock = new Unlock();
         unlock.from = tuple.component1();
         unlock.dogeAddress = tuple.component2();
-        unlock.value = tuple.component3().longValue();
-        unlock.operatorFee = tuple.component4().longValue();
+        unlock.valueToUser = tuple.component3().longValue();
+        unlock.operatorChange = tuple.component4().longValue();
         unlock.timestamp = tuple.component5().longValue();
-        unlock.dogeTxFee = tuple.component7().longValue();
+        unlock.superblockHeight = tuple.component6().longValue();
         unlock.operatorPublicKeyHash = tuple.component8();
+        unlock.completed = tuple.component9();
 
-        List<BigInteger> selectedUtxosIndexes = tuple.component6();
+        List<BigInteger> selectedUtxosIndexes = tuple.component7();
         List<UTXO> selectedUtxosOutpoints = new ArrayList<>();
         for (BigInteger selectedUtxo : selectedUtxosIndexes) {
             Tuple3<BigInteger, BigInteger, BigInteger> utxo = dogeToken.getUtxo(unlock.operatorPublicKeyHash, selectedUtxo).send();
@@ -1545,14 +1550,43 @@ public class EthWrapper implements SuperblockConstantProvider {
 
     // TODO: replace with immutable data types, e.g. Sha256Hash
     public static class Unlock {
+        /**
+         * User's Ethereum address
+         */
         public String from;
+        /**
+         * User's Dogecoin public key hash.
+         * Dogecoins should be sent to this address in the unlock tx.
+         */
         public byte[] dogeAddress;
-        public long value;
-        public long operatorFee;
+        /**
+         * Dogecoin value sent to the user in terms of satoshis.
+         */
+        public long valueToUser;
+        /**
+         * Dogecoin change kept by the operator in terms of satoshis.
+         */
+        public long operatorChange;
+        /**
+         * Ethereum timestamp of the unlock request.
+         */
         public long timestamp;
+        /**
+         * Superblockchain height at the time of the unlock request.
+         */
+        public long superblockHeight;
+        /**
+         * Selected UTXOs for the unlock.
+         */
         public List<UTXO> selectedUtxos;
-        public long dogeTxFee;
+        /**
+         * Dogecoin public key hash of the operator.
+         */
         public byte[] operatorPublicKeyHash;
+        /**
+         * Dogecoin public key hash of the operator.
+         */
+        public boolean completed;
     }
 
 
