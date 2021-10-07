@@ -28,7 +28,7 @@ import org.web3j.protocol.http.HttpService;
 
 import org.web3j.tuples.generated.Tuple3;
 
-import org.web3j.tuples.generated.Tuple8;
+import org.web3j.tuples.generated.Tuple9;
 import org.web3j.tx.ClientTransactionManager;
 
 import java.io.FileReader;
@@ -1476,9 +1476,10 @@ public class EthWrapper implements SuperblockConstantProvider {
                     operatorPublicKeyHash, txIndex, txSiblingsBigInteger, dogeBlockHeader, dogeBlockIndex,
                     dogeBlockSiblingsBigInteger, superblock.getSuperblockId().getBytes(), targetContract).sendAsync();
         } else {
+            BigInteger unlockIndex = findUnlock(tx, operatorPublicKeyHash);
             futureReceipt = superblocksForRelayTxs.relayUnlockTx(txSerialized,
                     operatorPublicKeyHash, txIndex, txSiblingsBigInteger, dogeBlockHeader, dogeBlockIndex,
-                    dogeBlockSiblingsBigInteger, superblock.getSuperblockId().getBytes(), targetContract).sendAsync();
+                    dogeBlockSiblingsBigInteger, superblock.getSuperblockId().getBytes(), targetContract, unlockIndex).sendAsync();
         }
         log.info("Relayed Tx {}", tx.getTxId());
         futureReceipt.thenAcceptAsync((TransactionReceipt receipt) ->
@@ -1489,6 +1490,32 @@ public class EthWrapper implements SuperblockConstantProvider {
             log.error(t.getMessage(), t);
             return null;
         });
+    }
+
+    /**
+     * Finds the unlock index that matches the unlock performed by a tx.
+     * This assumes the unlock tx is well-formed.
+     * @param tx Unlock tx.
+     * @param operatorPublicKeyHash PKH of the operator performing the unlock.
+     * @return The unlock index that matches this tx.
+     */
+    private BigInteger findUnlock(org.bitcoinj.core.Transaction tx, byte[] operatorPublicKeyHash) throws Exception {
+        // Iterate Unlocks beginning with the most recent one and find the matching unlock request.
+        BigInteger totalUnlocks = dogeToken.unlockIdx().send();
+        for (BigInteger unlockIndex = totalUnlocks.subtract(BigInteger.ONE);
+             unlockIndex.compareTo(BigInteger.ZERO) >= 0;
+             unlockIndex = unlockIndex.subtract(BigInteger.ONE))
+        {
+            Unlock unlock = getUnlock(unlockIndex);
+            TransactionOutPoint firstOutpoint = tx.getInput(0).getOutpoint();
+            UTXO firstSelectedUtxo = unlock.selectedUtxos.get(0);
+            if (firstOutpoint.getHash().compareTo(firstSelectedUtxo.getHash()) == 0 &&
+                firstOutpoint.getIndex() == firstSelectedUtxo.getIndex()) {
+                return unlockIndex;
+            }
+        }
+
+        throw new RuntimeException("Didn't find a pending unlock that matches tx " + tx.getTxId());
     }
 
 

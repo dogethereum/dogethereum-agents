@@ -81,14 +81,8 @@ public class SignBroadcastDogeUnlockTxAgent extends PersistentFileStore {
 
         NetworkParameters params = config.getAgentConstants().getDogeParams();
         Transaction tx = new Transaction(params);
-        long totalInputValue = 0;
-        for (UTXO utxo : unlock.selectedUtxos) {
-            totalInputValue += utxo.getValue().getValue();
-        }
-        long unlockValue = unlock.value - unlock.operatorFee;
-        long userValue = unlockValue - unlock.dogeTxFee;
-        tx.addOutput(Coin.valueOf(userValue), LegacyAddress.fromPubKeyHash(params, unlock.dogeAddress));
-        long change = totalInputValue - unlockValue;
+        tx.addOutput(Coin.valueOf(unlock.valueToUser), LegacyAddress.fromPubKeyHash(params, unlock.dogeAddress));
+        long change = unlock.operatorChange;
         if (change > 0) {
             tx.addOutput(Coin.valueOf(change), operatorKeyHandler.getAddress());
         }
