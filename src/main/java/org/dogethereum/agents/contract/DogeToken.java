@@ -51,6 +51,8 @@ import org.web3j.tx.gas.ContractGasProvider;
 public class DogeToken extends Contract {
     public static final String BINARY = "Bin file was not provided";
 
+    public static final String FUNC_DOGETHEREUM_COLLATERAL_RATIO_FRACTION = "DOGETHEREUM_COLLATERAL_RATIO_FRACTION";
+
     public static final String FUNC_DOGETHEREUM_FEE_FRACTION = "DOGETHEREUM_FEE_FRACTION";
 
     public static final String FUNC_DOGE_TX_BASE_FEE = "DOGE_TX_BASE_FEE";
@@ -77,8 +79,6 @@ public class DogeToken extends Contract {
 
     public static final String FUNC_BALANCEOF = "balanceOf";
 
-    public static final String FUNC_COLLATERALRATIO = "collateralRatio";
-
     public static final String FUNC_DECIMALS = "decimals";
 
     public static final String FUNC_DELETEOPERATOR = "deleteOperator";
@@ -103,6 +103,10 @@ public class DogeToken extends Contract {
 
     public static final String FUNC_INITIALIZE = "initialize";
 
+    public static final String FUNC_LIQUIDATIONTHRESHOLD = "liquidationThreshold";
+
+    public static final String FUNC_LOCKCOLLATERALRATIO = "lockCollateralRatio";
+
     public static final String FUNC_NAME = "name";
 
     public static final String FUNC_OPERATORKEYS = "operatorKeys";
@@ -116,6 +120,8 @@ public class DogeToken extends Contract {
     public static final String FUNC_PROCESSUNLOCKTRANSACTION = "processUnlockTransaction";
 
     public static final String FUNC_REPORTOPERATORMISSINGUNLOCK = "reportOperatorMissingUnlock";
+
+    public static final String FUNC_REPORTOPERATORUNSAFECOLLATERAL = "reportOperatorUnsafeCollateral";
 
     public static final String FUNC_SUPERBLOCKS = "superblocks";
 
@@ -379,6 +385,13 @@ public class DogeToken extends Contract {
         return unlockRequestEventFlowable(filter);
     }
 
+    public RemoteFunctionCall<BigInteger> DOGETHEREUM_COLLATERAL_RATIO_FRACTION() {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_DOGETHEREUM_COLLATERAL_RATIO_FRACTION, 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
     public RemoteFunctionCall<BigInteger> DOGETHEREUM_FEE_FRACTION() {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_DOGETHEREUM_FEE_FRACTION, 
                 Arrays.<Type>asList(), 
@@ -473,13 +486,6 @@ public class DogeToken extends Contract {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_BALANCEOF, 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(owner)), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
-        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
-    }
-
-    public RemoteFunctionCall<BigInteger> collateralRatio() {
-        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_COLLATERALRATIO, 
-                Arrays.<Type>asList(), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Uint8>() {}));
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
@@ -591,18 +597,33 @@ public class DogeToken extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteFunctionCall<TransactionReceipt> initialize(String relayerContract, String initSuperblocks, String initDogeUsdOracle, String initEthUsdOracle, BigInteger initCollateralRatio, BigInteger timeGracePeriod, BigInteger superblocksGracePeriod) {
+    public RemoteFunctionCall<TransactionReceipt> initialize(String relayerContract, String initSuperblocks, String initDogeUsdOracle, String initEthUsdOracle, BigInteger initLockCollateralRatio, BigInteger initLiquidationThreshold, BigInteger timeGracePeriod, BigInteger superblocksGracePeriod) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
                 FUNC_INITIALIZE, 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(relayerContract), 
                 new org.web3j.abi.datatypes.Address(initSuperblocks), 
                 new org.web3j.abi.datatypes.Address(initDogeUsdOracle), 
                 new org.web3j.abi.datatypes.Address(initEthUsdOracle), 
-                new org.web3j.abi.datatypes.generated.Uint8(initCollateralRatio), 
+                new org.web3j.abi.datatypes.generated.Uint256(initLockCollateralRatio), 
+                new org.web3j.abi.datatypes.generated.Uint256(initLiquidationThreshold), 
                 new org.web3j.abi.datatypes.generated.Uint256(timeGracePeriod), 
                 new org.web3j.abi.datatypes.generated.Uint256(superblocksGracePeriod)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
+    }
+
+    public RemoteFunctionCall<BigInteger> liquidationThreshold() {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_LIQUIDATIONTHRESHOLD, 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
+    public RemoteFunctionCall<BigInteger> lockCollateralRatio() {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_LOCKCOLLATERALRATIO, 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
     public RemoteFunctionCall<String> name() {
@@ -687,6 +708,14 @@ public class DogeToken extends Contract {
                 FUNC_REPORTOPERATORMISSINGUNLOCK, 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes20(operatorPublicKeyHash), 
                 new org.web3j.abi.datatypes.generated.Uint256(unlockIndex)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> reportOperatorUnsafeCollateral(byte[] operatorPublicKeyHash) {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+                FUNC_REPORTOPERATORUNSAFECOLLATERAL, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes20(operatorPublicKeyHash)), 
                 Collections.<TypeReference<?>>emptyList());
         return executeRemoteCallTransaction(function);
     }
