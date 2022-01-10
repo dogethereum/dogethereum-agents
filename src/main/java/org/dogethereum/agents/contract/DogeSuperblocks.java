@@ -143,10 +143,6 @@ public class DogeSuperblocks extends Contract {
             Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
     ;
 
-    public static final Event ERRORSUPERBLOCK_EVENT = new Event("ErrorSuperblock", 
-            Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Uint256>() {}));
-    ;
-
     public static final Event INVALIDSUPERBLOCK_EVENT = new Event("InvalidSuperblock", 
             Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}));
     ;
@@ -245,39 +241,6 @@ public class DogeSuperblocks extends Contract {
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
         filter.addSingleTopic(EventEncoder.encode(CHALLENGESUPERBLOCK_EVENT));
         return challengeSuperblockEventFlowable(filter);
-    }
-
-    public List<ErrorSuperblockEventResponse> getErrorSuperblockEvents(TransactionReceipt transactionReceipt) {
-        List<Contract.EventValuesWithLog> valueList = extractEventParametersWithLog(ERRORSUPERBLOCK_EVENT, transactionReceipt);
-        ArrayList<ErrorSuperblockEventResponse> responses = new ArrayList<ErrorSuperblockEventResponse>(valueList.size());
-        for (Contract.EventValuesWithLog eventValues : valueList) {
-            ErrorSuperblockEventResponse typedResponse = new ErrorSuperblockEventResponse();
-            typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            typedResponse.err = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
-            responses.add(typedResponse);
-        }
-        return responses;
-    }
-
-    public Flowable<ErrorSuperblockEventResponse> errorSuperblockEventFlowable(EthFilter filter) {
-        return web3j.ethLogFlowable(filter).map(new Function<Log, ErrorSuperblockEventResponse>() {
-            @Override
-            public ErrorSuperblockEventResponse apply(Log log) {
-                Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(ERRORSUPERBLOCK_EVENT, log);
-                ErrorSuperblockEventResponse typedResponse = new ErrorSuperblockEventResponse();
-                typedResponse.log = log;
-                typedResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-                typedResponse.err = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
-                return typedResponse;
-            }
-        });
-    }
-
-    public Flowable<ErrorSuperblockEventResponse> errorSuperblockEventFlowable(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
-        EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(ERRORSUPERBLOCK_EVENT));
-        return errorSuperblockEventFlowable(filter);
     }
 
     public List<InvalidSuperblockEventResponse> getInvalidSuperblockEvents(TransactionReceipt transactionReceipt) {
@@ -870,12 +833,6 @@ public class DogeSuperblocks extends Contract {
         public byte[] superblockHash;
 
         public String who;
-    }
-
-    public static class ErrorSuperblockEventResponse extends BaseEventResponse {
-        public byte[] superblockHash;
-
-        public BigInteger err;
     }
 
     public static class InvalidSuperblockEventResponse extends BaseEventResponse {

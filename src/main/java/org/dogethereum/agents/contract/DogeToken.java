@@ -14,6 +14,7 @@ import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.Bool;
 import org.web3j.abi.datatypes.DynamicArray;
 import org.web3j.abi.datatypes.Event;
+import org.web3j.abi.datatypes.StaticStruct;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.abi.datatypes.Utf8String;
 import org.web3j.abi.datatypes.generated.Bytes20;
@@ -31,7 +32,7 @@ import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tuples.generated.Tuple2;
 import org.web3j.tuples.generated.Tuple3;
-import org.web3j.tuples.generated.Tuple6;
+import org.web3j.tuples.generated.Tuple7;
 import org.web3j.tuples.generated.Tuple8;
 import org.web3j.tuples.generated.Tuple9;
 import org.web3j.tx.Contract;
@@ -55,9 +56,15 @@ public class DogeToken extends Contract {
 
     public static final String FUNC_DOGETHEREUM_FEE_FRACTION = "DOGETHEREUM_FEE_FRACTION";
 
-    public static final String FUNC_DOGE_TX_BASE_FEE = "DOGE_TX_BASE_FEE";
+    public static final String FUNC_DOGE_DUST = "DOGE_DUST";
 
-    public static final String FUNC_DOGE_TX_FEE_PER_INPUT = "DOGE_TX_FEE_PER_INPUT";
+    public static final String FUNC_DOGE_TX_FEE_RATE = "DOGE_TX_FEE_RATE";
+
+    public static final String FUNC_DOGE_TX_FIXED_SIZE = "DOGE_TX_FIXED_SIZE";
+
+    public static final String FUNC_DOGE_TX_INPUT_SIZE = "DOGE_TX_INPUT_SIZE";
+
+    public static final String FUNC_DOGE_TX_OUTPUT_SIZE = "DOGE_TX_OUTPUT_SIZE";
 
     public static final String FUNC_MIN_LOCK_VALUE = "MIN_LOCK_VALUE";
 
@@ -77,7 +84,11 @@ public class DogeToken extends Contract {
 
     public static final String FUNC_APPROVE = "approve";
 
+    public static final String FUNC_AUCTIONMINIMUMDURATION = "auctionMinimumDuration";
+
     public static final String FUNC_BALANCEOF = "balanceOf";
+
+    public static final String FUNC_CLOSELIQUIDATIONAUCTION = "closeLiquidationAuction";
 
     public static final String FUNC_DECIMALS = "decimals";
 
@@ -102,6 +113,8 @@ public class DogeToken extends Contract {
     public static final String FUNC_GETUTXOSLENGTH = "getUtxosLength";
 
     public static final String FUNC_INITIALIZE = "initialize";
+
+    public static final String FUNC_LIQUIDATIONBID = "liquidationBid";
 
     public static final String FUNC_LIQUIDATIONTHRESHOLD = "liquidationThreshold";
 
@@ -149,16 +162,20 @@ public class DogeToken extends Contract {
             Arrays.<TypeReference<?>>asList(new TypeReference<Address>(true) {}, new TypeReference<Address>(true) {}, new TypeReference<Uint256>() {}));
     ;
 
-    public static final Event ERRORDOGETOKEN_EVENT = new Event("ErrorDogeToken", 
-            Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+    public static final Event LIQUIDATIONBID_EVENT = new Event("LiquidationBid", 
+            Arrays.<TypeReference<?>>asList(new TypeReference<Bytes20>() {}, new TypeReference<Address>() {}, new TypeReference<Uint256>() {}));
     ;
 
     public static final Event NEWTOKEN_EVENT = new Event("NewToken", 
             Arrays.<TypeReference<?>>asList(new TypeReference<Address>(true) {}, new TypeReference<Uint256>() {}));
     ;
 
+    public static final Event OPERATORCOLLATERALAUCTIONED_EVENT = new Event("OperatorCollateralAuctioned", 
+            Arrays.<TypeReference<?>>asList(new TypeReference<Bytes20>() {}, new TypeReference<Address>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}));
+    ;
+
     public static final Event OPERATORLIQUIDATED_EVENT = new Event("OperatorLiquidated", 
-            Arrays.<TypeReference<?>>asList(new TypeReference<Bytes20>() {}));
+            Arrays.<TypeReference<?>>asList(new TypeReference<Bytes20>() {}, new TypeReference<Uint256>() {}));
     ;
 
     public static final Event TRANSFER_EVENT = new Event("Transfer", 
@@ -222,35 +239,39 @@ public class DogeToken extends Contract {
         return approvalEventFlowable(filter);
     }
 
-    public List<ErrorDogeTokenEventResponse> getErrorDogeTokenEvents(TransactionReceipt transactionReceipt) {
-        List<Contract.EventValuesWithLog> valueList = extractEventParametersWithLog(ERRORDOGETOKEN_EVENT, transactionReceipt);
-        ArrayList<ErrorDogeTokenEventResponse> responses = new ArrayList<ErrorDogeTokenEventResponse>(valueList.size());
+    public List<LiquidationBidEventResponse> getLiquidationBidEvents(TransactionReceipt transactionReceipt) {
+        List<Contract.EventValuesWithLog> valueList = extractEventParametersWithLog(LIQUIDATIONBID_EVENT, transactionReceipt);
+        ArrayList<LiquidationBidEventResponse> responses = new ArrayList<LiquidationBidEventResponse>(valueList.size());
         for (Contract.EventValuesWithLog eventValues : valueList) {
-            ErrorDogeTokenEventResponse typedResponse = new ErrorDogeTokenEventResponse();
+            LiquidationBidEventResponse typedResponse = new LiquidationBidEventResponse();
             typedResponse.log = eventValues.getLog();
-            typedResponse.err = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
+            typedResponse.operatorPublicKeyHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            typedResponse.bidder = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            typedResponse.bid = (BigInteger) eventValues.getNonIndexedValues().get(2).getValue();
             responses.add(typedResponse);
         }
         return responses;
     }
 
-    public Flowable<ErrorDogeTokenEventResponse> errorDogeTokenEventFlowable(EthFilter filter) {
-        return web3j.ethLogFlowable(filter).map(new Function<Log, ErrorDogeTokenEventResponse>() {
+    public Flowable<LiquidationBidEventResponse> liquidationBidEventFlowable(EthFilter filter) {
+        return web3j.ethLogFlowable(filter).map(new Function<Log, LiquidationBidEventResponse>() {
             @Override
-            public ErrorDogeTokenEventResponse apply(Log log) {
-                Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(ERRORDOGETOKEN_EVENT, log);
-                ErrorDogeTokenEventResponse typedResponse = new ErrorDogeTokenEventResponse();
+            public LiquidationBidEventResponse apply(Log log) {
+                Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(LIQUIDATIONBID_EVENT, log);
+                LiquidationBidEventResponse typedResponse = new LiquidationBidEventResponse();
                 typedResponse.log = log;
-                typedResponse.err = (BigInteger) eventValues.getNonIndexedValues().get(0).getValue();
+                typedResponse.operatorPublicKeyHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+                typedResponse.bidder = (String) eventValues.getNonIndexedValues().get(1).getValue();
+                typedResponse.bid = (BigInteger) eventValues.getNonIndexedValues().get(2).getValue();
                 return typedResponse;
             }
         });
     }
 
-    public Flowable<ErrorDogeTokenEventResponse> errorDogeTokenEventFlowable(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
+    public Flowable<LiquidationBidEventResponse> liquidationBidEventFlowable(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(ERRORDOGETOKEN_EVENT));
-        return errorDogeTokenEventFlowable(filter);
+        filter.addSingleTopic(EventEncoder.encode(LIQUIDATIONBID_EVENT));
+        return liquidationBidEventFlowable(filter);
     }
 
     public List<NewTokenEventResponse> getNewTokenEvents(TransactionReceipt transactionReceipt) {
@@ -286,6 +307,43 @@ public class DogeToken extends Contract {
         return newTokenEventFlowable(filter);
     }
 
+    public List<OperatorCollateralAuctionedEventResponse> getOperatorCollateralAuctionedEvents(TransactionReceipt transactionReceipt) {
+        List<Contract.EventValuesWithLog> valueList = extractEventParametersWithLog(OPERATORCOLLATERALAUCTIONED_EVENT, transactionReceipt);
+        ArrayList<OperatorCollateralAuctionedEventResponse> responses = new ArrayList<OperatorCollateralAuctionedEventResponse>(valueList.size());
+        for (Contract.EventValuesWithLog eventValues : valueList) {
+            OperatorCollateralAuctionedEventResponse typedResponse = new OperatorCollateralAuctionedEventResponse();
+            typedResponse.log = eventValues.getLog();
+            typedResponse.operatorPublicKeyHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            typedResponse.winner = (String) eventValues.getNonIndexedValues().get(1).getValue();
+            typedResponse.tokensBurned = (BigInteger) eventValues.getNonIndexedValues().get(2).getValue();
+            typedResponse.etherSold = (BigInteger) eventValues.getNonIndexedValues().get(3).getValue();
+            responses.add(typedResponse);
+        }
+        return responses;
+    }
+
+    public Flowable<OperatorCollateralAuctionedEventResponse> operatorCollateralAuctionedEventFlowable(EthFilter filter) {
+        return web3j.ethLogFlowable(filter).map(new Function<Log, OperatorCollateralAuctionedEventResponse>() {
+            @Override
+            public OperatorCollateralAuctionedEventResponse apply(Log log) {
+                Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(OPERATORCOLLATERALAUCTIONED_EVENT, log);
+                OperatorCollateralAuctionedEventResponse typedResponse = new OperatorCollateralAuctionedEventResponse();
+                typedResponse.log = log;
+                typedResponse.operatorPublicKeyHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+                typedResponse.winner = (String) eventValues.getNonIndexedValues().get(1).getValue();
+                typedResponse.tokensBurned = (BigInteger) eventValues.getNonIndexedValues().get(2).getValue();
+                typedResponse.etherSold = (BigInteger) eventValues.getNonIndexedValues().get(3).getValue();
+                return typedResponse;
+            }
+        });
+    }
+
+    public Flowable<OperatorCollateralAuctionedEventResponse> operatorCollateralAuctionedEventFlowable(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
+        EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
+        filter.addSingleTopic(EventEncoder.encode(OPERATORCOLLATERALAUCTIONED_EVENT));
+        return operatorCollateralAuctionedEventFlowable(filter);
+    }
+
     public List<OperatorLiquidatedEventResponse> getOperatorLiquidatedEvents(TransactionReceipt transactionReceipt) {
         List<Contract.EventValuesWithLog> valueList = extractEventParametersWithLog(OPERATORLIQUIDATED_EVENT, transactionReceipt);
         ArrayList<OperatorLiquidatedEventResponse> responses = new ArrayList<OperatorLiquidatedEventResponse>(valueList.size());
@@ -293,6 +351,7 @@ public class DogeToken extends Contract {
             OperatorLiquidatedEventResponse typedResponse = new OperatorLiquidatedEventResponse();
             typedResponse.log = eventValues.getLog();
             typedResponse.operatorPublicKeyHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+            typedResponse.endTimestamp = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
             responses.add(typedResponse);
         }
         return responses;
@@ -306,6 +365,7 @@ public class DogeToken extends Contract {
                 OperatorLiquidatedEventResponse typedResponse = new OperatorLiquidatedEventResponse();
                 typedResponse.log = log;
                 typedResponse.operatorPublicKeyHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
+                typedResponse.endTimestamp = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
                 return typedResponse;
             }
         });
@@ -399,15 +459,36 @@ public class DogeToken extends Contract {
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteFunctionCall<BigInteger> DOGE_TX_BASE_FEE() {
-        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_DOGE_TX_BASE_FEE, 
+    public RemoteFunctionCall<BigInteger> DOGE_DUST() {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_DOGE_DUST, 
                 Arrays.<Type>asList(), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
     }
 
-    public RemoteFunctionCall<BigInteger> DOGE_TX_FEE_PER_INPUT() {
-        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_DOGE_TX_FEE_PER_INPUT, 
+    public RemoteFunctionCall<BigInteger> DOGE_TX_FEE_RATE() {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_DOGE_TX_FEE_RATE, 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
+    public RemoteFunctionCall<BigInteger> DOGE_TX_FIXED_SIZE() {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_DOGE_TX_FIXED_SIZE, 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
+    public RemoteFunctionCall<BigInteger> DOGE_TX_INPUT_SIZE() {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_DOGE_TX_INPUT_SIZE, 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
+    public RemoteFunctionCall<BigInteger> DOGE_TX_OUTPUT_SIZE() {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_DOGE_TX_OUTPUT_SIZE, 
                 Arrays.<Type>asList(), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
@@ -482,11 +563,26 @@ public class DogeToken extends Contract {
         return executeRemoteCallTransaction(function);
     }
 
+    public RemoteFunctionCall<BigInteger> auctionMinimumDuration() {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_AUCTIONMINIMUMDURATION, 
+                Arrays.<Type>asList(), 
+                Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
+        return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
     public RemoteFunctionCall<BigInteger> balanceOf(String owner) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_BALANCEOF, 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.Address(owner)), 
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {}));
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
+    }
+
+    public RemoteFunctionCall<TransactionReceipt> closeLiquidationAuction(byte[] operatorPublicKeyHash) {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+                FUNC_CLOSELIQUIDATIONAUCTION, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes20(operatorPublicKeyHash)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
     }
 
     public RemoteFunctionCall<BigInteger> decimals() {
@@ -612,6 +708,15 @@ public class DogeToken extends Contract {
         return executeRemoteCallTransaction(function);
     }
 
+    public RemoteFunctionCall<TransactionReceipt> liquidationBid(byte[] operatorPublicKeyHash, BigInteger tokenAmount) {
+        final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(
+                FUNC_LIQUIDATIONBID, 
+                Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes20(operatorPublicKeyHash), 
+                new org.web3j.abi.datatypes.generated.Uint256(tokenAmount)), 
+                Collections.<TypeReference<?>>emptyList());
+        return executeRemoteCallTransaction(function);
+    }
+
     public RemoteFunctionCall<BigInteger> liquidationThreshold() {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_LIQUIDATIONTHRESHOLD, 
                 Arrays.<Type>asList(), 
@@ -649,22 +754,23 @@ public class DogeToken extends Contract {
                 });
     }
 
-    public RemoteFunctionCall<Tuple6<String, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger>> operators(byte[] param0) {
+    public RemoteFunctionCall<Tuple7<String, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger, Auction>> operators(byte[] param0) {
         final org.web3j.abi.datatypes.Function function = new org.web3j.abi.datatypes.Function(FUNC_OPERATORS, 
                 Arrays.<Type>asList(new org.web3j.abi.datatypes.generated.Bytes20(param0)), 
-                Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint32>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint24>() {}));
-        return new RemoteFunctionCall<Tuple6<String, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger>>(function,
-                new Callable<Tuple6<String, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger>>() {
+                Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint32>() {}, new TypeReference<Uint256>() {}, new TypeReference<Uint24>() {}, new TypeReference<Auction>() {}));
+        return new RemoteFunctionCall<Tuple7<String, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger, Auction>>(function,
+                new Callable<Tuple7<String, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger, Auction>>() {
                     @Override
-                    public Tuple6<String, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger> call() throws Exception {
+                    public Tuple7<String, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger, Auction> call() throws Exception {
                         List<Type> results = executeCallMultipleValueReturn(function);
-                        return new Tuple6<String, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger>(
+                        return new Tuple7<String, BigInteger, BigInteger, BigInteger, BigInteger, BigInteger, Auction>(
                                 (String) results.get(0).getValue(), 
                                 (BigInteger) results.get(1).getValue(), 
                                 (BigInteger) results.get(2).getValue(), 
                                 (BigInteger) results.get(3).getValue(), 
                                 (BigInteger) results.get(4).getValue(), 
-                                (BigInteger) results.get(5).getValue());
+                                (BigInteger) results.get(5).getValue(), 
+                                (Auction) results.get(6));
                     }
                 });
     }
@@ -837,6 +943,32 @@ public class DogeToken extends Contract {
         return new DogeToken(contractAddress, web3j, transactionManager, contractGasProvider);
     }
 
+    public static class Auction extends StaticStruct {
+        public BigInteger bestBid;
+
+        public String bestBidder;
+
+        public BigInteger status;
+
+        public BigInteger endTimestamp;
+
+        public Auction(BigInteger bestBid, String bestBidder, BigInteger status, BigInteger endTimestamp) {
+            super(new org.web3j.abi.datatypes.generated.Uint256(bestBid),new org.web3j.abi.datatypes.Address(bestBidder),new org.web3j.abi.datatypes.generated.Uint8(status),new org.web3j.abi.datatypes.generated.Uint256(endTimestamp));
+            this.bestBid = bestBid;
+            this.bestBidder = bestBidder;
+            this.status = status;
+            this.endTimestamp = endTimestamp;
+        }
+
+        public Auction(Uint256 bestBid, Address bestBidder, Uint8 status, Uint256 endTimestamp) {
+            super(bestBid,bestBidder,status,endTimestamp);
+            this.bestBid = bestBid.getValue();
+            this.bestBidder = bestBidder.getValue();
+            this.status = status.getValue();
+            this.endTimestamp = endTimestamp.getValue();
+        }
+    }
+
     public static class ApprovalEventResponse extends BaseEventResponse {
         public String owner;
 
@@ -845,8 +977,12 @@ public class DogeToken extends Contract {
         public BigInteger value;
     }
 
-    public static class ErrorDogeTokenEventResponse extends BaseEventResponse {
-        public BigInteger err;
+    public static class LiquidationBidEventResponse extends BaseEventResponse {
+        public byte[] operatorPublicKeyHash;
+
+        public String bidder;
+
+        public BigInteger bid;
     }
 
     public static class NewTokenEventResponse extends BaseEventResponse {
@@ -855,8 +991,20 @@ public class DogeToken extends Contract {
         public BigInteger value;
     }
 
+    public static class OperatorCollateralAuctionedEventResponse extends BaseEventResponse {
+        public byte[] operatorPublicKeyHash;
+
+        public String winner;
+
+        public BigInteger tokensBurned;
+
+        public BigInteger etherSold;
+    }
+
     public static class OperatorLiquidatedEventResponse extends BaseEventResponse {
         public byte[] operatorPublicKeyHash;
+
+        public BigInteger endTimestamp;
     }
 
     public static class TransferEventResponse extends BaseEventResponse {

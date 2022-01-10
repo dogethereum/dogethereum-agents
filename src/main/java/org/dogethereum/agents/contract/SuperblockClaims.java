@@ -143,10 +143,6 @@ public class SuperblockClaims extends Contract {
             Arrays.<TypeReference<?>>asList(new TypeReference<Address>() {}, new TypeReference<Uint256>() {}));
     ;
 
-    public static final Event ERRORCLAIM_EVENT = new Event("ErrorClaim", 
-            Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Uint256>() {}));
-    ;
-
     public static final Event SUPERBLOCKBATTLEDECIDED_EVENT = new Event("SuperblockBattleDecided", 
             Arrays.<TypeReference<?>>asList(new TypeReference<Bytes32>() {}, new TypeReference<Address>() {}, new TypeReference<Address>() {}));
     ;
@@ -327,39 +323,6 @@ public class SuperblockClaims extends Contract {
         EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
         filter.addSingleTopic(EventEncoder.encode(DEPOSITWITHDRAWN_EVENT));
         return depositWithdrawnEventFlowable(filter);
-    }
-
-    public List<ErrorClaimEventResponse> getErrorClaimEvents(TransactionReceipt transactionReceipt) {
-        List<Contract.EventValuesWithLog> valueList = extractEventParametersWithLog(ERRORCLAIM_EVENT, transactionReceipt);
-        ArrayList<ErrorClaimEventResponse> responses = new ArrayList<ErrorClaimEventResponse>(valueList.size());
-        for (Contract.EventValuesWithLog eventValues : valueList) {
-            ErrorClaimEventResponse typedResponse = new ErrorClaimEventResponse();
-            typedResponse.log = eventValues.getLog();
-            typedResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-            typedResponse.err = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
-            responses.add(typedResponse);
-        }
-        return responses;
-    }
-
-    public Flowable<ErrorClaimEventResponse> errorClaimEventFlowable(EthFilter filter) {
-        return web3j.ethLogFlowable(filter).map(new Function<Log, ErrorClaimEventResponse>() {
-            @Override
-            public ErrorClaimEventResponse apply(Log log) {
-                Contract.EventValuesWithLog eventValues = extractEventParametersWithLog(ERRORCLAIM_EVENT, log);
-                ErrorClaimEventResponse typedResponse = new ErrorClaimEventResponse();
-                typedResponse.log = log;
-                typedResponse.superblockHash = (byte[]) eventValues.getNonIndexedValues().get(0).getValue();
-                typedResponse.err = (BigInteger) eventValues.getNonIndexedValues().get(1).getValue();
-                return typedResponse;
-            }
-        });
-    }
-
-    public Flowable<ErrorClaimEventResponse> errorClaimEventFlowable(DefaultBlockParameter startBlock, DefaultBlockParameter endBlock) {
-        EthFilter filter = new EthFilter(startBlock, endBlock, getContractAddress());
-        filter.addSingleTopic(EventEncoder.encode(ERRORCLAIM_EVENT));
-        return errorClaimEventFlowable(filter);
     }
 
     public List<SuperblockBattleDecidedEventResponse> getSuperblockBattleDecidedEvents(TransactionReceipt transactionReceipt) {
@@ -989,12 +952,6 @@ public class SuperblockClaims extends Contract {
         public String who;
 
         public BigInteger amount;
-    }
-
-    public static class ErrorClaimEventResponse extends BaseEventResponse {
-        public byte[] superblockHash;
-
-        public BigInteger err;
     }
 
     public static class SuperblockBattleDecidedEventResponse extends BaseEventResponse {
