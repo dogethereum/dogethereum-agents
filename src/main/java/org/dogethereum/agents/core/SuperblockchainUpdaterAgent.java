@@ -39,7 +39,8 @@ public class SuperblockchainUpdaterAgent {
     public void setup() throws Exception {
         SystemProperties config = SystemProperties.CONFIG;
         AgentConstants agentConstants = config.getAgentConstants();
-        if (config.isDogeSuperblockSubmitterEnabled() || config.isDogeLockTxRelayEnabled() ||
+        if (config.isDogeSuperblockchainUpdaterEnabled() ||
+                config.isDogeSuperblockSubmitterEnabled() || config.isDogeLockTxRelayEnabled() ||
                 config.isOperatorEnabled() || config.isDogeBlockChallengerEnabled()) {
             new Timer("SuperblockchainUpdaterAgent").scheduleAtFixedRate(new SuperblockchainUpdaterAgentTimerTask(),
                       getFirstExecutionDate(), agentConstants.getSuperblockchainUpdaterAgentTimerTaskPeriod());

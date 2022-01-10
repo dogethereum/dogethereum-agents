@@ -152,6 +152,10 @@ public class SystemProperties {
         return agentConstants;
     }
 
+    public boolean isDogeSuperblockchainUpdaterEnabled() {
+        return getBooleanProperty("doge.superblock.updater.enabled", false);
+    }
+
     public boolean isDogeSuperblockSubmitterEnabled() {
         return getBooleanProperty("doge.superblock.submitter.enabled", false);
     }
