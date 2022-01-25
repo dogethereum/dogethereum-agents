@@ -1,5 +1,8 @@
 package org.dogethereum.agents.core.dogecoin;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.bitcoinj.core.*;
 
 import org.bouncycastle.util.encoders.Hex;
@@ -24,31 +27,42 @@ public class Superblock {
     /* ---- INFO FIELDS ---- */
 
     // Root of a Merkle tree comprised of Dogecoin block hashes. 32 bytes.
+    @JsonIgnore
     private Sha256Hash merkleRoot;
 
     // Total chain work put into this superblock -- same as total chain work put into last block. 32 bytes.
+    @JsonIgnore
     private BigInteger chainWork;
 
     // Timestamp of last mined Dogecoin block in the superblock. 32 bytes to comply with Solidity version.
+    @JsonProperty("timestamp")
     private long lastDogeBlockTime;
 
     // Timestamp of previous to last mined Dogecoin block in the superblock. 32 bytes to comply with Solidity version.
+    @JsonProperty("prevTimestamp")
     private long previousToLastDogeBlockTime;
 
     // SHA-256 hash of last mined Dogecoin block in the superblock. 32 bytes.
+    @JsonIgnore
     private Sha256Hash lastDogeBlockHash;
 
     // Bits (difficulty) of last mined Dogecoin block in the superblock. 32 bytes.
+    @JsonProperty("lastBits")
     private long lastDogeBlockBits;
 
     // SHA3-256 hash of previous superblock. 32 bytes.
+    @JsonIgnore
     private Keccak256Hash parentId;
 
 
     /* ---- EXTRA FIELDS ---- */
 
-    private Keccak256Hash superblockId; // SHA3-256 hash of superblock data
+    // SHA3-256 hash of superblock data
+    @JsonIgnore
+    private Keccak256Hash superblockId;
+    @JsonProperty("height")
     private long superblockHeight;
+    @JsonIgnore
     private List<Sha256Hash> dogeBlockHashes;
 
 
@@ -327,6 +341,40 @@ public class Superblock {
         for (int i = 0; i < hashes.size(); i++)
             stream.write(hashes.get(i).getReversedBytes());
     }
+
+    /**
+     * Serializes every block hash into a hexadecimal string.
+     * @apiNote Meant to be used when responding a superblock query through the JSON-RPC API.
+     */
+    @JsonGetter("blockHashes")
+     public List<String> serializeBlocksForJsonRpc() {
+        List<String> hexBlockHashes = new ArrayList<>(dogeBlockHashes.size());
+        for (Sha256Hash hash : dogeBlockHashes) {
+            hexBlockHashes.add("0x" + Utils.HEX.encode(hash.getBytes()));
+        }
+        return hexBlockHashes;
+    }
+
+    @JsonGetter("accumulatedWork")
+    public String serializeWorkForJsonRpc() {
+        return chainWork.toString(10);
+    }
+
+    @JsonGetter("merkleRoot")
+    public String serializeMerkleRootForJsonRpc() {
+        return "0x" + Utils.HEX.encode(merkleRoot.getBytes());
+    }
+
+    @JsonGetter("lastHash")
+    public String serializeLastHashForJsonRpc() {
+        return "0x" + Utils.HEX.encode(lastDogeBlockHash.getBytes());
+    }
+
+    @JsonGetter("parentId")
+    public String serializeParentIdForJsonRpc() {
+        return "0x" + Utils.HEX.encode(parentId.getBytes());
+    }
+
 
     /**
      * Given a little-endian byte array representing a superblock,

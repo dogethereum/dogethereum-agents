@@ -172,6 +172,14 @@ public class SystemProperties {
         return getBooleanProperty("doge.superblock.challenger.enabled", false);
     }
 
+    public boolean isHttpApiEnabled() {
+        return getBooleanProperty("httpApi.enabled", false);
+    }
+
+    public int getHttpApiPort() {
+        return getIntProperty("httpApi.port", 9000);
+    }
+
     public boolean isGanache() {
         return LOCAL.equals(constants()) || ETHGANACHE_DOGEMAIN.equals(constants());
     }
@@ -259,6 +267,9 @@ public class SystemProperties {
     }
     protected long getLongProperty(String propertyName, long defaultValue) {
         return config.hasPath(propertyName) ? config.getLong(propertyName) : defaultValue;
+    }
+    protected int getIntProperty(String propertyName, int defaultValue) {
+        return config.hasPath(propertyName) ? config.getInt(propertyName) : defaultValue;
     }
     protected boolean getBooleanProperty(String propertyName, boolean defaultValue) {
         return config.hasPath(propertyName) ? config.getBoolean(propertyName) : defaultValue;
