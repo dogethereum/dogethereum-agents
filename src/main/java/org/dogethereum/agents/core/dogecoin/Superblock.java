@@ -34,11 +34,11 @@ public class Superblock {
     @JsonIgnore
     private BigInteger chainWork;
 
-    // Timestamp of last mined Dogecoin block in the superblock. 32 bytes to comply with Solidity version.
+    // Timestamp of last mined Dogecoin block in the superblock.
     @JsonProperty("timestamp")
     private long lastDogeBlockTime;
 
-    // Timestamp of previous to last mined Dogecoin block in the superblock. 32 bytes to comply with Solidity version.
+    // Timestamp of previous to last mined Dogecoin block in the superblock.
     @JsonProperty("prevTimestamp")
     private long previousToLastDogeBlockTime;
 
