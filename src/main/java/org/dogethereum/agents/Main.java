@@ -29,8 +29,6 @@ public class Main {
         AnnotationConfigApplicationContext c = new AnnotationConfigApplicationContext(Main.class);
         SuperblocksService service = c.getBean(SuperblocksService.class);
 
-        // TODO: run http server only if enabled in config
-        // TODO: use port specified in config
         if (!config.isHttpApiEnabled()) return;
 
         int port = config.getHttpApiPort();
