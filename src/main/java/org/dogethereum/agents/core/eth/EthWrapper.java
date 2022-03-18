@@ -217,6 +217,11 @@ public class EthWrapper implements SuperblockConstantProvider {
         return arePendingTransactionsFor(dogeSuperblockChallengerAddress);
     }
 
+    public long getLatestBlockTimestamp() throws IOException {
+        EthBlock.Block block = web3.ethGetBlockByNumber(DefaultBlockParameterName.LATEST, false).send().getBlock();
+        return block.getTimestamp().longValueExact();
+    }
+
     /**
      * Checks if there are pending transactions for a given contract.
      * @param address
@@ -690,18 +695,8 @@ public class EthWrapper implements SuperblockConstantProvider {
      * @return When the superblock was submitted.
      * @throws Exception
      */
-    public BigInteger getNewEventTimestampBigInteger(Keccak256Hash superblockId) throws Exception {
-        return superblockClaims.getNewSuperblockEventTimestamp(superblockId.getBytes()).send();
-    }
-
-    /**
-     * Looks up a superblock's submission time in SuperblockClaims.
-     * @param superblockId Superblock hash.
-     * @return When the superblock was submitted.
-     * @throws Exception
-     */
-    public Date getNewEventTimestampDate(Keccak256Hash superblockId) throws Exception {
-        return new Date(getNewEventTimestampBigInteger(superblockId).longValue() * 1000);
+    public long getNewEventTimestamp(Keccak256Hash superblockId) throws Exception {
+        return superblockClaims.getNewSuperblockEventTimestamp(superblockId.getBytes()).send().longValueExact();
     }
 
 

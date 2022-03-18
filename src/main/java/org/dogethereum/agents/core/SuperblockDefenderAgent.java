@@ -231,16 +231,10 @@ public class SuperblockDefenderAgent extends SuperblockBattleBaseAgent {
     }
 
     private boolean submittedTimeoutPassed(Keccak256Hash superblockId) throws Exception {
-        return ethWrapper.getNewEventTimestampDate(superblockId).before(getTimeoutDate());
-    }
-
-    private Date getTimeoutDate() throws Exception {
-        int superblockTimeout = ethWrapper.getSuperblockTimeout().intValue();
-        return SuperblockUtils.getNSecondsAgo(superblockTimeout);
-    }
-
-    private boolean challengeTimeoutPassed(Keccak256Hash superblockId) throws Exception {
-        return ethWrapper.getClaimChallengeTimeoutDate(superblockId).before(getTimeoutDate());
+        long superblockTimestamp = ethWrapper.getNewEventTimestamp(superblockId);
+        long superblockTimeout = ethWrapper.getSuperblockTimeout().longValueExact();
+        long latestTimestamp = ethWrapper.getLatestBlockTimestamp();
+        return superblockTimestamp + superblockTimeout < latestTimestamp;
     }
 
     private boolean newAndTimeoutPassed(Superblock superblock) throws Exception {
