@@ -116,7 +116,7 @@ public class SuperblockChallengerAgent extends SuperblockBattleBaseAgent {
                 BigInteger height = ethWrapper.getSuperblockHeight(newSuperblock.superblockId);
                 Superblock localSuperblock = superblockchain.getSuperblockByHeight(height.longValue());
                 if (localSuperblock == null) {
-                    //FIXME: Local superbockchain might be out of sync
+                    //FIXME: Local superblockchain might be out of sync
                     log.info("Superblock {} not present in our superblock chain", newSuperblock.superblockId);
                 } else {
                     log.info("Superblock {} at height {} is replaced by {} in our superblock chain",
