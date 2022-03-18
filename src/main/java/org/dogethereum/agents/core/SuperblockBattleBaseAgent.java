@@ -83,34 +83,36 @@ public abstract class SuperblockBattleBaseAgent extends PersistentFileStore {
         @Override
         public void run() {
             try {
-                if (!ethWrapper.isEthNodeSyncing()) {
-                    if (arePendingTransactions()) {
-                        log.debug("Skipping because there are pending transaction for the sender address.");
-                        return;
-                    }
-
-                    ethWrapper.updateContractFacadesGasPrice();
-
-                    reactToElapsedTime();
-
-                    long fromBlock = latestEthBlockProcessed + 1;
-                    long toBlock = ethWrapper.getEthBlockCount() - getConfirmations() + 1;
-
-                    // Ignore execution if nothing to process
-                    if (fromBlock > toBlock) return;
-
-                    // Maintain data structures and react to events
-                    removeApproved(fromBlock, toBlock);
-                    removeInvalid(fromBlock, toBlock);
-                    getNewBattles(fromBlock, toBlock);
-                    deleteFinishedBattles(fromBlock, toBlock);
-                    latestEthBlockProcessed = reactToEvents(fromBlock, toBlock);
-
-                    flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
-                    flushFiles();
-                } else {
+                if (ethWrapper.isEthNodeSyncing()) {
                     log.warn("SuperblocksBattleBaseAgentTimerTask skipped because the eth node is syncing blocks");
+                    return;
                 }
+
+                if (arePendingTransactions()) {
+                    log.debug("Skipping because there are pending transaction for the sender address.");
+                    return;
+                }
+
+                ethWrapper.updateContractFacadesGasPrice();
+
+                reactToElapsedTime();
+
+                // Block interval: [from, to)
+                long fromBlock = latestEthBlockProcessed + 1;
+                long toBlock = ethWrapper.getEthBlockCount() - getConfirmations() + 1;
+
+                // Ignore execution if nothing to process
+                if (fromBlock > toBlock) return;
+
+                // Maintain data structures and react to events
+                removeApproved(fromBlock, toBlock);
+                removeInvalid(fromBlock, toBlock);
+                getNewBattles(fromBlock, toBlock);
+                deleteFinishedBattles(fromBlock, toBlock);
+                latestEthBlockProcessed = reactToEvents(fromBlock, toBlock);
+
+                flush(latestEthBlockProcessed, latestEthBlockProcessedFile);
+                flushFiles();
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
             }
