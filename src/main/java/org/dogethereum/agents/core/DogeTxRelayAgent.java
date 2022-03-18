@@ -67,7 +67,6 @@ public class DogeTxRelayAgent {
 
     private Date getFirstExecutionDate() {
         Calendar firstExecution = Calendar.getInstance();
-        firstExecution.add(Calendar.SECOND, 20);
         return firstExecution.getTime();
     }
 

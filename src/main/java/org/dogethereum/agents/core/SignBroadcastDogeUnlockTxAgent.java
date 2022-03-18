@@ -44,7 +44,6 @@ public class SignBroadcastDogeUnlockTxAgent extends PersistentFileStore {
 
     private Date getFirstExecutionDate() {
         Calendar firstExecution = Calendar.getInstance();
-        firstExecution.add(Calendar.SECOND, 25);
         return firstExecution.getTime();
     }
 

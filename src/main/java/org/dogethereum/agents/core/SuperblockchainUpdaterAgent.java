@@ -49,7 +49,6 @@ public class SuperblockchainUpdaterAgent {
 
     private Date getFirstExecutionDate() {
         Calendar firstExecution = Calendar.getInstance();
-        firstExecution.add(Calendar.SECOND, 1);
         return firstExecution.getTime();
     }
 
